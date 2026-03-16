@@ -6,8 +6,8 @@ from typing import Any
 import pandas as pd
 import pytest
 
-from src.logic.workout_manager import WorkoutManager
-from src.logic.workout_route import RoutePoint, WorkoutRoute
+from logic.workout_manager import WorkoutManager
+from logic.workout_route import RoutePoint, WorkoutRoute
 
 
 class TestGetCriticalPower:

@@ -9,9 +9,9 @@ from zipfile import ZipFile
 import pandas as pd
 import pytest
 
-import src.logic.export_parser as ep
-import src.logic.workout_manager as wm
-from src.logic.workout_manager.export import WorkoutManagerExportMixin
+import logic.export_parser as ep
+import logic.workout_manager as wm
+from logic.workout_manager.export import WorkoutManagerExportMixin
 
 
 def create_test_zip(zip_path: Path, xml_content: bytes) -> None:

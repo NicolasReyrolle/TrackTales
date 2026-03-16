@@ -4,7 +4,7 @@
 
 import pandas as pd
 
-from src.logic import workout_manager as wm
+from logic import workout_manager as wm
 
 
 class TestGetCountByPeriod:

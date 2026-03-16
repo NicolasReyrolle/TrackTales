@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pandas as pd
 
-import src.logic.workout_manager as wm
+import logic.workout_manager as wm
 
 
 class TestGetCountWithDateFiltering:

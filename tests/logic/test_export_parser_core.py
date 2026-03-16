@@ -7,8 +7,8 @@ from zipfile import ZipFile
 import pandas as pd
 import pytest
 
-import src.logic.export_parser as ep
-import src.logic.workout_manager as wm
+import logic.export_parser as ep
+import logic.workout_manager as wm
 
 
 class TestExportParser:

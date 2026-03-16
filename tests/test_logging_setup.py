@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Import the module to test
-import src.apple_health_analyzer as apple_health_analyzer
+import apple_health_analyzer as apple_health_analyzer
 
 
 class TestSetupLogging:

@@ -8,9 +8,9 @@ from zipfile import ZipFile
 import pandas as pd
 import pytest
 
-from src.logic.export_parser import ExportParser
-from src.logic.workout_manager import WorkoutManager
-from src.logic.workout_route import RoutePoint, WorkoutRoute
+from logic.export_parser import ExportParser
+from logic.workout_manager import WorkoutManager
+from logic.workout_route import RoutePoint, WorkoutRoute
 from tests.conftest import build_health_export_xml, load_export_fragment
 
 

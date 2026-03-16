@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 from babel.messages.pofile import read_po
 
-from src import i18n as i18n_module
+import i18n as i18n_module
 
 DEFAULT_LANGUAGE = i18n_module.DEFAULT_LANGUAGE
 LANGUAGES = i18n_module.LANGUAGES

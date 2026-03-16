@@ -1,6 +1,6 @@
 """Tests for i18n activity type translation helpers."""
 
-from src.i18n.activity_types import (
+from i18n.activity_types import (
     HK_WORKOUT_ACTIVITY_TYPES,
     activity_display_label,
     build_activity_select_options,

@@ -4,7 +4,7 @@ from xml.etree.ElementTree import Element
 
 import pytest
 
-import src.logic.export_parser as ep
+import logic.export_parser as ep
 
 
 class TestParseValue:

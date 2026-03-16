@@ -4,7 +4,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable, Hashable
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 from nicegui import app, ui
@@ -208,11 +208,11 @@ def _refresh_summary_metrics() -> None:
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
     )
 
-    metrics_display["count"] = format_integer(metrics["count"])
-    metrics_display["distance"] = format_integer(metrics["distance"])
-    metrics_display["duration"] = format_integer(metrics["duration"])
-    metrics_display["elevation"] = format_integer(metrics["elevation"])
-    metrics_display["calories"] = format_integer(metrics["calories"])
+    metrics_display["count"] = format_integer(cast(int, metrics["count"]))
+    metrics_display["distance"] = format_integer(cast(int, metrics["distance"]))
+    metrics_display["duration"] = format_integer(cast(int, metrics["duration"]))
+    metrics_display["elevation"] = format_integer(cast(int, metrics["elevation"]))
+    metrics_display["calories"] = format_integer(cast(int, metrics["calories"]))
 
 
 def _set_longest_metric_from_details(

@@ -66,9 +66,9 @@ class LocalFilePicker(ui.dialog):
         """Add a drive selection toggle for Windows systems."""
         if platform.system() == "Windows":
             try:
-                import win32api  # type: ignore[import-not-found]  # pylint: disable=import-outside-toplevel
+                import win32api  # type: ignore[import-not-found]
 
-                drives = win32api.GetLogicalDriveStrings().split("\000")[:-1]  # pylint: disable=no-member
+                drives = win32api.GetLogicalDriveStrings().split("\000")[:-1]
                 self.drives_toggle = ui.toggle(drives, value=drives[0], on_change=self.update_drive)
             except ImportError:
                 # win32api not available, skip drives toggle

@@ -1,8 +1,8 @@
 """Best-segment mixin for WorkoutManager."""
 
-from datetime import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, TypedDict, Union
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Optional, TypedDict, Union
 
 import pandas as pd
 
@@ -34,10 +34,15 @@ class WorkoutManagerSegmentsMixin:
 
     workouts: pd.DataFrame
     DEFAULT_SEGMENT_DISTANCES: list[int]
-    _filter_workouts: Callable[
-        [str, Optional[Union[datetime, "Timestamp"]], Optional[Union[datetime, "Timestamp"]]],
-        pd.DataFrame,
-    ]
+
+    def _filter_workouts(
+        self,
+        activity_type: str = "All",
+        start_date: Union[datetime, "Timestamp"] | None = None,
+        end_date: Union[datetime, "Timestamp"] | None = None,
+    ) -> pd.DataFrame:
+        """Stub for type checking; implemented in WorkoutManagerAggregationsMixin."""
+        raise NotImplementedError
 
     @staticmethod
     def _split_route_into_traces(route: WorkoutRoute) -> list[WorkoutRoute]:
@@ -92,7 +97,7 @@ class WorkoutManagerSegmentsMixin:
         )
 
     @staticmethod
-    def _get_run_distance_m(run_record: Any) -> Optional[float]:
+    def _get_run_distance_m(run_record: Any) -> float | None:
         """Return the run distance in meters when present and finite."""
         raw_run_distance: Any = getattr(run_record, "distance", None)
         if raw_run_distance is None or pd.isna(raw_run_distance):
@@ -113,9 +118,9 @@ class WorkoutManagerSegmentsMixin:
         route_traces: list[WorkoutRoute],
         distance_m: float,
         distance_scale_factor: float,
-    ) -> Optional[tuple[float, datetime, datetime]]:
+    ) -> tuple[float, datetime, datetime] | None:
         """Return (duration_s, start_time, end_time) for the fastest segment across traces."""
-        best: Optional[tuple[float, datetime, datetime]] = None
+        best: tuple[float, datetime, datetime] | None = None
         for route_trace in route_traces:
             result = route_trace.find_fastest_segment_window(
                 distance_m,
@@ -162,8 +167,8 @@ class WorkoutManagerSegmentsMixin:
 
     def _fallback_filter_running_workouts(
         self,
-        start_date: Optional[Union[datetime, pd.Timestamp]],
-        end_date: Optional[Union[datetime, pd.Timestamp]],
+        start_date: datetime | pd.Timestamp | None,
+        end_date: datetime | pd.Timestamp | None,
     ) -> pd.DataFrame:
         """Fallback: filter running workouts with local logic and end-date handling."""
         runs = self.workouts[self.workouts["activityType"] == "Running"]
@@ -181,9 +186,9 @@ class WorkoutManagerSegmentsMixin:
     def get_best_segments(
         self,
         topn: int = 5,
-        distances: Optional[list[int]] = None,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        distances: list[int] | None = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Return a DataFrame of best segments across all running workouts for a defined list of
         distances for the Top-N values of each segment distance.
@@ -218,7 +223,7 @@ class WorkoutManagerSegmentsMixin:
         if runs.empty:
             return self._empty_best_segments_frame()
 
-        results: List[List[Any]] = []
+        results: list[list[Any]] = []
 
         for run in runs.itertuples():
             results.extend(self._get_run_best_segment_rows(run, distances))
@@ -234,7 +239,7 @@ class WorkoutManagerSegmentsMixin:
         rp_values: pd.Series,
         seg_start_ts: pd.Timestamp,
         seg_end_ts: pd.Timestamp,
-    ) -> Optional[float]:
+    ) -> float | None:
         """Compute mean power from records whose startDate falls within segment bounds."""
         mask = (rp_times >= seg_start_ts) & (rp_times <= seg_end_ts) & rp_values.notna()
         vals = rp_values[mask]
@@ -249,7 +254,7 @@ class WorkoutManagerSegmentsMixin:
         rp_values: pd.Series,
         seg_start_ts: pd.Timestamp,
         seg_end_ts: pd.Timestamp,
-    ) -> Optional[tuple[float, int, float]]:
+    ) -> tuple[float, int, float] | None:
         """Estimate power from overlap duration between power intervals and segment window."""
         overlap_mask = (rp_times <= seg_end_ts) & (rp_end_times >= seg_start_ts) & rp_values.notna()
         if not overlap_mask.any():
@@ -275,8 +280,8 @@ class WorkoutManagerSegmentsMixin:
 
     @staticmethod
     def _prepare_running_power_series(
-        running_power_df: Optional[pd.DataFrame],
-    ) -> tuple[Optional[pd.Series], Optional[pd.Series], Optional[pd.Series]]:
+        running_power_df: pd.DataFrame | None,
+    ) -> tuple[pd.Series | None, pd.Series | None, pd.Series | None]:
         """Parse running power records into typed series for segment matching."""
         if (
             running_power_df is None
@@ -287,7 +292,7 @@ class WorkoutManagerSegmentsMixin:
             return None, None, None
 
         rp_times = pd.to_datetime(running_power_df["startDate"], format="ISO8601", errors="coerce")
-        rp_end_times: Optional[pd.Series] = None
+        rp_end_times: pd.Series | None = None
         if "endDate" in running_power_df.columns:
             rp_end_times = pd.to_datetime(
                 running_power_df["endDate"], format="ISO8601", errors="coerce"
@@ -295,9 +300,9 @@ class WorkoutManagerSegmentsMixin:
         rp_values = pd.to_numeric(running_power_df["value"], errors="coerce")
         return rp_times, rp_end_times, rp_values
 
-    def _build_workout_fallback_power(self) -> dict[Any, Optional[float]]:
+    def _build_workout_fallback_power(self) -> dict[Any, float | None]:
         """Build workout-level fallback lookup: startDate -> averageRunningPower."""
-        fallback: dict[Any, Optional[float]] = {}
+        fallback: dict[Any, float | None] = {}
         avg_power_col = "averageRunningPower"
         for workout in self.workouts.itertuples():
             workout_start = getattr(workout, "startDate", None)
@@ -314,9 +319,9 @@ class WorkoutManagerSegmentsMixin:
     def _compute_segment_power_and_confidence(  # pylint: disable=too-many-locals
         self,
         row: Any,
-        power_series: tuple[Optional[pd.Series], Optional[pd.Series], Optional[pd.Series]],
-        workout_fallback: dict[Any, Optional[float]],
-    ) -> tuple[Optional[float], str]:
+        power_series: tuple[pd.Series | None, pd.Series | None, pd.Series | None],
+        workout_fallback: dict[Any, float | None],
+    ) -> tuple[float | None, str]:
         """Compute power value and confidence for one segment row."""
         rp_times, rp_end_times, rp_values = power_series
         seg_start = getattr(row, "segment_start", None)
@@ -356,10 +361,10 @@ class WorkoutManagerSegmentsMixin:
         workout_start: Any,
         seg_start: Any,
         seg_end: Any,
-        rp_times: Optional[pd.Series],
-        rp_end_times: Optional[pd.Series],
-        rp_values: Optional[pd.Series],
-    ) -> tuple[Optional[float], str]:
+        rp_times: pd.Series | None,
+        rp_end_times: pd.Series | None,
+        rp_values: pd.Series | None,
+    ) -> tuple[float | None, str]:
         """Compute power from running-power records only (measured or overlap-estimated)."""
         if rp_times is None or rp_values is None or seg_start is None or seg_end is None:
             return None, "missing"
@@ -415,7 +420,7 @@ class WorkoutManagerSegmentsMixin:
     def annotate_segments_with_power(  # pylint: disable=too-many-locals
         self,
         segments: pd.DataFrame,
-        running_power_df: Optional[pd.DataFrame],
+        running_power_df: pd.DataFrame | None,
     ) -> pd.DataFrame:
         """Add ``segment_avg_power`` column to a best-segments DataFrame.
 
@@ -448,7 +453,7 @@ class WorkoutManagerSegmentsMixin:
         power_series = self._prepare_running_power_series(running_power_df)
         workout_fallback = self._build_workout_fallback_power()
 
-        avg_powers: list[Optional[float]] = []
+        avg_powers: list[float | None] = []
         confidences: list[str] = []
         for row in segments.itertuples():
             power, confidence = self._compute_segment_power_and_confidence(
@@ -465,12 +470,12 @@ class WorkoutManagerSegmentsMixin:
 
     def get_critical_power(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-return-statements
         self,
-        running_power_df: Optional[pd.DataFrame] = None,
+        running_power_df: pd.DataFrame | None = None,
         topn: int = 5,
         short_distance: int = 800,
         long_distance: int = 5000,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> Optional["CriticalPowerResult"]:
         """Compute Critical Power (CP) and W' using the 2-parameter power-duration model.
 
@@ -555,13 +560,13 @@ class WorkoutManagerSegmentsMixin:
 
     def get_critical_power_evolution(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
         self,
-        running_power_df: Optional[pd.DataFrame] = None,
+        running_power_df: pd.DataFrame | None = None,
         period: str = "M",
         short_distance: int = 800,
         long_distance: int = 5000,
         topn: int = 5,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Compute Critical Power (CP) and W' for each time period.
 

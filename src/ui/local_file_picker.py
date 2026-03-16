@@ -4,7 +4,6 @@ Originates from https://github.com/zauberzeug/nicegui/tree/main/examples/local_f
 
 import platform
 from pathlib import Path
-from typing import Optional
 
 from nicegui import events, ui
 
@@ -17,10 +16,10 @@ class LocalFilePicker(ui.dialog):
         self,
         directory: str,
         *,
-        upper_limit: Optional[str] = None,
+        upper_limit: str | None = None,
         multiple: bool = False,
         show_hidden_files: bool = False,
-        file_filter: Optional[str] = None,
+        file_filter: str | None = None,
     ) -> None:
         """Local File Picker
 
@@ -69,9 +68,7 @@ class LocalFilePicker(ui.dialog):
             try:
                 import win32api  # type: ignore[import-not-found]  # pylint: disable=import-outside-toplevel
 
-                drives = win32api.GetLogicalDriveStrings().split("\000")[
-                    :-1
-                ]  # pylint: disable=no-member
+                drives = win32api.GetLogicalDriveStrings().split("\000")[:-1]  # pylint: disable=no-member
                 self.drives_toggle = ui.toggle(drives, value=drives[0], on_change=self.update_drive)
             except ImportError:
                 # win32api not available, skip drives toggle

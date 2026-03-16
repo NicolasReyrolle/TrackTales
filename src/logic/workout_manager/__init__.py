@@ -6,6 +6,8 @@ from .manager import (
     HALF_MARATHON_DISTANCE_M,
     MARATHON_DISTANCE_M,
     STANDARD_SEGMENT_DISTANCES,
+)
+from .manager import (
     WorkoutManager as _WorkoutManager,
 )
 from .segments import CriticalPowerResult

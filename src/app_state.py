@@ -26,7 +26,7 @@ class AppState:
         self.file_loaded: bool = False
         self.loading: bool = False
         self.loading_status: str = ""
-        self.metrics = {
+        self.metrics: dict[str, int | float] = {
             "count": 0,
             "distance": 0,
             "duration": 0,
@@ -36,7 +36,7 @@ class AppState:
             "longest_walk": 0.0,
             "longest_cycling": 0.0,
         }
-        self.metrics_display = {
+        self.metrics_display: dict[str, str] = {
             "count": "0",
             "distance": "0",
             "duration": "0",

@@ -3,7 +3,7 @@
 import json
 import re
 from collections.abc import Sequence
-from typing import Optional, Protocol
+from typing import Protocol
 
 import pandas as pd
 from babel.core import default_locale
@@ -20,7 +20,7 @@ class _SupportsStrftime(Protocol):  # pylint: disable=too-few-public-methods
         raise NotImplementedError
 
 
-def _resolve_locale(locale_name: Optional[str] = None) -> str:
+def _resolve_locale(locale_name: str | None = None) -> str:
     """Resolve the locale to use for formatting."""
     if locale_name:
         return locale_name
@@ -42,12 +42,12 @@ def _normalize_language_code(language_code: str) -> str:
     return normalized
 
 
-def format_integer(value: int, locale_name: Optional[str] = None) -> str:
+def format_integer(value: int, locale_name: str | None = None) -> str:
     """Format an integer with grouping for the current locale."""
     return format_decimal(value, format="#,##0", locale=_resolve_locale(locale_name))
 
 
-def format_float(value: float, decimal_places: int = 1, locale_name: Optional[str] = None) -> str:
+def format_float(value: float, decimal_places: int = 1, locale_name: str | None = None) -> str:
     """Format a float with the given number of decimal places for the current locale."""
     if decimal_places <= 0:
         fmt = "#,##0"
@@ -76,7 +76,7 @@ def qdate_locale_json(language_code: str) -> str:
     def tr(message: str) -> str:
         return translate(message, language=normalized_language_code)
 
-    locale_by_language = {
+    locale_by_language: dict[str, dict[str, object]] = {
         "fr": {
             "days": [
                 tr("Sunday"),
@@ -168,7 +168,9 @@ def qdate_locale_json(language_code: str) -> str:
             "firstDayOfWeek": 0,
         },
     }
-    locale = locale_by_language.get(normalized_language_code, locale_by_language["en"])
+    locale: dict[str, object] = locale_by_language.get(
+        normalized_language_code, locale_by_language["en"]
+    )
     return json.dumps(locale)
 
 
@@ -226,7 +228,7 @@ def translate_parser_progress_message(message: str, language_code: str) -> str:
     if exact_template is not None:
         return translate(exact_template, language=language_code)
 
-    template: Optional[str]
+    template: str | None
     params: dict[str, str]
     processed_match = re.match(r"^Processed (\d+) workouts\.\.\.$", message)
     if processed_match:

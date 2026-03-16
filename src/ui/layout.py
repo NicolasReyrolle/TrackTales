@@ -3,8 +3,8 @@
 import asyncio
 import logging
 import time
-from collections.abc import Hashable
-from typing import Any, Callable, Optional
+from collections.abc import Callable, Hashable
+from typing import Any
 
 import pandas as pd
 from nicegui import app, ui
@@ -190,40 +190,45 @@ def handle_csv_export() -> None:
 
 def _refresh_summary_metrics() -> None:
     """Refresh global summary metrics and their display values."""
-    state.metrics["count"] = state.workouts.get_count(
+    metrics: dict[str, int | float] = state.metrics  # type: ignore[assignment]
+    metrics_display: dict[str, str] = state.metrics_display  # type: ignore[assignment]
+    metrics["count"] = state.workouts.get_count(
         state.selected_activity_type, state.start_date, state.end_date
     )
-    state.metrics["distance"] = state.workouts.get_total_distance(
+    metrics["distance"] = state.workouts.get_total_distance(
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
     )
-    state.metrics["duration"] = state.workouts.get_total_duration(
+    metrics["duration"] = state.workouts.get_total_duration(
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
     )
-    state.metrics["elevation"] = state.workouts.get_total_elevation(
+    metrics["elevation"] = state.workouts.get_total_elevation(
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
     )
-    state.metrics["calories"] = state.workouts.get_total_calories(
+    metrics["calories"] = state.workouts.get_total_calories(
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
     )
 
-    state.metrics_display["count"] = format_integer(state.metrics["count"])
-    state.metrics_display["distance"] = format_integer(state.metrics["distance"])
-    state.metrics_display["duration"] = format_integer(state.metrics["duration"])
-    state.metrics_display["elevation"] = format_integer(state.metrics["elevation"])
-    state.metrics_display["calories"] = format_integer(state.metrics["calories"])
+    metrics_display["count"] = format_integer(metrics["count"])
+    metrics_display["distance"] = format_integer(metrics["distance"])
+    metrics_display["duration"] = format_integer(metrics["duration"])
+    metrics_display["elevation"] = format_integer(metrics["elevation"])
+    metrics_display["calories"] = format_integer(metrics["calories"])
 
 
 def _set_longest_metric_from_details(
     metric_key: str,
-    details: Optional[dict[str, Any]],
+    details: dict[str, Any] | None,
     language_code: str,
 ) -> None:
     """Set one longest-workout metric display/tooltip from details."""
-    state.metrics[metric_key] = 0.0
-    state.metrics_display[metric_key] = format_float(0.0)
+    metrics: dict[str, int | float] = state.metrics  # type: ignore[assignment]
+    metrics_display: dict[str, str] = state.metrics_display  # type: ignore[assignment]
+    metrics_tooltip: dict[str, str] = state.metrics_tooltip  # type: ignore[assignment]
+    metrics[metric_key] = 0.0
+    metrics_display[metric_key] = format_float(0.0)
 
     if details is None:
-        state.metrics_tooltip[metric_key] = t("No data")
+        metrics_tooltip[metric_key] = t("No data")
         return
 
     distance_value = details.get("distance")
@@ -234,17 +239,17 @@ def _set_longest_metric_from_details(
         except (TypeError, ValueError):
             distance_float = 0.0
 
-    state.metrics[metric_key] = distance_float
-    state.metrics_display[metric_key] = format_float(distance_float)
+    metrics[metric_key] = distance_float
+    metrics_display[metric_key] = format_float(distance_float)
 
     date_value = details.get("date")
     duration_value = details.get("duration")
 
-    date_str: Optional[str] = None
+    date_str: str | None = None
     if date_value is not None:
         date_str = format_date_label(date_value, language_code)
 
-    duration_str: Optional[str] = None
+    duration_str: str | None = None
     if duration_value is not None:
         try:
             duration_float = float(duration_value)
@@ -254,13 +259,13 @@ def _set_longest_metric_from_details(
             duration_str = format_duration_label(duration_float)
 
     if date_str and duration_str:
-        state.metrics_tooltip[metric_key] = f"{date_str} — {duration_str}"
+        metrics_tooltip[metric_key] = f"{date_str} — {duration_str}"
     elif date_str:
-        state.metrics_tooltip[metric_key] = date_str
+        metrics_tooltip[metric_key] = date_str
     elif duration_str:
-        state.metrics_tooltip[metric_key] = duration_str
+        metrics_tooltip[metric_key] = duration_str
     else:
-        state.metrics_tooltip[metric_key] = t("No data")
+        metrics_tooltip[metric_key] = t("No data")
 
 
 def _refresh_longest_workout_metrics() -> None:
@@ -394,9 +399,7 @@ def render_date_range_selector() -> None:
         ).bind_value(
             date_input,
             forward=lambda x: (
-                f'{x["from"]} - {x["to"]}'
-                if isinstance(x, dict) and "from" in x
-                else str(x or "")  # type: ignore[arg-type]
+                f"{x['from']} - {x['to']}" if isinstance(x, dict) and "from" in x else str(x or "")  # type: ignore[arg-type]
             ),
             backward=lambda x: (
                 {
@@ -406,9 +409,7 @@ def render_date_range_selector() -> None:
                 if " - " in (x or "")
                 else None
             ),
-        ).bind_enabled_from(
-            state, "file_loaded"
-        )
+        ).bind_enabled_from(state, "file_loaded")
 
 
 def _change_language(language_code: str) -> None:
@@ -473,7 +474,7 @@ async def pick_file() -> None:
 
 def load_workouts_from_file(
     file_path: str,
-    progress_callback: Optional[Callable[[int, str], None]] = None,
+    progress_callback: Callable[[int, str], None] | None = None,
 ) -> tuple[WorkoutManager, list[str], RecordsByType]:
     """Load and parse the Apple Health export file.
 

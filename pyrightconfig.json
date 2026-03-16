@@ -1,8 +1,0 @@
-{
-  "pythonVersion": "3.14",
-  "typeCheckingMode": "strict",
-  "include": ["src"],
-  "exclude": ["build", "**/.venv", "tests", "**/__pycache__"],
-  "extraPaths": ["src"],
-  "reportMissingModuleSource": false
-}

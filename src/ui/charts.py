@@ -1,7 +1,6 @@
 """Shared UI chart and card components for Apple Health Analyzer."""
 
 from collections.abc import Mapping
-from typing import Optional
 
 from nicegui import ui
 
@@ -35,8 +34,8 @@ def stat_card(
     value_ref: dict[str, str],
     key: str,
     unit: str = "",
-    tooltip_ref: Optional[dict[str, str]] = None,
-    tooltip_key: Optional[str] = None,
+    tooltip_ref: dict[str, str] | None = None,
+    tooltip_key: str | None = None,
 ) -> None:
     """Create a reactive KPI card with an optional hover tooltip.
 
@@ -79,7 +78,9 @@ def stat_card(
 def render_pie_rose_graph(label: str, values: Mapping[str, float | int], unit: str = "") -> None:
     """Render a pie/rose graph for the given values."""
 
-    chart_data = [{"value": v, "name": k} for k, v in values.items()]
+    chart_data: list[dict[str, float | int | str]] = [
+        {"value": v, "name": k} for k, v in values.items()
+    ]
 
     with ui.card().classes(CHART_CARD_CLASSES):
         ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
@@ -112,7 +113,9 @@ def render_generic_graph(
     """Render generic graphs for the given values."""
 
     # Transform dictionary data into ECharts format: [{'value': x, 'name': y}, ...]
-    chart_data = [{"value": v, "name": k} for k, v in values.items()]
+    chart_data: list[dict[str, float | int | None | str]] = [
+        {"value": v, "name": k} for k, v in values.items()
+    ]
 
     # Extract raw lists for the axes and series
     categories = [d["name"] for d in chart_data]

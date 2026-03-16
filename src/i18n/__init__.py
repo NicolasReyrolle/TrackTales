@@ -10,7 +10,7 @@ NiceGUI user storage and returns the appropriate translated string.
 
 import gettext
 import logging
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from typing import cast
 
@@ -115,7 +115,7 @@ def compile_message_catalogs() -> int:
     return compiled_count
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_translation(lang: str) -> gettext.NullTranslations:
     """Load and cache the compiled ``.mo`` translation for *lang*.
 

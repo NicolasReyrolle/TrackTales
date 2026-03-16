@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Mapping
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 import pandas as pd
 
@@ -99,14 +99,14 @@ class WorkoutManagerAggregationsMixin:
 
         workouts = self._filter_workouts("All", start_date, end_date)
 
-        grouped = aggregation(
-            workouts.groupby("activityType")[column]  # type: ignore[reportUnknownMemberType]
-        )
+        series_group = workouts.groupby("activityType")[column]
+        grouped = aggregation(cast(Any, series_group))
         if grouped.empty:
             return {}
 
         transformed = transformation(grouped)
-        result_float: dict[str, float] = transformed.astype(float).to_dict()  # type: ignore[reportUnknownMemberType]
+        transformed_float = transformed.astype(float)
+        result_float = cast(dict[str, float], transformed_float.to_dict())
 
         if combination_threshold > 0:
             result_float = self.group_small_values(

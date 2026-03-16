@@ -190,8 +190,8 @@ def handle_csv_export() -> None:
 
 def _refresh_summary_metrics() -> None:
     """Refresh global summary metrics and their display values."""
-    metrics: dict[str, int | float] = state.metrics  # type: ignore[assignment]
-    metrics_display: dict[str, str] = state.metrics_display  # type: ignore[assignment]
+    metrics: dict[str, int | float] = state.metrics
+    metrics_display: dict[str, str] = state.metrics_display
     metrics["count"] = state.workouts.get_count(
         state.selected_activity_type, state.start_date, state.end_date
     )

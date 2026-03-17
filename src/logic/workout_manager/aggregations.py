@@ -106,7 +106,9 @@ class WorkoutManagerAggregationsMixin:
 
         transformed = transformation(grouped)
         transformed_float = transformed.astype(float)
-        result_float = cast(dict[str, float], transformed_float.to_dict())
+        result_float: dict[str, float] = {
+            str(k): float(v) for k, v in transformed_float.to_dict().items()
+        }
 
         if combination_threshold > 0:
             result_float = self.group_small_values(

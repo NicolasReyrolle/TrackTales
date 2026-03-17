@@ -118,10 +118,9 @@ class RecordsByType:
             result = (
                 result.set_index("period").reindex(full_range).rename_axis("period").reset_index()
             )
-            result[["avg", "min", "max"]] = result[["avg", "min", "max"]].where(
-                result[["avg", "min", "max"]].notna(),
-                pd.NA,  # type: ignore[arg-type]
-            )
+            cols = ["avg", "min", "max"]
+            result.loc[:, cols] = result.loc[:, cols].astype("Float64")
+
             result["count"] = result["count"].fillna(0)
             result["count"] = result["count"].astype(int)
 

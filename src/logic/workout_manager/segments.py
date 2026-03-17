@@ -248,7 +248,7 @@ class WorkoutManagerSegmentsMixin:
         return float(vals.mean())
 
     @staticmethod
-    def _compute_overlap_estimated_power(  # pylint: disable=too-many-locals
+    def _compute_overlap_estimated_power(
         rp_times: pd.Series,
         rp_end_times: pd.Series,
         rp_values: pd.Series,

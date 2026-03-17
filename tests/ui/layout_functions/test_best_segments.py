@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from types import SimpleNamespace
-from typing import Any, Callable, cast
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
@@ -18,12 +19,14 @@ from ._helpers import DummyComponent, DummyContext, DummyTab, DummyTable, DummyT
 
 def _annotate_with_missing_power(df: pd.DataFrame, _running_power_df: object) -> pd.DataFrame:
     """Return a copy with missing segment power values."""
-    return df.assign(segment_avg_power=None)
+    result: pd.DataFrame = df.assign(segment_avg_power=None)
+    return result
 
 
 def _annotate_with_nan_power(df: pd.DataFrame, _running_power_df: object) -> pd.DataFrame:
     """Return a copy with NaN segment power values."""
-    return df.assign(segment_avg_power=float("nan"))
+    result: pd.DataFrame = df.assign(segment_avg_power=float("nan"))
+    return result
 
 
 def _annotate_passthrough(df: pd.DataFrame, _running_power_df: object) -> pd.DataFrame:
@@ -333,14 +336,14 @@ class TestBestSegmentsTabData:
         original_workouts: Any = state.workouts
         original_range = state.date_range_text
 
-        class _GroupFrame:  # pylint: disable=too-few-public-methods
+        class _GroupFrame:
             """Minimal frame-like object exposing only methods used by builder."""
 
             def __init__(self, records: list[Any]) -> None:
                 """Store tuple-like records to return from itertuples."""
                 self._records = records
 
-            def sort_values(self, _column: str) -> "_GroupFrame":
+            def sort_values(self, _column: str) -> _GroupFrame:
                 """Return self to mimic DataFrame sorting chain."""
                 return self
 
@@ -349,7 +352,7 @@ class TestBestSegmentsTabData:
                 _ = index
                 return self._records
 
-        class _BestSegmentsFrame:  # pylint: disable=too-few-public-methods
+        class _BestSegmentsFrame:
             """Minimal frame-like object exposing only groupby used by builder."""
 
             def __init__(self, groups: list[tuple[str, _GroupFrame]]) -> None:
@@ -383,9 +386,7 @@ class TestBestSegmentsTabData:
             state.date_range_text = ""
             build_rows = cast(
                 Callable[[], list[dict[str, Any]]],
-                getattr(
-                    best_segments_module, "_build_best_segments_rows"
-                ),  # pyright: ignore[reportPrivateUsage]
+                getattr(best_segments_module, "_build_best_segments_rows"),
             )
             with patch("ui.best_segments.get_language", return_value="en"):
                 rows = build_rows()

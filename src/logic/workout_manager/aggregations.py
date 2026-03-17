@@ -1,7 +1,8 @@
 """Aggregation and filtering mixin for WorkoutManager."""
 
+from collections.abc import Callable, Mapping
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from typing import Any, cast
 
 import pandas as pd
 
@@ -12,44 +13,46 @@ class WorkoutManagerAggregationsMixin:
     workouts: pd.DataFrame
     DEFAULT_EXCLUDED_COLUMNS: set[str]
 
-    def get_activity_types(self) -> List[str]:
+    def get_activity_types(self) -> list[str]:
         """Return the list of unique activity types."""
         if self.workouts.empty or "activityType" not in self.workouts.columns:
             return []
-        return self.workouts["activityType"].dropna().unique().tolist()
+
+        result: list[str] = self.workouts["activityType"].dropna().unique().tolist()
+        return result
 
     def _filter_workouts(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Filter workouts by activity type and/or date range."""
-        workouts = self.workouts
+        workouts: pd.DataFrame = self.workouts
 
         if activity_type != "All":
-            workouts = workouts[workouts["activityType"] == activity_type]
+            workouts = workouts.loc[workouts["activityType"] == activity_type]
 
         if "startDate" in workouts.columns:
             if start_date is not None:
-                workouts = workouts[workouts["startDate"] >= pd.Timestamp(start_date)]
+                workouts = workouts.loc[workouts["startDate"] >= pd.Timestamp(start_date)]
             if end_date is not None:
                 end_timestamp = pd.Timestamp(end_date)
                 if self._is_date_only(end_date):
                     next_day = end_timestamp + pd.Timedelta(days=1)
-                    workouts = workouts[workouts["startDate"] < next_day]
+                    workouts = workouts.loc[workouts["startDate"] < next_day]
                 else:
-                    workouts = workouts[workouts["startDate"] <= end_timestamp]
+                    workouts = workouts.loc[workouts["startDate"] <= end_timestamp]
 
         return workouts
 
     @staticmethod
-    def _is_date_only(value: Union[datetime, pd.Timestamp]) -> bool:
+    def _is_date_only(value: datetime | pd.Timestamp) -> bool:
         """Return True when the value represents a date without time-of-day information."""
         timestamp = pd.Timestamp(value)
-        return timestamp == timestamp.normalize()
+        return bool(timestamp == timestamp.normalize())
 
-    def _get_filtered_columns(self, exclude_columns: Optional[set[str]] = None) -> List[str]:
+    def _get_filtered_columns(self, exclude_columns: set[str] | None = None) -> list[str]:
         """Return list of columns after applying exclusion filters."""
         excluded = exclude_columns if exclude_columns is not None else self.DEFAULT_EXCLUDED_COLUMNS
         return [col for col in self.workouts.columns if col not in excluded]
@@ -70,8 +73,8 @@ class WorkoutManagerAggregationsMixin:
         column: str,
         divisor: float = 1.0,
         default: int = 0,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Generic method to calculate total for any column with optional unit conversion."""
         workouts = self._filter_workouts(activity_type, start_date, end_date)
@@ -85,12 +88,12 @@ class WorkoutManagerAggregationsMixin:
         column: str,
         aggregation: Callable[[Any], pd.Series],
         transformation: Callable[[pd.Series], pd.Series],
-        column_check: Optional[str] = None,
+        column_check: str | None = None,
         filter_zeros: bool = True,
         combination_threshold: float = 10.0,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Generic method to aggregate metrics by activity type."""
         column_check = column_check or column
         if "activityType" not in self.workouts.columns or column_check not in self.workouts.columns:
@@ -98,23 +101,23 @@ class WorkoutManagerAggregationsMixin:
 
         workouts = self._filter_workouts("All", start_date, end_date)
 
-        grouped = aggregation(
-            workouts.groupby("activityType")[column]  # type: ignore[reportUnknownMemberType]
-        )
+        series_group = workouts.groupby("activityType")[column]
+        grouped = aggregation(cast(Any, series_group))
         if grouped.empty:
             return {}
 
         transformed = transformation(grouped)
-        result_float: Dict[str, float] = transformed.astype(
-            float
-        ).to_dict()  # type: ignore[reportUnknownMemberType]
+        transformed_float = transformed.astype(float)
+        result_float: dict[str, float] = {
+            str(k): float(v) for k, v in transformed_float.to_dict().items()
+        }
 
         if combination_threshold > 0:
             result_float = self.group_small_values(
                 result_float, threshold_percent=combination_threshold
             )
 
-        result: Dict[str, int] = {k: int(round(v)) for k, v in result_float.items()}
+        result: dict[str, int] = {k: int(round(v)) for k, v in result_float.items()}
 
         if filter_zeros:
             result = {k: v for k, v in result.items() if v > 0}
@@ -127,13 +130,13 @@ class WorkoutManagerAggregationsMixin:
         period: str,
         aggregation: Callable[[Any], Any],
         transformation: Callable[[pd.Series], pd.Series],
-        column_check: Optional[str] = None,
+        column_check: str | None = None,
         filter_zeros: bool = True,
         activity_type: str = "All",
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Generic method to aggregate metrics by period."""
         column_check = column_check or column
         if (
@@ -151,11 +154,7 @@ class WorkoutManagerAggregationsMixin:
         if workouts.empty:
             return {}
 
-        grouped = aggregation(
-            workouts.groupby(  # type: ignore[reportUnknownMemberType]
-                workouts["startDate"].dt.to_period(period)  # type: ignore[reportUnknownMemberType]
-            )[column]
-        )
+        grouped = aggregation(workouts.groupby(workouts["startDate"].dt.to_period(period))[column])
 
         if grouped.empty:
             return {}
@@ -166,16 +165,13 @@ class WorkoutManagerAggregationsMixin:
                 end=grouped.index.max(),
                 freq=period,
             )
-            grouped = grouped.reindex(
-                full_range, fill_value=0
-            )  # type: ignore[reportUnknownMemberType]
+            grouped = grouped.reindex(full_range, fill_value=0)
 
         transformed = transformation(grouped)
-        result_float: Dict[str, float] = transformed.astype(
-            float
-        ).to_dict()  # type: ignore[reportUnknownMemberType]
+        transformed_float = transformed.astype(float)
+        result_float: dict[str, float] = cast(dict[str, float], transformed_float.to_dict())
 
-        result: Dict[str, int] = {str(k): int(round(v)) for k, v in result_float.items()}
+        result: dict[str, int] = {str(k): int(round(v)) for k, v in result_float.items()}
 
         if filter_zeros and not fill_missing_periods:
             result = {k: v for k, v in result.items() if v > 0}
@@ -185,8 +181,8 @@ class WorkoutManagerAggregationsMixin:
     def get_count(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the number of workouts."""
         return len(self._filter_workouts(activity_type, start_date, end_date))
@@ -195,8 +191,8 @@ class WorkoutManagerAggregationsMixin:
         self,
         activity_type: str = "All",
         unit: str = "km",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total distance optionally per activity_type, and in the given unit."""
         divisor = self._get_distance_divisor(unit)
@@ -212,8 +208,8 @@ class WorkoutManagerAggregationsMixin:
     def get_total_duration(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total duration of workouts in hours rounded to the nearest integer."""
         return self._get_aggregate_total(
@@ -224,8 +220,8 @@ class WorkoutManagerAggregationsMixin:
         self,
         activity_type: str = "All",
         unit: str = "km",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total elevation gain of workouts in the specified unit."""
         divisor = self._get_distance_divisor(unit)
@@ -240,8 +236,8 @@ class WorkoutManagerAggregationsMixin:
     def get_total_calories(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total calories burned of workouts."""
         return self._get_aggregate_total(
@@ -251,9 +247,9 @@ class WorkoutManagerAggregationsMixin:
     def get_calories_by_activity(
         self,
         combination_threshold: float = 10.0,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping activity types to total calories burned."""
         return self._aggregate_by_activity(
             "sumActiveEnergyBurned",
@@ -269,9 +265,9 @@ class WorkoutManagerAggregationsMixin:
         period: str,
         activity_type: str = "All",
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping periods to total calories burned."""
         return self._aggregate_by_period(
             "sumActiveEnergyBurned",
@@ -288,9 +284,9 @@ class WorkoutManagerAggregationsMixin:
         self,
         unit: str = "km",
         combination_threshold: float = 10.0,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping activity types to total distance."""
         return self._aggregate_by_activity(
             "distance",
@@ -307,9 +303,9 @@ class WorkoutManagerAggregationsMixin:
         activity_type: str = "All",
         unit: str = "km",
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping periods to total distance."""
         return self._aggregate_by_period(
             "distance",
@@ -326,9 +322,9 @@ class WorkoutManagerAggregationsMixin:
     def get_count_by_activity(
         self,
         combination_threshold: float = 10.0,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping activity types to workout counts."""
         return self._aggregate_by_activity(
             "activityType",
@@ -345,9 +341,9 @@ class WorkoutManagerAggregationsMixin:
         period: str,
         activity_type: str = "All",
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping periods to workout counts."""
         return self._aggregate_by_period(
             "activityType",
@@ -364,9 +360,9 @@ class WorkoutManagerAggregationsMixin:
     def get_duration_by_activity(
         self,
         combination_threshold: float = 10.0,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping activity types to total duration."""
         return self._aggregate_by_activity(
             "duration",
@@ -382,9 +378,9 @@ class WorkoutManagerAggregationsMixin:
         period: str,
         activity_type: str = "All",
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping periods to total duration in hours."""
         return self._aggregate_by_period(
             "duration",
@@ -401,9 +397,9 @@ class WorkoutManagerAggregationsMixin:
         self,
         combination_threshold: float = 10.0,
         unit: str = "m",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping activity types to total elevation gain."""
         return self._aggregate_by_activity(
             "ElevationAscended",
@@ -421,9 +417,9 @@ class WorkoutManagerAggregationsMixin:
         activity_type: str = "All",
         fill_missing_periods: bool = True,
         unit: str = "m",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Dict[str, int]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
         """Return a dictionary mapping periods to total elevation gain in the specified unit."""
         return self._aggregate_by_period(
             "ElevationAscended",
@@ -442,7 +438,7 @@ class WorkoutManagerAggregationsMixin:
         data: Mapping[str, float],
         threshold_percent: float = 10.0,
         others_label: str = "Others",
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Group smallest values whose cumulative sum is below threshold into a single category."""
         if not data:
             return {}
@@ -456,7 +452,7 @@ class WorkoutManagerAggregationsMixin:
 
         sorted_items = sorted(data.items(), key=lambda x: x[1])
 
-        result: Dict[str, float] = {}
+        result: dict[str, float] = {}
         others_sum = 0.0
         cumulative_sum = 0.0
 
@@ -474,10 +470,10 @@ class WorkoutManagerAggregationsMixin:
 
     def get_longest_workout(
         self,
-        activity_types: List[str],
+        activity_types: list[str],
         unit: str = "km",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> float:
         """Return the distance of the longest single workout for the given activity types."""
         if (
@@ -504,11 +500,11 @@ class WorkoutManagerAggregationsMixin:
 
     def get_longest_workout_details(
         self,
-        activity_types: List[str],
+        activity_types: list[str],
         unit: str = "km",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Optional[Dict[str, Any]]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, Any] | None:
         """Return details of the longest single workout for the given activity types.
 
         Returns a dict with keys ``distance`` (float, in *unit*), ``date`` (Timestamp or ``None``),
@@ -535,17 +531,19 @@ class WorkoutManagerAggregationsMixin:
             return None
         idx = distance_series.idxmax()
 
-        row = filtered.loc[idx]
+        row = filtered.loc[[idx]].iloc[0]
         divisor = self._get_distance_divisor(unit)
-        raw_duration = row["duration"] if "duration" in filtered.columns else None
-        result: Dict[str, Any] = {
-            "distance": float(row["distance"]) / divisor,
+        raw_distance: float = float(row["distance"])
+        raw_duration_val = row["duration"] if "duration" in filtered.columns else None
+        raw_duration: float | None = (
+            None
+            if raw_duration_val is None or pd.isna(raw_duration_val)
+            else float(raw_duration_val)
+        )
+        result: dict[str, Any] = {
+            "distance": raw_distance / divisor,
             "date": row["startDate"] if "startDate" in filtered.columns else None,
-            "duration": (
-                None
-                if raw_duration is None or pd.isna(raw_duration)
-                else float(raw_duration)
-            ),
+            "duration": raw_duration,
         }
         return result
 

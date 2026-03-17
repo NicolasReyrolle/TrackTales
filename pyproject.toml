@@ -36,16 +36,10 @@ Issues = "https://github.com/NicolasReyrolle/apple-health-analyzer/issues"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.black]
-line-length = 100
-target-version = ["py310", "py311", "py312", "py313", "py314"]
-
-[tool.isort]
-profile = "black"
-line_length = 100
-
 [tool.mypy]
-python_version = "3.14"
+mypy_path = "src"
+explicit_package_bases = true
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -57,10 +51,21 @@ asyncio_mode = "auto"
 main_file = "src/apple_health_analyzer.py"
 addopts = "-p nicegui.testing.user_plugin"
 
-[tool.pylint.MASTER]
-init-hook = 'import sys; sys.path.append("src")'
+[tool.ruff]
+line-length = 100
+target-version = "py310"
 
-[tool.pylint.TYPECHECK]
-ignored-modules = []
-ignored-classes = []
-extension-pkg-allow-list = ["win32api"] # Allow Pylint to check C extensions for win32api
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP"]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+# Disable the warning for accessing protected members (like _extract_health_data_record)
+reportPrivateUsage = false

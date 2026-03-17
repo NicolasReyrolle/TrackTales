@@ -24,14 +24,14 @@ def test_refresh_data_logs_to_root_logger(
     log_messages = [record.message for record in caplog.records]
 
     # Should have the INFO message but not the DEBUG message
-    assert any(
-        "Test INFO message" in msg for msg in log_messages
-    ), f"Expected INFO message to be logged, got: {log_messages}"
+    assert any("Test INFO message" in msg for msg in log_messages), (
+        f"Expected INFO message to be logged, got: {log_messages}"
+    )
 
     # DEBUG message should not be captured (INFO is default level)
-    assert not any(
-        "Test DEBUG message" in msg for msg in log_messages
-    ), f"DEBUG message should not be captured at INFO level, got: {log_messages}"
+    assert not any("Test DEBUG message" in msg for msg in log_messages), (
+        f"DEBUG message should not be captured at INFO level, got: {log_messages}"
+    )
 
 
 def test_layout_logger_propagates(caplog: pytest.LogCaptureFixture) -> None:
@@ -43,9 +43,9 @@ def test_layout_logger_propagates(caplog: pytest.LogCaptureFixture) -> None:
 
     log_messages = [record.message for record in caplog.records]
 
-    assert any(
-        "TEST MESSAGE FROM LAYOUT" in msg for msg in log_messages
-    ), f"Expected test message to be logged, got: {log_messages}"
+    assert any("TEST MESSAGE FROM LAYOUT" in msg for msg in log_messages), (
+        f"Expected test message to be logged, got: {log_messages}"
+    )
 
 
 def test_module_logger_exists() -> None:
@@ -53,14 +53,15 @@ def test_module_logger_exists() -> None:
     # The _logger should be logging.getLogger("ui.layout")
     assert hasattr(layout, "_logger"), "layout module should have _logger attribute"
     assert isinstance(
-        layout._logger, logging.Logger  # type: ignore[attr-defined]  # pylint: disable=protected-access
+        layout._logger,
+        logging.Logger,  # type: ignore[attr-defined]
     ), "_logger should be a Logger instance"
     assert (
-        layout._logger.name == "ui.layout"  # type: ignore[attr-defined]  # pylint: disable=protected-access
-    ), f"Logger name should be 'ui.layout', got {layout._logger.name}"  # type: ignore[attr-defined]  # pylint: disable=protected-access
+        layout._logger.name == "ui.layout"  # type: ignore[attr-defined]
+    ), f"Logger name should be 'ui.layout', got {layout._logger.name}"  # type: ignore[attr-defined]
     # Logger should propagate by default
     assert (
-        layout._logger.propagate  # type: ignore[attr-defined]  # pylint: disable=protected-access
+        layout._logger.propagate  # type: ignore[attr-defined]
     ), "Logger should propagate to parent loggers"
 
 

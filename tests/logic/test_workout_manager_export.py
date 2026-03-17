@@ -1,10 +1,9 @@
 """Tests for export functionality (JSON and CSV)."""
 
-from datetime import datetime
 import json
+from datetime import datetime
 from io import StringIO
 from pathlib import Path
-from typing import Optional
 from zipfile import ZipFile
 
 import pandas as pd
@@ -21,7 +20,7 @@ def create_test_zip(zip_path: Path, xml_content: bytes) -> None:
         zf.writestr("apple_health_export/export.xml", xml_content)
 
 
-def parse_and_export_json(zip_path: Path, exclude_columns: Optional[set[str]] = None) -> str:
+def parse_and_export_json(zip_path: Path, exclude_columns: set[str] | None = None) -> str:
     """Helper to parse ZIP and export to JSON."""
     parser = ep.ExportParser()
     with parser:
@@ -29,7 +28,7 @@ def parse_and_export_json(zip_path: Path, exclude_columns: Optional[set[str]] = 
         return workouts.export_to_json(exclude_columns=exclude_columns)
 
 
-def parse_and_export_csv(zip_path: Path, exclude_columns: Optional[set[str]] = None) -> str:
+def parse_and_export_csv(zip_path: Path, exclude_columns: set[str] | None = None) -> str:
     """Helper to parse ZIP and export to CSV."""
     parser = ep.ExportParser()
     with parser:
@@ -45,7 +44,8 @@ class TestExportToJson:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -62,7 +62,8 @@ class TestExportToJson:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -79,9 +80,12 @@ class TestExportToJson:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-03" endDate="2024-01-03" duration="30"/>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="25"/>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-02" endDate="2024-01-02" duration="28"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-03" endDate="2024-01-03" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="25"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-02" endDate="2024-01-02" duration="28"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -113,7 +117,8 @@ class TestExportToCsv:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -131,8 +136,10 @@ class TestExportToCsv:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-02" endDate="2024-01-02" duration="25"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-02" endDate="2024-01-02" duration="25"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -172,7 +179,8 @@ class TestColumnExclusion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -189,7 +197,8 @@ class TestColumnExclusion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -208,7 +217,8 @@ class TestColumnExclusion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -226,7 +236,8 @@ class TestColumnExclusion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -244,7 +255,8 @@ class TestColumnExclusion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -267,7 +279,8 @@ class TestColumnExclusion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -285,7 +298,8 @@ class TestColumnExclusion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -301,7 +315,8 @@ class TestColumnExclusion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+    startDate="2024-01-01" endDate="2024-01-01" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -322,10 +337,12 @@ class TestDataTypeConversion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30">
         <MetadataEntry key="HKIndoorWorkout" value="1"/>
     </Workout>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-02" endDate="2024-01-02" duration="25">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-02" endDate="2024-01-02" duration="25">
         <MetadataEntry key="HKIndoorWorkout" value="0"/>
     </Workout>
 </HealthData>
@@ -339,9 +356,9 @@ class TestDataTypeConversion:
         for record in data["data"]:
             if "IndoorWorkout" in record:
                 value = record["IndoorWorkout"]
-                assert isinstance(
-                    value, bool
-                ), f"IndoorWorkout should be boolean, got {type(value).__name__}"
+                assert isinstance(value, bool), (
+                    f"IndoorWorkout should be boolean, got {type(value).__name__}"
+                )
                 assert value in [True, False]
 
     def test_indoor_workout_field_exported_as_boolean_csv(self, tmp_path: Path) -> None:
@@ -349,10 +366,12 @@ class TestDataTypeConversion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30">
         <MetadataEntry key="HKIndoorWorkout" value="1"/>
     </Workout>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-02" endDate="2024-01-02" duration="25">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-02" endDate="2024-01-02" duration="25">
         <MetadataEntry key="HKIndoorWorkout" value="0"/>
     </Workout>
 </HealthData>
@@ -375,16 +394,17 @@ class TestDataTypeConversion:
                 0,
             ], f"IndoorWorkout should be boolean (1 or 0), got {val} of type {type(val).__name__}"
             # Ensure no float values like 1.0 or 0.0
-            assert not (
-                isinstance(val, float) and val in [0.0, 1.0]
-            ), f"IndoorWorkout should not be float (0.0 or 1.0), got {val}"
+            assert not (isinstance(val, float) and val in [0.0, 1.0]), (
+                f"IndoorWorkout should not be float (0.0 or 1.0), got {val}"
+            )
 
     def test_zero_value_without_unit_becomes_boolean_false(self, tmp_path: Path) -> None:
         """Test that value '0' without unit is converted to boolean False."""
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30">
         <MetadataEntry key="HKIndoorWorkout" value="0"/>
     </Workout>
 </HealthData>
@@ -404,7 +424,8 @@ class TestDataTypeConversion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30">
         <MetadataEntry key="HKIndoorWorkout" value="1"/>
     </Workout>
 </HealthData>
@@ -424,7 +445,8 @@ class TestDataTypeConversion:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30">
         <MetadataEntry key="HKTestValue" value="42"/>
     </Workout>
 </HealthData>
@@ -448,10 +470,12 @@ class TestDataTypeConversion:
         # Also includes multiple MetadataEntry elements with same key to trigger aggregation logic
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30">
         <MetadataEntry key="HKIndoorWorkout" value="0"/>
     </Workout>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-02" endDate="2024-01-02" duration="25">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-02" endDate="2024-01-02" duration="25">
         <MetadataEntry key="HKIndoorWorkout" value="1"/>
         <MetadataEntry key="HKIndoorWorkout" value="1"/>
     </Workout>
@@ -466,9 +490,9 @@ class TestDataTypeConversion:
             if "IndoorWorkout" in record:
                 value = record["IndoorWorkout"]
                 # Must be boolean True or False, not float 0.0 or 1.0
-                assert isinstance(
-                    value, bool
-                ), f"IndoorWorkout must be boolean, got {type(value).__name__}: {value}"
+                assert isinstance(value, bool), (
+                    f"IndoorWorkout must be boolean, got {type(value).__name__}: {value}"
+                )
                 assert value in [True, False]
                 # Explicitly reject floats
                 assert not isinstance(value, float), f"IndoorWorkout must not be float, got {value}"
@@ -490,8 +514,10 @@ class TestStartDateTimezoneHandling:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01 10:30:45 +0100" endDate="2024-01-01 11:00:00 +0100" duration="30"/>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-02 14:15:30 +0100" endDate="2024-01-02 14:45:30 +0100" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01 10:30:45 +0100" endDate="2024-01-01 11:00:00 +0100" duration="30"/>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-02 14:15:30 +0100" endDate="2024-01-02 14:45:30 +0100" duration="30"/>
 </HealthData>
 """
         create_test_zip(zip_path, xml_content)
@@ -691,13 +717,13 @@ class _ExportMixinStub(WorkoutManagerExportMixin):
     def _filter_workouts(  # type: ignore[override]
         self,
         activity_type: str = "All",
-        start_date: Optional[datetime | pd.Timestamp] = None,
-        end_date: Optional[datetime | pd.Timestamp] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         return super()._filter_workouts(activity_type, start_date, end_date)
 
     def _get_filtered_columns(  # type: ignore[override]
-        self, exclude_columns: Optional[set[str]] = None
+        self, exclude_columns: set[str] | None = None
     ) -> list[str]:
         return super()._get_filtered_columns(exclude_columns)
 
@@ -705,8 +731,8 @@ class _ExportMixinStub(WorkoutManagerExportMixin):
         self,
         activity_type: str = "All",
         unit: str = "km",
-        start_date: Optional[datetime | pd.Timestamp] = None,
-        end_date: Optional[datetime | pd.Timestamp] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         return super().get_total_distance(activity_type, unit, start_date, end_date)
 

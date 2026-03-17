@@ -94,9 +94,9 @@ def test_dev_file_invalid_path() -> None:
     assert result.returncode != 0, "Invalid --dev-file path should cause non-zero exit"
     # Verify the actual validation logic detected the missing file
     combined_output = (result.stdout or "") + (result.stderr or "")
-    assert (
-        "File not found" in combined_output or "not found" in combined_output.lower()
-    ), "Error message should indicate file was not found"
+    assert "File not found" in combined_output or "not found" in combined_output.lower(), (
+        "Error message should indicate file was not found"
+    )
 
 
 def test_dev_file_valid_path() -> None:
@@ -115,7 +115,7 @@ def test_dev_file_valid_path() -> None:
     # Start the real application with a valid dev file. We don't wait indefinitely;
     # instead, allow a short startup window, then terminate if still running.
     # Use --no-browser to prevent opening a browser window in CI/headless environments.
-    process = subprocess.Popen(  # pylint: disable=consider-using-with
+    process = subprocess.Popen(
         [
             sys.executable,
             "src/apple_health_analyzer.py",
@@ -181,9 +181,9 @@ def test_dev_file_directory_instead_of_file() -> None:
     # Should fail because a directory is not a file
     assert result.returncode != 0, "Directory path should cause non-zero exit"
     combined_output = (result.stdout or "") + (result.stderr or "")
-    assert (
-        "File not found" in combined_output or "not found" in combined_output.lower()
-    ), "Error message should indicate file was not found"
+    assert "File not found" in combined_output or "not found" in combined_output.lower(), (
+        "Error message should indicate file was not found"
+    )
 
 
 def test_dev_file_combined_with_log_level() -> None:
@@ -203,7 +203,7 @@ def test_dev_file_combined_with_log_level() -> None:
     env.pop("NICEGUI_SCREEN_TEST_PORT", None)
     env["BROWSER"] = "none"
 
-    process = subprocess.Popen(  # pylint: disable=consider-using-with
+    process = subprocess.Popen(
         [
             sys.executable,
             "src/apple_health_analyzer.py",

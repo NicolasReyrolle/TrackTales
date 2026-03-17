@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 import logic.workout_manager as wm
+import logic.workout_manager.export as wm_export
 
 
 class TestGetDistanceByActivityUnits:
@@ -151,7 +152,7 @@ class TestAggregateByPeriodInternalBranches:
             )
         )
 
-        result = workouts._aggregate_by_period(  # pylint: disable=protected-access  # type: ignore[attr-defined]
+        result = workouts._aggregate_by_period(  # type: ignore[attr-defined]
             column="duration",
             period="M",
             aggregation=lambda grouped: grouped.sum(),
@@ -174,7 +175,7 @@ class TestAggregateByPeriodInternalBranches:
             )
         )
 
-        result = workouts._aggregate_by_period(  # pylint: disable=protected-access  # type: ignore[attr-defined]
+        result = workouts._aggregate_by_period(  # type: ignore[attr-defined]
             column="duration",
             period="M",
             aggregation=lambda _grouped: pd.Series(dtype=float),
@@ -208,7 +209,7 @@ class TestAggregateByPeriodInternalBranches:
 
         monkeypatch.setattr(workouts, "_filter_workouts", _empty_filter)
 
-        result = workouts._aggregate_by_period(  # pylint: disable=protected-access  # type: ignore[attr-defined]
+        result = workouts._aggregate_by_period(  # type: ignore[attr-defined]
             column="duration",
             period="M",
             aggregation=lambda grouped: grouped.sum(),
@@ -484,7 +485,7 @@ class TestGetDateBounds:
             def now(cls, tz=None) -> datetime:  # type: ignore[override]
                 return cls(2024, 1, 2)
 
-        monkeypatch.setattr(wm, "datetime", _FixedDatetime)
+        monkeypatch.setattr(wm_export, "datetime", _FixedDatetime)
 
         manager = wm.WorkoutManager()
 
@@ -500,7 +501,7 @@ class TestGetDateBounds:
             def now(cls, tz=None) -> datetime:  # type: ignore[override]
                 return cls(2024, 1, 2)
 
-        monkeypatch.setattr(wm, "datetime", _FixedDatetime)
+        monkeypatch.setattr(wm_export, "datetime", _FixedDatetime)
 
         manager = wm.WorkoutManager(pd.DataFrame({"activityType": ["Running"]}))
 

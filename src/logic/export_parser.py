@@ -3,9 +3,10 @@
 import logging
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime
 from types import TracebackType
-from typing import Any, Callable, List, Optional, Tuple, Type
+from typing import Any
 from xml.etree.ElementTree import Element
 from zipfile import ZipFile
 
@@ -28,18 +29,18 @@ SUPPORTED_RECORD_TYPES = frozenset({"HeartRate", "BodyMass", "VO2Max", "RunningP
 class ExportParser:
     """Reads and parses Apple Health export files."""
 
-    def __init__(self, progress_callback: Optional[Callable[[str], None]] = None) -> None:
+    def __init__(self, progress_callback: Callable[[str], None] | None = None) -> None:
         self.progress_callback = progress_callback
-        self._route_cache: dict[str, Optional[WorkoutRoute]] = {}
+        self._route_cache: dict[str, WorkoutRoute | None] = {}
 
     def __enter__(self) -> "ExportParser":
         return self
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         # Nothing to do for now
         pass
@@ -56,7 +57,7 @@ class ExportParser:
             return None
 
     @staticmethod
-    def parse_metadata_value(raw_value: Optional[str]) -> Tuple[Any, Optional[str]]:
+    def parse_metadata_value(raw_value: str | None) -> tuple[Any, str | None]:
         """
         Parse a metadata entry value without boolean coercion.
 
@@ -85,7 +86,7 @@ class ExportParser:
         return raw_value, None
 
     @staticmethod
-    def _parse_value(raw_value: Optional[str]) -> Tuple[Any, Optional[str]]:
+    def _parse_value(raw_value: str | None) -> tuple[Any, str | None]:
         """
         Internal helper: Separates value and unit, converts to standard metric system.
 
@@ -164,7 +165,7 @@ class ExportParser:
         if self.progress_callback:
             try:
                 self.progress_callback(message)
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 _logger.debug(message)
 
     def _process_workout_event(
@@ -218,7 +219,7 @@ class ExportParser:
         self._log("Loading the workouts...")
 
         with zipfile.open("apple_health_export/export.xml") as export_file:
-            workout_rows: List[WorkoutRecord] = []
+            workout_rows: list[WorkoutRecord] = []
             record_rows_by_type: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
             for _, elem in iterparse(export_file, events=("end",)):
@@ -231,13 +232,13 @@ class ExportParser:
 
             return self._build_parsed_health_data(workout_rows, record_rows_by_type)
 
-    def _extract_health_data_record(self, elem: Element) -> Optional[Tuple[str, dict[str, Any]]]:
+    def _extract_health_data_record(self, elem: Element) -> tuple[str, dict[str, Any]] | None:
         """Extract and clean health data record from element attributes and metadata."""
         raw_type = elem.get("type")
         if not raw_type:
             return None
         record_type = raw_type.replace("HKQuantityTypeIdentifier", "")
-        record_data = {
+        record_data: dict[str, Any] = {
             "type": record_type,
             "startDate": elem.get("startDate"),
             "endDate": elem.get("endDate"),
@@ -285,9 +286,9 @@ class ExportParser:
     def _update_motion_timestamps(
         event_type: str,
         event_date: datetime,
-        last_paused: Optional[datetime],
-        last_resumed: Optional[datetime],
-    ) -> tuple[Optional[datetime], Optional[datetime]]:
+        last_paused: datetime | None,
+        last_resumed: datetime | None,
+    ) -> tuple[datetime | None, datetime | None]:
         """Update motion timestamps based on event type."""
         if event_type == "HKWorkoutEventTypeMotionPaused":
             if last_paused is None or event_date > last_paused:
@@ -298,15 +299,15 @@ class ExportParser:
         return last_paused, last_resumed
 
     @staticmethod
-    def _compute_active_end(elem: Element) -> Optional[datetime]:
+    def _compute_active_end(elem: Element) -> datetime | None:
         """Return the last MotionPaused time if it is not followed by a MotionResumed.
 
         When the user forgets to stop the watch before getting into a vehicle, the GPS
         keeps recording at vehicle speed after the final pause.  Trimming route points
         beyond this timestamp prevents impossible best-segment values.
         """
-        last_paused: Optional[datetime] = None
-        last_resumed: Optional[datetime] = None
+        last_paused: datetime | None = None
+        last_resumed: datetime | None = None
         for child in elem:
             if child.tag != "WorkoutEvent":
                 continue
@@ -337,7 +338,7 @@ class ExportParser:
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
 
     @staticmethod
-    def str_distance_to_meters(value: str, unit: Optional[str]) -> int:
+    def str_distance_to_meters(value: str, unit: str | None) -> int:
         """Convert distance to meters."""
         if unit is None:
             raise ValueError("Distance unit is missing (None). Cannot convert to meters.")
@@ -362,11 +363,11 @@ class ExportParser:
                         stat_attr_str, child.get("unit")
                     )
                 else:
-                    record[f"{stat_attr}{stat_type}"] = float(stat_attr_str)
-                    record[f"{stat_attr}{stat_type}Unit"] = child.get("unit")
+                    record[f"{stat_attr}{stat_type}"] = float(stat_attr_str)  # type: ignore[literal-required]
+                    record[f"{stat_attr}{stat_type}Unit"] = child.get("unit")  # type: ignore[literal-required]
 
     @staticmethod
-    def _parse_gpx_speed(ext_elem: Optional[Element]) -> float:
+    def _parse_gpx_speed(ext_elem: Element | None) -> float:
         """Extract speed value from GPX extensions element."""
         if ext_elem is None:
             return 0.0
@@ -412,7 +413,7 @@ class ExportParser:
             speed=speed_val,
         )
 
-    def _load_route(self, zipfile: ZipFile, route_path: str) -> Optional[WorkoutRoute]:
+    def _load_route(self, zipfile: ZipFile, route_path: str) -> WorkoutRoute | None:
         """Load GPX route file from the export zip."""
         try:
             with zipfile.open(f"apple_health_export{route_path}") as route_file:
@@ -428,7 +429,7 @@ class ExportParser:
             return None
 
     @staticmethod
-    def _parse_health_datetime(raw: Optional[str]) -> Optional[datetime]:
+    def _parse_health_datetime(raw: str | None) -> datetime | None:
         """Parse Apple Health datetime values like "YYYY-MM-DD HH:MM:SS +0100"."""
         if raw is None:
             return None
@@ -437,7 +438,7 @@ class ExportParser:
         except ValueError:
             return None
 
-    def _load_route_cached(self, zipfile: ZipFile, route_path: str) -> Optional[WorkoutRoute]:
+    def _load_route_cached(self, zipfile: ZipFile, route_path: str) -> WorkoutRoute | None:
         """Load GPX route once per file path for the current export parsing session."""
         if route_path not in self._route_cache:
             self._route_cache[route_path] = self._load_route(zipfile, route_path)
@@ -446,8 +447,8 @@ class ExportParser:
     @staticmethod
     def clip_route_to_window(
         route: WorkoutRoute,
-        window_start: Optional[datetime],
-        window_end: Optional[datetime],
+        window_start: datetime | None,
+        window_end: datetime | None,
     ) -> WorkoutRoute:
         """Return route points clipped to WorkoutRoute time window.
 
@@ -488,7 +489,7 @@ class ExportParser:
         return WorkoutRoute(points=clipped_points)
 
     @staticmethod
-    def _merge_route_parts(route_parts: list[WorkoutRoute]) -> Optional[WorkoutRoute]:
+    def _merge_route_parts(route_parts: list[WorkoutRoute]) -> WorkoutRoute | None:
         """Merge route parts as a compatibility route while preserving part boundaries.
 
         Use ``route_parts`` for analytics. The merged ``route`` field remains available
@@ -514,7 +515,7 @@ class ExportParser:
         elem: Element,
         record: WorkoutRecord,
         zipfile: ZipFile,
-        active_end: Optional[datetime] = None,
+        active_end: datetime | None = None,
     ) -> None:
         """Process one WorkoutRoute XML block as an independent time window.
 
@@ -526,7 +527,7 @@ class ExportParser:
         which prevents vehicle-speed GPS points recorded after forgetting to stop the
         watch from influencing best-segment calculations.
         """
-        route_path: Optional[str] = None
+        route_path: str | None = None
         for child in elem:
             if child.tag == "FileReference":
                 route_path = child.get("path")
@@ -577,9 +578,9 @@ class ExportParser:
         if key in record:
             logging.debug("Duplicate key '%s' found, bypassing the second one", key)
         else:
-            record[key] = value
+            record[key] = value  # type: ignore[literal-required]
             if unit:
-                record[f"{key}Unit"] = unit
+                record[f"{key}Unit"] = unit  # type: ignore[literal-required]
 
     def parse(self, export_file: str) -> ParsedHealthData:
         """Parse the export file."""

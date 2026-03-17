@@ -1,7 +1,8 @@
 """Tests for UI formatting in layout refresh."""
 
+from collections.abc import Coroutine
 from datetime import datetime
-from typing import Any, Coroutine, List, Optional, Union
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
@@ -16,8 +17,8 @@ class _DummyWorkouts(WorkoutManager):
     def get_count(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         return 12345
 
@@ -25,16 +26,16 @@ class _DummyWorkouts(WorkoutManager):
         self,
         activity_type: str = "All",
         unit: str = "km",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         return 67890
 
     def get_total_duration(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         return 24680
 
@@ -42,35 +43,35 @@ class _DummyWorkouts(WorkoutManager):
         self,
         activity_type: str = "All",
         unit: str = "m",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         return 13579
 
     def get_total_calories(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         return 98765
 
     def get_longest_workout(
         self,
-        activity_types: List[str],
+        activity_types: list[str],
         unit: str = "km",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> float:
         return 0.0
 
     def get_longest_workout_details(
         self,
-        activity_types: List[str],
+        activity_types: list[str],
         unit: str = "km",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-    ) -> Optional[dict[str, Any]]:
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, Any] | None:
         """Return no longest workout details in this dummy implementation."""
         return None
 

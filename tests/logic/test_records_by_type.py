@@ -1,14 +1,13 @@
 """Test suite for RecordsByType wrapper around HealthKit record DataFrames."""
 
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable
 
 import pandas as pd
 import pytest
 
 from logic.export_parser import ExportParser
 from logic.records_by_type import RecordsByType
-
 from tests.conftest import build_health_export_xml, load_export_fragment
 
 

@@ -5,8 +5,8 @@ from __future__ import annotations
 import argparse
 import sys
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 INTERNAL_XML_PATH = "apple_health_export/export.xml"
 INTERNAL_EXPORT_ROOT = "apple_health_export"

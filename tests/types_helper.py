@@ -1,6 +1,6 @@
 """Protocol for UI state assertion functions."""
 
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 from nicegui.testing import UserInteraction
 
@@ -11,6 +11,6 @@ class StateAssertion(Protocol):
     def __call__(
         self,
         interaction: UserInteraction[Any],
-        enabled: Optional[bool] = None,
-        visible: Optional[bool] = None,
+        enabled: bool | None = None,
+        visible: bool | None = None,
     ) -> None: ...

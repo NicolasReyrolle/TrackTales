@@ -1,8 +1,8 @@
 """Tests for complex workout parsing and route handling."""
 
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Callable
 from xml.etree.ElementTree import Element
 from zipfile import ZipFile
 
@@ -158,7 +158,9 @@ class TestComplexRealWorldWorkout:
         """Ensure data inside WorkoutActivity is not loaded into the workout record."""
 
         workout_fragment = """
-<Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01 10:00:00 +0000" endDate="2024-01-01 10:10:00 +0000" duration="10" durationUnit="min">
+<Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+         startDate="2024-01-01 10:00:00 +0000"
+         endDate="2024-01-01 10:10:00 +0000" duration="10" durationUnit="min">
   <WorkoutActivity>
     <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" sum="123" unit="kcal"/>
     <MetadataEntry key="HKWeatherHumidity" value="5000 %"/>
@@ -272,7 +274,6 @@ class TestComplexRealWorldWorkout:
 class TestLoadRoute:
     """Test the _load_route method."""
 
-    # pylint: disable=protected-access
     def test_load_route_with_valid_gpx(self, tmp_path: Path) -> None:
         """Test loading a valid GPX route file."""
         zip_path = tmp_path / "route_export.zip"
@@ -353,7 +354,6 @@ class TestLoadRoute:
 class TestProcessWorkoutRoute:
     """Test the _process_workout_route method."""
 
-    # pylint: disable=protected-access
     def test_process_workout_route_with_file_reference(self, tmp_path: Path) -> None:
         """Test processing a workout route with FileReference."""
         zip_path = tmp_path / "route_export.zip"
@@ -371,7 +371,8 @@ class TestProcessWorkoutRoute:
 """
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" startDate="2024-01-01" endDate="2024-01-01" duration="30">
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+             startDate="2024-01-01" endDate="2024-01-01" duration="30">
         <WorkoutRoute sourceName="Apple Watch">
             <FileReference path="/workout-routes/test_route.gpx"/>
         </WorkoutRoute>

@@ -1,10 +1,8 @@
 """Tests for WorkoutManager elevation by period methods."""
 
-# pylint: disable=missing-function-docstring,duplicate-code
-
 import pandas as pd
 
-import logic.workout_manager as wm
+from logic import workout_manager as wm
 
 
 class TestGetElevationByPeriod:

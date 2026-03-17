@@ -27,9 +27,8 @@ def main() -> None:
     project_root = Path(__file__).parent.parent
     sys.path.insert(0, str(project_root / "src"))
 
-    # pylint: disable=import-outside-toplevel
-    from logic.export_parser import ExportParser  # pylint: disable=import-outside-toplevel
-    from logic.workout_manager import WorkoutManager  # pylint: disable=import-outside-toplevel
+    from logic.export_parser import ExportParser  # noqa: E402
+    from logic.workout_manager import WorkoutManager  # noqa: E402
 
     sample_file = project_root / "tests" / "fixtures" / "export_sample.zip"
 

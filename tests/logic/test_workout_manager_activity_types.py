@@ -171,7 +171,7 @@ class TestGroupSmallValues:
 
         result = manager.group_small_values(data, threshold_percent=25.0)
 
-        # Total = 150, threshold (25%) = 37.5
+        # Total is 150, so threshold (25%) = 37.5
         # Sorted: Walking(20), Cycling(30), Running(100)
         # Cumulative: Walking(20) <= 37.5, grouped into Others
         # Walking(20) + Cycling(30) = 50 > 37.5, so Cycling stays separate
@@ -186,7 +186,7 @@ class TestGroupSmallValues:
             data, threshold_percent=10.0, others_label="Minor Activities"
         )
 
-        # Total = 155, threshold = 15.5
+        # Total is 155, so threshold = 15.5
         assert result == {"Running": 100, "Cycling": 50, "Minor Activities": 5}
 
     def test_group_small_values_all_below_threshold(self) -> None:
@@ -196,7 +196,7 @@ class TestGroupSmallValues:
 
         result = manager.group_small_values(data, threshold_percent=50.0)
 
-        # Total = 10, threshold = 5
+        # Total is 10, so threshold = 5
         # Walking (5) is >= 5, so it stays separate
         # Yoga (3) and Stretching (2) grouped into Others (5)
         assert result == {"Walking": 5, "Others": 5}
@@ -218,7 +218,7 @@ class TestGroupSmallValues:
 
         result = manager.group_small_values(data, threshold_percent=10.0)
 
-        # Total = 100, threshold = 10, value = 100 >= 10
+        # Total is 100, so threshold = 10, value = 100 >= 10
         assert result == {"Running": 100}
 
     def test_group_small_values_boundary_case(self) -> None:
@@ -228,7 +228,7 @@ class TestGroupSmallValues:
 
         result = manager.group_small_values(data, threshold_percent=9.0)
 
-        # Total = 110, threshold = 9.9
+        # Total is 110, so threshold = 9.9
         # Cycling (10) is >= 9.9, should not be grouped
         assert result == {"Running": 100, "Cycling": 10}
 

@@ -241,9 +241,9 @@ class TestGetBestSegments:
         assert len(result) == 1
         duration_s = float(result.iloc[0]["duration_s"])
         # Car section excluded; running at ≈1 m/s → need 101 steps for 100 m → 101 s
-        assert (
-            duration_s >= 100.0
-        ), f"Expected ≥ 100 s (car trimmed, running at 1 m/s), got {duration_s} s"
+        assert duration_s >= 100.0, (
+            f"Expected ≥ 100 s (car trimmed, running at 1 m/s), got {duration_s} s"
+        )
 
     def test_real_fixture_too_fast_does_not_generate_one_second_100m(self, tmp_path: Path) -> None:
         """Window clipping and per-part analysis prevent impossible 100m=1s artifacts."""

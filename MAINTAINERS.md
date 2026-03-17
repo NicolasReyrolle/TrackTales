@@ -66,10 +66,9 @@ This rebuilds `tests/fixtures/export_sample.zip` from `tests/fixtures/exports/`.
 Run before opening a PR:
 
 ```bash
-black src tests --line-length=100
-isort src tests --profile=black
+ruff format src tests
+ruff check src tests
 mypy src tests
-pylint src tests
 ```
 
 ## Route Parsing and Segment Semantics

@@ -1,6 +1,6 @@
 """Test parsing of complex real-world records from Apple Health export."""
 
-from typing import Callable
+from collections.abc import Callable
 
 import pandas as pd
 import pytest
@@ -216,7 +216,7 @@ class TestToNumber:
         assert isinstance(result, float)
 
 
-class TestParseMetadataValue:  # pylint: disable=too-few-public-methods
+class TestParseMetadataValue:
     """Test suite for ExportParser.parse_metadata_value static method."""
 
     def test_parse_metadata_value_keeps_numeric_flags_as_ints(self) -> None:

@@ -6,8 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 from app_state import state
-from ui import charts
-from ui import layout
+from ui import charts, layout
 
 from ._helpers import DummyComponent, DummyRow
 

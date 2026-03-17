@@ -3,7 +3,8 @@
 import asyncio
 import json
 import logging
-from typing import Any, Callable, cast
+from collections.abc import Callable
+from typing import Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -13,9 +14,9 @@ from nicegui.testing import User
 
 from app_state import state
 from tests.types_helper import StateAssertion
+from ui import layout as layout_module
 from ui.helpers import format_integer
 from ui.layout import load_file
-from ui import layout as layout_module
 
 
 def is_valid_json(data_string: str) -> bool:
@@ -100,7 +101,7 @@ class TestFileBrowsing:
             input_elements = list(user.find("Apple Health export file").elements)
             input_field = input_elements[0] if input_elements else None
             assert input_field is not None
-            actual_value = input_field.value  # type: ignore[union-attr]
+            actual_value = input_field.value  # type: ignore[attr-defined]
             assert actual_value == "", "Input should start empty"
 
             # Click Browse
@@ -108,8 +109,8 @@ class TestFileBrowsing:
             await asyncio.sleep(1.0)
 
             # Check if value was set
-            assert fake_path in input_field.value, (  # type: ignore[union-attr]
-                f"Expected {fake_path} in {input_field.value}"  # type: ignore[union-attr]
+            assert fake_path in input_field.value, (  # type: ignore[attr-defined]
+                f"Expected {fake_path} in {input_field.value}"  # type: ignore[attr-defined]
             )
 
 

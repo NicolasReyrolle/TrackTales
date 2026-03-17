@@ -97,6 +97,14 @@ To analyze your data, you first need to export it from your iPhone:
 
 Maintainer and contributor documentation has moved to [MAINTAINERS.md](MAINTAINERS.md).
 
+Quality checks (Ruff + mypy):
+
+```bash
+ruff format src tests
+ruff check src tests
+mypy src tests
+```
+
 If you are here to use the app, you can skip directly to the sections above.
 
 ### Best Segments algorithm (summary)

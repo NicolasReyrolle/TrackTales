@@ -7,7 +7,7 @@ various scenarios like page refreshes, multiple connections, and error handling.
 
 import asyncio
 import logging
-from typing import Callable
+from collections.abc import Callable
 from unittest.mock import patch
 
 import pytest
@@ -38,12 +38,12 @@ class TestAutoLoadFunctionality:
 
                 # Verify the file was loaded by checking logs
                 log_messages = [record.message for record in caplog.records]
-                assert any(
-                    "Finished parsing in" in msg for msg in log_messages
-                ), "Should log completion message"
-                assert any(
-                    "Total distance of 9" in msg for msg in log_messages
-                ), "Should log workout statistics with total distance of 9"
+                assert any("Finished parsing in" in msg for msg in log_messages), (
+                    "Should log completion message"
+                )
+                assert any("Total distance of 9" in msg for msg in log_messages), (
+                    "Should log workout statistics with total distance of 9"
+                )
 
         finally:
             # Cleanup
@@ -85,9 +85,9 @@ class TestAutoLoadFunctionality:
                 await asyncio.sleep(2.0)
 
                 log_messages = [record.message for record in caplog.records]
-                assert any(
-                    "Finished parsing in" in msg for msg in log_messages
-                ), "Should log completion message on first load"
+                assert any("Finished parsing in" in msg for msg in log_messages), (
+                    "Should log completion message on first load"
+                )
 
             caplog.clear()
 
@@ -98,12 +98,12 @@ class TestAutoLoadFunctionality:
 
                 # Verify the file is auto-loaded again after refresh
                 log_messages = [record.message for record in caplog.records]
-                assert any(
-                    "Finished parsing in" in msg for msg in log_messages
-                ), "Should log completion message after refresh"
-                assert any(
-                    "Total distance of 9" in msg for msg in log_messages
-                ), "Should log workout statistics with total distance of 9"
+                assert any("Finished parsing in" in msg for msg in log_messages), (
+                    "Should log completion message after refresh"
+                )
+                assert any("Total distance of 9" in msg for msg in log_messages), (
+                    "Should log workout statistics with total distance of 9"
+                )
         finally:
             # Cleanup
             app.storage.general.pop("_dev_file_path", None)
@@ -163,7 +163,7 @@ class TestAutoLoadFunctionality:
                 call_args = mock_timer.call_args
 
                 # Check the interval is 1.0 second
-                assert call_args[0][0] == 1.0, "Timer interval should be 1.0 second"
+                assert call_args[0][0] == pytest.approx(1.0)  # type: ignore[arg-type]
 
                 # Check the 'once' parameter is True
                 assert call_args[1].get("once") is True, "Timer should be set to run once"
@@ -218,12 +218,12 @@ class TestAutoLoadFunctionality:
 
                     # Each time should trigger auto-load
                     log_messages = [record.message for record in caplog.records]
-                    assert any(
-                        "Finished parsing in" in msg for msg in log_messages
-                    ), "Should log completion message"
-                    assert any(
-                        "Total distance of 9" in msg for msg in log_messages
-                    ), "Should log workout statistics with total distance of 9"
+                    assert any("Finished parsing in" in msg for msg in log_messages), (
+                        "Should log completion message"
+                    )
+                    assert any("Total distance of 9" in msg for msg in log_messages), (
+                        "Should log workout statistics with total distance of 9"
+                    )
 
                 caplog.clear()
         finally:

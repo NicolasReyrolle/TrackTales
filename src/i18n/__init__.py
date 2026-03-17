@@ -10,13 +10,13 @@ NiceGUI user storage and returns the appropriate translated string.
 
 import gettext
 import logging
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from typing import cast
 
 from babel.messages import mofile, pofile
 
-DEFAULT_LANGUAGE = "en"
+DEFAULT_LANGUAGE: str = "en"
 
 LANGUAGES: dict[str, str] = {
     "en": "English",
@@ -31,6 +31,7 @@ __all__ = [
     "DEFAULT_LANGUAGE",
     "LANGUAGES",
     "compile_message_catalogs",
+    "get_language",
     "t",
     "translate",
 ]
@@ -107,7 +108,7 @@ def compile_message_catalogs() -> int:
             _logger.debug(
                 "Cannot write compiled catalog for '%s': directory is not writable.", po_path
             )
-        except Exception as exc:  # pylint: disable=broad-except
+        except Exception as exc:
             _logger.warning("Failed to compile translation catalog '%s': %s", po_path, exc)
 
     # Ensure subsequent translation lookups reload catalogs after recompilation.
@@ -115,7 +116,7 @@ def compile_message_catalogs() -> int:
     return compiled_count
 
 
-@lru_cache(maxsize=None)
+@cache
 def _get_translation(lang: str) -> gettext.NullTranslations:
     """Load and cache the compiled ``.mo`` translation for *lang*.
 
@@ -138,11 +139,11 @@ def get_language() -> str:
     (e.g., during unit tests that do not set up a NiceGUI session).
     """
     try:
-        from nicegui import app  # pylint: disable=import-outside-toplevel
+        from nicegui import app
 
         user_storage = cast(dict[str, object], app.storage.user)
         return str(user_storage.get("language", DEFAULT_LANGUAGE))
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         return DEFAULT_LANGUAGE
 
 

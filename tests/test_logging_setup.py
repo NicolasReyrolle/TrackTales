@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Import the module to test
-import apple_health_analyzer
+import apple_health_analyzer as apple_health_analyzer
 
 
 class TestSetupLogging:
@@ -159,14 +159,14 @@ class TestSetupLogging:
 
             # After calling setup_logging, verify none of the dummy handlers remain
             handlers_after = set(logger.handlers)
-            assert not dummy_handlers.intersection(
-                handlers_after
-            ), "Dummy handlers should have been removed by setup_logging"
+            assert not dummy_handlers.intersection(handlers_after), (
+                "Dummy handlers should have been removed by setup_logging"
+            )
 
             # Verify we have exactly 2 new handlers (console + file)
-            assert (
-                len(self._non_pytest_handlers(logger)) == 2
-            ), f"Expected 2 handlers, got {len(self._non_pytest_handlers(logger))}"
+            assert len(self._non_pytest_handlers(logger)) == 2, (
+                f"Expected 2 handlers, got {len(self._non_pytest_handlers(logger))}"
+            )
         finally:
             os.chdir(original_cwd)
 
@@ -267,9 +267,9 @@ class TestSetupLogging:
             with caplog.at_level(logging.WARNING):
                 apple_health_analyzer.setup_logging("INFO", enable_file_logging=True)
 
-        assert any(
-            "File logging disabled" in record.message for record in caplog.records
-        ), "Expected a warning when file logging cannot be initialized"
+        assert any("File logging disabled" in record.message for record in caplog.records), (
+            "Expected a warning when file logging cannot be initialized"
+        )
 
 
 class TestCLIArgumentParsing:
@@ -286,15 +286,11 @@ class TestCLIArgumentParsing:
             The log level string passed to setup_logging
         """
         # Ensure at least one call was made
-        assert (
-            len(mock_setup_logging.call_args_list) > 0
-        ), "Expected setup_logging to be called"  # type: ignore[arg-type]
+        assert len(mock_setup_logging.call_args_list) > 0, "Expected setup_logging to be called"  # type: ignore[arg-type]
         # Get the most recent call
         call_args = mock_setup_logging.call_args  # type: ignore[attr-defined]
         # Extract log_level from either positional or keyword arguments
-        log_level: str = (
-            call_args[0][0] if call_args[0] else call_args[1].get("log_level")
-        )  # type: ignore[index,union-attr]
+        log_level: str = call_args[0][0] if call_args[0] else call_args[1].get("log_level")  # type: ignore[index,union-attr]
         return log_level
 
     def test_log_level_argument_default(self) -> None:
@@ -405,7 +401,7 @@ class TestCLIArgumentParsing:
         mock_setup_logging.assert_called_once()
         mock_ui_run.assert_not_called()
 
-    def test_cli_main_stores_dev_file_and_disables_file_logging(  # pylint: disable=unused-argument
+    def test_cli_main_stores_dev_file_and_disables_file_logging(
         self, clean_logger: logging.Logger, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test that a valid dev file sets storage and disables file logging."""
@@ -452,7 +448,7 @@ class TestCLIArgumentParsing:
             finally:
                 apple_health_analyzer.app.storage.general.pop("_dev_file_path", None)
 
-    def test_cli_main_dev_file_not_found_exits(  # pylint: disable=unused-argument
+    def test_cli_main_dev_file_not_found_exits(
         self, clean_logger: logging.Logger, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test that a non-existent dev file causes an early exit with an error."""

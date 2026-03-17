@@ -1,7 +1,5 @@
 """Core WorkoutManager class composed from dedicated mixins."""
 
-from typing import Optional
-
 import pandas as pd
 
 from .aggregations import WorkoutManagerAggregationsMixin
@@ -38,7 +36,7 @@ class WorkoutManager(
     DATE_FORMAT = "%Y/%m/%d"
     DEFAULT_SEGMENT_DISTANCES = STANDARD_SEGMENT_DISTANCES
 
-    def __init__(self, pd_workouts: Optional[pd.DataFrame] = None) -> None:
+    def __init__(self, pd_workouts: pd.DataFrame | None = None) -> None:
         if pd_workouts is None:
             self.workouts: pd.DataFrame = pd.DataFrame(
                 columns=[

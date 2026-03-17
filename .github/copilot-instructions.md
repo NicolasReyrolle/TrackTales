@@ -34,7 +34,7 @@ If two rules at the same level conflict, choose the simpler option and state the
 - Setup (Windows): `.\.venv\Scripts\Activate.ps1`
 - Run app: `python -m nicegui src.apple_health_analyzer`
 - Tests: `pytest --cov=src tests/`
-- Quality: `black src tests --line-length=100`, `isort src tests --profile=black`, `mypy src tests`, `pylint src tests`
+- Quality: `ruff format src tests`, `ruff check src tests`, `mypy src tests`
 
 ## Mandatory engineering constraints
 
@@ -69,7 +69,8 @@ If two rules at the same level conflict, choose the simpler option and state the
 ### During coding
 - Fix root cause; avoid cosmetic unrelated edits.
 - Keep public APIs stable unless the task explicitly requests API changes. Do not use compatibility layers unless absolutely necessary.
-- Use `# pylint: disable=...` or `# type: ignore` only when necessary and scoped to the smallest expression/line.
+- Use `# noqa: ...` or `# type: ignore` only when necessary and scoped to the smallest
+  expression/line.
 - Keep cognitive complexity low; break down complex functions into smaller helpers. Maximum complexity of 15 per function.
 - Keep functions under 50 lines where practical. If a function exceeds this, consider refactoring into smaller functions.
 - Each module must contain less than 1000 lines of code. If a module exceeds this, consider splitting it into smaller modules.
@@ -77,8 +78,8 @@ If two rules at the same level conflict, choose the simpler option and state the
 ### Validation scope (default)
 - Validate changed files and directly affected tests first.
 - Run wider suites (`tests/`, full lint, full type-check) only when:
-	- requested by the user, or
-	- risk is high (cross-cutting parser/model/UI changes).
+  - requested by the user, or
+  - risk is high (cross-cutting parser/model/UI changes).
 
 ### TDD policy
 - Use TDD for bug fixes and new logic where practical.
@@ -88,7 +89,8 @@ If two rules at the same level conflict, choose the simpler option and state the
 
 A task is complete when all of the following are true:
 1. Requested behavior is implemented.
-2. Changed files are lint/type clean (or existing unrelated issues are explicitly called out). Use both pylance and pylint for type/lint checks.
+2. Changed files are lint/type clean (or existing unrelated issues are explicitly called out).
+	Use both Pylance and Ruff for type/lint checks.
 3. Relevant tests pass.
 4. Any new assumptions, trade-offs, or follow-ups are clearly reported.
 
@@ -107,7 +109,7 @@ A task is complete when all of the following are true:
 | `src/logic/workout_manager/` | Aggregations and reporting utilities |
 | `src/logic/workout_route.py` | Route models and route computations |
 | `tests/conftest.py` | Shared fixtures and test helpers |
-| `pyproject.toml` | Tooling configuration (pytest/mypy/pylint/formatters) |
+| `pyproject.toml` | Tooling configuration (pytest/mypy/ruff/formatters) |
 | `resources/style.css` | Global CSS: dark-mode vars, Quasar overrides, utility classes |
 
 ## CI expectations

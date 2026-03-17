@@ -1,6 +1,6 @@
 """Models representing the structured data extracted from the Apple Health export."""
 
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 from logic.workout_route import WorkoutRoute
 
@@ -14,11 +14,11 @@ class WorkoutRecordRequired(TypedDict):
 class WorkoutRecord(WorkoutRecordRequired, total=False):
     """Type definition for workout record structure."""
 
-    duration: Optional[float]
-    durationUnit: Optional[str]
-    startDate: Optional[str]
-    endDate: Optional[str]
-    source: Optional[str]
-    route: Optional[WorkoutRoute]
+    duration: float | None
+    durationUnit: str | None
+    startDate: str | None
+    endDate: str | None
+    source: str | None
+    route: WorkoutRoute | None
     route_parts: list[WorkoutRoute]
-    distance: Optional[int]  # Total distance in meters
+    distance: int | None  # Total distance in meters

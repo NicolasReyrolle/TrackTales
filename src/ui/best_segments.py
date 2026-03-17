@@ -153,7 +153,7 @@ async def load_best_segments_data(force: bool = False) -> None:
         rows = await asyncio.to_thread(_build_best_segments_rows)
         state.best_segments_rows = rows
         state.best_segments_loaded = True
-    except Exception:  # pylint: disable=broad-except
+    except Exception:
         _logger.exception("Failed to load best segments data")
     finally:
         state.best_segments_loading = False

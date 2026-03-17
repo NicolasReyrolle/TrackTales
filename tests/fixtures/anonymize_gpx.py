@@ -5,13 +5,15 @@ from __future__ import annotations
 import argparse
 import math
 import sys
-from pathlib import Path
-from typing import Callable, TypeAlias
 import xml.etree.ElementTree as _stdlib_ET
+from collections.abc import Callable
+from pathlib import Path
+from typing import TypeAlias
+
 from defusedxml import ElementTree as ET
 
-GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"
-XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance"
+GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"  # noqa: S5332
+XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance"  # noqa: S5332
 GPX_TRKPT_XPATH = ".//gpx:trkpt"
 ZERO_THRESHOLD = 1e-12
 Vector3: TypeAlias = tuple[float, float, float]

@@ -10,7 +10,6 @@ import logic.export_parser as ep
 class TestParseValue:
     """Test cases for the _parse_value static method."""
 
-    # pylint: disable=protected-access
     @pytest.mark.parametrize(
         "input_str, expected_val, expected_unit",
         [
@@ -75,7 +74,6 @@ class TestParseValue:
 class TestParseValueEdgeCases:
     """Additional edge case tests for _parse_value."""
 
-    # pylint: disable=protected-access
     def test_parse_value_with_negative_fahrenheit(self) -> None:
         """Test Fahrenheit conversion with negative temperature."""
         val, unit = ep.ExportParser._parse_value("-40 degF")  # type: ignore[misc]
@@ -106,7 +104,6 @@ class TestParseValueEdgeCases:
         assert val is not None
 
 
-# pylint: disable=protected-access
 class TestExtractActivityType:
     """Test the _extract_activity_type method."""
 
@@ -135,7 +132,6 @@ class TestExtractActivityType:
 class TestExtractHealthDataRecord:
     """Test the _extract_health_data_record method."""
 
-    # pylint: disable=protected-access
     def test_extract_heart_rate_record_basic(self) -> None:
         """Test extracting a basic heart rate record."""
         elem = Element(
@@ -226,7 +222,7 @@ class TestExtractHealthDataRecord:
         record_type, record_data = parser._extract_health_data_record(elem)  # type: ignore[misc]
 
         assert record_type == "BodyMass"
-        assert record_data["BodyMassUnit"] == 75.0
+        assert record_data["BodyMassUnit"] == pytest.approx(75.0)  # type: ignore[misc]
         assert record_data["BodyMassUnitUnit"] == "kg"
 
     def test_extract_health_data_record_type_removal(self) -> None:

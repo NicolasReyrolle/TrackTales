@@ -14,7 +14,7 @@ def translated_message(message: str, **kwargs: Any) -> str:
 class DummyRow:
     """Simple context manager stub with chainable classes() method."""
 
-    def __enter__(self) -> "DummyRow":
+    def __enter__(self) -> DummyRow:
         return self
 
     def __exit__(
@@ -22,10 +22,11 @@ class DummyRow:
         exc_type: type[BaseException] | None,
         exc: BaseException | None,
         tb: TracebackType | None,
-    ) -> bool:
-        return False
+    ) -> None:
+        """Exit method that does nothing."""
+        pass
 
-    def classes(self, *_args: Any, **_kwargs: Any) -> "DummyRow":
+    def classes(self, *_args: Any, **_kwargs: Any) -> DummyRow:
         """Mock method to allow chaining."""
         return self
 
@@ -33,27 +34,27 @@ class DummyRow:
 class DummyComponent:
     """Generic chainable NiceGUI component stub."""
 
-    def classes(self, *_args: Any, **_kwargs: Any) -> "DummyComponent":
+    def classes(self, *_args: Any, **_kwargs: Any) -> DummyComponent:
         """Return self for class chaining."""
         return self
 
-    def bind_enabled_from(self, *_args: Any, **_kwargs: Any) -> "DummyComponent":
+    def bind_enabled_from(self, *_args: Any, **_kwargs: Any) -> DummyComponent:
         """Return self for bind_enabled_from chaining."""
         return self
 
-    def bind_value(self, *_args: Any, **_kwargs: Any) -> "DummyComponent":
+    def bind_value(self, *_args: Any, **_kwargs: Any) -> DummyComponent:
         """Return self for bind_value chaining."""
         return self
 
-    def bind_text_from(self, *_args: Any, **_kwargs: Any) -> "DummyComponent":
+    def bind_text_from(self, *_args: Any, **_kwargs: Any) -> DummyComponent:
         """Return self for bind_text_from chaining."""
         return self
 
-    def bind_visibility_from(self, *_args: Any, **_kwargs: Any) -> "DummyComponent":
+    def bind_visibility_from(self, *_args: Any, **_kwargs: Any) -> DummyComponent:
         """Return self for bind_visibility_from chaining."""
         return self
 
-    def props(self, *_args: Any, **_kwargs: Any) -> "DummyComponent":
+    def props(self, *_args: Any, **_kwargs: Any) -> DummyComponent:
         """Return self for props chaining."""
         return self
 
@@ -61,7 +62,7 @@ class DummyComponent:
 class DummyContext(DummyComponent):
     """Context-manager capable component stub."""
 
-    def __enter__(self) -> "DummyContext":
+    def __enter__(self) -> DummyContext:
         return self
 
     def __exit__(
@@ -69,8 +70,9 @@ class DummyContext(DummyComponent):
         exc_type: type[BaseException] | None,
         exc: BaseException | None,
         tb: TracebackType | None,
-    ) -> bool:
-        return False
+    ) -> None:
+        """Exit method that does nothing."""
+        pass
 
 
 class DummyTab(DummyComponent):

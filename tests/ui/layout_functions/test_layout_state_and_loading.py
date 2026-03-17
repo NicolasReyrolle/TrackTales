@@ -1,7 +1,5 @@
 """Focused tests for ui.layout state/scheduling/loading branches."""
 
-# pylint: disable=protected-access
-
 from __future__ import annotations
 
 import asyncio
@@ -413,7 +411,7 @@ async def test_pick_file_notifies_or_sets_input_value() -> None:
     """pick_file should notify when no file selected and update state when selected."""
     had_input_file = hasattr(state, "input_file")
     original_input = getattr(state, "input_file", None)
-    state.input_file = SimpleNamespace(value="")  # type: ignore[attr-defined]
+    state.input_file = SimpleNamespace(value="")  # type: ignore[assignment]
 
     try:
         with patch("ui.layout.LocalFilePicker", new=AsyncMock(return_value=[])):
@@ -426,7 +424,7 @@ async def test_pick_file_notifies_or_sets_input_value() -> None:
         assert state.input_file.value == "C:/x.zip"
     finally:
         if had_input_file:
-            state.input_file = original_input  # type: ignore[attr-defined]
+            state.input_file = original_input  # type: ignore[assignment]
         else:
             delattr(state, "input_file")
 
@@ -443,7 +441,7 @@ async def test_load_file_guards_success_and_error() -> None:
     original_workouts = state.workouts
     original_records = state.records_by_type
 
-    state.input_file = SimpleNamespace(value="")  # type: ignore[attr-defined]
+    state.input_file = SimpleNamespace(value="")  # type: ignore[assignment]
     state.loading = False
     state.loading_status = ""
     state.file_loaded = False
@@ -508,7 +506,7 @@ async def test_load_file_guards_success_and_error() -> None:
         assert state.loading_status == ""
     finally:
         if had_input_file:
-            state.input_file = original_input  # type: ignore[attr-defined]
+            state.input_file = original_input  # type: ignore[assignment]
         else:
             delattr(state, "input_file")
         state.loading = original_loading
@@ -527,11 +525,11 @@ def test_render_trends_tab_period_change_schedules_health_load_on_health_tab() -
         def __init__(self, _options: dict[str, str], on_change: Any = None) -> None:
             self.on_change = on_change
 
-        def bind_value(self, *_args: Any, **_kwargs: Any) -> "_DummyRadio":
+        def bind_value(self, *_args: Any, **_kwargs: Any) -> _DummyRadio:
             """Simulate binding that returns self for chaining."""
             return self
 
-        def props(self, *_args: Any, **_kwargs: Any) -> "_DummyRadio":
+        def props(self, *_args: Any, **_kwargs: Any) -> _DummyRadio:
             """Simulate setting props that returns self for chaining."""
             return self
 
@@ -620,11 +618,12 @@ def test_render_header_builds_language_menu_items() -> None:
         def __init__(self, context: bool = False) -> None:
             self._context = context
 
-        def __enter__(self) -> "_DummyButton":
+        def __enter__(self) -> _DummyButton:
             return self
 
-        def __exit__(self, *_args: Any) -> bool:
-            return False
+        def __exit__(self, *_args: Any) -> None:
+            """Exit method that does nothing."""
+            pass
 
     def _button_factory(*_args: Any, **kwargs: Any) -> _DummyButton:
         return _DummyButton(context=kwargs.get("icon") == "language")

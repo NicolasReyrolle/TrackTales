@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union
 
 import pandas as pd
 
@@ -50,8 +49,8 @@ class RecordsByType:
         query_filter: str | None = None,
         round_decimals: int = 2,
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Aggregate avg/min/max/count by period for one record type."""
         df = self.get(record_type)
@@ -81,15 +80,15 @@ class RecordsByType:
             # exclusive next-day boundary. For datetimes with a time component, treat the
             # bound as an exact timestamp and include records up to and including end_ts.
             has_time_component = False
-            if isinstance(end_date, datetime):
-                has_time_component = any(
-                    getattr(end_date, attr) != 0
-                    for attr in ("hour", "minute", "second", "microsecond")
-                )
-            elif isinstance(end_date, pd.Timestamp):
+            if isinstance(end_date, pd.Timestamp):
                 has_time_component = any(
                     getattr(end_date, attr) != 0
                     for attr in ("hour", "minute", "second", "microsecond", "nanosecond")
+                )
+            else:
+                has_time_component = any(
+                    getattr(end_date, attr) != 0
+                    for attr in ("hour", "minute", "second", "microsecond")
                 )
             if has_time_component:
                 work = work[work[date_col] <= end_ts]
@@ -100,7 +99,7 @@ class RecordsByType:
         if work.empty:
             return pd.DataFrame(columns=["period", "avg", "min", "max", "count"])
 
-        result = (
+        result: pd.DataFrame = (
             work.groupby(work[date_col].dt.to_period(period))[value_col]
             .agg(avg="mean", min="min", max="max", count="count")
             .reset_index()
@@ -119,9 +118,9 @@ class RecordsByType:
             result = (
                 result.set_index("period").reindex(full_range).rename_axis("period").reset_index()
             )
-            result[["avg", "min", "max"]] = result[["avg", "min", "max"]].where(
-                result[["avg", "min", "max"]].notna(), pd.NA  # type: ignore[arg-type]
-            )
+            cols = ["avg", "min", "max"]
+            result = result.astype(dict.fromkeys(cols, "Float64"))
+
             result["count"] = result["count"].fillna(0)
             result["count"] = result["count"].astype(int)
 
@@ -133,8 +132,8 @@ class RecordsByType:
         context: HeartRateMeasureContext | None = None,
         round_decimals: int = 2,
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Return aggregated heart rate stats by period."""
         heart_rate_df = self.heart_rate()
@@ -157,8 +156,8 @@ class RecordsByType:
         period: str = "M",
         round_decimals: int = 2,
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Return aggregated weight stats by period."""
         return self.stats_by_period(
@@ -175,8 +174,8 @@ class RecordsByType:
         period: str = "M",
         round_decimals: int = 2,
         fill_missing_periods: bool = True,
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Return aggregated VO2 max stats by period."""
         return self.stats_by_period(

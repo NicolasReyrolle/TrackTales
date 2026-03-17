@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pandas as pd
 
@@ -17,20 +17,20 @@ class WorkoutManagerExportMixin:
     def _filter_workouts(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         raise NotImplementedError
 
-    def _get_filtered_columns(self, exclude_columns: Optional[set[str]] = None) -> List[str]:
+    def _get_filtered_columns(self, exclude_columns: set[str] | None = None) -> list[str]:
         raise NotImplementedError
 
     def get_total_distance(
         self,
         activity_type: str = "All",
         unit: str = "km",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total distance in the specified unit."""
         raise NotImplementedError
@@ -54,9 +54,9 @@ class WorkoutManagerExportMixin:
     def export_to_json(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        exclude_columns: Optional[set[str]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+        exclude_columns: set[str] | None = None,
     ) -> str:
         """Export to JSON: Schema first, specific column order, no nulls. Return JSON string."""
         cols_to_keep = self._get_filtered_columns(exclude_columns)
@@ -68,7 +68,7 @@ class WorkoutManagerExportMixin:
 
         column_priority = {"index": 0, "startDate": 1, "endDate": 2}
 
-        cleaned_data: List[Dict[str, Any]] = []
+        cleaned_data: list[dict[str, Any]] = []
         for row in raw_obj.get("data", []):
             valid_items = {k: v for k, v in row.items() if v is not None}
             sorted_keys = sorted(
@@ -78,7 +78,7 @@ class WorkoutManagerExportMixin:
 
         cleaned_data.sort(key=lambda x: x.get("startDate", ""))
 
-        final_obj: Dict[str, Any] = {
+        final_obj: dict[str, Any] = {
             "schema": raw_obj.get("schema"),
             "data": cleaned_data,
         }
@@ -88,9 +88,9 @@ class WorkoutManagerExportMixin:
     def export_to_csv(
         self,
         activity_type: str = "All",
-        start_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        end_date: Optional[Union[datetime, pd.Timestamp]] = None,
-        exclude_columns: Optional[set[str]] = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+        exclude_columns: set[str] | None = None,
     ) -> str:
         """Export workouts to a CSV format, returns the CSV string."""
         cols_to_keep = self._get_filtered_columns(exclude_columns)
@@ -112,16 +112,17 @@ class WorkoutManagerExportMixin:
             empty_df = pd.DataFrame(columns=cols_to_keep)
             return empty_df.to_csv(index=False)
 
-        return filtered_workouts[cols_to_keep].to_csv(index=False)
+        result: str = filtered_workouts[cols_to_keep].to_csv(index=False)
+        return result
 
     def get_date_bounds(self) -> tuple[str, str]:
         """Return the minimum and maximum start dates as strings in YYYY/MM/DD."""
         if self.workouts.empty or "startDate" not in self.workouts.columns:
             return "2000/01/01", datetime.now().strftime(self.DATE_FORMAT)
 
-        start_dates = [w.startDate for w in self.workouts.itertuples()]
+        start_dates: list[datetime] = [ts.to_pydatetime() for ts in self.workouts["startDate"]]
 
         return (
-            min(start_dates).strftime(self.DATE_FORMAT),  # type: ignore[arg-type,union-attr]
-            max(start_dates).strftime(self.DATE_FORMAT),  # type: ignore[arg-type,union-attr]
+            min(start_dates).strftime(self.DATE_FORMAT),
+            max(start_dates).strftime(self.DATE_FORMAT),
         )

@@ -120,7 +120,7 @@ class WorkoutManagerExportMixin:
         if self.workouts.empty or "startDate" not in self.workouts.columns:
             return "2000/01/01", datetime.now().strftime(self.DATE_FORMAT)
 
-        start_dates: list[datetime] = self.workouts["startDate"].dt.to_pydatetime().tolist()
+        start_dates: list[datetime] = [ts.to_pydatetime() for ts in self.workouts["startDate"]]
 
         return (
             min(start_dates).strftime(self.DATE_FORMAT),

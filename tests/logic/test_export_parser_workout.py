@@ -13,7 +13,7 @@ class TestCreateWorkoutRecord:
     """Test the _create_workout_record method."""
 
     # pylint: disable=protected-access
-    def test_create_workout_record_with_all_attributes(self):
+    def test_create_workout_record_with_all_attributes(self) -> None:
         """Test creating a workout record with all attributes."""
         elem = Element(
             "Workout",
@@ -35,7 +35,7 @@ class TestCreateWorkoutRecord:
         assert record.get("endDate") == "2024-01-01 10:30:00"
         assert record.get("source") == "Apple Watch"
 
-    def test_create_workout_record_with_missing_attributes(self):
+    def test_create_workout_record_with_missing_attributes(self) -> None:
         """Test creating a workout record with missing attributes."""
         elem = Element("Workout", attrib={"workoutActivityType": "HKWorkoutActivityTypeRunning"})
         parser = ep.ExportParser()
@@ -52,7 +52,7 @@ class TestProcessWorkoutStatistics:
     """Test the _process_workout_statistics method."""
 
     # pylint: disable=protected-access
-    def test_process_workout_statistics_with_sum(self):
+    def test_process_workout_statistics_with_sum(self) -> None:
         """Test processing workout statistics with sum value."""
         elem = Element(
             "WorkoutStatistics",
@@ -70,7 +70,7 @@ class TestProcessWorkoutStatistics:
         assert isinstance(record.get("distance"), int)
         assert record.get("distance") == 5200
 
-    def test_process_workout_statistics_with_average(self):
+    def test_process_workout_statistics_with_average(self) -> None:
         """Test processing workout statistics with average value."""
         elem = Element(
             "WorkoutStatistics",
@@ -89,7 +89,7 @@ class TestProcessWorkoutStatistics:
         assert record.get("averageHeartRate") == 150
         assert record.get("averageHeartRateUnit") == "count/min"
 
-    def test_process_workout_statistics_with_multiple_values(self):
+    def test_process_workout_statistics_with_multiple_values(self) -> None:
         """Test processing workout statistics with multiple values."""
         elem = Element(
             "WorkoutStatistics",
@@ -112,7 +112,7 @@ class TestProcessWorkoutStatistics:
         assert record.get("maximumSpeed") == pytest.approx(12.0)  # type: ignore[misc]
         assert record.get("maximumSpeedUnit") == "km/h"
 
-    def test_process_workout_statistics_with_no_values(self):
+    def test_process_workout_statistics_with_no_values(self) -> None:
         """Test processing workout statistics with no values (all attributes missing)."""
         elem = Element(
             "WorkoutStatistics",
@@ -128,7 +128,7 @@ class TestProcessWorkoutStatistics:
         # Should not add any statistics since no values are present
         assert len(record) == 1  # Only activityType
 
-    def test_process_workout_statistics_with_distance_swimming(self):
+    def test_process_workout_statistics_with_distance_swimming(self) -> None:
         """Test processing workout statistics for swimming distance."""
         elem = Element(
             "WorkoutStatistics",
@@ -146,7 +146,7 @@ class TestProcessWorkoutStatistics:
         assert isinstance(record.get("distance"), int)
         assert record.get("distance") == 2500
 
-    def test_process_workout_statistics_with_distance_cycling(self):
+    def test_process_workout_statistics_with_distance_cycling(self) -> None:
         """Test processing workout statistics for cycling distance."""
         elem = Element(
             "WorkoutStatistics",
@@ -169,7 +169,7 @@ class TestProcessMetadataEntry:
     """Test the _process_metadata_entry method."""
 
     # pylint: disable=protected-access
-    def test_process_metadata_entry_with_simple_value(self):
+    def test_process_metadata_entry_with_simple_value(self) -> None:
         """Test processing a simple metadata entry."""
         elem = Element(
             "MetadataEntry",
@@ -182,7 +182,7 @@ class TestProcessMetadataEntry:
 
         assert record.get("MetadataKeyTimeZone") == "Europe/Luxembourg"
 
-    def test_process_metadata_entry_with_value_and_unit(self):
+    def test_process_metadata_entry_with_value_and_unit(self) -> None:
         """Test processing metadata entry with value and unit."""
         elem = Element(
             "MetadataEntry",
@@ -198,7 +198,7 @@ class TestProcessMetadataEntry:
         )
         assert record.get("MetadataKeyElevationAscendedUnit") == "m"
 
-    def test_process_metadata_entry_with_boolean_conversion(self):
+    def test_process_metadata_entry_with_boolean_conversion(self) -> None:
         """Test metadata entry with boolean conversion."""
         elem = Element(
             "MetadataEntry",

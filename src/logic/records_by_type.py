@@ -99,7 +99,7 @@ class RecordsByType:
         if work.empty:
             return pd.DataFrame(columns=["period", "avg", "min", "max", "count"])
 
-        result = (
+        result: pd.DataFrame = (
             work.groupby(work[date_col].dt.to_period(period))[value_col]
             .agg(avg="mean", min="min", max="max", count="count")
             .reset_index()

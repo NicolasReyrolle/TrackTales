@@ -19,8 +19,9 @@ class _DummyRow:
         exc_type: type[BaseException] | None,
         exc: BaseException | None,
         tb: TracebackType | None,
-    ) -> bool:
-        return False
+    ) -> None:
+        """Exit method that does nothing."""
+        pass
 
     def classes(self, *_args: Any, **_kwargs: Any) -> _DummyRow:
         """Mock method to allow chaining."""
@@ -335,9 +336,9 @@ def test_render_header_dark_mode_callbacks_update_state_and_refresh_graphs() -> 
             exc_type: type[BaseException] | None,
             exc: BaseException | None,
             tb: TracebackType | None,
-        ) -> bool:
-            """Exit context manager without swallowing exceptions."""
-            return False
+        ) -> None:
+            """Exit method that does nothing."""
+            pass
 
     class _DummyImage:  # pylint: disable=too-few-public-methods
         """Minimal image stub supporting classes() chaining."""

@@ -22,8 +22,9 @@ class DummyRow:
         exc_type: type[BaseException] | None,
         exc: BaseException | None,
         tb: TracebackType | None,
-    ) -> bool:
-        return False
+    ) -> None:
+        """Exit method that does nothing."""
+        pass
 
     def classes(self, *_args: Any, **_kwargs: Any) -> DummyRow:
         """Mock method to allow chaining."""
@@ -69,8 +70,9 @@ class DummyContext(DummyComponent):
         exc_type: type[BaseException] | None,
         exc: BaseException | None,
         tb: TracebackType | None,
-    ) -> bool:
-        return False
+    ) -> None:
+        """Exit method that does nothing."""
+        pass
 
 
 class DummyTab(DummyComponent):

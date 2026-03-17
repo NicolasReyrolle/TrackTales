@@ -112,16 +112,17 @@ class WorkoutManagerExportMixin:
             empty_df = pd.DataFrame(columns=cols_to_keep)
             return empty_df.to_csv(index=False)
 
-        return filtered_workouts[cols_to_keep].to_csv(index=False)
+        result: str = filtered_workouts[cols_to_keep].to_csv(index=False)
+        return result
 
     def get_date_bounds(self) -> tuple[str, str]:
         """Return the minimum and maximum start dates as strings in YYYY/MM/DD."""
         if self.workouts.empty or "startDate" not in self.workouts.columns:
             return "2000/01/01", datetime.now().strftime(self.DATE_FORMAT)
 
-        start_dates = [w.startDate for w in self.workouts.itertuples()]
+        start_dates: list[datetime] = self.workouts["startDate"].dt.to_pydatetime().tolist()
 
         return (
-            min(start_dates).strftime(self.DATE_FORMAT),  # type: ignore[arg-type,union-attr]
-            max(start_dates).strftime(self.DATE_FORMAT),  # type: ignore[arg-type,union-attr]
+            min(start_dates).strftime(self.DATE_FORMAT),
+            max(start_dates).strftime(self.DATE_FORMAT),
         )

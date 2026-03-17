@@ -192,9 +192,9 @@ def format_distance_label(
     return f"{distance_m / 1000:.1f} km"
 
 
-def format_duration_label(duration_s: float) -> str:
+def format_duration_label(duration_s: float | None) -> str:
     """Format a duration in seconds into a human-readable label."""
-    total_seconds = max(0, int(round(duration_s)))
+    total_seconds = max(0, int(round(duration_s))) if duration_s is not None else 0
     hours, remaining = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remaining, 60)
 

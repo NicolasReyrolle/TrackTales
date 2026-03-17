@@ -223,7 +223,7 @@ class TestHandleOk:
         picker.grid = MagicMock()
 
         # Mock get_selected_rows to return a coroutine
-        async def async_get_selected_rows():
+        async def async_get_selected_rows():  # noqa:S7503
             return [{"path": str(file_path)}]
 
         picker.grid.get_selected_rows = async_get_selected_rows
@@ -247,7 +247,7 @@ class TestHandleOk:
         picker.grid = MagicMock()
 
         # Mock get_selected_rows to return a coroutine
-        async def async_get_selected_rows():
+        async def async_get_selected_rows():  # noqa:S7503
             return [{"path": str(file1)}, {"path": str(file2)}]
 
         picker.grid.get_selected_rows = async_get_selected_rows
@@ -394,8 +394,9 @@ class TestLocalFilePickerInit:
                 exc_type: type[BaseException] | None,
                 exc: BaseException | None,
                 tb: TracebackType | None,
-            ) -> bool:
-                return False
+            ) -> None:
+                """Exit method that does nothing."""
+                pass
 
             def classes(self, *_args: Any, **_kwargs: Any):
                 """Dummy method to allow chaining."""

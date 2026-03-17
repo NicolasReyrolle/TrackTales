@@ -19,12 +19,14 @@ from ._helpers import DummyComponent, DummyContext, DummyTab, DummyTable, DummyT
 
 def _annotate_with_missing_power(df: pd.DataFrame, _running_power_df: object) -> pd.DataFrame:
     """Return a copy with missing segment power values."""
-    return df.assign(segment_avg_power=None)
+    result: pd.DataFrame = df.assign(segment_avg_power=None)
+    return result
 
 
 def _annotate_with_nan_power(df: pd.DataFrame, _running_power_df: object) -> pd.DataFrame:
     """Return a copy with NaN segment power values."""
-    return df.assign(segment_avg_power=float("nan"))
+    result: pd.DataFrame = df.assign(segment_avg_power=float("nan"))
+    return result
 
 
 def _annotate_passthrough(df: pd.DataFrame, _running_power_df: object) -> pd.DataFrame:

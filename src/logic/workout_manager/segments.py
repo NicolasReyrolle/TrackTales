@@ -111,7 +111,8 @@ class WorkoutManagerSegmentsMixin:
             results, columns=["startDate", "distance", "duration_s", "segment_start", "segment_end"]
         )
         df = df.sort_values(["distance", "duration_s"], ascending=[True, True])
-        return df.groupby("distance").head(topn).reset_index(drop=True)
+        result: pd.DataFrame = df.groupby("distance").head(topn).reset_index(drop=True)
+        return result
 
     @staticmethod
     def _get_fastest_segment_window(
@@ -171,16 +172,16 @@ class WorkoutManagerSegmentsMixin:
         end_date: datetime | pd.Timestamp | None,
     ) -> pd.DataFrame:
         """Fallback: filter running workouts with local logic and end-date handling."""
-        runs = self.workouts[self.workouts["activityType"] == "Running"]
+        runs: pd.DataFrame = self.workouts[self.workouts["activityType"] == "Running"]
         if start_date is not None:
-            runs = runs[runs["startDate"] >= pd.Timestamp(start_date)]
+            runs = runs.loc[runs["startDate"] >= pd.Timestamp(start_date)]
         if end_date is not None:
             end_ts = pd.Timestamp(end_date)
             is_date_only = end_ts.normalize() == end_ts
             if is_date_only:
-                runs = runs[runs["startDate"] < end_ts + pd.Timedelta(days=1)]
+                runs = runs.loc[runs["startDate"] < end_ts + pd.Timedelta(days=1)]
             else:
-                runs = runs[runs["startDate"] <= end_ts]
+                runs = runs.loc[runs["startDate"] <= end_ts]
         return runs
 
     def get_best_segments(
@@ -444,7 +445,7 @@ class WorkoutManagerSegmentsMixin:
             (float Watts, or ``None``) and ``segment_power_confidence`` with one of:
             ``measured``, ``overlap_estimated``, ``workout_fallback``, ``missing``.
         """
-        result = segments.copy()
+        result: pd.DataFrame = segments.copy()
         if segments.empty or "segment_start" not in segments.columns:
             result["segment_avg_power"] = None
             result["segment_power_confidence"] = "missing"

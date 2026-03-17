@@ -363,8 +363,8 @@ class ExportParser:
                         stat_attr_str, child.get("unit")
                     )
                 else:
-                    record[f"{stat_attr}{stat_type}"] = float(stat_attr_str)
-                    record[f"{stat_attr}{stat_type}Unit"] = child.get("unit")
+                    record[f"{stat_attr}{stat_type}"] = float(stat_attr_str)  # type: ignore
+                    record[f"{stat_attr}{stat_type}Unit"] = child.get("unit")  # type: ignore
 
     @staticmethod
     def _parse_gpx_speed(ext_elem: Element | None) -> float:
@@ -578,9 +578,9 @@ class ExportParser:
         if key in record:
             logging.debug("Duplicate key '%s' found, bypassing the second one", key)
         else:
-            record[key] = value
+            record[key] = value  # type: ignore
             if unit:
-                record[f"{key}Unit"] = unit
+                record[f"{key}Unit"] = unit  # type: ignore
 
     def parse(self, export_file: str) -> ParsedHealthData:
         """Parse the export file."""

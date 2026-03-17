@@ -101,7 +101,7 @@ class TestFileBrowsing:
             input_elements = list(user.find("Apple Health export file").elements)
             input_field = input_elements[0] if input_elements else None
             assert input_field is not None
-            actual_value = input_field.value  # type: ignore[union-attr]
+            actual_value = input_field.value  # type: ignore[attr-defined]
             assert actual_value == "", "Input should start empty"
 
             # Click Browse
@@ -109,8 +109,8 @@ class TestFileBrowsing:
             await asyncio.sleep(1.0)
 
             # Check if value was set
-            assert fake_path in input_field.value, (  # type: ignore[union-attr]
-                f"Expected {fake_path} in {input_field.value}"  # type: ignore[union-attr]
+            assert fake_path in input_field.value, (  # type: ignore[attr-defined]
+                f"Expected {fake_path} in {input_field.value}"  # type: ignore[attr-defined]
             )
 
 

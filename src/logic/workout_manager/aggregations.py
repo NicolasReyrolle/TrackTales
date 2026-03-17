@@ -17,7 +17,9 @@ class WorkoutManagerAggregationsMixin:
         """Return the list of unique activity types."""
         if self.workouts.empty or "activityType" not in self.workouts.columns:
             return []
-        return self.workouts["activityType"].dropna().unique().tolist()
+
+        result: list[str] = self.workouts["activityType"].dropna().unique().tolist()
+        return result
 
     def _filter_workouts(
         self,
@@ -26,21 +28,21 @@ class WorkoutManagerAggregationsMixin:
         end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Filter workouts by activity type and/or date range."""
-        workouts = self.workouts
+        workouts: pd.DataFrame = self.workouts
 
         if activity_type != "All":
-            workouts = workouts[workouts["activityType"] == activity_type]
+            workouts = workouts.loc[workouts["activityType"] == activity_type]
 
         if "startDate" in workouts.columns:
             if start_date is not None:
-                workouts = workouts[workouts["startDate"] >= pd.Timestamp(start_date)]
+                workouts = workouts.loc[workouts["startDate"] >= pd.Timestamp(start_date)]
             if end_date is not None:
                 end_timestamp = pd.Timestamp(end_date)
                 if self._is_date_only(end_date):
                     next_day = end_timestamp + pd.Timedelta(days=1)
-                    workouts = workouts[workouts["startDate"] < next_day]
+                    workouts = workouts.loc[workouts["startDate"] < next_day]
                 else:
-                    workouts = workouts[workouts["startDate"] <= end_timestamp]
+                    workouts = workouts.loc[workouts["startDate"] <= end_timestamp]
 
         return workouts
 
@@ -48,7 +50,7 @@ class WorkoutManagerAggregationsMixin:
     def _is_date_only(value: datetime | pd.Timestamp) -> bool:
         """Return True when the value represents a date without time-of-day information."""
         timestamp = pd.Timestamp(value)
-        return timestamp == timestamp.normalize()
+        return bool(timestamp == timestamp.normalize())
 
     def _get_filtered_columns(self, exclude_columns: set[str] | None = None) -> list[str]:
         """Return list of columns after applying exclusion filters."""

@@ -92,7 +92,7 @@ def mock_file_picker_context() -> Callable[[str | None], AbstractContextManager[
         class AwaitableMock:
             """Mock class to simulate an awaitable LocalFilePicker."""
 
-            def __await__(self):
+            def __await__(self) -> Generator[Any, None, list[str]]:
                 future: asyncio.Future[list[str]] = asyncio.Future()
                 future.set_result(result_value)
                 return future.__await__()
@@ -105,7 +105,7 @@ def mock_file_picker_context() -> Callable[[str | None], AbstractContextManager[
 
 
 @pytest.fixture(autouse=True, scope="session")
-def setup_test_environment():
+def setup_test_environment() -> Generator[Any, Any, Any]:
     """Fixture to set up a temporary NiceGUI storage path for tests."""
     test_dir = tempfile.mkdtemp()
     os.environ["NICEGUI_STORAGE_PATH"] = test_dir

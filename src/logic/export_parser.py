@@ -363,8 +363,8 @@ class ExportParser:
                         stat_attr_str, child.get("unit")
                     )
                 else:
-                    record[f"{stat_attr}{stat_type}"] = float(stat_attr_str)  # type: ignore
-                    record[f"{stat_attr}{stat_type}Unit"] = child.get("unit")  # type: ignore
+                    record[f"{stat_attr}{stat_type}"] = float(stat_attr_str)  # type: ignore[literal-required]
+                    record[f"{stat_attr}{stat_type}Unit"] = child.get("unit")  # type: ignore[literal-required]
 
     @staticmethod
     def _parse_gpx_speed(ext_elem: Element | None) -> float:
@@ -580,7 +580,7 @@ class ExportParser:
         else:
             record[key] = value  # type: ignore
             if unit:
-                record[f"{key}Unit"] = unit  # type: ignore
+                record[f"{key}Unit"] = unit  # type: ignore[literal-required]
 
     def parse(self, export_file: str) -> ParsedHealthData:
         """Parse the export file."""

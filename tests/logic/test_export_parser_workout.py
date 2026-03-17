@@ -12,7 +12,6 @@ import logic.export_parser as ep
 class TestCreateWorkoutRecord:
     """Test the _create_workout_record method."""
 
-    # pylint: disable=protected-access
     def test_create_workout_record_with_all_attributes(self) -> None:
         """Test creating a workout record with all attributes."""
         elem = Element(

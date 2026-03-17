@@ -54,7 +54,7 @@ def test_module_logger_exists() -> None:
     assert hasattr(layout, "_logger"), "layout module should have _logger attribute"
     assert isinstance(
         layout._logger,
-        logging.Logger,  # type: ignore[attr-defined]  # pylint: disable=protected-access
+        logging.Logger,  # type: ignore[attr-defined]
     ), "_logger should be a Logger instance"
     assert (
         layout._logger.name == "ui.layout"  # type: ignore[attr-defined]  # pylint: disable=protected-access

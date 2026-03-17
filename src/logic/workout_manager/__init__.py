@@ -1,7 +1,5 @@
 """Workout manager package and public compatibility exports."""
 
-from datetime import datetime
-
 from .manager import (
     HALF_MARATHON_DISTANCE_M,
     MARATHON_DISTANCE_M,
@@ -14,19 +12,9 @@ from .segments import CriticalPowerResult
 
 
 class WorkoutManager(_WorkoutManager):
-    """Compatibility wrapper exposing package-level datetime monkeypatch point."""
+    """Compatibility wrapper for package-level imports."""
 
-    def get_date_bounds(self) -> tuple[str, str]:
-        """Return the minimum and maximum start dates as strings in YYYY/MM/DD."""
-        if self.workouts.empty or "startDate" not in self.workouts.columns:
-            return "2000/01/01", datetime.now().strftime(self.DATE_FORMAT)
-
-        start_dates: list[datetime] = [ts.to_pydatetime() for ts in self.workouts["startDate"]]
-
-        return (
-            min(start_dates).strftime(self.DATE_FORMAT),
-            max(start_dates).strftime(self.DATE_FORMAT),
-        )
+    pass
 
 
 __all__ = [
@@ -35,5 +23,4 @@ __all__ = [
     "HALF_MARATHON_DISTANCE_M",
     "MARATHON_DISTANCE_M",
     "CriticalPowerResult",
-    "datetime",
 ]

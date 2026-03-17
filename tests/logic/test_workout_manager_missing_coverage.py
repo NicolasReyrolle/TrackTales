@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 import logic.workout_manager as wm
+import logic.workout_manager.export as wm_export
 
 
 class TestGetDistanceByActivityUnits:
@@ -484,7 +485,7 @@ class TestGetDateBounds:
             def now(cls, tz=None) -> datetime:  # type: ignore[override]
                 return cls(2024, 1, 2)
 
-        monkeypatch.setattr(wm, "datetime", _FixedDatetime)
+        monkeypatch.setattr(wm_export, "datetime", _FixedDatetime)
 
         manager = wm.WorkoutManager()
 
@@ -500,7 +501,7 @@ class TestGetDateBounds:
             def now(cls, tz=None) -> datetime:  # type: ignore[override]
                 return cls(2024, 1, 2)
 
-        monkeypatch.setattr(wm, "datetime", _FixedDatetime)
+        monkeypatch.setattr(wm_export, "datetime", _FixedDatetime)
 
         manager = wm.WorkoutManager(pd.DataFrame({"activityType": ["Running"]}))
 

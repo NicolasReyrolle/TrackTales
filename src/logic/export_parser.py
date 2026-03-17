@@ -578,7 +578,7 @@ class ExportParser:
         if key in record:
             logging.debug("Duplicate key '%s' found, bypassing the second one", key)
         else:
-            record[key] = value  # type: ignore
+            record[key] = value  # type: ignore[literal-required]
             if unit:
                 record[f"{key}Unit"] = unit  # type: ignore[literal-required]
 

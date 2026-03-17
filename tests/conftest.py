@@ -269,7 +269,7 @@ def clean_logger() -> Generator[logging.Logger, None, None]:
     logger = logging.getLogger()
 
     # Pre-cleanup: close and remove any existing handlers from previous tests
-    for handler in list(logger.handlers):  # noqa:S7504
+    for handler in list(logger.handlers):  # noqa: S7504
         try:
             handler.close()
         except (OSError, ValueError):
@@ -287,7 +287,7 @@ def clean_logger() -> Generator[logging.Logger, None, None]:
     yield logger
 
     # Post-cleanup: close and remove all handlers added during the test
-    for handler in list(logger.handlers):  # noqa:S7504
+    for handler in list(logger.handlers):  # noqa: S7504
         try:
             handler.close()
         except (OSError, ValueError):

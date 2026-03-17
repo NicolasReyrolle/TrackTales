@@ -150,11 +150,7 @@ class WorkoutManagerAggregationsMixin:
         if workouts.empty:
             return {}
 
-        grouped = aggregation(
-            workouts.groupby(
-                workouts["startDate"].dt.to_period(period)
-            )[column]
-        )
+        grouped = aggregation(workouts.groupby(workouts["startDate"].dt.to_period(period))[column])
 
         if grouped.empty:
             return {}

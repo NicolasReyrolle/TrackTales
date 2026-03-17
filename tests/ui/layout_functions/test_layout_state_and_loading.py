@@ -527,11 +527,11 @@ def test_render_trends_tab_period_change_schedules_health_load_on_health_tab() -
         def __init__(self, _options: dict[str, str], on_change: Any = None) -> None:
             self.on_change = on_change
 
-        def bind_value(self, *_args: Any, **_kwargs: Any) -> "_DummyRadio":
+        def bind_value(self, *_args: Any, **_kwargs: Any) -> _DummyRadio:
             """Simulate binding that returns self for chaining."""
             return self
 
-        def props(self, *_args: Any, **_kwargs: Any) -> "_DummyRadio":
+        def props(self, *_args: Any, **_kwargs: Any) -> _DummyRadio:
             """Simulate setting props that returns self for chaining."""
             return self
 
@@ -620,7 +620,7 @@ def test_render_header_builds_language_menu_items() -> None:
         def __init__(self, context: bool = False) -> None:
             self._context = context
 
-        def __enter__(self) -> "_DummyButton":
+        def __enter__(self) -> _DummyButton:
             return self
 
         def __exit__(self, *_args: Any) -> bool:

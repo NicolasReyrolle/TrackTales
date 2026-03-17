@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from types import SimpleNamespace
-from typing import Any, Callable, cast
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
@@ -340,7 +341,7 @@ class TestBestSegmentsTabData:
                 """Store tuple-like records to return from itertuples."""
                 self._records = records
 
-            def sort_values(self, _column: str) -> "_GroupFrame":
+            def sort_values(self, _column: str) -> _GroupFrame:
                 """Return self to mimic DataFrame sorting chain."""
                 return self
 
@@ -383,9 +384,7 @@ class TestBestSegmentsTabData:
             state.date_range_text = ""
             build_rows = cast(
                 Callable[[], list[dict[str, Any]]],
-                getattr(
-                    best_segments_module, "_build_best_segments_rows"
-                ),  # pyright: ignore[reportPrivateUsage]
+                getattr(best_segments_module, "_build_best_segments_rows"),  # pyright: ignore[reportPrivateUsage]
             )
             with patch("ui.best_segments.get_language", return_value="en"):
                 rows = build_rows()

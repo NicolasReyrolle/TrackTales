@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
-from types import TracebackType
+from types import SimpleNamespace, TracebackType
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -23,7 +22,7 @@ class _DummyRow:
     ) -> bool:
         return False
 
-    def classes(self, *_args: Any, **_kwargs: Any) -> "_DummyRow":
+    def classes(self, *_args: Any, **_kwargs: Any) -> _DummyRow:
         """Mock method to allow chaining."""
         return self
 
@@ -34,13 +33,13 @@ class _DummyRadio:
         self.target: Any | None = None
         self.key: str | None = None
 
-    def bind_value(self, _target: Any, _key: str) -> "_DummyRadio":
+    def bind_value(self, _target: Any, _key: str) -> _DummyRadio:
         """Mock bind_value to capture binding information."""
         self.target = _target
         self.key = _key
         return self
 
-    def props(self, *_args: Any, **_kwargs: Any) -> "_DummyRadio":
+    def props(self, *_args: Any, **_kwargs: Any) -> _DummyRadio:
         """Mock props to enable chaining."""
         return self
 
@@ -48,19 +47,19 @@ class _DummyRadio:
 class _DummyInput:
     """Mock input component to test method chaining in render_date_range_selector."""
 
-    def classes(self, *_args: Any, **_kwargs: Any) -> "_DummyInput":
+    def classes(self, *_args: Any, **_kwargs: Any) -> _DummyInput:
         """Mock classes to enable chaining."""
         return self
 
-    def bind_enabled_from(self, *_args: Any, **_kwargs: Any) -> "_DummyInput":
+    def bind_enabled_from(self, *_args: Any, **_kwargs: Any) -> _DummyInput:
         """Mock bind_enabled_from to enable chaining."""
         return self
 
-    def bind_value(self, *_args: Any, **_kwargs: Any) -> "_DummyInput":
+    def bind_value(self, *_args: Any, **_kwargs: Any) -> _DummyInput:
         """Mock bind_value to enable chaining."""
         return self
 
-    def props(self, *_args: Any, **_kwargs: Any) -> "_DummyInput":
+    def props(self, *_args: Any, **_kwargs: Any) -> _DummyInput:
         """Mock props to enable chaining."""
         return self
 
@@ -71,16 +70,16 @@ class _DummyDate:
     def __init__(self) -> None:
         self.props_arg = ""
 
-    def props(self, value: str) -> "_DummyDate":
+    def props(self, value: str) -> _DummyDate:
         """Mock props to capture arguments and enable chaining."""
         self.props_arg = value
         return self
 
-    def bind_value(self, *_args: Any, **_kwargs: Any) -> "_DummyDate":
+    def bind_value(self, *_args: Any, **_kwargs: Any) -> _DummyDate:
         """Mock bind_value to enable chaining."""
         return self
 
-    def bind_enabled_from(self, *_args: Any, **_kwargs: Any) -> "_DummyDate":
+    def bind_enabled_from(self, *_args: Any, **_kwargs: Any) -> _DummyDate:
         """Mock bind_enabled_from to enable chaining."""
         return self
 
@@ -317,15 +316,15 @@ def test_render_header_dark_mode_callbacks_update_state_and_refresh_graphs() -> 
             self.on_click = on_click
             self._context = context
 
-        def bind_visibility_from(self, *_args: Any, **_kwargs: Any) -> "_DummyButton":
+        def bind_visibility_from(self, *_args: Any, **_kwargs: Any) -> _DummyButton:
             """Support NiceGUI-style chaining."""
             return self
 
-        def props(self, *_args: Any, **_kwargs: Any) -> "_DummyButton":
+        def props(self, *_args: Any, **_kwargs: Any) -> _DummyButton:
             """Support NiceGUI-style chaining."""
             return self
 
-        def __enter__(self) -> "_DummyButton":
+        def __enter__(self) -> _DummyButton:
             """Enter context only for context-enabled buttons."""
             if not self._context:
                 raise RuntimeError("not a context button")
@@ -343,14 +342,14 @@ def test_render_header_dark_mode_callbacks_update_state_and_refresh_graphs() -> 
     class _DummyImage:  # pylint: disable=too-few-public-methods
         """Minimal image stub supporting classes() chaining."""
 
-        def classes(self, *_args: Any, **_kwargs: Any) -> "_DummyImage":
+        def classes(self, *_args: Any, **_kwargs: Any) -> _DummyImage:
             """Support NiceGUI-style chaining."""
             return self
 
     class _DummyLabel:  # pylint: disable=too-few-public-methods
         """Minimal label stub supporting classes() chaining."""
 
-        def classes(self, *_args: Any, **_kwargs: Any) -> "_DummyLabel":
+        def classes(self, *_args: Any, **_kwargs: Any) -> _DummyLabel:
             """Support NiceGUI-style chaining."""
             return self
 

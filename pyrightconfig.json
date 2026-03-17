@@ -1,0 +1,7 @@
+{
+  "pythonPath": "./src",
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "basic",
+  "include": ["src", "tests"],
+  "exclude": ["**/node_modules", "**/__pycache__"]
+}

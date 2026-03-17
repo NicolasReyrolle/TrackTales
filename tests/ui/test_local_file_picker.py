@@ -3,7 +3,7 @@
 import sys
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Dict, List, Type, cast
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -34,7 +34,7 @@ class TestUpdateGrid:
 
         # Verify grid was updated and has content
         assert picker.grid.update.called
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
         assert len(options["rowData"]) > 0
 
     def test_update_grid_hides_hidden_files_by_default(self, tmp_path: Path) -> None:
@@ -55,9 +55,9 @@ class TestUpdateGrid:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        file_names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        file_names: list[str] = [r["name"] for r in row_data]
 
         # Hidden file should not be in the list
         assert not any(".hidden" in name for name in file_names)
@@ -80,9 +80,9 @@ class TestUpdateGrid:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        file_names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        file_names: list[str] = [r["name"] for r in row_data]
 
         # Hidden file should be in the list
         assert any(".hidden" in name for name in file_names)
@@ -107,9 +107,9 @@ class TestUpdateGrid:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        names: list[str] = [r["name"] for r in row_data]
 
         # Directories should come before files
         dir_indices = [i for i, n in enumerate(names) if "📁" in n]
@@ -135,9 +135,9 @@ class TestUpdateGrid:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        names: list[str] = [r["name"] for r in row_data]
 
         # Parent directory should be first
         assert any(".." in name for name in names)
@@ -156,9 +156,9 @@ class TestUpdateGrid:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        names: list[str] = [r["name"] for r in row_data]
 
         # Parent directory should not be shown
         assert not any(".." in name for name in names)
@@ -391,7 +391,7 @@ class TestLocalFilePickerInit:
 
             def __exit__(
                 self,
-                exc_type: Type[BaseException] | None,
+                exc_type: type[BaseException] | None,
                 exc: BaseException | None,
                 tb: TracebackType | None,
             ) -> bool:
@@ -414,7 +414,7 @@ class TestLocalFilePickerInit:
 
         def _dialog_exit(
             self: Any,
-            exc_type: Type[BaseException] | None,
+            exc_type: type[BaseException] | None,
             exc: BaseException | None,
             tb: TracebackType | None,
         ) -> bool:
@@ -461,9 +461,9 @@ class TestFileFilter:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        file_names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        file_names: list[str] = [r["name"] for r in row_data]
 
         # Should only show .xml files and directories
         assert any("file1.xml" in name for name in file_names)
@@ -492,9 +492,9 @@ class TestFileFilter:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        file_names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        file_names: list[str] = [r["name"] for r in row_data]
 
         # Should match both uppercase and mixed case extensions
         assert any("file1.XML" in name for name in file_names)
@@ -520,9 +520,9 @@ class TestFileFilter:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        file_names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        file_names: list[str] = [r["name"] for r in row_data]
 
         # All files should be shown
         assert any("file1.xml" in name for name in file_names)
@@ -549,9 +549,9 @@ class TestFileFilter:
         # Call the actual method
         local_file_picker.update_grid(picker)
 
-        options: Dict[str, List[Any]] = picker.grid.options  # type: ignore[assignment]
-        row_data: List[Dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
-        file_names: List[str] = [r["name"] for r in row_data]
+        options: dict[str, list[Any]] = picker.grid.options  # type: ignore[assignment]
+        row_data: list[dict[str, Any]] = options["rowData"]  # type: ignore[assignment]
+        file_names: list[str] = [r["name"] for r in row_data]
 
         # Both directories should be shown regardless of filter
         assert any("docs" in name for name in file_names)

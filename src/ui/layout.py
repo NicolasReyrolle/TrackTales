@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import time
-from collections.abc import Callable, Hashable
+from collections.abc import Callable
 from typing import Any
 
 import pandas as pd
@@ -78,7 +78,7 @@ def schedule_health_data_load(force: bool = False) -> None:
         state.health_data_task.add_done_callback(_clear_completed_task)
 
 
-def _to_json_safe(d: dict[Hashable, Any]) -> dict[str, float | int | None]:
+def _to_json_safe(d: dict[Any, Any]) -> dict[str, float | int | None]:
     """Replace pd.NA/NaN with None for JSON-safe chart data."""
     result: dict[str, float | int | None] = {}
     for key, value in d.items():

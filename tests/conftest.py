@@ -20,7 +20,8 @@ import pytest
 from nicegui.testing import UserInteraction
 
 from app_state import state as app_state
-from tests.types_helper import StateAssertion
+
+from .types_helper import StateAssertion
 
 EXPORT_FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "exports"
 DEFAULT_EXPORT_FIXTURE = "workout_running.xml"

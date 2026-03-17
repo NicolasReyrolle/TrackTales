@@ -1,7 +1,6 @@
 """Tests for UI helper formatting utilities."""
 
 from datetime import datetime
-from typing import Optional
 
 import pytest
 
@@ -16,7 +15,7 @@ def test_format_integer_uses_explicit_locale() -> None:
 def test_format_integer_defaults_to_fallback_locale(monkeypatch: pytest.MonkeyPatch) -> None:
     """Fallback locale should be used when no default is detected."""
 
-    def _no_locale() -> Optional[str]:
+    def _no_locale() -> str | None:
         return None
 
     monkeypatch.setattr(helpers, "default_locale", _no_locale)

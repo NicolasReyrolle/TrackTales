@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
 
@@ -117,11 +117,11 @@ class TestLoadWorkoutsFromFile:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" 
-             startDate="2024-01-01 10:00:00 +0000" 
-             endDate="2024-01-01 11:00:00 +0000" 
-             duration="60" 
-             totalDistance="5.0" 
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+             startDate="2024-01-01 10:00:00 +0000"
+             endDate="2024-01-01 11:00:00 +0000"
+             duration="60"
+             totalDistance="5.0"
              totalEnergyBurned="300"/>
 </HealthData>
 """
@@ -140,9 +140,9 @@ class TestLoadWorkoutsFromFile:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" 
-             startDate="2024-01-01 10:00:00 +0000" 
-             endDate="2024-01-01 11:00:00 +0000" 
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+             startDate="2024-01-01 10:00:00 +0000"
+             endDate="2024-01-01 11:00:00 +0000"
              duration="60"/>
 </HealthData>
 """
@@ -167,9 +167,9 @@ class TestLoadWorkoutsFromFile:
         zip_path = tmp_path / "test_export.zip"
         xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData>
-    <Workout workoutActivityType="HKWorkoutActivityTypeRunning" 
-             startDate="2024-01-01 10:00:00 +0000" 
-             endDate="2024-01-01 11:00:00 +0000" 
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+             startDate="2024-01-01 10:00:00 +0000"
+             endDate="2024-01-01 11:00:00 +0000"
              duration="60"/>
 </HealthData>
 """
@@ -262,7 +262,7 @@ class TestToJsonSafe:
     def test_period_keys_are_converted_to_str(self) -> None:
         """pandas Period keys must be converted to strings so output is JSON-safe."""
         period_key = pd.Period("2025-01", freq="M")
-        result = layout._to_json_safe({period_key: 55.0})
+        result = layout._to_json_safe({period_key: 55.0})  # type: ignore[dict-item]
         assert "2025-01" in result
         json.dumps(result)  # must not raise
 
@@ -299,7 +299,7 @@ class TestToJsonSafe:
         """Mixed input with Period keys, NaN, None, valid numbers must be JSON-safe."""
         p1 = pd.Period("2025-Q1", freq="Q")
         p2 = pd.Period("2025-Q2", freq="Q")
-        mixed: dict[Any, Any] = {p1: 300.0, p2: float("nan"), "2025-Q3": None, "2025-Q4": 250}
+        mixed = cast(dict[Any, Any], {p1: 300.0, p2: float("nan"), "2025-Q3": None, "2025-Q4": 250})  # type: ignore[dict-item]
         result = layout._to_json_safe(mixed)
         serialised = json.dumps(result)
         parsed = json.loads(serialised)

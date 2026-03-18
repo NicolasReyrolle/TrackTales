@@ -151,7 +151,7 @@ class TestAutoLoadFunctionality:
         """Test that the auto-load timer is set up with correct parameters."""
         zip_path = create_health_zip()
 
-        with patch("apple_health_analyzer.ui.timer") as mock_timer:
+        with patch("nicegui.ui.timer") as mock_timer:
             app.storage.general["_dev_file_path"] = zip_path
 
             try:
@@ -259,7 +259,7 @@ class TestAutoLoadFunctionality:
         app.storage.general["_dev_file_path"] = ""
 
         try:
-            with patch("apple_health_analyzer.ui.timer") as mock_timer:
+            with patch("nicegui.ui.timer") as mock_timer:
                 await user.open("/")
                 await asyncio.sleep(0.5)
 

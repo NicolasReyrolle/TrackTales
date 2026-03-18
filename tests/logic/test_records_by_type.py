@@ -8,7 +8,6 @@ import pytest
 
 from logic.export_parser import ExportParser
 from logic.records_by_type import RecordsByType
-from tests.conftest import build_health_export_xml, load_export_fragment
 
 
 class TestRecordsByTypeGetters:
@@ -290,7 +289,10 @@ class TestRecordsByTypeConvenienceStats:
         assert list(result_without_fill["period"].astype(str)) == ["2024-01", "2024-03"]
 
     def test_heart_rate_stats_from_export_sample_zip(
-        self, create_health_zip: Callable[..., str]
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Aggregate heart rate stats from the export_sample.zip fixture."""
         xml_content = build_health_export_xml([load_export_fragment("record_heart_rate.xml")])
@@ -311,7 +313,10 @@ class TestRecordsByTypeConvenienceStats:
         assert (result["avg"] <= result["max"]).all()
 
     def test_vo2_max_stats_from_export_sample_zip(
-        self, create_health_zip: Callable[..., str]
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Aggregate VO2 max stats from the export_sample.zip fixture."""
         xml_content = build_health_export_xml([load_export_fragment("record_vo2_max.xml")])

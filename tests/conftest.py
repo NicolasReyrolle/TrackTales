@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import tempfile
+import uuid
 import zipfile
 from collections.abc import Callable, Generator, Iterator
 from contextlib import AbstractContextManager
@@ -25,54 +26,67 @@ EXPORT_FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "exports"
 DEFAULT_EXPORT_FIXTURE = "workout_running.xml"
 
 
-def load_export_fragment(file_name: str) -> str:
+@pytest.fixture
+def load_export_fragment() -> Callable[[str], str]:
     """Load a workout fragment from the export fixtures directory."""
-    fixture_path = EXPORT_FIXTURES_DIR / file_name
-    return fixture_path.read_text(encoding="utf-8")
+
+    def _loader(file_name: str) -> str:
+        fixture_path = EXPORT_FIXTURES_DIR / file_name
+        return fixture_path.read_text(encoding="utf-8")
+
+    return _loader
 
 
-def build_health_export_xml(workout_fragments: list[str]) -> str:
+@pytest.fixture
+def build_health_export_xml() -> Callable[[list[str]], str]:
     """Wrap workout fragments in a minimal HealthData document."""
-    workouts_xml = "\n".join(workout_fragments)
-    return f"""<?xml version="1.0" encoding="UTF-8"?>
+
+    def _builder(workout_fragments: list[str]) -> str:
+        workouts_xml = "\n".join(workout_fragments)
+        return f"""<?xml version="1.0" encoding="UTF-8"?>
 <HealthData version="11">
     <ExportDate value="2026-01-20 22:00:00 +0100"/>
 {workouts_xml}
 </HealthData>
 """
 
+    return _builder
+
 
 @pytest.fixture
-def create_health_zip() -> Generator[Callable[..., str], None, None]:
+def create_health_zip(
+    tmp_path: Path,
+    load_export_fragment: Callable[[str], str],
+    build_health_export_xml: Callable[[list[str]], str],
+) -> Callable[..., str]:
     """
-    Factory fixture to generate a health export ZIP file.
-    Usage: zip_path = create_health_zip(xml_content=..., fixture_name=...)
+    Factory fixture to generate a temporary Apple Health export ZIP file.
+    Uses tmp_path, which pytest cleans up automatically after each test.
     """
-    temp_dirs: list[str] = []
 
     def _generate(xml_content: str | None = None, fixture_name: str | None = None) -> str:
+        # If no explicit XML content is provided, load it from a fixture file
         if xml_content is None:
             if fixture_name is None:
                 fixture_name = DEFAULT_EXPORT_FIXTURE
-            xml_content = build_health_export_xml([load_export_fragment(fixture_name)])
 
-        # Create a unique temp directory for this specific file
-        temp_dir = tempfile.mkdtemp()
-        temp_dirs.append(temp_dir)
+            fragment = load_export_fragment(fixture_name)
+            xml_content = build_health_export_xml([fragment])
 
-        zip_path = Path(temp_dir) / "export.zip"
+        # Generate a short unique ID for the filename to avoid collisions
+        unique_id = uuid.uuid4().hex[:8]
+        zip_path = tmp_path / f"export_{unique_id}.zip"
         internal_path = "apple_health_export/export.xml"
+
+        # Ensure we have content to write
+        assert xml_content is not None, "XML content must be provided or resolvable"
 
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
             zipf.writestr(internal_path, xml_content)
 
         return str(zip_path)
 
-    yield _generate
-
-    # Cleanup after the test is finished
-    for d in temp_dirs:
-        shutil.rmtree(d, ignore_errors=True)
+    return _generate
 
 
 @pytest.fixture

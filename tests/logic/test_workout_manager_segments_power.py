@@ -1,5 +1,6 @@
 """Tests for WorkoutManager.annotate_segments_with_power."""
 
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,6 @@ import pytest
 from logic.export_parser import ExportParser
 from logic.workout_manager import WorkoutManager
 from logic.workout_route import RoutePoint, WorkoutRoute
-from tests.conftest import build_health_export_xml, load_export_fragment
 
 
 class TestAnnotateSegmentsWithPower:
@@ -146,7 +146,12 @@ class TestAnnotateSegmentsWithPower:
         assert "segment_avg_power" in result.columns
         assert "segment_power_confidence" in result.columns
 
-    def test_real_fixture_2024_12_26_uses_overlap_estimated_power(self, tmp_path: Path) -> None:
+    def test_real_fixture_2024_12_26_uses_overlap_estimated_power(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """Real 2024-12-26 run should compute segment power from overlapping intervals."""
         workout_xml = load_export_fragment("workout_running_too_fast.xml")
         power_xml = load_export_fragment("record_running_power.xml")

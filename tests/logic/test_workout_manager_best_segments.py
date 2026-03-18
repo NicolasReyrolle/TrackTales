@@ -1,5 +1,6 @@
 """Tests for WorkoutManager.get_best_segments and date-filtering."""
 
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from zipfile import ZipFile
@@ -10,7 +11,6 @@ import pytest
 from logic.export_parser import ExportParser
 from logic.workout_manager import WorkoutManager
 from logic.workout_route import RoutePoint, WorkoutRoute
-from tests.conftest import build_health_export_xml, load_export_fragment
 
 
 def _two_point_route(duration_s: int, distance_deg_lon: float = 0.01) -> WorkoutRoute:
@@ -101,7 +101,12 @@ class TestGetBestSegments:
         expected_durations = [pytest.approx(250.0), pytest.approx(400.0)]  # type: ignore[misc]
         assert list(top2["duration_s"]) == expected_durations
 
-    def test_with_real_fixture_running_route(self, tmp_path: Path) -> None:
+    def test_with_real_fixture_running_route(
+        self,
+        tmp_path: Path,
+        build_health_export_xml: Callable[[list[str]], str],
+        load_export_fragment: Callable[[str], str],
+    ) -> None:
         """Existing real fixture should produce a known best traveled 1000m segment."""
         workout_xml = load_export_fragment("workout_running.xml")
         route_file = (
@@ -182,7 +187,12 @@ class TestGetBestSegments:
         assert list(result["distance"]) == [1000]
         assert abs(float(result.iloc[0]["duration_s"]) - 260.0) < 1e-6
 
-    def test_last_unpaired_motion_paused_trims_vehicle_section(self, tmp_path: Path) -> None:
+    def test_last_unpaired_motion_paused_trims_vehicle_section(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """Active-end trimming removes vehicle GPS recorded after forgetting to stop the watch.
 
         Uses the Usain Bolt fixture XML (last MotionPaused at 16:46:13 +0100, no following
@@ -245,7 +255,12 @@ class TestGetBestSegments:
             f"Expected ≥ 100 s (car trimmed, running at 1 m/s), got {duration_s} s"
         )
 
-    def test_real_fixture_too_fast_does_not_generate_one_second_100m(self, tmp_path: Path) -> None:
+    def test_real_fixture_too_fast_does_not_generate_one_second_100m(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """Window clipping and per-part analysis prevent impossible 100m=1s artifacts."""
         workout_xml = load_export_fragment("workout_running_too_fast.xml")
         route_dir = Path(__file__).resolve().parents[1] / "fixtures" / "exports" / "workout-routes"
@@ -272,7 +287,10 @@ class TestGetBestSegments:
         assert duration_s > 1.0
 
     def test_real_fixture_long_distance_includes_half_marathon_segments(
-        self, tmp_path: Path
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Long-distance fixture should produce best segments beyond 5 km."""
         workout_xml = load_export_fragment("workout_running_long_distance.xml")

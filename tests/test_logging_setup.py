@@ -297,8 +297,8 @@ class TestCLIArgumentParsing:
         """Test that --log-level defaults to INFO in the real CLI."""
         with (
             patch("sys.argv", ["apple_health_analyzer.py"]),
-            patch("apple_health_analyzer.setup_logging") as mock_setup_logging,
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             apple_health_analyzer.cli_main()
 
@@ -314,8 +314,8 @@ class TestCLIArgumentParsing:
                 "sys.argv",
                 ["apple_health_analyzer.py", "--log-level", "DEBUG"],
             ),
-            patch("apple_health_analyzer.setup_logging") as mock_setup_logging,
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             apple_health_analyzer.cli_main()
 
@@ -331,8 +331,8 @@ class TestCLIArgumentParsing:
                 "sys.argv",
                 ["apple_health_analyzer.py", "--log-level", "WARNING"],
             ),
-            patch("apple_health_analyzer.setup_logging") as mock_setup_logging,
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             apple_health_analyzer.cli_main()
 
@@ -348,8 +348,8 @@ class TestCLIArgumentParsing:
                 "sys.argv",
                 ["apple_health_analyzer.py", "--log-level", "ERROR"],
             ),
-            patch("apple_health_analyzer.setup_logging") as mock_setup_logging,
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             apple_health_analyzer.cli_main()
 
@@ -362,8 +362,8 @@ class TestCLIArgumentParsing:
         """Test that browser opens by default (show=True)."""
         with (
             patch("sys.argv", ["apple_health_analyzer.py"]),
-            patch("apple_health_analyzer.setup_logging"),
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging"),
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             apple_health_analyzer.cli_main()
 
@@ -376,8 +376,8 @@ class TestCLIArgumentParsing:
         """Test that --no-browser prevents browser from opening (show=False)."""
         with (
             patch("sys.argv", ["apple_health_analyzer.py", "--no-browser"]),
-            patch("apple_health_analyzer.setup_logging"),
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging"),
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             apple_health_analyzer.cli_main()
 
@@ -391,8 +391,8 @@ class TestCLIArgumentParsing:
         with (
             patch("sys.argv", ["apple_health_analyzer.py", "--dev-file", "~/bad/path.zip"]),
             patch("pathlib.Path.resolve", side_effect=OSError("bad path")),
-            patch("apple_health_analyzer.setup_logging") as mock_setup_logging,
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             with pytest.raises(SystemExit) as exc_info:
                 apple_health_analyzer.cli_main()
@@ -411,8 +411,8 @@ class TestCLIArgumentParsing:
         monkeypatch.setattr(sys, "argv", ["apple_health_analyzer.py", "--dev-file", str(dev_file)])
 
         with (
-            patch("apple_health_analyzer.setup_logging") as mock_setup_logging,
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             try:
                 apple_health_analyzer.cli_main()
@@ -432,8 +432,8 @@ class TestCLIArgumentParsing:
         monkeypatch.setattr(sys, "argv", ["apple_health_analyzer.py"])
 
         with (
-            patch("apple_health_analyzer.setup_logging") as mock_setup_logging,
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             try:
                 apple_health_analyzer.cli_main()
@@ -458,8 +458,8 @@ class TestCLIArgumentParsing:
         monkeypatch.setattr(sys, "argv", ["apple_health_analyzer.py", "--dev-file", str(dev_file)])
 
         with (
-            patch("apple_health_analyzer.setup_logging") as mock_setup_logging,
-            patch("apple_health_analyzer.ui.run") as mock_ui_run,
+            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run") as mock_ui_run,
         ):
             with pytest.raises(SystemExit) as exc_info:
                 apple_health_analyzer.cli_main()

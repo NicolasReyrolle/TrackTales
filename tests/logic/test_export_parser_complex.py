@@ -11,14 +11,16 @@ import pytest
 
 from logic.export_parser import ExportParser, WorkoutRecord
 from logic.workout_route import RoutePoint, WorkoutRoute
-from tests.conftest import build_health_export_xml, load_export_fragment
 
 
 class TestComplexRealWorldWorkout:
     """Test parsing of a complex real-world Apple Health workout with multiple elements."""
 
     def test_parse_complex_workout_with_all_elements(
-        self, create_health_zip: Callable[..., str]
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Test parsing a complex running workout with multiple activities and route"""
 
@@ -68,7 +70,12 @@ class TestComplexRealWorldWorkout:
         # Verify metadata entries for elevation
         assert workout["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  # type: ignore[misc]
 
-    def test_parse_workout_with_multiple_route_parts(self, tmp_path: Path) -> None:
+    def test_parse_workout_with_multiple_route_parts(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """A workout containing multiple WorkoutRoute entries should preserve route parts.
 
         Analytics should use route_parts (window-bounded parts), while route remains
@@ -117,7 +124,12 @@ class TestComplexRealWorldWorkout:
 
         assert len(merged_route.points) == expected_points - dedup_boundaries
 
-    def test_route_windows_without_matching_points_are_skipped(self, tmp_path: Path) -> None:
+    def test_route_windows_without_matching_points_are_skipped(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """WorkoutRoute windows with no points are intentionally dropped from route_parts."""
         workout_fragment = load_export_fragment("workout_running_too_fast.xml")
         route_dir = Path(__file__).resolve().parents[1] / "fixtures" / "exports" / "workout-routes"
@@ -153,7 +165,9 @@ class TestComplexRealWorldWorkout:
         assert points_in_missing_window == []
 
     def test_workout_activity_stats_and_metadata_are_ignored(
-        self, create_health_zip: Callable[..., str]
+        self,
+        create_health_zip: Callable[..., str],
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Ensure data inside WorkoutActivity is not loaded into the workout record."""
 
@@ -182,7 +196,10 @@ class TestComplexRealWorldWorkout:
         assert "WeatherHumidity" not in workouts.columns
 
     def test_parse_multiple_separate_workouts_with_different_distance_units(
-        self, tmp_path: Path
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Test parsing an export file containing separate swimming and running workouts.
 
@@ -224,7 +241,10 @@ class TestComplexRealWorldWorkout:
         assert running["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  # type: ignore[misc]
 
     def test_metadata_not_duplicated_when_present_at_multiple_levels(
-        self, create_health_zip: Callable[..., str]
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Test that duplicate metadata entries at the top-level Workout are not processed twice.
 

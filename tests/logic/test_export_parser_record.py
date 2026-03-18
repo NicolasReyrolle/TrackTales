@@ -7,7 +7,6 @@ import pytest
 
 from logic.export_parser import ExportParser, ParsedHealthData
 from logic.records_by_type import RecordsByType
-from tests.conftest import build_health_export_xml, load_export_fragment
 
 
 class TestParsedHealthData:
@@ -65,7 +64,12 @@ class TestParsedHealthData:
 class TestComplexRealWorldRecords:
     """Test parsing of complex real-world records."""
 
-    def test_parse_complex_records(self, create_health_zip: Callable[..., str]) -> None:
+    def test_parse_complex_records(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """Test parsing complex real-world heart rate Record entries from an export fragment."""
 
         xml_content = build_health_export_xml([load_export_fragment("record_heart_rate.xml")])
@@ -83,7 +87,12 @@ class TestComplexRealWorldRecords:
         assert sample_record["startDate"] == "2022-01-17 16:34:57 +0100"
         assert sample_record["HeartRateMotionContext"] == 1
 
-    def test_parse_returns_parsed_health_data(self, create_health_zip: Callable[..., str]) -> None:
+    def test_parse_returns_parsed_health_data(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """Test that parse() returns ParsedHealthData instance."""
         xml_content = build_health_export_xml([load_export_fragment("record_heart_rate.xml")])
         zip_path = create_health_zip(xml_content=xml_content)
@@ -96,7 +105,12 @@ class TestComplexRealWorldRecords:
         assert isinstance(result.workouts, pd.DataFrame)
         assert isinstance(result.records_by_type, dict)
 
-    def test_parse_records_by_type_structure(self, create_health_zip: Callable[..., str]) -> None:
+    def test_parse_records_by_type_structure(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """Test that records are properly grouped by type."""
         xml_content = build_health_export_xml([load_export_fragment("record_heart_rate.xml")])
         zip_path = create_health_zip(xml_content=xml_content)
@@ -119,7 +133,12 @@ class TestComplexRealWorldRecords:
         assert stats.iloc[0]["count"] == 2
         assert stats.iloc[0]["avg"] == pytest.approx(68.5, abs=1e-9)  # type: ignore[arg-type]
 
-    def test_parse_running_power_records(self, create_health_zip: Callable[..., str]) -> None:
+    def test_parse_running_power_records(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """RunningPower records should be parsed into records_by_type."""
         xml_content = build_health_export_xml([load_export_fragment("record_running_power.xml")])
         zip_path = create_health_zip(xml_content=xml_content)
@@ -278,6 +297,7 @@ class TestExportParserInternalBranches:
         self,
         create_health_zip: Callable[..., str],
         caplog: pytest.LogCaptureFixture,
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Progress callback errors should be swallowed and parser should continue."""
         workout_xml = (
@@ -307,6 +327,7 @@ class TestExportParserInternalBranches:
         self,
         create_health_zip: Callable[..., str],
         monkeypatch: pytest.MonkeyPatch,
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """When workout count reaches interval, parser should emit processed progress message."""
         monkeypatch.setattr("logic.export_parser.WORKOUT_PROGRESS_INTERVAL", 1)
@@ -330,7 +351,11 @@ class TestExportParserInternalBranches:
 
         assert any(message.startswith("Processed 1 workouts") for message in messages)
 
-    def test_parse_ignores_record_without_type(self, create_health_zip: Callable[..., str]) -> None:
+    def test_parse_ignores_record_without_type(
+        self,
+        create_health_zip: Callable[..., str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """Record entries missing a type should be ignored without failing parsing."""
         xml_content = build_health_export_xml(
             ["<Record startDate='2024-01-01 10:00:00 +0000' value='72' />"]
@@ -344,7 +369,9 @@ class TestExportParserInternalBranches:
         assert not result.records_by_type
 
     def test_parse_preserves_non_hk_metadata_keys(
-        self, create_health_zip: Callable[..., str]
+        self,
+        create_health_zip: Callable[..., str],
+        build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Metadata keys without HK prefix should be preserved as-is."""
         record_xml = (

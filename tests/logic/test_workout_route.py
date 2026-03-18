@@ -1,6 +1,7 @@
 """Unit tests for workout route domain models and calculations."""
 
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
@@ -10,7 +11,6 @@ import pytest
 from logic.export_parser import ExportParser
 from logic.workout_manager import WorkoutManager
 from logic.workout_route import RoutePoint, WorkoutRoute
-from tests.conftest import build_health_export_xml, load_export_fragment
 
 
 def _point(
@@ -232,7 +232,12 @@ class TestWorkoutRoute:
 class TestWorkoutRouteEndToEnd:
     """End-to-end checks using real workout and GPX fixtures."""
 
-    def test_running_route_metrics_vs_workout_manager(self, tmp_path: Path) -> None:
+    def test_running_route_metrics_vs_workout_manager(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
         """Compare route-derived metrics against workout/manager metrics from real fixtures.
 
         Route and workout metrics are compared with explicit tolerances to account

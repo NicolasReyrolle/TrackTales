@@ -93,7 +93,14 @@ class WorkoutManagerSegmentsMixin:
     def _empty_best_segments_frame() -> pd.DataFrame:
         """Return an empty DataFrame with the stable best-segment schema."""
         return pd.DataFrame(
-            columns=["startDate", "distance", "duration_s", "segment_start", "segment_end"]
+            columns=[
+                "startDate",
+                "distance",
+                "duration_s",
+                "segment_start",
+                "segment_end",
+                "elevation_gain_m",
+            ]
         )
 
     @staticmethod
@@ -202,7 +209,14 @@ class WorkoutManagerSegmentsMixin:
             end_date: Optional end date to filter workouts (inclusive)
 
         Returns:
-            DataFrame with columns: startDate, distance, duration_s, segment_start, segment_end
+            DataFrame with columns:
+                - startDate
+                - distance
+                - duration_s
+                - segment_start
+                - segment_end
+                - elevation_gain_m (when available in route data, otherwise may be missing or null)
+                Empty when no valid segments are found or workouts are missing
         """
         if distances is None:
             distances = self.DEFAULT_SEGMENT_DISTANCES

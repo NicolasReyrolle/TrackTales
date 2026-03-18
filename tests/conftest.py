@@ -61,7 +61,7 @@ def create_health_zip(
 ) -> Callable[..., str]:
     """
     Factory fixture to generate a temporary Apple Health export ZIP file.
-    Uses tmp_path for automatic cleanup after the test session.
+    Uses tmp_path, which pytest cleans up automatically after each test.
     """
 
     def _generate(xml_content: str | None = None, fixture_name: str | None = None) -> str:

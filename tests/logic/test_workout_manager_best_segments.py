@@ -13,7 +13,11 @@ from logic.workout_manager import WorkoutManager
 from logic.workout_route import RoutePoint, WorkoutRoute
 
 
-def _two_point_route(duration_s: int, distance_deg_lon: float = 0.01) -> WorkoutRoute:
+def _two_point_route(
+    duration_s: int,
+    distance_deg_lon: float = 0.01,
+    altitude_change: float = 1.0,
+) -> WorkoutRoute:
     """Build a minimal route with one segment over ~1km for deterministic best-segment tests."""
     start_time = datetime(2025, 1, 1, tzinfo=timezone.utc)
     end_time = start_time + pd.Timedelta(seconds=duration_s)
@@ -24,7 +28,7 @@ def _two_point_route(duration_s: int, distance_deg_lon: float = 0.01) -> Workout
                 time=end_time,
                 latitude=0.0,
                 longitude=distance_deg_lon,
-                altitude=0.0,
+                altitude=altitude_change,
             ),
         ]
     )
@@ -46,6 +50,7 @@ class TestGetBestSegments:
             "duration_s",
             "segment_start",
             "segment_end",
+            "elevation_change_m",
         ]
 
     def test_returns_empty_when_topn_is_non_positive(self) -> None:
@@ -69,12 +74,13 @@ class TestGetBestSegments:
             "duration_s",
             "segment_start",
             "segment_end",
+            "elevation_change_m",
         ]
 
     def test_selects_fastest_segments_and_applies_topn(self) -> None:
         """topn should keep the fastest (smallest duration) segments per distance."""
         fast_route = _two_point_route(250)
-        slow_route = _two_point_route(400)
+        slow_route = _two_point_route(400, altitude_change=-2.0)
 
         manager = WorkoutManager(
             pd.DataFrame(
@@ -95,11 +101,14 @@ class TestGetBestSegments:
         assert int(top1.iloc[0]["distance"]) == 1000
         assert float(top1.iloc[0]["duration_s"]) == pytest.approx(250.0)  # type: ignore[misc]
         assert top1.iloc[0]["startDate"] == pd.Timestamp("2025-01-01")
+        assert top1.iloc[0]["elevation_change_m"] == pytest.approx(1.0)  # type: ignore[misc]
 
         top2 = manager.get_best_segments(topn=2, distances=[1000])
         assert len(top2) == 2
         expected_durations = [pytest.approx(250.0), pytest.approx(400.0)]  # type: ignore[misc]
         assert list(top2["duration_s"]) == expected_durations
+        expected_elevations = [pytest.approx(1.0), pytest.approx(-2.0)]  # type: ignore[misc]
+        assert list(top2["elevation_change_m"]) == expected_elevations
 
     def test_with_real_fixture_running_route(
         self,
@@ -434,6 +443,7 @@ class TestGetBestSegments:
             "duration_s",
             "segment_start",
             "segment_end",
+            "elevation_change_m",
         ]
 
     def test_get_best_segments_handles_nan_distance_by_using_route_trace(self) -> None:
@@ -553,6 +563,7 @@ class TestGetBestSegmentsDateFiltering:
             "duration_s",
             "segment_start",
             "segment_end",
+            "elevation_change_m",
         ]
 
     def test_get_best_segments_end_date_is_inclusive(self) -> None:

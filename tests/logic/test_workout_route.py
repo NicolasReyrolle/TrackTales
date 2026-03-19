@@ -207,8 +207,9 @@ class TestWorkoutRoute:
         window = route.find_fastest_segment_window(1000.0)
 
         assert window is not None
-        duration_s, seg_start, seg_end = window
+        duration_s, seg_start, seg_end, elevation_change = window
         assert duration_s == pytest.approx(375.0)  # type: ignore[misc]
+        assert elevation_change == pytest.approx(-14.496923)  # type: ignore[misc]
         # The window should span exactly the returned duration
         elapsed = (seg_end - seg_start).total_seconds()
         assert elapsed == pytest.approx(duration_s)  # type: ignore[misc]

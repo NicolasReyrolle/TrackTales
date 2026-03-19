@@ -49,7 +49,7 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 main_file = "src/apple_health_analyzer.py"
-addopts = "-p nicegui.testing.user_plugin"
+addopts = "-p nicegui.testing.user_plugin --testmon"
 
 [tool.ruff]
 line-length = 100
@@ -65,7 +65,6 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 
-[[tool.pyright.executionEnvironments]]
-root = "tests"
-# Disable the warning for accessing protected members (like _extract_health_data_record)
+[tool.pyright]
+extraPaths = ["src"]
 reportPrivateUsage = false

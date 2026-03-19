@@ -68,6 +68,7 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
     def _format_entry(
         distance_m: float,
         duration_s: float,
+        elevation_change_m: float,
         start_date: Any,
         power_w: Any,
         power_confidence: Any,
@@ -91,6 +92,7 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
                 MARATHON_DISTANCE_M,
             ),
             "duration": format_duration_label(duration_s),
+            "elevation_change": f"{elevation_change_m:.1f} m",
             "average_speed": f"{average_speed:.2f} km/h",
             "avg_power": avg_power_str,
             "avg_power_confidence_icon": str(confidence_cfg["icon"]),
@@ -105,6 +107,7 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
             continue
 
         distance_m = float(getattr(records[0], "distance", 0.0))
+        elevation_change_m = float(getattr(records[0], "elevation_change_m", 0.0))
         start_date = getattr(records[0], "startDate", None)
         if start_date is None:
             continue
@@ -115,6 +118,7 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
             **_format_entry(
                 distance_m,
                 float(getattr(records[0], "duration_s", 0.0)),
+                elevation_change_m,
                 start_date,
                 power_w,
                 power_confidence,
@@ -124,6 +128,7 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
                 _format_entry(
                     distance_m,
                     float(getattr(record, "duration_s", 0.0)),
+                    float(getattr(record, "elevation_change_m", 0.0)),
                     getattr(record, "startDate"),
                     getattr(record, "segment_avg_power", None),
                     getattr(record, "segment_power_confidence", None),
@@ -168,6 +173,11 @@ def render_best_segments_tab() -> None:
         columns = [
             {"name": "distance", "label": t("Distance"), "field": "distance"},
             {"name": "duration", "label": t("Duration"), "field": "duration"},
+            {
+                "name": "elevation_change",
+                "label": t("Elevation Change"),
+                "field": "elevation_change",
+            },
             {
                 "name": "average_speed",
                 "label": t("Average Speed"),
@@ -241,6 +251,7 @@ def render_best_segments_tab() -> None:
                                 <span class="text-caption text-white-9">
                                     #{{ i + 2 }}&nbsp;&nbsp;
                                     {{ child.duration }}&nbsp;&nbsp;
+                                    {{ child.elevation_change }}&nbsp;&nbsp;
                                     {{ child.average_speed }}&nbsp;&nbsp;
                                     {{ child.avg_power }}&nbsp;&nbsp;
                                     <q-icon

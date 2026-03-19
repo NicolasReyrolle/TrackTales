@@ -642,3 +642,5 @@ msgstr ""
 msgid "Yoga"
 msgstr ""
 
+msgid "Elevation Change"
+msgstr ""

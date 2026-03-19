@@ -646,3 +646,6 @@ msgstr "Lutte"
 
 msgid "Yoga"
 msgstr "Yoga"
+
+msgid "Elevation Change"
+msgstr "Dénivelé"

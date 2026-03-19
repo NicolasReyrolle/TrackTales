@@ -93,7 +93,14 @@ class WorkoutManagerSegmentsMixin:
     def _empty_best_segments_frame() -> pd.DataFrame:
         """Return an empty DataFrame with the stable best-segment schema."""
         return pd.DataFrame(
-            columns=["startDate", "distance", "duration_s", "segment_start", "segment_end"]
+            columns=[
+                "startDate",
+                "distance",
+                "duration_s",
+                "segment_start",
+                "segment_end",
+                "elevation_change_m",
+            ]
         )
 
     @staticmethod
@@ -108,7 +115,15 @@ class WorkoutManagerSegmentsMixin:
     def _build_best_segments_frame(results: list[list[Any]], topn: int) -> pd.DataFrame:
         """Sort and keep the fastest Top-N segments per requested distance."""
         df = pd.DataFrame(
-            results, columns=["startDate", "distance", "duration_s", "segment_start", "segment_end"]
+            results,
+            columns=[
+                "startDate",
+                "distance",
+                "duration_s",
+                "segment_start",
+                "segment_end",
+                "elevation_change_m",
+            ],
         )
         df = df.sort_values(["distance", "duration_s"], ascending=[True, True])
         result: pd.DataFrame = df.groupby("distance").head(topn).reset_index(drop=True)
@@ -119,9 +134,10 @@ class WorkoutManagerSegmentsMixin:
         route_traces: list[WorkoutRoute],
         distance_m: float,
         distance_scale_factor: float,
-    ) -> tuple[float, datetime, datetime] | None:
-        """Return (duration_s, start_time, end_time) for the fastest segment across traces."""
-        best: tuple[float, datetime, datetime] | None = None
+    ) -> tuple[float, datetime, datetime, float] | None:
+        """Return (duration_s, start_time, end_time, elevation_change_m)
+        for the fastest segment across traces."""
+        best: tuple[float, datetime, datetime, float] | None = None
         for route_trace in route_traces:
             result = route_trace.find_fastest_segment_window(
                 distance_m,
@@ -161,8 +177,10 @@ class WorkoutManagerSegmentsMixin:
             if window is None:
                 continue
 
-            duration_s, seg_start, seg_end = window
-            rows.append([run_record.startDate, distance, duration_s, seg_start, seg_end])
+            duration_s, seg_start, seg_end, elevation_change_m = window
+            rows.append(
+                [run_record.startDate, distance, duration_s, seg_start, seg_end, elevation_change_m]
+            )
 
         return rows
 
@@ -202,7 +220,14 @@ class WorkoutManagerSegmentsMixin:
             end_date: Optional end date to filter workouts (inclusive)
 
         Returns:
-            DataFrame with columns: startDate, distance, duration_s, segment_start, segment_end
+            DataFrame with columns:
+                - startDate
+                - distance
+                - duration_s
+                - segment_start
+                - segment_end
+                - elevation_change_m
+                Empty when no valid segments are found or workouts are missing
         """
         if distances is None:
             distances = self.DEFAULT_SEGMENT_DISTANCES

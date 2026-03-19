@@ -54,6 +54,7 @@ class WorkoutRoute:
     def distance_meters(self) -> float:
         """Calculate the total distance of the workout route in meters."""
         cumulative_distances = self._cumulative_distances()
+
         return cumulative_distances[-1] if cumulative_distances else 0.0
 
     @property
@@ -215,8 +216,11 @@ class WorkoutRoute:
 
     def find_fastest_segment_window(
         self, segment_length_m: float, distance_scale_factor: float = 1.0
-    ) -> tuple[float, datetime, datetime] | None:
-        """Find the fastest segment and return (duration_s, start_time, end_time).
+    ) -> tuple[float, datetime, datetime, float] | None:
+        """Find the fastest segment
+
+        The elevation change is computed as the net gain (positive) or loss (negative) in altitude
+        from the start to the end of the segment
 
         Identical sliding-window search to :meth:`find_fastest_segment` but also
         returns the GPS timestamps that bound the best window so callers can look
@@ -227,14 +231,14 @@ class WorkoutRoute:
             distance_scale_factor: Same scaling applied in :meth:`find_fastest_segment`.
 
         Returns:
-            ``(duration_s, start_time, end_time)`` for the fastest window, or
+            ``(duration_s, start_time, end_time, elevation_change_m)`` for the fastest window, or
             ``None`` if no valid segment exists.
         """
         if self.is_empty or segment_length_m <= 0 or len(self.points) < 2:
             return None
 
         cumulative_distances = self._cumulative_distances()
-        best: tuple[float, datetime, datetime] | None = None
+        best: tuple[float, datetime, datetime, float] | None = None
         end_idx = 1
 
         for start_idx in range(len(self.points) - 1):
@@ -246,7 +250,13 @@ class WorkoutRoute:
                 break
 
             duration_s = (self.points[end_idx].time - self.points[start_idx].time).total_seconds()
+            elevation_change_m = self.points[end_idx].altitude - self.points[start_idx].altitude
             if duration_s > 0 and (best is None or duration_s < best[0]):
-                best = (duration_s, self.points[start_idx].time, self.points[end_idx].time)
+                best = (
+                    duration_s,
+                    self.points[start_idx].time,
+                    self.points[end_idx].time,
+                    elevation_change_m,
+                )
 
         return best

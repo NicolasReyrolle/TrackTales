@@ -226,7 +226,7 @@ class WorkoutManagerSegmentsMixin:
                 - duration_s
                 - segment_start
                 - segment_end
-                - elevation_change_m (when available in route data, otherwise may be null)
+                - elevation_change_m
                 Empty when no valid segments are found or workouts are missing
         """
         if distances is None:

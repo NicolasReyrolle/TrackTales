@@ -9,7 +9,7 @@ pywin32==311; platform_system == "Windows"
 
 # Code quality
 mypy==1.19.1
-ruff==0.15.6
+ruff==0.15.7
 
 # Development
 ipython>=8.0.0

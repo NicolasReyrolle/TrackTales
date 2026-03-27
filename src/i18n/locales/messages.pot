@@ -58,6 +58,9 @@ msgstr ""
 msgid "Trends"
 msgstr ""
 
+msgid "Workouts"
+msgstr ""
+
 msgid "Health Data"
 msgstr ""
 
@@ -105,6 +108,16 @@ msgid "Loading best segments..."
 msgstr ""
 
 msgid "Open this tab to load best segments."
+msgstr ""
+
+# Workout table
+msgid "Load a file to see workout details."
+msgstr ""
+
+msgid "Activity"
+msgstr ""
+
+msgid "Avg HR"
 msgstr ""
 
 msgid "Loading health data..."

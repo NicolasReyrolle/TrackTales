@@ -102,7 +102,8 @@ def mock_refresh_data() -> None:
         with patch("ui.layout.render_trends_graphs.refresh"):
             with patch("ui.layout.render_health_data_tab.refresh"):
                 with patch("ui.layout.render_best_segments_tab.refresh"):
-                    refresh_data()
+                    with patch("ui.layout.render_workout_table.refresh"):
+                        refresh_data()
 
 
 def test_refresh_data_passes_date_range_to_workouts() -> None:
@@ -175,14 +176,15 @@ def test_refresh_data_triggers_best_segments_load_when_tab_selected() -> None:
             with patch("ui.layout.render_trends_graphs.refresh"):
                 with patch("ui.layout.render_health_data_tab.refresh"):
                     with patch("ui.layout.render_best_segments_tab.refresh"):
-                        with patch("ui.layout.load_best_segments_data", new=AsyncMock()):
-                            with patch("ui.layout.asyncio.create_task") as create_task_mock:
+                        with patch("ui.layout.render_workout_table.refresh"):
+                            with patch("ui.layout.load_best_segments_data", new=AsyncMock()):
+                                with patch("ui.layout.asyncio.create_task") as create_task_mock:
 
-                                def _close_coro(coro: Coroutine[Any, Any, None]) -> None:
-                                    coro.close()
+                                    def _close_coro(coro: Coroutine[Any, Any, None]) -> None:
+                                        coro.close()
 
-                                create_task_mock.side_effect = _close_coro
-                                refresh_data()
+                                    create_task_mock.side_effect = _close_coro
+                                    refresh_data()
 
         assert state.best_segments_rows == []
         assert state.best_segments_loaded is False

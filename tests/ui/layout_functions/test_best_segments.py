@@ -599,6 +599,7 @@ def test_render_body_tab_change_to_best_segments_schedules_async_load() -> None:
         patch("ui.layout.render_health_data_tab"),
         patch("ui.layout.render_best_segments_tab"),
         patch("ui.layout.load_best_segments_data", new=AsyncMock()),
+        patch("ui.layout.render_workout_table"),
         patch("ui.layout.asyncio.create_task") as create_task_mock,
     ):
 
@@ -676,6 +677,7 @@ def test_render_body_initializes_tabs_from_state() -> None:
             patch("ui.layout.render_trends_tab"),
             patch("ui.layout.render_health_data_tab"),
             patch("ui.layout.render_best_segments_tab"),
+            patch("ui.layout.render_workout_table"),
         ):
             layout.render_body()
 
@@ -712,6 +714,7 @@ def test_render_body_defaults_tabs_to_summary_when_state_empty() -> None:
             patch("ui.layout.render_trends_tab"),
             patch("ui.layout.render_health_data_tab"),
             patch("ui.layout.render_best_segments_tab"),
+            patch("ui.layout.render_workout_table"),
         ):
             layout.render_body()
 

@@ -47,6 +47,7 @@ from ui.helpers import (
     translate_parser_progress_message,
 )
 from ui.local_file_picker import LocalFilePicker
+from ui.workout_table import render_workout_table
 
 # Get logger for this module
 _logger = logging.getLogger(__name__)
@@ -335,6 +336,7 @@ def refresh_data() -> None:
     render_trends_graphs.refresh()
     render_health_data_tab.refresh()
     render_best_segments_tab.refresh()
+    render_workout_table.refresh()
 
     # If user is already on the tab, load asynchronously after invalidation.
     if state.selected_main_tab == "best_segments":
@@ -612,6 +614,7 @@ def render_body() -> None:
         ui.tab("summary", t("Overview"))
         ui.tab("activities", t("Activities")).bind_enabled_from(state, "file_loaded")
         ui.tab("trends", t("Trends")).bind_enabled_from(state, "file_loaded")
+        ui.tab("workouts", t("Workouts")).bind_enabled_from(state, "file_loaded")
         ui.tab("health_data", t("Health Data")).bind_enabled_from(state, "file_loaded")
         ui.tab("best_segments", t("Best Segments")).bind_enabled_from(state, "file_loaded")
 
@@ -658,6 +661,9 @@ def render_body() -> None:
 
         with ui.tab_panel("trends"):
             render_trends_tab()
+
+        with ui.tab_panel("workouts"):
+            render_workout_table()
 
         with ui.tab_panel("health_data"):
             render_health_data_tab()

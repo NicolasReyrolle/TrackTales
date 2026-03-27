@@ -365,23 +365,24 @@ def test_refresh_data_schedules_load_for_selected_tab() -> None:
                             with patch("ui.layout.render_trends_graphs.refresh"):
                                 with patch("ui.layout.render_health_data_tab.refresh"):
                                     with patch("ui.layout.render_best_segments_tab.refresh"):
-                                        with patch(
-                                            "ui.layout.schedule_best_segments_load"
-                                        ) as best_mock:
+                                        with patch("ui.layout.render_workout_table.refresh"):
                                             with patch(
-                                                "ui.layout.schedule_health_data_load"
-                                            ) as health_mock:
-                                                state.selected_main_tab = "best_segments"
-                                                layout.refresh_data()
-                                                best_mock.assert_called_once()
-                                                health_mock.assert_not_called()
+                                                "ui.layout.schedule_best_segments_load"
+                                            ) as best_mock:
+                                                with patch(
+                                                    "ui.layout.schedule_health_data_load"
+                                                ) as health_mock:
+                                                    state.selected_main_tab = "best_segments"
+                                                    layout.refresh_data()
+                                                    best_mock.assert_called_once()
+                                                    health_mock.assert_not_called()
 
-                                                best_mock.reset_mock()
-                                                health_mock.reset_mock()
-                                                state.selected_main_tab = "health_data"
-                                                layout.refresh_data()
-                                                health_mock.assert_called_once()
-                                                best_mock.assert_not_called()
+                                                    best_mock.reset_mock()
+                                                    health_mock.reset_mock()
+                                                    state.selected_main_tab = "health_data"
+                                                    layout.refresh_data()
+                                                    health_mock.assert_called_once()
+                                                    best_mock.assert_not_called()
     finally:
         state.selected_main_tab = original_selected_tab
 
@@ -590,6 +591,7 @@ def test_render_body_health_data_tab_change_schedules_load() -> None:
         patch("ui.layout.render_trends_tab"),
         patch("ui.layout.render_health_data_tab"),
         patch("ui.layout.render_best_segments_tab"),
+        patch("ui.layout.render_workout_table"),
         patch("ui.layout.schedule_health_data_load") as health_load_mock,
     ):
         layout.render_body()

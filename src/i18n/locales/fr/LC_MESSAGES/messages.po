@@ -63,6 +63,9 @@ msgstr "Vue d'ensemble"
 msgid "Trends"
 msgstr "Tendances"
 
+msgid "Workouts"
+msgstr "Séances"
+
 msgid "Health Data"
 msgstr "Données de santé"
 
@@ -111,6 +114,16 @@ msgstr "Chargement des meilleurs segments..."
 
 msgid "Open this tab to load best segments."
 msgstr "Ouvrez cet onglet pour charger les meilleurs segments."
+
+# Workout table
+msgid "Load a file to see workout details."
+msgstr "Chargez un fichier pour voir les détails des séances."
+
+msgid "Activity"
+msgstr "Activité"
+
+msgid "Avg HR"
+msgstr "FC moy."
 
 msgid "Loading health data..."
 msgstr "Chargement des données de santé..."

@@ -371,6 +371,32 @@ class ExportParser:
             return int(float(value) * 1609.34)
         raise ValueError(f"Unknown distance unit: {unit}")
 
+    @staticmethod
+    def _process_distance_stat(
+        record: WorkoutRecord,
+        stat_attr_str: str,
+        unit: str | None,
+        fill_missing_only: bool,
+    ) -> None:
+        """Process distance statistic (consolidates all distance types into Distance field)."""
+        if not fill_missing_only or "distance" not in record:
+            record["distance"] = ExportParser.str_distance_to_meters(stat_attr_str, unit)
+
+    @staticmethod
+    def _process_non_distance_stat(
+        record: WorkoutRecord,
+        stat_attr: str,
+        stat_type: str,
+        stat_attr_str: str,
+        unit: str | None,
+        fill_missing_only: bool,
+    ) -> None:
+        """Process non-distance statistic."""
+        key = f"{stat_attr}{stat_type}"
+        if not fill_missing_only or key not in record:
+            record[key] = float(stat_attr_str)  # type: ignore[literal-required]
+            record[f"{key}Unit"] = unit  # type: ignore[literal-required]
+
     def _process_workout_statistics(
         self, child: Element, record: WorkoutRecord, *, fill_missing_only: bool = False
     ) -> None:
@@ -380,21 +406,18 @@ class ExportParser:
         in the record so that top-level Workout values take precedence.
         """
         stat_type = child.get("type", "").replace("HKQuantityTypeIdentifier", "")
+        unit = child.get("unit")
 
         for stat_attr in ["sum", "average", "minimum", "maximum"]:
             if child.get(stat_attr):
                 stat_attr_str = child.get(stat_attr) or "0"
                 # Consolidate all distance types into a single Distance field
                 if stat_attr == "sum" and "Distance" in stat_type:
-                    if not fill_missing_only or "distance" not in record:
-                        record["distance"] = self.str_distance_to_meters(
-                            stat_attr_str, child.get("unit")
-                        )
+                    self._process_distance_stat(record, stat_attr_str, unit, fill_missing_only)
                 else:
-                    key = f"{stat_attr}{stat_type}"
-                    if not fill_missing_only or key not in record:
-                        record[key] = float(stat_attr_str)  # type: ignore[literal-required]
-                        record[f"{key}Unit"] = child.get("unit")  # type: ignore[literal-required]
+                    self._process_non_distance_stat(
+                        record, stat_attr, stat_type, stat_attr_str, unit, fill_missing_only
+                    )
 
     @staticmethod
     def _parse_gpx_speed(ext_elem: Element | None) -> float:

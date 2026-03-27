@@ -336,6 +336,27 @@ class ExportParser:
                 self._process_metadata_entry(child, record)
             elif child.tag == "WorkoutRoute":
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
+            elif child.tag == "WorkoutActivity":
+                self._process_workout_activity_children(
+                    child, record, zipfile, active_end=active_end
+                )
+
+    def _process_workout_activity_children(
+        self, elem: Element, record: WorkoutRecord, zipfile: ZipFile, *, active_end: datetime | None
+    ) -> None:
+        """Process children of a WorkoutActivity element.
+
+        Only fills keys not already present in the record so that top-level Workout
+        statistics/metadata take precedence over WorkoutActivity values when both exist.
+        The active_end computed from the parent Workout is reused to avoid an extra pass.
+        """
+        for child in elem:
+            if child.tag == "WorkoutStatistics":
+                self._process_workout_statistics(child, record, fill_missing_only=True)
+            elif child.tag == "MetadataEntry":
+                self._process_metadata_entry(child, record)  # already skips duplicates
+            elif child.tag == "WorkoutRoute":
+                self._process_workout_route(child, record, zipfile, active_end=active_end)
 
     @staticmethod
     def str_distance_to_meters(value: str, unit: str | None) -> int:
@@ -350,8 +371,14 @@ class ExportParser:
             return int(float(value) * 1609.34)
         raise ValueError(f"Unknown distance unit: {unit}")
 
-    def _process_workout_statistics(self, child: Element, record: WorkoutRecord) -> None:
-        """Process workout statistics child element."""
+    def _process_workout_statistics(
+        self, child: Element, record: WorkoutRecord, *, fill_missing_only: bool = False
+    ) -> None:
+        """Process workout statistics child element.
+
+        When fill_missing_only is True, only populate keys that are not already present
+        in the record so that top-level Workout values take precedence.
+        """
         stat_type = child.get("type", "").replace("HKQuantityTypeIdentifier", "")
 
         for stat_attr in ["sum", "average", "minimum", "maximum"]:
@@ -359,12 +386,15 @@ class ExportParser:
                 stat_attr_str = child.get(stat_attr) or "0"
                 # Consolidate all distance types into a single Distance field
                 if stat_attr == "sum" and "Distance" in stat_type:
-                    record["distance"] = self.str_distance_to_meters(
-                        stat_attr_str, child.get("unit")
-                    )
+                    if not fill_missing_only or "distance" not in record:
+                        record["distance"] = self.str_distance_to_meters(
+                            stat_attr_str, child.get("unit")
+                        )
                 else:
-                    record[f"{stat_attr}{stat_type}"] = float(stat_attr_str)  # type: ignore[literal-required]
-                    record[f"{stat_attr}{stat_type}Unit"] = child.get("unit")  # type: ignore[literal-required]
+                    key = f"{stat_attr}{stat_type}"
+                    if not fill_missing_only or key not in record:
+                        record[key] = float(stat_attr_str)  # type: ignore[literal-required]
+                        record[f"{key}Unit"] = child.get("unit")  # type: ignore[literal-required]
 
     @staticmethod
     def _parse_gpx_speed(ext_elem: Element | None) -> float:

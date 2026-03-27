@@ -70,6 +70,32 @@ class TestComplexRealWorldWorkout:
         # Verify metadata entries for elevation
         assert workout["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  # type: ignore[misc]
 
+    def test_parse_complex_workout_does_not_load_elevation(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """Test a bug where elevation ascended is not loaded"""
+
+        xml_content = build_health_export_xml(
+            [load_export_fragment("workout_running_long_distance.xml")]
+        )
+        zip_path = create_health_zip(xml_content=xml_content)
+
+        parser = ExportParser()
+        with parser:
+            health_data = parser.parse(str(zip_path))
+
+        # Verify the workout was parsed
+        assert len(health_data.workouts) == 1
+
+        # Get the parsed workout record
+        workout = health_data.workouts.iloc[0]
+
+        # Verify metadata entries for elevation
+        assert workout["ElevationAscended"] == pytest.approx(428.75)
+
     def test_parse_workout_with_multiple_route_parts(
         self,
         tmp_path: Path,
@@ -163,37 +189,6 @@ class TestComplexRealWorldWorkout:
             if missing_window_start <= point.time <= missing_window_end
         ]
         assert points_in_missing_window == []
-
-    def test_workout_activity_stats_and_metadata_are_ignored(
-        self,
-        create_health_zip: Callable[..., str],
-        build_health_export_xml: Callable[[list[str]], str],
-    ) -> None:
-        """Ensure data inside WorkoutActivity is not loaded into the workout record."""
-
-        workout_fragment = """
-<Workout workoutActivityType="HKWorkoutActivityTypeRunning"
-         startDate="2024-01-01 10:00:00 +0000"
-         endDate="2024-01-01 10:10:00 +0000" duration="10" durationUnit="min">
-  <WorkoutActivity>
-    <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" sum="123" unit="kcal"/>
-    <MetadataEntry key="HKWeatherHumidity" value="5000 %"/>
-  </WorkoutActivity>
-</Workout>
-""".strip()
-
-        xml_content = build_health_export_xml([workout_fragment])
-        zip_path = create_health_zip(xml_content=xml_content)
-
-        parser = ExportParser()
-        with parser:
-            health_data = parser.parse(str(zip_path))
-
-        workouts = health_data.workouts
-        assert len(workouts) == 1
-
-        assert "sumActiveEnergyBurned" not in workouts.columns
-        assert "WeatherHumidity" not in workouts.columns
 
     def test_parse_multiple_separate_workouts_with_different_distance_units(
         self,

@@ -336,6 +336,8 @@ class ExportParser:
                 self._process_metadata_entry(child, record)
             elif child.tag == "WorkoutRoute":
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
+            elif child.tag == "WorkoutActivity":
+                self._process_workout_children(child, record, zipfile)
 
     @staticmethod
     def str_distance_to_meters(value: str, unit: str | None) -> int:

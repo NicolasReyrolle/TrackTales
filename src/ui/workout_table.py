@@ -52,9 +52,7 @@ def _build_workout_rows() -> list[dict[str, Any]]:
         # ── Date ────────────────────────────────────────────────────────────
         start_date_raw = row.get("startDate")
         ts: pd.Timestamp | None = (
-            start_date_raw
-            if isinstance(start_date_raw, pd.Timestamp)
-            else None
+            start_date_raw if isinstance(start_date_raw, pd.Timestamp) else None
         )
         date_sort = float(ts.timestamp()) if ts is not None else _MISSING_SORT
         date_display = format_date_label(ts, language_code) if ts is not None else "–"

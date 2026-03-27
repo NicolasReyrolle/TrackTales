@@ -8,13 +8,17 @@ from nicegui import ui
 
 from app_state import state
 from i18n import get_language, t
-from ui.css import LABEL_EMPTY_STATE_CLASSES, TABLE_FULL_CLASSES
+from i18n.activity_types import activity_display_label
+from ui.css import LABEL_EMPTY_STATE_CLASSES, ROW_FULL_ITEMS_CLASSES, TABLE_FULL_CLASSES
 from ui.helpers import format_date_label, format_duration_label
 
 _logger = logging.getLogger(__name__)
 
 # Sentinel used for missing optional numeric values so they sort to the bottom.
 _MISSING_SORT = -1.0
+
+# Available rows-per-page options shown in the dropdown.
+_ROWS_PER_PAGE_OPTIONS = [10, 20, 50]
 
 
 def _safe_float(value: Any) -> float | None:
@@ -90,7 +94,8 @@ def _extract_row_data(row: Any, idx: int, language_code: str) -> dict[str, Any]:
         A dictionary with sort and display values for all columns.
     """
     date_sort, date_display = _extract_date_field(row, language_code)
-    activity_type = str(row.get("activityType") or "–")
+    raw_activity = str(row.get("activityType") or "")
+    activity_type = activity_display_label(raw_activity) if raw_activity else "–"
     duration_sort, duration_display = _build_field_pair(row.get("duration"), format_duration_label)
     distance_sort, distance_display = _extract_distance_field(row)
     calories_sort, calories_display = _build_field_pair(
@@ -153,13 +158,22 @@ def _extract_distance_field(row: Any) -> tuple[float | str, str]:
 
 @ui.refreshable
 def render_workout_table() -> None:
-    """Render the workout details table with sortable numeric columns."""
+    """Render the workout details table with sortable numeric columns and pagination."""
     if not state.file_loaded:
         ui.label(t("Load a file to see workout details.")).classes(LABEL_EMPTY_STATE_CLASSES)
         return
 
     rows = _build_workout_rows()
     _logger.debug("Rendering workout table with %d rows", len(rows))
+
+    # ── Pagination selector (top-right) ──────────────────────────────────────
+    with ui.row().classes(f"{ROW_FULL_ITEMS_CLASSES} justify-end"):
+        ui.select(
+            options=_ROWS_PER_PAGE_OPTIONS,
+            value=state.workout_table_rows_per_page,
+            label=t("Rows per page"),
+            on_change=lambda e: _set_rows_per_page(int(e.value)),
+        ).props("dense borderless").classes("w-28")
 
     columns = [
         {
@@ -224,6 +238,11 @@ def render_workout_table() -> None:
         columns=columns,
         rows=rows,
         row_key="id",
+        pagination={
+            "rowsPerPage": state.workout_table_rows_per_page,
+            "sortBy": "date_sort",
+            "descending": True,
+        },
     ).classes(TABLE_FULL_CLASSES)
 
     # Render formatted display values via body-cell slots while keeping raw
@@ -242,3 +261,10 @@ def render_workout_table() -> None:
             f"body-cell-{col_name}",
             f'<q-td :props="props">{{{{ props.row.{display_field} }}}}</q-td>',
         )
+
+
+def _set_rows_per_page(value: int) -> None:
+    """Update the rows-per-page preference and refresh the table."""
+    state.workout_table_rows_per_page = value
+    render_workout_table.refresh()
+

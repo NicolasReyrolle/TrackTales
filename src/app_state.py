@@ -55,6 +55,7 @@ class AppState:
         self.best_segments_loading: bool = False
         self.best_segments_loaded: bool = False
         self.best_segments_task: asyncio.Task[None] | None = None
+        self.workout_table_rows_per_page: int = 20
         self.health_data_graphs: dict[str, dict[str, float | int | None]] = {
             "heart_rate": {},
             "body_mass": {},

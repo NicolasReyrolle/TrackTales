@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -23,7 +23,6 @@ class TestBuildWorkoutRows:
 
     def test_returns_empty_list_when_workouts_empty(self) -> None:
         """Empty workouts DataFrame should produce no rows."""
-        from unittest.mock import MagicMock
 
         original_workouts: Any = state.workouts
         workouts_mock = MagicMock()
@@ -37,7 +36,6 @@ class TestBuildWorkoutRows:
 
     def test_formats_date_duration_and_activity(self) -> None:
         """Rows should include formatted date, duration and activity type."""
-        from unittest.mock import MagicMock
 
         original_workouts: Any = state.workouts
         original_file_loaded = state.file_loaded
@@ -71,7 +69,6 @@ class TestBuildWorkoutRows:
 
     def test_missing_optional_columns_use_sentinel(self) -> None:
         """Rows missing optional numeric columns should use _MISSING_SORT sentinel."""
-        from unittest.mock import MagicMock
 
         original_workouts: Any = state.workouts
         workouts_mock = MagicMock()
@@ -107,7 +104,6 @@ class TestBuildWorkoutRows:
 
     def test_optional_columns_formatted_when_present(self) -> None:
         """Optional columns should be formatted when their values are present."""
-        from unittest.mock import MagicMock
 
         original_workouts: Any = state.workouts
         workouts_mock = MagicMock()
@@ -147,7 +143,6 @@ class TestBuildWorkoutRows:
 
     def test_rows_sorted_by_date_descending(self) -> None:
         """Rows should be ordered most-recent first."""
-        from unittest.mock import MagicMock
 
         original_workouts: Any = state.workouts
         workouts_mock = MagicMock()
@@ -177,7 +172,6 @@ class TestBuildWorkoutRows:
 
     def test_row_ids_are_unique(self) -> None:
         """Every row must have a distinct ``id`` field."""
-        from unittest.mock import MagicMock
 
         original_workouts: Any = state.workouts
         workouts_mock = MagicMock()
@@ -233,7 +227,6 @@ class TestRenderWorkoutTable:
         original_file_loaded = state.file_loaded
         original_workouts: Any = state.workouts
 
-        from unittest.mock import MagicMock
 
         workouts_mock = MagicMock()
         workouts_mock._filter_workouts.return_value = pd.DataFrame(
@@ -282,7 +275,6 @@ class TestRenderWorkoutTable:
         original_workouts: Any = state.workouts
         original_rpp = state.workout_table_rows_per_page
 
-        from unittest.mock import MagicMock
 
         workouts_mock = MagicMock()
         workouts_mock._filter_workouts.return_value = pd.DataFrame(
@@ -321,7 +313,6 @@ class TestRenderWorkoutTable:
         original_file_loaded = state.file_loaded
         original_workouts: Any = state.workouts
 
-        from unittest.mock import MagicMock
 
         workouts_mock = MagicMock()
         workouts_mock._filter_workouts.return_value = pd.DataFrame(

@@ -172,7 +172,7 @@ def render_workout_table() -> None:
             options=_ROWS_PER_PAGE_OPTIONS,
             value=state.workout_table_rows_per_page,
             label=t("Rows per page"),
-            on_change=lambda e: _set_rows_per_page(int(e.value)),
+            on_change=lambda e: _set_rows_per_page(e.value),
         ).props("dense borderless").classes("w-28")
 
     columns = [
@@ -264,7 +264,12 @@ def render_workout_table() -> None:
 
 
 def _set_rows_per_page(value: int) -> None:
-    """Update the rows-per-page preference and refresh the table."""
+    """Update the rows-per-page preference and refresh the table.
+
+    Only values in ``_ROWS_PER_PAGE_OPTIONS`` are accepted; others are ignored.
+    """
+    if value not in _ROWS_PER_PAGE_OPTIONS:
+        return
     state.workout_table_rows_per_page = value
     render_workout_table.refresh()
 

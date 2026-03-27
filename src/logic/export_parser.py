@@ -378,7 +378,8 @@ class ExportParser:
         unit: str | None,
         fill_missing_only: bool,
     ) -> None:
-        """Process distance statistic (consolidates all distance types into the `distance` field)."""
+        """Process distance statistic (consolidates all distance types into the `distance`
+        field)."""
         if not fill_missing_only or "distance" not in record:
             record["distance"] = ExportParser.str_distance_to_meters(stat_attr_str, unit)
 

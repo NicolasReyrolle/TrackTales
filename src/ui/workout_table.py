@@ -226,10 +226,7 @@ def render_workout_table() -> None:
         columns=columns,
         rows=rows,
         row_key="id",
-        pagination={
-            "sortBy": "date_sort",
-            "descending": True,
-        },
+        pagination={"sortBy": "date_sort", "descending": True, "rowsPerPage": 15},
     ).classes(TABLE_FULL_CLASSES)
 
     # Render formatted display values via body-cell slots while keeping raw

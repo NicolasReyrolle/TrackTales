@@ -9,16 +9,13 @@ from nicegui import ui
 from app_state import state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
-from ui.css import LABEL_EMPTY_STATE_CLASSES, ROW_FULL_ITEMS_CLASSES, TABLE_FULL_CLASSES
+from ui.css import LABEL_EMPTY_STATE_CLASSES, TABLE_FULL_CLASSES
 from ui.helpers import format_date_label, format_duration_label
 
 _logger = logging.getLogger(__name__)
 
 # Sentinel used for missing optional numeric values so they sort to the bottom.
 _MISSING_SORT = -1.0
-
-# Available rows-per-page options shown in the dropdown.
-_ROWS_PER_PAGE_OPTIONS = [10, 20, 50]
 
 
 def _safe_float(value: Any) -> float | None:
@@ -166,15 +163,6 @@ def render_workout_table() -> None:
     rows = _build_workout_rows()
     _logger.debug("Rendering workout table with %d rows", len(rows))
 
-    # ── Pagination selector (top-right) ──────────────────────────────────────
-    with ui.row().classes(f"{ROW_FULL_ITEMS_CLASSES} justify-end"):
-        ui.select(
-            options=_ROWS_PER_PAGE_OPTIONS,
-            value=state.workout_table_rows_per_page,
-            label=t("Rows per page"),
-            on_change=lambda e: _set_rows_per_page(e.value),
-        ).props("dense borderless").classes("w-28")
-
     columns = [
         {
             "name": "date",
@@ -239,7 +227,6 @@ def render_workout_table() -> None:
         rows=rows,
         row_key="id",
         pagination={
-            "rowsPerPage": state.workout_table_rows_per_page,
             "sortBy": "date_sort",
             "descending": True,
         },
@@ -261,15 +248,3 @@ def render_workout_table() -> None:
             f"body-cell-{col_name}",
             f'<q-td :props="props">{{{{ props.row.{display_field} }}}}</q-td>',
         )
-
-
-def _set_rows_per_page(value: int) -> None:
-    """Update the rows-per-page preference and refresh the table.
-
-    Only values in ``_ROWS_PER_PAGE_OPTIONS`` are accepted; others are ignored.
-    """
-    if value not in _ROWS_PER_PAGE_OPTIONS:
-        return
-    state.workout_table_rows_per_page = value
-    render_workout_table.refresh()
-

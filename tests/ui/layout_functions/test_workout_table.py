@@ -11,7 +11,7 @@ import pytest
 from app_state import state
 from ui import workout_table as wt
 
-from ._helpers import DummyComponent, DummyContext, DummyTable
+from ._helpers import DummyComponent, DummyTable
 
 
 class TestBuildWorkoutRows:
@@ -227,7 +227,6 @@ class TestRenderWorkoutTable:
         original_file_loaded = state.file_loaded
         original_workouts: Any = state.workouts
 
-
         workouts_mock = MagicMock()
         workouts_mock._filter_workouts.return_value = pd.DataFrame(
             [
@@ -245,11 +244,7 @@ class TestRenderWorkoutTable:
             state.file_loaded = True
             state.workouts = workouts_mock
 
-            with (
-                patch("ui.workout_table.ui.row", return_value=DummyContext()),
-                patch("ui.workout_table.ui.select", return_value=DummyComponent()),
-                patch("ui.workout_table.ui.table", return_value=table_stub) as table_mock,
-            ):
+            with patch("ui.workout_table.ui.table", return_value=table_stub) as table_mock:
                 wt.render_workout_table.func()
 
             table_mock.assert_called_once()
@@ -269,51 +264,11 @@ class TestRenderWorkoutTable:
             state.file_loaded = original_file_loaded
             state.workouts = original_workouts
 
-    def test_pagination_selector_rendered_with_correct_options(self) -> None:
-        """Rows-per-page selector should be rendered with options [10, 20, 50]."""
-        original_file_loaded = state.file_loaded
-        original_workouts: Any = state.workouts
-        original_rpp = state.workout_table_rows_per_page
-
-
-        workouts_mock = MagicMock()
-        workouts_mock._filter_workouts.return_value = pd.DataFrame(
-            [
-                {
-                    "activityType": "Running",
-                    "startDate": pd.Timestamp("2025-09-16"),
-                    "duration": 3660.0,
-                }
-            ]
-        )
-
-        try:
-            state.file_loaded = True
-            state.workouts = workouts_mock
-            state.workout_table_rows_per_page = 20
-
-            with (
-                patch("ui.workout_table.ui.row", return_value=DummyContext()),
-                patch("ui.workout_table.ui.select", return_value=DummyComponent()) as select_mock,
-                patch("ui.workout_table.ui.table", return_value=DummyTable()),
-            ):
-                wt.render_workout_table.func()
-
-            select_mock.assert_called_once()
-            call_kwargs = select_mock.call_args
-            assert call_kwargs.kwargs.get("options") == [10, 20, 50]
-            assert call_kwargs.kwargs.get("value") == 20
-        finally:
-            state.file_loaded = original_file_loaded
-            state.workouts = original_workouts
-            state.workout_table_rows_per_page = original_rpp
-
     def test_table_pagination_default_sort_date_descending(self) -> None:
         """Table should be initialised with date sort descending."""
         original_file_loaded = state.file_loaded
         original_workouts: Any = state.workouts
 
-
         workouts_mock = MagicMock()
         workouts_mock._filter_workouts.return_value = pd.DataFrame(
             [
@@ -329,11 +284,7 @@ class TestRenderWorkoutTable:
             state.file_loaded = True
             state.workouts = workouts_mock
 
-            with (
-                patch("ui.workout_table.ui.row", return_value=DummyContext()),
-                patch("ui.workout_table.ui.select", return_value=DummyComponent()),
-                patch("ui.workout_table.ui.table", return_value=DummyTable()) as table_mock,
-            ):
+            with patch("ui.workout_table.ui.table", return_value=DummyTable()) as table_mock:
                 wt.render_workout_table.func()
 
             call_kwargs = table_mock.call_args

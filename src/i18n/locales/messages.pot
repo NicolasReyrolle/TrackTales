@@ -120,9 +120,6 @@ msgstr ""
 msgid "Avg HR"
 msgstr ""
 
-msgid "Rows per page"
-msgstr ""
-
 msgid "Loading health data..."
 msgstr ""
 

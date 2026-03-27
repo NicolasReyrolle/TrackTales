@@ -70,13 +70,13 @@ class TestComplexRealWorldWorkout:
         # Verify metadata entries for elevation
         assert workout["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  # type: ignore[misc]
 
-    def test_parse_complex_workout_does_not_load_elevation(
+    def test_parse_complex_workout_loads_elevation_from_nested_activity(
         self,
         create_health_zip: Callable[..., str],
         load_export_fragment: Callable[[str], str],
         build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
-        """Test a bug where elevation ascended is not loaded"""
+        """Elevation ascended is loaded from nested WorkoutActivity metadata."""
 
         xml_content = build_health_export_xml(
             [load_export_fragment("workout_running_long_distance.xml")]

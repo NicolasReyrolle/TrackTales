@@ -28,6 +28,29 @@ def _safe_float(value: Any) -> float | None:
     return None if pd.isna(f) else f
 
 
+def _build_field_pair(
+    raw_value: Any,
+    formatter: Any,
+    missing_display: str = "–",
+) -> tuple[float | str, str]:
+    """Build a (sort_value, display_value) pair for a field.
+
+    Args:
+        raw_value: The raw value to process.
+        formatter: A callable that takes the raw value and returns a display string,
+                   or None if the value is missing/invalid.
+        missing_display: String to display when value is missing.
+
+    Returns:
+        A tuple of (sort_value, display_value).
+    """
+    safe_val = _safe_float(raw_value)
+    if safe_val is None:
+        return _MISSING_SORT, missing_display
+    display = formatter(safe_val)
+    return safe_val, display
+
+
 def _build_workout_rows() -> list[dict[str, Any]]:
     """Build table rows from the currently filtered workouts.
 
@@ -49,72 +72,83 @@ def _build_workout_rows() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
 
     for idx, (_, row) in enumerate(df.iterrows()):
-        # ── Date ────────────────────────────────────────────────────────────
-        start_date_raw = row.get("startDate")
-        ts: pd.Timestamp | None = (
-            start_date_raw if isinstance(start_date_raw, pd.Timestamp) else None
-        )
-        date_sort = float(ts.timestamp()) if ts is not None else _MISSING_SORT
-        date_display = format_date_label(ts, language_code) if ts is not None else "–"
-
-        # ── Activity type ────────────────────────────────────────────────────
-        activity_type = str(row.get("activityType") or "–")
-
-        # ── Duration ────────────────────────────────────────────────────────
-        duration_raw = _safe_float(row.get("duration"))
-        duration_sort = duration_raw if duration_raw is not None else _MISSING_SORT
-        duration_display = format_duration_label(duration_raw) if duration_raw is not None else "–"
-
-        # ── Distance (optional, stored in metres) ────────────────────────────
-        distance_raw = _safe_float(row.get("distance"))
-        distance_sort = distance_raw if distance_raw is not None else _MISSING_SORT
-        if distance_raw is not None and distance_raw > 0:
-            distance_display = f"{distance_raw / 1000:.1f} km"
-        else:
-            distance_display = "–"
-
-        # ── Calories (optional, kcal) ────────────────────────────────────────
-        calories_raw = _safe_float(row.get("sumActiveEnergyBurned"))
-        calories_sort = calories_raw if calories_raw is not None else _MISSING_SORT
-        calories_display = f"{int(round(calories_raw))} kcal" if calories_raw is not None else "–"
-
-        # ── Average heart rate (optional, bpm) ───────────────────────────────
-        hr_raw = _safe_float(row.get("averageHeartRate"))
-        hr_sort = hr_raw if hr_raw is not None else _MISSING_SORT
-        hr_display = f"{int(round(hr_raw))} bpm" if hr_raw is not None else "–"
-
-        # ── Elevation ascended (optional, stored in metres) ──────────────────
-        elev_raw = _safe_float(row.get("ElevationAscended"))
-        elev_sort = elev_raw if elev_raw is not None else _MISSING_SORT
-        elev_display = f"{int(round(elev_raw))} m" if elev_raw is not None else "–"
-
-        # ── Average running power (optional, Watts) ──────────────────────────
-        power_raw = _safe_float(row.get("averageRunningPower"))
-        power_sort = power_raw if power_raw is not None else _MISSING_SORT
-        power_display = f"{int(round(power_raw))} W" if power_raw is not None else "–"
-
-        rows.append(
-            {
-                "id": f"{date_sort}_{idx}",
-                "date_sort": date_sort,
-                "date": date_display,
-                "activity_type": activity_type,
-                "duration_sort": duration_sort,
-                "duration": duration_display,
-                "distance_sort": distance_sort,
-                "distance": distance_display,
-                "calories_sort": calories_sort,
-                "calories": calories_display,
-                "avg_hr_sort": hr_sort,
-                "avg_hr": hr_display,
-                "elevation_sort": elev_sort,
-                "elevation": elev_display,
-                "avg_power_sort": power_sort,
-                "avg_power": power_display,
-            }
-        )
+        row_data = _extract_row_data(row, idx, language_code)
+        rows.append(row_data)
 
     return rows
+
+
+def _extract_row_data(row: Any, idx: int, language_code: str) -> dict[str, Any]:
+    """Extract and format a single workout row.
+
+    Args:
+        row: A pandas Series representing a workout.
+        idx: The row index.
+        language_code: The current language code for date formatting.
+
+    Returns:
+        A dictionary with sort and display values for all columns.
+    """
+    date_sort, date_display = _extract_date_field(row, language_code)
+    activity_type = str(row.get("activityType") or "–")
+    duration_sort, duration_display = _build_field_pair(row.get("duration"), format_duration_label)
+    distance_sort, distance_display = _extract_distance_field(row)
+    calories_sort, calories_display = _build_field_pair(
+        row.get("sumActiveEnergyBurned"),
+        lambda v: f"{int(round(v))} kcal",
+    )
+    hr_sort, hr_display = _build_field_pair(
+        row.get("averageHeartRate"),
+        lambda v: f"{int(round(v))} bpm",
+    )
+    elev_sort, elev_display = _build_field_pair(
+        row.get("ElevationAscended"),
+        lambda v: f"{int(round(v))} m",
+    )
+    power_sort, power_display = _build_field_pair(
+        row.get("averageRunningPower"),
+        lambda v: f"{int(round(v))} W",
+    )
+
+    return {
+        "id": f"{date_sort}_{idx}",
+        "date_sort": date_sort,
+        "date": date_display,
+        "activity_type": activity_type,
+        "duration_sort": duration_sort,
+        "duration": duration_display,
+        "distance_sort": distance_sort,
+        "distance": distance_display,
+        "calories_sort": calories_sort,
+        "calories": calories_display,
+        "avg_hr_sort": hr_sort,
+        "avg_hr": hr_display,
+        "elevation_sort": elev_sort,
+        "elevation": elev_display,
+        "avg_power_sort": power_sort,
+        "avg_power": power_display,
+    }
+
+
+def _extract_date_field(row: Any, language_code: str) -> tuple[float, str]:
+    """Extract date sort and display values."""
+    start_date_raw = row.get("startDate")
+    ts: pd.Timestamp | None = start_date_raw if isinstance(start_date_raw, pd.Timestamp) else None
+    date_sort = float(ts.timestamp()) if ts is not None else _MISSING_SORT
+    date_display = format_date_label(ts, language_code) if ts is not None else "–"
+    return date_sort, date_display
+
+
+def _extract_distance_field(row: Any) -> tuple[float | str, str]:
+    """Extract distance sort and display values (stored in metres)."""
+    distance_raw = _safe_float(row.get("distance"))
+    if distance_raw is None:
+        return _MISSING_SORT, "–"
+    if distance_raw > 0:
+        distance_display = f"{distance_raw / 1000:.1f} km"
+    else:
+        distance_display = "–"
+    return distance_raw, distance_display
 
 
 @ui.refreshable

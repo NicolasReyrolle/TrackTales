@@ -128,6 +128,9 @@ msgstr "FC moy."
 msgid "Loading health data..."
 msgstr "Chargement des données de santé..."
 
+msgid "Loading Critical Power data..."
+msgstr "Chargement des données de Puissance Critique..."
+
 msgid "Open this tab to load health data."
 msgstr "Ouvrez cet onglet pour charger les données de santé."
 

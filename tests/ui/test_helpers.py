@@ -132,6 +132,7 @@ class TestBestSegmentLabelFormatters:
 
     def test_format_distance_label_miles_unit(self) -> None:
         """Distances above 1 km should use miles formatting when distance_unit='mi'."""
+        # 1609 metres ≈ 1.0 mile (1609 / 1609.34 = 0.9998, rounds to "1.0")
         assert (
             helpers.format_distance_label(
                 1609,
@@ -140,7 +141,7 @@ class TestBestSegmentLabelFormatters:
                 marathon_distance_m=42195,
                 distance_unit="mi",
             )
-            == pytest.approx("1.0 mi", abs=0.1)  # type: ignore[arg-type]
+            == "1.0 mi"
         )
         assert (
             helpers.format_distance_label(

@@ -65,6 +65,8 @@ class WorkoutManagerAggregationsMixin:
             return 1
         if unit == "mi":
             return 1609.34
+        if unit == "ft":
+            return 0.3048
         raise ValueError(f"Unsupported unit: {unit}")
 
     def _get_aggregate_total(

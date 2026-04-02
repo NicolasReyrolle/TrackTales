@@ -658,13 +658,9 @@ def test_render_header_builds_language_menu_items() -> None:
         patch("ui.layout.ui.menu", return_value=DummyContext()),
         patch("ui.layout.ui.menu_item") as menu_item_mock,
         patch("ui.layout.LANGUAGES", {"en": "English", "fr": "Français"}),
-        patch(
-            "ui.layout.DISTANCE_UNITS",
-            {"km": "km", "mi": "mi"},
-        ),
-        patch("ui.layout.WEIGHT_UNITS", {"kg": "kg", "lbs": "lbs"}),
+        patch("ui.layout.UNIT_SYSTEMS", {"metric": "Metric", "imperial": "Imperial"}),
     ):
         layout.render_header()
 
-    # 2 language items + 2 distance unit items + 2 weight unit items
-    assert menu_item_mock.call_count == 6
+    # 2 language items + 2 unit system items (metric, imperial)
+    assert menu_item_mock.call_count == 4

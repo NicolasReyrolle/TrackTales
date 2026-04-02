@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from nicegui import ui
 
-from app_state import get_distance_unit, state
+from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
 from ui.css import (
@@ -98,17 +98,18 @@ def _build_workout_rows() -> list[dict[str, Any]]:
         df = df.sort_values("startDate", ascending=False)
 
     language_code = get_language()
+    elevation_unit = get_elevation_unit()
     rows: list[dict[str, Any]] = []
 
     for idx, (_, row) in enumerate(df.iterrows()):
-        row_data = _extract_row_data(row, idx, language_code, distance_unit)
+        row_data = _extract_row_data(row, idx, language_code, distance_unit, elevation_unit)
         rows.append(row_data)
 
     return rows
 
 
 def _extract_row_data(
-    row: Any, idx: int, language_code: str, distance_unit: str = "km"
+    row: Any, idx: int, language_code: str, distance_unit: str = "km", elevation_unit: str = "m"
 ) -> dict[str, Any]:
     """Extract and format a single workout row.
 
@@ -117,6 +118,7 @@ def _extract_row_data(
         idx: The row index.
         language_code: The current language code for date formatting.
         distance_unit: The display unit for distance values (``"km"`` or ``"mi"``).
+        elevation_unit: The display unit for elevation values (``"m"`` or ``"ft"``).
 
     Returns:
         A dictionary with sort and display values for all columns.
@@ -134,10 +136,16 @@ def _extract_row_data(
         row.get("averageHeartRate"),
         lambda v: f"{int(round(v))} bpm",
     )
-    elev_sort, elev_display = _build_field_pair(
-        row.get("ElevationAscended"),
-        lambda v: f"{int(round(v))} m",
-    )
+    if elevation_unit == "ft":
+        elev_sort, elev_display = _build_field_pair(
+            row.get("ElevationAscended"),
+            lambda v: f"{int(round(v / 0.3048))} ft",
+        )
+    else:
+        elev_sort, elev_display = _build_field_pair(
+            row.get("ElevationAscended"),
+            lambda v: f"{int(round(v))} m",
+        )
     power_sort, power_display = _build_field_pair(
         row.get("averageRunningPower"),
         lambda v: f"{int(round(v))} W",

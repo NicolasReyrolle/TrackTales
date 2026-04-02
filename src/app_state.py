@@ -13,42 +13,52 @@ from logic.workout_manager import WorkoutManager
 # Unit preference constants
 # ---------------------------------------------------------------------------
 
-DEFAULT_DISTANCE_UNIT: str = "km"
-DEFAULT_WEIGHT_UNIT: str = "kg"
+# ---------------------------------------------------------------------------
+# Unit system preference constants
+# ---------------------------------------------------------------------------
 
-#: Available distance units: mapping from unit code to display label.
-DISTANCE_UNITS: dict[str, str] = {"km": "km", "mi": "mi"}
+#: Available unit systems: mapping from system code to display label.
+UNIT_SYSTEMS: dict[str, str] = {"metric": "Metric", "imperial": "Imperial"}
 
-#: Available weight units: mapping from unit code to display label.
-WEIGHT_UNITS: dict[str, str] = {"kg": "kg", "lbs": "lbs"}
+DEFAULT_UNIT_SYSTEM: str = "metric"
+
+
+def get_unit_system() -> str:
+    """Return the active unit system from NiceGUI user storage.
+
+    Returns ``"metric"`` or ``"imperial"``. Falls back to ``DEFAULT_UNIT_SYSTEM``
+    when storage is not available (e.g., during unit tests).
+    """
+    try:
+        user_storage = cast(dict[str, object], app.storage.user)
+        system = str(user_storage.get("unit_system", DEFAULT_UNIT_SYSTEM))
+        return system if system in UNIT_SYSTEMS else DEFAULT_UNIT_SYSTEM
+    except Exception:
+        return DEFAULT_UNIT_SYSTEM
 
 
 def get_distance_unit() -> str:
-    """Return the active distance unit from NiceGUI user storage.
+    """Return the active distance unit derived from the current unit system.
 
-    Falls back to ``DEFAULT_DISTANCE_UNIT`` when storage is not available
-    (e.g., during unit tests that do not set up a NiceGUI session).
+    Returns ``"km"`` for metric, ``"mi"`` for imperial.
     """
-    try:
-        user_storage = cast(dict[str, object], app.storage.user)
-        unit = str(user_storage.get("distance_unit", DEFAULT_DISTANCE_UNIT))
-        return unit if unit in DISTANCE_UNITS else DEFAULT_DISTANCE_UNIT
-    except Exception:
-        return DEFAULT_DISTANCE_UNIT
+    return "mi" if get_unit_system() == "imperial" else "km"
+
+
+def get_elevation_unit() -> str:
+    """Return the active elevation unit derived from the current unit system.
+
+    Returns ``"m"`` for metric, ``"ft"`` for imperial.
+    """
+    return "ft" if get_unit_system() == "imperial" else "m"
 
 
 def get_weight_unit() -> str:
-    """Return the active weight unit from NiceGUI user storage.
+    """Return the active weight unit derived from the current unit system.
 
-    Falls back to ``DEFAULT_WEIGHT_UNIT`` when storage is not available
-    (e.g., during unit tests that do not set up a NiceGUI session).
+    Returns ``"lbs"`` for imperial, ``"kg"`` for metric.
     """
-    try:
-        user_storage = cast(dict[str, object], app.storage.user)
-        unit = str(user_storage.get("weight_unit", DEFAULT_WEIGHT_UNIT))
-        return unit if unit in WEIGHT_UNITS else DEFAULT_WEIGHT_UNIT
-    except Exception:
-        return DEFAULT_WEIGHT_UNIT
+    return "lbs" if get_unit_system() == "imperial" else "kg"
 
 
 class AppState:

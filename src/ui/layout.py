@@ -11,9 +11,10 @@ import pandas as pd
 from nicegui import app, ui
 
 from app_state import (
-    DISTANCE_UNITS,
-    WEIGHT_UNITS,
+    UNIT_SYSTEMS,
     get_distance_unit,
+    get_elevation_unit,
+    get_unit_system,
     get_weight_unit,
     state,
 )
@@ -233,6 +234,7 @@ def handle_csv_export() -> None:
 def _refresh_summary_metrics() -> None:
     """Refresh global summary metrics and their display values."""
     dist_unit = get_distance_unit()
+    elev_unit = get_elevation_unit()
     metrics: dict[str, int | float] = state.metrics
     metrics_display: dict[str, str] = state.metrics_display
     metrics["count"] = state.workouts.get_count(
@@ -248,7 +250,10 @@ def _refresh_summary_metrics() -> None:
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
     )
     metrics["elevation"] = state.workouts.get_total_elevation(
-        state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
+        state.selected_activity_type,
+        unit=elev_unit,
+        start_date=state.start_date,
+        end_date=state.end_date,
     )
     metrics["calories"] = state.workouts.get_total_calories(
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
@@ -517,17 +522,10 @@ def _change_language(language_code: str) -> None:
     ui.navigate.reload()
 
 
-def _change_distance_unit(unit: str) -> None:
-    """Store the selected distance unit and reload the page."""
-    app.storage.user["distance_unit"] = unit
-    _logger.info("Distance unit changed to '%s', reloading page.", unit)
-    ui.navigate.reload()
-
-
-def _change_weight_unit(unit: str) -> None:
-    """Store the selected weight unit and reload the page."""
-    app.storage.user["weight_unit"] = unit
-    _logger.info("Weight unit changed to '%s', reloading page.", unit)
+def _change_unit_system(system: str) -> None:
+    """Store the selected unit system and reload the page."""
+    app.storage.user["unit_system"] = system
+    _logger.info("Unit system changed to '%s', reloading page.", system)
     ui.navigate.reload()
 
 
@@ -564,27 +562,19 @@ def render_header() -> None:
             dark, "value"
         ).props(BUTTON_FLAT_ROUND_PROPS)
 
-        # Preferences menu (language + units)
-        current_dist_unit = get_distance_unit()
-        current_weight_unit = get_weight_unit()
+        # Preferences menu (language + unit system)
+        current_system = get_unit_system()
         with ui.button(icon="tune").props(BUTTON_FLAT_ROUND_PROPS):
             with ui.menu():
                 ui.label(t("Language")).classes(PREF_SECTION_LABEL_CLASSES)
                 for code, name in LANGUAGES.items():
                     ui.menu_item(name, on_click=lambda _event, c=code: _change_language(c))
                 ui.separator()
-                ui.label(t("Distance")).classes(PREF_SECTION_LABEL_CLASSES)
-                for unit_code, unit_label in DISTANCE_UNITS.items():
+                ui.label(t("Units")).classes(PREF_SECTION_LABEL_CLASSES)
+                for system_code, system_label in UNIT_SYSTEMS.items():
                     ui.menu_item(
-                        f"{'✓ ' if unit_code == current_dist_unit else ''}{unit_label}",
-                        on_click=lambda _event, u=unit_code: _change_distance_unit(u),
-                    )
-                ui.separator()
-                ui.label(t("Weight")).classes(PREF_SECTION_LABEL_CLASSES)
-                for unit_code, unit_label in WEIGHT_UNITS.items():
-                    ui.menu_item(
-                        f"{'✓ ' if unit_code == current_weight_unit else ''}{unit_label}",
-                        on_click=lambda _event, u=unit_code: _change_weight_unit(u),
+                        f"{'✓ ' if system_code == current_system else ''}{t(system_label)}",
+                        on_click=lambda _event, s=system_code: _change_unit_system(s),
                     )
 
 
@@ -749,11 +739,12 @@ def render_body() -> None:
     with ui.tab_panels(tabs, value=state.selected_main_tab or "summary").classes(TABS_FULL_CLASSES):
         with ui.tab_panel("summary"):
             dist_unit = get_distance_unit()
+            elev_unit = get_elevation_unit()
             with ui.row().classes(ROW_CENTERED_CLASSES):
                 stat_card(t("Count"), state.metrics_display, "count")
                 stat_card(t("Distance"), state.metrics_display, "distance", dist_unit)
                 stat_card(t("Duration"), state.metrics_display, "duration", "h")
-                stat_card(t("Elevation"), state.metrics_display, "elevation", "km")
+                stat_card(t("Elevation"), state.metrics_display, "elevation", elev_unit)
             with ui.row().classes(ROW_CENTERED_CLASSES):
                 stat_card(t("Calories"), state.metrics_display, "calories", "kcal")
             with ui.row().classes(ROW_CENTERED_CLASSES):
@@ -805,6 +796,7 @@ def render_body() -> None:
 def render_activity_graphs() -> None:
     """Render graphs by activity type."""
     dist_unit = get_distance_unit()
+    elev_unit = get_elevation_unit()
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_pie_rose_graph(
             t("Count by activity"),
@@ -845,16 +837,16 @@ def render_activity_graphs() -> None:
             "h",
         )
     with ui.row().classes(ROW_CENTERED_CLASSES):
-        # Display elevation in meters (not km like the stat card) because per-activity
-        # values can be small and would show as 0.0X km, making the chart less readable
         render_pie_rose_graph(
             t("Elevation by activity"),
             translate_activity_value_map(
                 state.workouts.get_elevation_by_activity(
-                    start_date=state.start_date, end_date=state.end_date
+                    unit=elev_unit,
+                    start_date=state.start_date,
+                    end_date=state.end_date,
                 )
             ),
-            "m",
+            elev_unit,
         )
 
 
@@ -867,6 +859,7 @@ def render_trends_tab() -> None:
 def render_trends_graphs() -> None:
     """Render trend graphs."""
     dist_unit = get_distance_unit()
+    elev_unit = get_elevation_unit()
     period_label = t(period_code_to_label(state.trends_period))
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
@@ -911,18 +904,16 @@ def render_trends_graphs() -> None:
             "h",
         )
     with ui.row().classes(ROW_CENTERED_CLASSES):
-        # Display elevation in meters (not km like the stat card) because values for the
-        # selected period can be small and would show as 0.0X km, making the chart less readable
         render_generic_graph(
             t("Elevation by {period}", period=period_label),
             state.workouts.get_elevation_by_period(
                 state.trends_period,
                 activity_type=state.selected_activity_type,
-                unit="m",
+                unit=elev_unit,
                 start_date=state.start_date,
                 end_date=state.end_date,
             ),
-            "m",
+            elev_unit,
         )
 
 

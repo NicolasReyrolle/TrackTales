@@ -19,8 +19,14 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-# Preferences menu: unit section headers
-msgid "Weight"
+# Preferences menu: unit system section header and options
+msgid "Units"
+msgstr ""
+
+msgid "Metric"
+msgstr ""
+
+msgid "Imperial"
 msgstr ""
 
 # Left drawer

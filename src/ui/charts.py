@@ -82,8 +82,11 @@ def render_pie_rose_graph(label: str, values: Mapping[str, float | int], unit: s
         {"value": v, "name": k} for k, v in values.items()
     ]
 
+    # Include unit in chart title when one is provided
+    title_text = f"{label} ({unit})" if unit else label
+
     with ui.card().classes(CHART_CARD_CLASSES):
-        ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+        ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
         ui.echart(
             {
                 "backgroundColor": "transparent",
@@ -175,7 +178,12 @@ def render_generic_graph(
                     "data": categories,
                     "axisTick": {"alignWithLabel": True},
                 },
-                "yAxis": {"type": "value", "scale": True},
+                "yAxis": {
+                    "type": "value",
+                    "scale": True,
+                    "name": unit,
+                    "nameLocation": "end",
+                },
                 "series": series,
             }
         )

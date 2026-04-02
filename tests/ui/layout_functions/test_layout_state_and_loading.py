@@ -14,7 +14,7 @@ import pytest
 from app_state import state
 from ui import layout
 
-from ._helpers import DummyComponent, DummyContext, DummyRow, DummyTab, DummyTabs
+from ._helpers import DummyComponent, DummyContext, DummyTab, DummyTabs
 
 
 class _FakeTask:
@@ -396,6 +396,7 @@ def test_render_left_drawer_renders_export_actions() -> None:
         patch("ui.layout.ui.label", return_value=DummyContext()),
         patch("ui.layout.render_activity_select") as activity_mock,
         patch("ui.layout.render_date_range_selector") as date_mock,
+        patch("ui.layout.render_period_selector") as period_mock,
         patch("ui.layout.ui.separator"),
         patch("ui.layout.ui.dropdown_button", return_value=DummyContext()),
         patch("ui.layout.ui.button", return_value=DummyContext()) as button_mock,
@@ -404,6 +405,7 @@ def test_render_left_drawer_renders_export_actions() -> None:
 
     activity_mock.assert_called_once()
     date_mock.assert_called_once()
+    period_mock.assert_called_once()
     labels = [call.args[0] for call in button_mock.call_args_list if call.args]
     assert "to JSON" in labels
     assert "to CSV" in labels
@@ -520,7 +522,7 @@ async def test_load_file_guards_success_and_error() -> None:
         state.records_by_type = original_records
 
 
-def test_render_trends_tab_period_change_schedules_health_load_on_health_tab() -> None:
+def test_render_period_selector_period_change_schedules_health_load_on_health_tab() -> None:
     """Changing trends period should schedule health-data reload when health tab is active."""
     original_tab = state.selected_main_tab
 
@@ -545,17 +547,14 @@ def test_render_trends_tab_period_change_schedules_health_load_on_health_tab() -
 
     try:
         state.selected_main_tab = "health_data"
-        with patch("ui.layout.ui.row", return_value=DummyRow()):
-            with patch("ui.layout.ui.label"):
-                with patch("ui.layout.ui.radio", side_effect=_radio_factory):
-                    with patch("ui.layout.render_trends_graphs") as render_trends_graphs_mock:
-                        with patch(
-                            "ui.layout.render_health_data_tab"
-                        ) as render_health_data_tab_mock:
-                            with patch("ui.layout._reset_health_data_state"):
-                                with patch("ui.layout.schedule_health_data_load") as schedule_mock:
-                                    layout.render_trends_tab()
-                                    radios[0].on_change()
+        with patch("ui.layout.ui.label"):
+            with patch("ui.layout.ui.radio", side_effect=_radio_factory):
+                with patch("ui.layout.render_trends_graphs") as render_trends_graphs_mock:
+                    with patch("ui.layout.render_health_data_tab") as render_health_data_tab_mock:
+                        with patch("ui.layout._reset_health_data_state"):
+                            with patch("ui.layout.schedule_health_data_load") as schedule_mock:
+                                layout.render_period_selector()
+                                radios[0].on_change()
 
         render_trends_graphs_mock.refresh.assert_called_once()
         render_health_data_tab_mock.refresh.assert_called_once()

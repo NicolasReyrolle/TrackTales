@@ -384,6 +384,28 @@ def render_activity_select() -> None:
     )
 
 
+def render_period_selector() -> None:
+    """Render the aggregate-by-period radio button selector."""
+
+    def _on_period_change() -> None:
+        _reset_health_data_state()
+        render_trends_graphs.refresh()
+        render_health_data_tab.refresh()
+        if state.selected_main_tab == "health_data":
+            schedule_health_data_load()
+
+    ui.label(t("Aggregate by:")).classes(LABEL_SECTION_CLASSES)
+    ui.radio(
+        {
+            "W": t("Week"),
+            "M": t("Month"),
+            "Q": t("Quarter"),
+            "Y": t("Year"),
+        },
+        on_change=_on_period_change,
+    ).bind_value(state, "trends_period").props("inline")
+
+
 def render_left_drawer() -> None:
     """Generate the left drawer with filters."""
 
@@ -394,6 +416,10 @@ def render_left_drawer() -> None:
         ui.separator()
 
         render_date_range_selector()
+
+        ui.separator()
+
+        render_period_selector()
 
         ui.separator()
         with ui.dropdown_button(t("Export data"), icon="download").bind_enabled_from(
@@ -752,27 +778,7 @@ def render_activity_graphs() -> None:
 
 
 def render_trends_tab() -> None:
-    """Render the trends tab with period selection and graphs."""
-
-    def _on_trends_period_change() -> None:
-        _reset_health_data_state()
-        render_trends_graphs.refresh()
-        render_health_data_tab.refresh()
-        if state.selected_main_tab == "health_data":
-            schedule_health_data_load()
-
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        ui.label(t("Aggregate by:")).classes(LABEL_SECTION_CLASSES)
-        ui.radio(
-            {
-                "W": t("Week"),
-                "M": t("Month"),
-                "Q": t("Quarter"),
-                "Y": t("Year"),
-            },
-            on_change=_on_trends_period_change,
-        ).bind_value(state, "trends_period").props("inline")
-
+    """Render the trends tab with trend graphs."""
     render_trends_graphs()
 
 

@@ -76,7 +76,7 @@ python -m nicegui src.apple_health_analyzer
 1. Explore your data in the **Activities** tab (pie/rose charts grouped by activity type), **Trends** tab (weekly/monthly/quarterly/yearly bar charts with moving average trend lines), **Health Data** tab (line charts for resting heart rate, body mass, VO2 max, CP, and W'), and **Best Segments** tab (standard race distances with expandable runner-ups).
 1. Use the **Activity filter** in the left drawer to focus on specific workout types.
 1. Use the **Date range picker** to analyze specific time periods.
-1. Use the **Aggregate by** selector in the **Trends** tab to change the period.
+1. Use the **Aggregate by** selector in the left drawer to change the aggregation period.
 1. Export your data using the **Export data** menu to download CSV or JSON files.
 
 > **Tip**: You can set a permanent storage secret for sessions by using an environment variable:

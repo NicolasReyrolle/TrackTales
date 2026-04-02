@@ -112,14 +112,12 @@ def test_render_activity_graphs_renders_all_charts() -> None:
         state.workouts = original_workouts
 
 
-def test_render_trends_tab_renders_period_selector() -> None:
-    """Test that render_trends_tab renders the period selector radio button."""
+def test_render_period_selector_renders_label_and_radio() -> None:
+    """Test that render_period_selector renders the 'Aggregate by:' label and radio button."""
 
-    with patch("ui.layout.ui.row", return_value=_DummyRow()):
-        with patch("ui.layout.ui.label") as label_mock:
-            with patch("ui.layout.ui.radio", side_effect=_DummyRadio) as radio_mock:
-                with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
-                    layout.render_trends_tab()
+    with patch("ui.layout.ui.label") as label_mock:
+        with patch("ui.layout.ui.radio", side_effect=_DummyRadio) as radio_mock:
+            layout.render_period_selector()
 
     # Verify the label was created
     label_mock.assert_called_once_with("Aggregate by:")
@@ -130,12 +128,9 @@ def test_render_trends_tab_renders_period_selector() -> None:
     assert radio_options == {"W": "Week", "M": "Month", "Q": "Quarter", "Y": "Year"}
     assert "on_change" in call_kwargs
 
-    # Verify render_trends_graphs was called
-    render_graphs_mock.assert_called_once()
 
-
-def test_render_trends_tab_radio_bound_to_state() -> None:
-    """Test that render_trends_tab radio button is bound to state.trends_period."""
+def test_render_period_selector_radio_bound_to_state() -> None:
+    """Test that render_period_selector radio button is bound to state.trends_period."""
 
     radio_instances: list[_DummyRadio] = []
 
@@ -145,11 +140,9 @@ def test_render_trends_tab_radio_bound_to_state() -> None:
         radio_instances.append(instance)
         return instance
 
-    with patch("ui.layout.ui.row", return_value=_DummyRow()):
-        with patch("ui.layout.ui.label"):
-            with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
-                with patch("ui.layout.render_trends_graphs"):
-                    layout.render_trends_tab()
+    with patch("ui.layout.ui.label"):
+        with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
+            layout.render_period_selector()
 
     # Get the radio instance that was created
     assert radio_mock.call_count == 1
@@ -160,8 +153,8 @@ def test_render_trends_tab_radio_bound_to_state() -> None:
     assert radio_instance.key == "trends_period"
 
 
-def test_render_trends_tab_radio_calls_refresh_on_change() -> None:
-    """Test that the radio on_change callback triggers render_trends_graphs.refresh."""
+def test_render_period_selector_radio_calls_refresh_on_change() -> None:
+    """Test that the period selector on_change callback triggers render_trends_graphs.refresh."""
 
     radio_instances: list[_DummyRadio] = []
 
@@ -171,23 +164,36 @@ def test_render_trends_tab_radio_calls_refresh_on_change() -> None:
         radio_instances.append(instance)
         return instance
 
-    with patch("ui.layout.ui.row", return_value=_DummyRow()):
-        with patch("ui.layout.ui.label"):
-            with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
-                with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
-                    with patch("ui.layout.render_health_data_tab"):
-                        with patch("ui.layout._reset_health_data_state"):
-                            with patch("ui.layout.schedule_health_data_load"):
-                                layout.render_trends_tab()
+    with patch("ui.layout.ui.label"):
+        with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
+            with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
+                with patch("ui.layout.render_health_data_tab"):
+                    with patch("ui.layout._reset_health_data_state"):
+                        with patch("ui.layout.schedule_health_data_load"):
+                            layout.render_period_selector()
 
-                                assert radio_mock.call_count == 1
-                                radio_instance = radio_instances[0]
-                                assert radio_instance.on_change is not None
+                            assert radio_mock.call_count == 1
+                            radio_instance = radio_instances[0]
+                            assert radio_instance.on_change is not None
 
-                                # Invoke inside patch scope so mocks are still active
-                                radio_instance.on_change()
+                            # Invoke inside patch scope so mocks are still active
+                            radio_instance.on_change()
 
     render_graphs_mock.refresh.assert_called_once()
+
+
+def test_render_trends_tab_only_renders_graphs() -> None:
+    """Test that render_trends_tab no longer renders the period selector."""
+
+    with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
+        with patch("ui.layout.ui.label") as label_mock:
+            with patch("ui.layout.ui.radio") as radio_mock:
+                layout.render_trends_tab()
+
+    # Only render_trends_graphs should be called; no label or radio
+    render_graphs_mock.assert_called_once()
+    label_mock.assert_not_called()
+    radio_mock.assert_not_called()
 
 
 def test_change_language_reloads_ui_without_triggering_file_load() -> None:

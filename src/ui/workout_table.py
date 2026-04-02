@@ -66,6 +66,27 @@ def _build_workout_rows() -> list[dict[str, Any]]:
     if df.empty:
         return []
 
+    # Apply distance range filter (convert km to metres, the canonical storage unit).
+    dist_range = state.distance_range_km
+    dist_min_m = dist_range.get("min", 0.0) * 1000.0
+    dist_max_m = dist_range.get("max", 0.0) * 1000.0
+    if "distance" in df.columns and dist_min_m < dist_max_m:
+        df = df[
+            (df["distance"].fillna(0.0) >= dist_min_m) & (df["distance"].fillna(0.0) <= dist_max_m)
+        ]
+
+    # Apply duration range filter (convert minutes to seconds, the canonical storage unit).
+    dur_range = state.duration_range_min
+    dur_min_s = dur_range.get("min", 0.0) * 60.0
+    dur_max_s = dur_range.get("max", 0.0) * 60.0
+    if "duration" in df.columns and dur_min_s < dur_max_s:
+        df = df[
+            (df["duration"].fillna(0.0) >= dur_min_s) & (df["duration"].fillna(0.0) <= dur_max_s)
+        ]
+
+    if df.empty:
+        return []
+
     if "startDate" in df.columns:
         df = df.sort_values("startDate", ascending=False)
 

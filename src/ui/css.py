@@ -62,6 +62,12 @@ INPUT_SMALL_CLASSES = "w-40"
 #: Row containing a date range input and its popup picker.
 DATE_ROW_CLASSES = "items-center gap-2"
 
+#: Row containing a range slider and its label.
+RANGE_ROW_CLASSES = "flex-col w-full gap-1"
+
+#: Label shown above a range slider.
+RANGE_LABEL_CLASSES = "text-sm text-gray-500"
+
 # ---------------------------------------------------------------------------
 # Labels / typography
 # ---------------------------------------------------------------------------

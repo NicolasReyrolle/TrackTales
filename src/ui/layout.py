@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import math
 import time
 from collections.abc import Callable
 from typing import Any, cast
@@ -33,6 +34,8 @@ from ui.css import (
     INPUT_SMALL_CLASSES,
     LABEL_MUTED_CLASSES,
     LABEL_SECTION_CLASSES,
+    RANGE_LABEL_CLASSES,
+    RANGE_ROW_CLASSES,
     ROW_CENTERED_CLASSES,
     ROW_FULL_ITEMS_CLASSES,
     TABS_FULL_CLASSES,
@@ -419,6 +422,14 @@ def render_left_drawer() -> None:
 
         ui.separator()
 
+        render_distance_range_selector()
+
+        ui.separator()
+
+        render_duration_range_selector()
+
+        ui.separator()
+
         render_period_selector()
 
         ui.separator()
@@ -463,6 +474,74 @@ def render_date_range_selector() -> None:
                 else None
             ),
         ).bind_enabled_from(state, "file_loaded")
+
+
+@ui.refreshable
+def render_distance_range_selector() -> None:
+    """Render the distance range slider for the workout table filter."""
+    min_km, max_km = state.workouts.get_distance_bounds()
+    slider_min = math.floor(min_km)
+    slider_max = math.ceil(max_km)
+
+    if slider_min >= slider_max:
+        return
+
+    with ui.column().classes(RANGE_ROW_CLASSES):
+        dist_range = state.distance_range_km
+        ui.label(
+            t(
+                "Distance: {lo} – {hi} km",
+                lo=str(int(dist_range.get("min", slider_min))),
+                hi=str(int(dist_range.get("max", slider_max))),
+            )
+        ).classes(RANGE_LABEL_CLASSES).bind_text_from(
+            state,
+            "distance_range_km",
+            backward=lambda r: t(
+                "Distance: {lo} – {hi} km",
+                lo=str(int(r.get("min", slider_min))),
+                hi=str(int(r.get("max", slider_max))),
+            ),
+        )
+        ui.range(
+            min=slider_min, max=slider_max, step=1, on_change=render_workout_table.refresh
+        ).bind_value(state, "distance_range_km").bind_enabled_from(state, "file_loaded").classes(
+            "w-full"
+        )
+
+
+@ui.refreshable
+def render_duration_range_selector() -> None:
+    """Render the duration range slider for the workout table filter."""
+    min_min, max_min = state.workouts.get_duration_bounds()
+    slider_min = math.floor(min_min)
+    slider_max = math.ceil(max_min)
+
+    if slider_min >= slider_max:
+        return
+
+    with ui.column().classes(RANGE_ROW_CLASSES):
+        dur_range = state.duration_range_min
+        ui.label(
+            t(
+                "Duration: {lo} – {hi} min",
+                lo=str(int(dur_range.get("min", slider_min))),
+                hi=str(int(dur_range.get("max", slider_max))),
+            )
+        ).classes(RANGE_LABEL_CLASSES).bind_text_from(
+            state,
+            "duration_range_min",
+            backward=lambda r: t(
+                "Duration: {lo} – {hi} min",
+                lo=str(int(r.get("min", slider_min))),
+                hi=str(int(r.get("max", slider_max))),
+            ),
+        )
+        ui.range(
+            min=slider_min, max=slider_max, step=1, on_change=render_workout_table.refresh
+        ).bind_value(state, "duration_range_min").bind_enabled_from(state, "file_loaded").classes(
+            "w-full"
+        )
 
 
 def _change_language(language_code: str) -> None:
@@ -618,8 +697,15 @@ async def load_file() -> None:
         state.records_by_type = records_by_type
         state.file_loaded = True
         state.activity_options = activity_options
+        # Reset range filters to the full bounds of the newly loaded dataset.
+        dist_min, dist_max = workouts.get_distance_bounds()
+        state.distance_range_km = {"min": math.floor(dist_min), "max": math.ceil(dist_max)}
+        dur_min, dur_max = workouts.get_duration_bounds()
+        state.duration_range_min = {"min": math.floor(dur_min), "max": math.ceil(dur_max)}
         render_activity_select.refresh()
         render_date_range_selector.refresh()
+        render_distance_range_selector.refresh()
+        render_duration_range_selector.refresh()
         refresh_data()
         ui.notify(t("File parsed successfully."))
     except Exception as e:

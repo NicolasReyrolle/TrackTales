@@ -72,6 +72,12 @@ class AppState:
         self.activity_options: list[str] = ["All"]
         self.date_range_text: str = ""
         self.trends_period: str = "M"
+        # Distance range filter for the workout table (values in km).
+        # Initialised to {"min": 0.0, "max": 0.0}; reset to full dataset bounds on file load.
+        self.distance_range_km: dict[str, float] = {"min": 0.0, "max": 0.0}
+        # Duration range filter for the workout table (values in minutes).
+        # Initialised to {"min": 0.0, "max": 0.0}; reset to full dataset bounds on file load.
+        self.duration_range_min: dict[str, float] = {"min": 0.0, "max": 0.0}
 
     def _parse_date(self, date_str: str) -> datetime | None:
         """Parse a date string in one of the supported formats.

@@ -547,6 +547,43 @@ class WorkoutManagerAggregationsMixin:
         }
         return result
 
+    def get_distance_bounds(self, unit: str = "km") -> tuple[float, float]:
+        """Return the minimum and maximum workout distance in the specified unit.
+
+        Returns ``(0.0, 0.0)`` when there are no workouts or no ``distance`` column.
+        Only workouts with a positive distance are considered.
+        """
+        if self.workouts.empty or "distance" not in self.workouts.columns:
+            return 0.0, 0.0
+        distances = self.workouts["distance"].dropna()
+        distances = distances[distances > 0]
+        if distances.empty:
+            return 0.0, 0.0
+        divisor = self._get_distance_divisor(unit)
+        return float(distances.min()) / divisor, float(distances.max()) / divisor
+
+    def get_duration_bounds(self, unit: str = "min") -> tuple[float, float]:
+        """Return the minimum and maximum workout duration in the specified unit.
+
+        Returns ``(0.0, 0.0)`` when there are no workouts or no ``duration`` column.
+        Duration is stored in seconds; supported units are ``"s"``, ``"min"``, ``"h"``.
+        """
+        if self.workouts.empty or "duration" not in self.workouts.columns:
+            return 0.0, 0.0
+        durations = self.workouts["duration"].dropna()
+        durations = durations[durations > 0]
+        if durations.empty:
+            return 0.0, 0.0
+        if unit == "min":
+            divisor = 60.0
+        elif unit == "h":
+            divisor = 3600.0
+        elif unit == "s":
+            divisor = 1.0
+        else:
+            raise ValueError(f"Unsupported duration unit: {unit}")
+        return float(durations.min()) / divisor, float(durations.max()) / divisor
+
     def get_workouts(self) -> pd.DataFrame:
         """Return the DataFrame of workouts."""
         return self.workouts

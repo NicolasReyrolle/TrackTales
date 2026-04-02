@@ -29,6 +29,12 @@ msgstr ""
 msgid "Date range"
 msgstr ""
 
+msgid "Distance: {lo} – {hi} km"
+msgstr ""
+
+msgid "Duration: {lo} – {hi} min"
+msgstr ""
+
 msgid "Export data"
 msgstr ""
 

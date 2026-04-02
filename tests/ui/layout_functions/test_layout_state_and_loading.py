@@ -607,6 +607,8 @@ def test_render_body_health_data_tab_change_schedules_load() -> None:
         patch("ui.layout.render_health_data_tab"),
         patch("ui.layout.render_best_segments_tab"),
         patch("ui.layout.render_workout_table"),
+        patch("ui.layout.render_distance_range_selector"),
+        patch("ui.layout.render_duration_range_selector"),
         patch("ui.layout.schedule_health_data_load") as health_load_mock,
     ):
         layout.render_body()

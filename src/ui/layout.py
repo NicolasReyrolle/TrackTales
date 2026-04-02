@@ -500,7 +500,7 @@ def render_distance_range_selector() -> None:
     if slider_min >= slider_max:
         return
 
-    with ui.column().classes(RANGE_ROW_CLASSES):
+    with ui.column().classes(RANGE_ROW_CLASSES + " flex-1"):
         dist_range = state.distance_range_km
         ui.label(
             t(
@@ -539,7 +539,7 @@ def render_duration_range_selector() -> None:
     if slider_min >= slider_max:
         return
 
-    with ui.column().classes(RANGE_ROW_CLASSES):
+    with ui.column().classes(RANGE_ROW_CLASSES + " flex-1"):
         dur_range = state.duration_range_min
         ui.label(
             t(
@@ -813,10 +813,8 @@ def render_body() -> None:
 
         with ui.tab_panel("workouts"):
             with ui.row().classes("w-full gap-8 q-pb-sm"):
-                with ui.column().classes("flex-1"):
-                    render_distance_range_selector()
-                with ui.column().classes("flex-1"):
-                    render_duration_range_selector()
+                render_distance_range_selector()
+                render_duration_range_selector()
             render_workout_table()
 
         with ui.tab_panel("health_data"):

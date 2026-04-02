@@ -813,8 +813,10 @@ def render_body() -> None:
 
         with ui.tab_panel("workouts"):
             with ui.row().classes("w-full gap-4 q-pb-sm"):
-                render_distance_range_selector()
-                render_duration_range_selector()
+                with ui.column().classes("flex-1"):
+                    render_distance_range_selector()
+                with ui.column().classes("flex-1"):
+                    render_duration_range_selector()
             render_workout_table()
 
         with ui.tab_panel("health_data"):

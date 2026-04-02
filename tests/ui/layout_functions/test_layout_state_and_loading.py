@@ -367,24 +367,34 @@ def test_refresh_data_schedules_load_for_selected_tab() -> None:
                             with patch("ui.layout.render_trends_graphs.refresh"):
                                 with patch("ui.layout.render_health_data_tab.refresh"):
                                     with patch("ui.layout.render_best_segments_tab.refresh"):
-                                        with patch("ui.layout.render_workout_table.refresh"):
+                                        with patch(
+                                            "ui.layout.render_distance_range_selector.refresh"
+                                        ):
                                             with patch(
-                                                "ui.layout.schedule_best_segments_load"
-                                            ) as best_mock:
+                                                "ui.layout.render_duration_range_selector.refresh"
+                                            ):
                                                 with patch(
-                                                    "ui.layout.schedule_health_data_load"
-                                                ) as health_mock:
-                                                    state.selected_main_tab = "best_segments"
-                                                    layout.refresh_data()
-                                                    best_mock.assert_called_once()
-                                                    health_mock.assert_not_called()
+                                                    "ui.layout.render_workout_table.refresh"
+                                                ):
+                                                    with patch(
+                                                        "ui.layout.schedule_best_segments_load"
+                                                    ) as best_mock:
+                                                        with patch(
+                                                            "ui.layout.schedule_health_data_load"
+                                                        ) as health_mock:
+                                                            state.selected_main_tab = (
+                                                                "best_segments"
+                                                            )
+                                                            layout.refresh_data()
+                                                            best_mock.assert_called_once()
+                                                            health_mock.assert_not_called()
 
-                                                    best_mock.reset_mock()
-                                                    health_mock.reset_mock()
-                                                    state.selected_main_tab = "health_data"
-                                                    layout.refresh_data()
-                                                    health_mock.assert_called_once()
-                                                    best_mock.assert_not_called()
+                                                            best_mock.reset_mock()
+                                                            health_mock.reset_mock()
+                                                            state.selected_main_tab = "health_data"
+                                                            layout.refresh_data()
+                                                            health_mock.assert_called_once()
+                                                            best_mock.assert_not_called()
     finally:
         state.selected_main_tab = original_selected_tab
 
@@ -445,6 +455,8 @@ async def test_load_file_guards_success_and_error() -> None:
     original_activity_options = list(state.activity_options)
     original_workouts = state.workouts
     original_records = state.records_by_type
+    original_distance_range = dict(state.distance_range_km)
+    original_duration_range = dict(state.duration_range_min)
 
     state.input_file = SimpleNamespace(value="")  # type: ignore[assignment]
     state.loading = False
@@ -520,6 +532,8 @@ async def test_load_file_guards_success_and_error() -> None:
         state.activity_options = original_activity_options
         state.workouts = original_workouts
         state.records_by_type = original_records
+        state.distance_range_km = original_distance_range
+        state.duration_range_min = original_duration_range
 
 
 def test_render_period_selector_period_change_schedules_health_load_on_health_tab() -> None:
@@ -593,6 +607,8 @@ def test_render_body_health_data_tab_change_schedules_load() -> None:
         patch("ui.layout.render_health_data_tab"),
         patch("ui.layout.render_best_segments_tab"),
         patch("ui.layout.render_workout_table"),
+        patch("ui.layout.render_distance_range_selector"),
+        patch("ui.layout.render_duration_range_selector"),
         patch("ui.layout.schedule_health_data_load") as health_load_mock,
     ):
         layout.render_body()

@@ -34,6 +34,12 @@ msgstr "Type d'activité"
 msgid "Date range"
 msgstr "Plage de dates"
 
+msgid "Distance: {lo} – {hi} km"
+msgstr "Distance : {lo} – {hi} km"
+
+msgid "Duration: {lo} – {hi} min"
+msgstr "Durée : {lo} – {hi} min"
+
 msgid "Export data"
 msgstr "Exporter les données"
 

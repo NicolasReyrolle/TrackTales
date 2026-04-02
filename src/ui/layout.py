@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import math
 import time
 from collections.abc import Callable
 from typing import Any, cast
@@ -33,6 +34,7 @@ from ui.css import (
     INPUT_SMALL_CLASSES,
     LABEL_MUTED_CLASSES,
     LABEL_SECTION_CLASSES,
+    RANGE_SELECTORS_ROW_CLASSES,
     ROW_CENTERED_CLASSES,
     ROW_FULL_ITEMS_CLASSES,
     TABS_FULL_CLASSES,
@@ -47,7 +49,11 @@ from ui.helpers import (
     translate_parser_progress_message,
 )
 from ui.local_file_picker import LocalFilePicker
-from ui.workout_table import render_workout_table
+from ui.workout_table import (
+    render_distance_range_selector,
+    render_duration_range_selector,
+    render_workout_table,
+)
 
 # Get logger for this module
 _logger = logging.getLogger(__name__)
@@ -357,10 +363,27 @@ def refresh_data() -> None:
     _reset_best_segments_state()
     _reset_health_data_state()
 
+    # Reset range filter bounds to match the current activity/date filtered dataset so
+    # sliders always show a meaningful range and start fully open after a filter change.
+    dist_min, dist_max = state.workouts.get_distance_bounds(
+        activity_type=state.selected_activity_type,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
+    state.distance_range_km = {"min": math.floor(dist_min), "max": math.ceil(dist_max)}
+    dur_min, dur_max = state.workouts.get_duration_bounds(
+        activity_type=state.selected_activity_type,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
+    state.duration_range_min = {"min": math.floor(dur_min), "max": math.ceil(dur_max)}
+
     render_activity_graphs.refresh()
     render_trends_graphs.refresh()
     render_health_data_tab.refresh()
     render_best_segments_tab.refresh()
+    render_distance_range_selector.refresh()
+    render_duration_range_selector.refresh()
     render_workout_table.refresh()
 
     # If user is already on the tab, load asynchronously after invalidation.
@@ -714,6 +737,9 @@ def render_body() -> None:
             render_trends_tab()
 
         with ui.tab_panel("workouts"):
+            with ui.row().classes(RANGE_SELECTORS_ROW_CLASSES):
+                render_distance_range_selector()
+                render_duration_range_selector()
             render_workout_table()
 
         with ui.tab_panel("health_data"):

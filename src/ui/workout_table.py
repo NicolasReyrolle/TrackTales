@@ -1,6 +1,7 @@
-"""Workout details table for Apple Health Analyzer."""
+"""Workout details table and range-filter selectors for Apple Health Analyzer."""
 
 import logging
+import math
 from typing import Any
 
 import pandas as pd
@@ -9,7 +10,12 @@ from nicegui import ui
 from app_state import state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
-from ui.css import LABEL_EMPTY_STATE_CLASSES, TABLE_FULL_CLASSES
+from ui.css import (
+    LABEL_EMPTY_STATE_CLASSES,
+    RANGE_LABEL_CLASSES,
+    RANGE_SELECTOR_COLUMN_CLASSES,
+    TABLE_FULL_CLASSES,
+)
 from ui.helpers import format_date_label, format_duration_label
 
 _logger = logging.getLogger(__name__)
@@ -62,6 +68,25 @@ def _build_workout_rows() -> list[dict[str, Any]]:
     df = state.workouts._filter_workouts(
         state.selected_activity_type, state.start_date, state.end_date
     )
+
+    if df.empty:
+        return []
+
+    # Apply distance range filter (convert km to metres, the canonical storage unit).
+    dist_range = state.distance_range_km
+    dist_min_m = dist_range.get("min", 0.0) * 1000.0
+    dist_max_m = dist_range.get("max", 0.0) * 1000.0
+    if "distance" in df.columns and dist_min_m < dist_max_m:
+        dist = df["distance"].fillna(0.0)
+        df = df[(dist >= dist_min_m) & (dist <= dist_max_m)]
+
+    # Apply duration range filter (convert minutes to seconds, the canonical storage unit).
+    dur_range = state.duration_range_min
+    dur_min_s = dur_range.get("min", 0.0) * 60.0
+    dur_max_s = dur_range.get("max", 0.0) * 60.0
+    if "duration" in df.columns and dur_min_s < dur_max_s:
+        dur = df["duration"].fillna(0.0)
+        df = df[(dur >= dur_min_s) & (dur <= dur_max_s)]
 
     if df.empty:
         return []
@@ -244,4 +269,85 @@ def render_workout_table() -> None:
         table.add_slot(
             f"body-cell-{col_name}",
             f'<q-td :props="props">{{{{ props.row.{display_field} }}}}</q-td>',
+        )
+
+
+@ui.refreshable
+def render_distance_range_selector() -> None:
+    """Render the distance range slider for the workout table filter."""
+    min_km, max_km = state.workouts.get_distance_bounds(
+        activity_type=state.selected_activity_type,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
+    slider_min = math.floor(min_km)
+    slider_max = math.ceil(max_km)
+
+    # No meaningful range to filter (no data or all workouts have the same distance).
+    if slider_min >= slider_max:
+        return
+
+    with ui.column().classes(RANGE_SELECTOR_COLUMN_CLASSES):
+        dist_range = state.distance_range_km
+        # Pre-compute translated format string once at render time so the
+        # bind_text_from backward never calls t() in a deferred binding context
+        # where app.storage.user may not yet be available (causing English reversion).
+        dist_label_fmt = t("Distance: {lo} – {hi} km")
+        ui.label(
+            dist_label_fmt.format(
+                lo=str(int(dist_range.get("min", slider_min))),
+                hi=str(int(dist_range.get("max", slider_max))),
+            )
+        ).classes(RANGE_LABEL_CLASSES).bind_text_from(
+            state,
+            "distance_range_km",
+            backward=lambda r: dist_label_fmt.format(
+                lo=str(int(r.get("min", slider_min))),
+                hi=str(int(r.get("max", slider_max))),
+            ),
+        )
+        ui.range(
+            min=slider_min, max=slider_max, step=1, on_change=render_workout_table.refresh
+        ).bind_value(state, "distance_range_km").bind_enabled_from(state, "file_loaded").classes(
+            TABLE_FULL_CLASSES
+        )
+
+
+@ui.refreshable
+def render_duration_range_selector() -> None:
+    """Render the duration range slider for the workout table filter."""
+    min_min, max_min = state.workouts.get_duration_bounds(
+        activity_type=state.selected_activity_type,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
+    slider_min = math.floor(min_min)
+    slider_max = math.ceil(max_min)
+
+    # No meaningful range to filter (no data or all workouts have the same duration).
+    if slider_min >= slider_max:
+        return
+
+    with ui.column().classes(RANGE_SELECTOR_COLUMN_CLASSES):
+        dur_range = state.duration_range_min
+        # Pre-compute translated format string once at render time (same reasoning
+        # as render_distance_range_selector).
+        dur_label_fmt = t("Duration: {lo} – {hi} min")
+        ui.label(
+            dur_label_fmt.format(
+                lo=str(int(dur_range.get("min", slider_min))),
+                hi=str(int(dur_range.get("max", slider_max))),
+            )
+        ).classes(RANGE_LABEL_CLASSES).bind_text_from(
+            state,
+            "duration_range_min",
+            backward=lambda r: dur_label_fmt.format(
+                lo=str(int(r.get("min", slider_min))),
+                hi=str(int(r.get("max", slider_max))),
+            ),
+        )
+        ui.range(
+            min=slider_min, max=slider_max, step=1, on_change=render_workout_table.refresh
+        ).bind_value(state, "duration_range_min").bind_enabled_from(state, "file_loaded").classes(
+            TABLE_FULL_CLASSES
         )

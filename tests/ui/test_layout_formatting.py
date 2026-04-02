@@ -75,6 +75,24 @@ class _DummyWorkouts(WorkoutManager):
         """Return no longest workout details in this dummy implementation."""
         return None
 
+    def get_distance_bounds(
+        self,
+        unit: str = "km",
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> tuple[float, float]:
+        return 0.0, 0.0
+
+    def get_duration_bounds(
+        self,
+        unit: str = "min",
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> tuple[float, float]:
+        return 0.0, 0.0
+
 
 def test_refresh_data_formats_metrics_display() -> None:
     """refresh_data should populate formatted display values."""
@@ -102,8 +120,10 @@ def mock_refresh_data() -> None:
         with patch("ui.layout.render_trends_graphs.refresh"):
             with patch("ui.layout.render_health_data_tab.refresh"):
                 with patch("ui.layout.render_best_segments_tab.refresh"):
-                    with patch("ui.layout.render_workout_table.refresh"):
-                        refresh_data()
+                    with patch("ui.layout.render_distance_range_selector.refresh"):
+                        with patch("ui.layout.render_duration_range_selector.refresh"):
+                            with patch("ui.layout.render_workout_table.refresh"):
+                                refresh_data()
 
 
 def test_refresh_data_passes_date_range_to_workouts() -> None:
@@ -120,6 +140,8 @@ def test_refresh_data_passes_date_range_to_workouts() -> None:
     workouts_mock.get_total_calories.return_value = 5
     workouts_mock.get_longest_workout.return_value = 0.0
     workouts_mock.get_longest_workout_details.return_value = None
+    workouts_mock.get_distance_bounds.return_value = (0.0, 0.0)
+    workouts_mock.get_duration_bounds.return_value = (0.0, 0.0)
 
     try:
         state.workouts = workouts_mock
@@ -165,6 +187,8 @@ def test_refresh_data_triggers_best_segments_load_when_tab_selected() -> None:
     workouts_mock.get_total_calories.return_value = 5
     workouts_mock.get_longest_workout.return_value = 0.0
     workouts_mock.get_longest_workout_details.return_value = None
+    workouts_mock.get_distance_bounds.return_value = (0.0, 0.0)
+    workouts_mock.get_duration_bounds.return_value = (0.0, 0.0)
 
     try:
         state.workouts = workouts_mock
@@ -176,15 +200,23 @@ def test_refresh_data_triggers_best_segments_load_when_tab_selected() -> None:
             with patch("ui.layout.render_trends_graphs.refresh"):
                 with patch("ui.layout.render_health_data_tab.refresh"):
                     with patch("ui.layout.render_best_segments_tab.refresh"):
-                        with patch("ui.layout.render_workout_table.refresh"):
-                            with patch("ui.layout.load_best_segments_data", new=AsyncMock()):
-                                with patch("ui.layout.asyncio.create_task") as create_task_mock:
+                        with patch("ui.layout.render_distance_range_selector.refresh"):
+                            with patch("ui.layout.render_duration_range_selector.refresh"):
+                                with patch("ui.layout.render_workout_table.refresh"):
+                                    with patch(
+                                        "ui.layout.load_best_segments_data", new=AsyncMock()
+                                    ):
+                                        with patch(
+                                            "ui.layout.asyncio.create_task"
+                                        ) as create_task_mock:
 
-                                    def _close_coro(coro: Coroutine[Any, Any, None]) -> None:
-                                        coro.close()
+                                            def _close_coro(
+                                                coro: Coroutine[Any, Any, None],
+                                            ) -> None:
+                                                coro.close()
 
-                                    create_task_mock.side_effect = _close_coro
-                                    refresh_data()
+                                            create_task_mock.side_effect = _close_coro
+                                            refresh_data()
 
         assert state.best_segments_rows == []
         assert state.best_segments_loaded is False

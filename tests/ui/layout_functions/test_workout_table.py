@@ -311,3 +311,200 @@ class TestRenderWorkoutTable:
             table_mock.assert_not_called()
         finally:
             state.file_loaded = original_file_loaded
+
+
+class TestBuildWorkoutRowsRangeFiltering:
+    """Tests for distance and duration range filtering in _build_workout_rows()."""
+
+    def _make_workouts_mock(self, rows: list[dict[str, Any]]) -> MagicMock:
+        mock = MagicMock()
+        mock._filter_workouts.return_value = pd.DataFrame(rows)
+        return mock
+
+    def test_distance_range_filter_excludes_outside_rows(self) -> None:
+        """Workouts outside the distance range should not appear in the result."""
+        original_workouts: Any = state.workouts
+        original_dist = dict(state.distance_range_km)
+
+        workouts_mock = self._make_workouts_mock(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 1800.0,
+                    "distance": 3000.0,
+                },  # 3 km – too short
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-02"),
+                    "duration": 3600.0,
+                    "distance": 8000.0,
+                },  # 8 km – in range
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-03"),
+                    "duration": 7200.0,
+                    "distance": 15000.0,
+                },  # 15 km – too long
+            ]
+        )
+
+        try:
+            state.workouts = workouts_mock
+            state.distance_range_km = {"min": 5.0, "max": 10.0}
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+            state.distance_range_km = original_dist
+
+        assert len(rows) == 1
+        assert rows[0]["distance_sort"] == pytest.approx(8000.0)
+
+    def test_distance_range_zero_zero_applies_no_filter(self) -> None:
+        """Default {"min": 0, "max": 0} state should not filter any workouts."""
+        original_workouts: Any = state.workouts
+        original_dist = dict(state.distance_range_km)
+
+        workouts_mock = self._make_workouts_mock(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 1800.0,
+                    "distance": 1000.0,
+                },
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-02"),
+                    "duration": 3600.0,
+                    "distance": 42000.0,
+                },
+            ]
+        )
+
+        try:
+            state.workouts = workouts_mock
+            state.distance_range_km = {"min": 0.0, "max": 0.0}
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+            state.distance_range_km = original_dist
+
+        assert len(rows) == 2
+
+    def test_duration_range_filter_excludes_outside_rows(self) -> None:
+        """Workouts outside the duration range should not appear in the result."""
+        original_workouts: Any = state.workouts
+        original_dur = dict(state.duration_range_min)
+
+        workouts_mock = self._make_workouts_mock(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 600.0,
+                    "distance": 2000.0,
+                },  # 10 min – too short
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-02"),
+                    "duration": 3600.0,
+                    "distance": 10000.0,
+                },  # 60 min – in range
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-03"),
+                    "duration": 9000.0,
+                    "distance": 25000.0,
+                },  # 150 min – too long
+            ]
+        )
+
+        try:
+            state.workouts = workouts_mock
+            state.duration_range_min = {"min": 30.0, "max": 90.0}
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+            state.duration_range_min = original_dur
+
+        assert len(rows) == 1
+        assert rows[0]["duration_sort"] == pytest.approx(3600.0)
+
+    def test_duration_range_zero_zero_applies_no_filter(self) -> None:
+        """Default {"min": 0, "max": 0} state should not filter any workouts."""
+        original_workouts: Any = state.workouts
+        original_dur = dict(state.duration_range_min)
+
+        workouts_mock = self._make_workouts_mock(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 600.0,
+                    "distance": 2000.0,
+                },
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-02"),
+                    "duration": 7200.0,
+                    "distance": 20000.0,
+                },
+            ]
+        )
+
+        try:
+            state.workouts = workouts_mock
+            state.duration_range_min = {"min": 0.0, "max": 0.0}
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+            state.duration_range_min = original_dur
+
+        assert len(rows) == 2
+
+    def test_combined_distance_and_duration_filter(self) -> None:
+        """Both distance and duration range filters apply simultaneously."""
+        original_workouts: Any = state.workouts
+        original_dist = dict(state.distance_range_km)
+        original_dur = dict(state.duration_range_min)
+
+        workouts_mock = self._make_workouts_mock(
+            [
+                # passes distance, fails duration
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 600.0,
+                    "distance": 8000.0,
+                },
+                # passes both
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-02"),
+                    "duration": 3600.0,
+                    "distance": 8000.0,
+                },
+                # fails distance
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-03"),
+                    "duration": 3600.0,
+                    "distance": 1000.0,
+                },
+            ]
+        )
+
+        try:
+            state.workouts = workouts_mock
+            state.distance_range_km = {"min": 5.0, "max": 15.0}
+            state.duration_range_min = {"min": 30.0, "max": 90.0}
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+            state.distance_range_km = original_dist
+            state.duration_range_min = original_dur
+
+        assert len(rows) == 1
+        assert rows[0]["distance_sort"] == pytest.approx(8000.0)
+        assert rows[0]["duration_sort"] == pytest.approx(3600.0)

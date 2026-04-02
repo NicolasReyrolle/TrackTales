@@ -95,8 +95,8 @@ def _to_json_safe(d: dict[Any, Any]) -> dict[str, float | int | None]:
     return result
 
 
-def _build_health_data_graphs() -> dict[str, dict[str, float | int | None]]:
-    """Build cached chart series for the health data tab."""
+def _build_fast_health_graphs() -> dict[str, dict[str, float | int | None]]:
+    """Build chart series for fast health graphs (HR, body mass, VO2 max)."""
     heart_rate_stats = state.records_by_type.heart_rate_stats(
         period=state.trends_period,
         context=RecordsByType.HeartRateMeasureContext.SEDENTARY,
@@ -113,13 +113,6 @@ def _build_health_data_graphs() -> dict[str, dict[str, float | int | None]]:
         start_date=state.start_date,
         end_date=state.end_date,
     )
-    cp_evolution = state.workouts.get_critical_power_evolution(
-        running_power_df=state.records_by_type.get("RunningPower"),
-        period=state.trends_period,
-        start_date=state.start_date,
-        end_date=state.end_date,
-    )
-
     return {
         "heart_rate": _to_json_safe(
             heart_rate_stats.assign(period=heart_rate_stats["period"].astype(str))
@@ -136,6 +129,18 @@ def _build_health_data_graphs() -> dict[str, dict[str, float | int | None]]:
             .set_index("period")["avg"]
             .to_dict()
         ),
+    }
+
+
+def _build_cp_graphs() -> dict[str, dict[str, float | int | None]]:
+    """Build chart series for the slow CP/W' graphs (critical power evolution)."""
+    cp_evolution = state.workouts.get_critical_power_evolution(
+        running_power_df=state.records_by_type.get("RunningPower"),
+        period=state.trends_period,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
+    return {
         "critical_power": _to_json_safe(
             {}
             if cp_evolution.empty
@@ -148,7 +153,11 @@ def _build_health_data_graphs() -> dict[str, dict[str, float | int | None]]:
 
 
 async def load_health_data(force: bool = False) -> None:
-    """Load health data asynchronously for the tab, with concurrency guard."""
+    """Load health data asynchronously for the tab, with concurrency guard.
+
+    Uses two phases so fast graphs (HR, body mass, VO2 max) are displayed
+    immediately while the slower CP/W' computation runs in the background.
+    """
     if state.health_data_loading:
         return
     if state.health_data_loaded and not force:
@@ -160,12 +169,27 @@ async def load_health_data(force: bool = False) -> None:
     render_health_data_tab.refresh()
 
     try:
-        state.health_data_graphs = await asyncio.to_thread(_build_health_data_graphs)
+        # Phase 1 — fast graphs: HR, body mass, VO2 max
+        fast_graphs = await asyncio.to_thread(_build_fast_health_graphs)
+        state.health_data_graphs.update(fast_graphs)
         state.health_data_loaded = True
+        state.health_data_loading = False
+        state.health_data_cp_loading = True
+        render_health_data_tab.refresh()
+
+        # Phase 2 — slow graphs: critical power and W'
+        try:
+            cp_graphs = await asyncio.to_thread(_build_cp_graphs)
+            state.health_data_graphs.update(cp_graphs)
+        except Exception:
+            _logger.exception("Failed to load critical power graphs")
+        finally:
+            state.health_data_cp_loading = False
+            render_health_data_tab.refresh()
     except Exception:
         _logger.exception("Failed to load health data tab")
-    finally:
         state.health_data_loading = False
+        state.health_data_cp_loading = False
         render_health_data_tab.refresh()
 
 
@@ -309,6 +333,7 @@ def _reset_health_data_state() -> None:
     state.health_data_task = None
     state.health_data_loading = False
     state.health_data_loaded = False
+    state.health_data_cp_loading = False
     state.health_data_graphs = {
         "heart_rate": {},
         "body_mass": {},
@@ -849,17 +874,21 @@ def render_health_data_tab() -> None:
         )
 
     with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_generic_graph(
-            t("Critical Power (CP) over time"),
-            state.health_data_graphs.get("critical_power", {}),
-            "W",
-            graph_type="line",
-            show_trend=False,
-        )
-        render_generic_graph(
-            t("W' over time"),
-            state.health_data_graphs.get("w_prime", {}),
-            "kJ",
-            graph_type="line",
-            show_trend=False,
-        )
+        if state.health_data_cp_loading:
+            ui.spinner(size="lg")
+            ui.label(t("Loading Critical Power data..."))
+        else:
+            render_generic_graph(
+                t("Critical Power (CP) over time"),
+                state.health_data_graphs.get("critical_power", {}),
+                "W",
+                graph_type="line",
+                show_trend=False,
+            )
+            render_generic_graph(
+                t("W' over time"),
+                state.health_data_graphs.get("w_prime", {}),
+                "kJ",
+                graph_type="line",
+                show_trend=False,
+            )

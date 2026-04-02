@@ -78,11 +78,13 @@ class TestRenderHealthDataTab:
         """Loaded tab should render graphs from cached series without recomputation."""
         original_loading = state.health_data_loading
         original_loaded = state.health_data_loaded
+        original_cp_loading = state.health_data_cp_loading
         original_graphs = state.health_data_graphs
 
         try:
             state.health_data_loading = False
             state.health_data_loaded = True
+            state.health_data_cp_loading = False
             state.health_data_graphs = {
                 "heart_rate": {"2025-01": 67.0},
                 "body_mass": {"2025-01": 70.5},
@@ -106,6 +108,57 @@ class TestRenderHealthDataTab:
         finally:
             state.health_data_loading = original_loading
             state.health_data_loaded = original_loaded
+            state.health_data_cp_loading = original_cp_loading
+            state.health_data_graphs = original_graphs
+
+    def test_render_health_data_tab_shows_cp_loading_spinner(self) -> None:
+        """Tab should show CP spinner for phase-2 while fast graphs are already rendered."""
+        original_loading = state.health_data_loading
+        original_loaded = state.health_data_loaded
+        original_cp_loading = state.health_data_cp_loading
+        original_graphs = state.health_data_graphs
+
+        try:
+            state.health_data_loading = False
+            state.health_data_loaded = True
+            state.health_data_cp_loading = True
+            state.health_data_graphs = {
+                "heart_rate": {"2025-01": 67.0},
+                "body_mass": {"2025-01": 70.5},
+                "vo2_max": {"2025-01": 51.2},
+                "critical_power": {},
+                "w_prime": {},
+            }
+
+            with (
+                patch("ui.layout.ui.row", return_value=DummyRow()),
+                patch("ui.layout.ui.spinner") as spinner_mock,
+                patch("ui.layout.ui.label") as label_mock,
+                patch("ui.layout.render_generic_graph") as render_generic_graph_mock,
+            ):
+                layout.render_health_data_tab.func()
+
+            # Fast graphs should be rendered
+            rendered_titles = [
+                call.args[0] for call in render_generic_graph_mock.call_args_list if call.args
+            ]
+            assert any("Resting HR" in t for t in rendered_titles)
+            assert any("Body Mass" in t for t in rendered_titles)
+            assert any("VO2 Max" in t for t in rendered_titles)
+
+            # CP/W' should NOT be rendered — spinner shown instead
+            assert not any("Critical Power" in t for t in rendered_titles)
+            assert not any("W'" in t for t in rendered_titles)
+            spinner_mock.assert_called_once()
+            assert any(
+                "Loading Critical Power data..." in str(call.args[0])
+                for call in label_mock.call_args_list
+                if call.args
+            )
+        finally:
+            state.health_data_loading = original_loading
+            state.health_data_loaded = original_loaded
+            state.health_data_cp_loading = original_cp_loading
             state.health_data_graphs = original_graphs
 
 

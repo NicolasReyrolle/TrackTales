@@ -73,7 +73,7 @@ def test_schedule_health_data_load_sets_and_clears_task() -> None:
 
 
 def test_build_health_data_graphs_handles_empty_cp_evolution() -> None:
-    """Health graph builder should emit empty CP/W' dicts when evolution frame is empty."""
+    """Health graph builders should emit correct data; CP/W' empty when evolution frame is empty."""
     original_records = state.records_by_type
     original_workouts = state.workouts
 
@@ -97,13 +97,15 @@ def test_build_health_data_graphs_handles_empty_cp_evolution() -> None:
     try:
         state.records_by_type = records_mock
         state.workouts = workouts_mock
-        graphs = layout._build_health_data_graphs()  # type: ignore[attr-defined]
 
-        assert graphs["heart_rate"] == {"2025-01": 60.0}
-        assert graphs["body_mass"] == {"2025-01": 70.5}
-        assert graphs["vo2_max"] == {"2025-01": 50.1}
-        assert not graphs["critical_power"]
-        assert not graphs["w_prime"]
+        fast_graphs = layout._build_fast_health_graphs()
+        assert fast_graphs["heart_rate"] == {"2025-01": 60.0}
+        assert fast_graphs["body_mass"] == {"2025-01": 70.5}
+        assert fast_graphs["vo2_max"] == {"2025-01": 50.1}
+
+        cp_graphs = layout._build_cp_graphs()
+        assert not cp_graphs["critical_power"]
+        assert not cp_graphs["w_prime"]
     finally:
         state.records_by_type = original_records
         state.workouts = original_workouts
@@ -131,7 +133,7 @@ async def test_load_health_data_success_and_exception_paths() -> None:
 
         assert state.health_data_loaded is True
         assert state.health_data_loading is False
-        assert refresh_mock.call_count == 2
+        assert refresh_mock.call_count == 3
 
         state.health_data_loaded = False
         with patch("ui.layout.render_health_data_tab.refresh") as refresh_mock:

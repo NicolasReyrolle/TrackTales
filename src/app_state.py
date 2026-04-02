@@ -64,6 +64,7 @@ class AppState:
         }
         self.health_data_loading: bool = False
         self.health_data_loaded: bool = False
+        self.health_data_cp_loading: bool = False
         self.health_data_task: asyncio.Task[None] | None = None
         self.selected_main_tab: str = "summary"
 

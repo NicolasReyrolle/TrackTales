@@ -123,6 +123,9 @@ msgstr ""
 msgid "Loading health data..."
 msgstr ""
 
+msgid "Loading Critical Power data..."
+msgstr ""
+
 msgid "Open this tab to load health data."
 msgstr ""
 

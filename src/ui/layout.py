@@ -812,7 +812,7 @@ def render_body() -> None:
             render_trends_tab()
 
         with ui.tab_panel("workouts"):
-            with ui.row().classes("w-full gap-4 q-pb-sm"):
+            with ui.row().classes("w-full gap-8 q-pb-sm"):
                 with ui.column().classes("flex-1"):
                     render_distance_range_selector()
                 with ui.column().classes("flex-1"):

@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from nicegui import ui
 
-from app_state import get_distance_unit, get_elevation_unit, state
+from app_state import METERS_TO_FEET, get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from logic.workout_manager import (
     HALF_MARATHON_DISTANCE_M,
@@ -92,7 +92,7 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
             confidence_key = "missing"
         confidence_cfg = confidence_meta[confidence_key]
         if elevation_unit == "ft":
-            elevation_display = f"{elevation_change_m / 0.3048:.1f} ft"
+            elevation_display = f"{elevation_change_m * METERS_TO_FEET:.1f} ft"
         else:
             elevation_display = f"{elevation_change_m:.1f} m"
         return {

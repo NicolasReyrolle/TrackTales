@@ -66,6 +66,7 @@ class WorkoutManagerAggregationsMixin:
         if unit == "mi":
             return 1609.34
         if unit == "ft":
+            # 1 foot = 0.3048 metres; dividing by 0.3048 converts metres to feet
             return 0.3048
         raise ValueError(f"Unsupported unit: {unit}")
 

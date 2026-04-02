@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from nicegui import ui
 
-from app_state import get_distance_unit, get_elevation_unit, state
+from app_state import METERS_TO_FEET, get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
 from ui.css import (
@@ -139,7 +139,7 @@ def _extract_row_data(
     if elevation_unit == "ft":
         elev_sort, elev_display = _build_field_pair(
             row.get("ElevationAscended"),
-            lambda v: f"{int(round(v / 0.3048))} ft",
+            lambda v: f"{int(round(v * METERS_TO_FEET))} ft",
         )
     else:
         elev_sort, elev_display = _build_field_pair(

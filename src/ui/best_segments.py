@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from nicegui import ui
 
-from app_state import state
+from app_state import get_distance_unit, state
 from i18n import get_language, t
 from logic.workout_manager import (
     HALF_MARATHON_DISTANCE_M,
@@ -46,6 +46,7 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
     annotated = state.workouts.annotate_segments_with_power(best_segments, running_power_df)
 
     language_code = get_language()
+    distance_unit = get_distance_unit()
     confidence_meta = {
         "measured": {
             "icon": "sensors",
@@ -73,7 +74,12 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
         power_w: Any,
         power_confidence: Any,
     ) -> dict[str, str]:
-        average_speed = (distance_m / 1000) / (duration_s / 3600) if duration_s > 0 else 0.0
+        if distance_unit == "mi":
+            average_speed = (distance_m / 1609.34) / (duration_s / 3600) if duration_s > 0 else 0.0
+            speed_str = f"{average_speed:.2f} mi/h"
+        else:
+            average_speed = (distance_m / 1000) / (duration_s / 3600) if duration_s > 0 else 0.0
+            speed_str = f"{average_speed:.2f} km/h"
         avg_power_str = (
             f"{float(power_w):.0f} W" if power_w is not None and not pd.isna(power_w) else "–"
         )
@@ -90,10 +96,11 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
                 language_code,
                 HALF_MARATHON_DISTANCE_M,
                 MARATHON_DISTANCE_M,
+                distance_unit,
             ),
             "duration": format_duration_label(duration_s),
             "elevation_change": f"{elevation_change_m:.1f} m",
-            "average_speed": f"{average_speed:.2f} km/h",
+            "average_speed": speed_str,
             "avg_power": avg_power_str,
             "avg_power_confidence_icon": str(confidence_cfg["icon"]),
             "avg_power_confidence_tooltip": str(confidence_cfg["tooltip"]),

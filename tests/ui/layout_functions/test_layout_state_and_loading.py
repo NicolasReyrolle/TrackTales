@@ -619,7 +619,7 @@ def test_render_body_health_data_tab_change_schedules_load() -> None:
 
 
 def test_render_header_builds_language_menu_items() -> None:
-    """Header should create one language menu item per LANGUAGES entry."""
+    """Header should create one preferences menu item per language and unit option."""
 
     class _DummyDarkMode:
         def __init__(self) -> None:
@@ -645,18 +645,26 @@ def test_render_header_builds_language_menu_items() -> None:
             pass
 
     def _button_factory(*_args: Any, **kwargs: Any) -> _DummyButton:
-        return _DummyButton(context=kwargs.get("icon") == "language")
+        # The preferences button uses icon="tune"
+        return _DummyButton(context=kwargs.get("icon") == "tune")
 
     with (
         patch("ui.layout.ui.dark_mode", return_value=_DummyDarkMode()),
         patch("ui.layout.ui.header", return_value=DummyContext()),
         patch("ui.layout.ui.image", return_value=DummyComponent()),
         patch("ui.layout.ui.label", return_value=DummyComponent()),
+        patch("ui.layout.ui.separator"),
         patch("ui.layout.ui.button", side_effect=_button_factory),
         patch("ui.layout.ui.menu", return_value=DummyContext()),
         patch("ui.layout.ui.menu_item") as menu_item_mock,
         patch("ui.layout.LANGUAGES", {"en": "English", "fr": "Français"}),
+        patch(
+            "ui.layout.DISTANCE_UNITS",
+            {"km": "km", "mi": "mi"},
+        ),
+        patch("ui.layout.WEIGHT_UNITS", {"kg": "kg", "lbs": "lbs"}),
     ):
         layout.render_header()
 
-    assert menu_item_mock.call_count == 2
+    # 2 language items + 2 distance unit items + 2 weight unit items
+    assert menu_item_mock.call_count == 6

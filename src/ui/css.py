@@ -84,6 +84,9 @@ LABEL_MUTED_CLASSES = "text-sm text-gray-500"
 #: Muted small label used as a section heading (uppercase + self-centred).
 LABEL_SECTION_CLASSES = "text-sm text-gray-500 uppercase self-center"
 
+#: Small muted uppercase label used inside menus/dialogs as a section heading.
+PREF_SECTION_LABEL_CLASSES = "text-sm text-gray-500 uppercase px-4 py-1"
+
 #: Uppercase label used inside cards and chart headers.
 LABEL_UPPERCASE_CLASSES = "text-sm text-gray-500 uppercase"
 

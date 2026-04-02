@@ -24,6 +24,10 @@ msgstr "Analyseur de santé Apple"
 msgid "Language"
 msgstr "Langue"
 
+# Preferences menu: unit section headers
+msgid "Weight"
+msgstr "Poids"
+
 # Left drawer
 msgid "Activities"
 msgstr "Activités"
@@ -34,8 +38,8 @@ msgstr "Type d'activité"
 msgid "Date range"
 msgstr "Plage de dates"
 
-msgid "Distance: {lo} – {hi} km"
-msgstr "Distance : {lo} – {hi} km"
+msgid "Distance: {lo} – {hi} {unit}"
+msgstr "Distance : {lo} – {hi} {unit}"
 
 msgid "Duration: {lo} – {hi} min"
 msgstr "Durée : {lo} – {hi} min"

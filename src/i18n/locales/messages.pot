@@ -19,6 +19,10 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
+# Preferences menu: unit section headers
+msgid "Weight"
+msgstr ""
+
 # Left drawer
 msgid "Activities"
 msgstr ""
@@ -29,7 +33,7 @@ msgstr ""
 msgid "Date range"
 msgstr ""
 
-msgid "Distance: {lo} – {hi} km"
+msgid "Distance: {lo} – {hi} {unit}"
 msgstr ""
 
 msgid "Duration: {lo} – {hi} min"

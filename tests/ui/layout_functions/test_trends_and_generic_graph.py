@@ -45,7 +45,7 @@ class TestRenderTrendsGraphs:
                 "M", activity_type="Running", start_date=None, end_date=None
             )
             workouts_mock.get_distance_by_period.assert_called_once_with(
-                "M", activity_type="Running", start_date=None, end_date=None
+                "M", unit="km", activity_type="Running", start_date=None, end_date=None
             )
             workouts_mock.get_calories_by_period.assert_called_once_with(
                 "M", activity_type="Running", start_date=None, end_date=None
@@ -86,7 +86,7 @@ class TestRenderTrendsGraphs:
                 "W", activity_type="Running", start_date=None, end_date=None
             )
             workouts_mock.get_distance_by_period.assert_called_once_with(
-                "W", activity_type="Running", start_date=None, end_date=None
+                "W", unit="km", activity_type="Running", start_date=None, end_date=None
             )
 
             called_labels = [call[0][0] for call in render_graph_mock.call_args_list]

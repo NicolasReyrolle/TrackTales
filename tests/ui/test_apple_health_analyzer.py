@@ -191,8 +191,8 @@ class TestLanguageSwitching:
         await user.should_see("Apple Health Analyzer")
         await user.should_see("Apple Health export file")
 
-        # Open the language menu and select French
-        user.find("language").click()
+        # Open the preferences menu and select French
+        user.find("tune").click()
         await asyncio.sleep(0.1)
         change_language = cast(Callable[[str], None], getattr(layout_module, "_change_language"))
         change_language("fr")

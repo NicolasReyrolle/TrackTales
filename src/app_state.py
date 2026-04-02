@@ -2,12 +2,57 @@
 
 import asyncio
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from nicegui import ui
 
 from logic.records_by_type import RecordsByType
 from logic.workout_manager import WorkoutManager
+
+# ---------------------------------------------------------------------------
+# Unit preference constants
+# ---------------------------------------------------------------------------
+
+DEFAULT_DISTANCE_UNIT: str = "km"
+DEFAULT_WEIGHT_UNIT: str = "kg"
+
+#: Available distance units: mapping from unit code to display label.
+DISTANCE_UNITS: dict[str, str] = {"km": "km", "mi": "mi"}
+
+#: Available weight units: mapping from unit code to display label.
+WEIGHT_UNITS: dict[str, str] = {"kg": "kg", "lbs": "lbs"}
+
+
+def get_distance_unit() -> str:
+    """Return the active distance unit from NiceGUI user storage.
+
+    Falls back to ``DEFAULT_DISTANCE_UNIT`` when storage is not available
+    (e.g., during unit tests that do not set up a NiceGUI session).
+    """
+    try:
+        from nicegui import app  # noqa: PLC0415
+
+        user_storage = cast(dict[str, object], app.storage.user)
+        unit = str(user_storage.get("distance_unit", DEFAULT_DISTANCE_UNIT))
+        return unit if unit in DISTANCE_UNITS else DEFAULT_DISTANCE_UNIT
+    except Exception:
+        return DEFAULT_DISTANCE_UNIT
+
+
+def get_weight_unit() -> str:
+    """Return the active weight unit from NiceGUI user storage.
+
+    Falls back to ``DEFAULT_WEIGHT_UNIT`` when storage is not available
+    (e.g., during unit tests that do not set up a NiceGUI session).
+    """
+    try:
+        from nicegui import app  # noqa: PLC0415
+
+        user_storage = cast(dict[str, object], app.storage.user)
+        unit = str(user_storage.get("weight_unit", DEFAULT_WEIGHT_UNIT))
+        return unit if unit in WEIGHT_UNITS else DEFAULT_WEIGHT_UNIT
+    except Exception:
+        return DEFAULT_WEIGHT_UNIT
 
 
 class AppState:

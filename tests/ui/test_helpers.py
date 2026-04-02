@@ -130,6 +130,63 @@ class TestBestSegmentLabelFormatters:
             == "1.0 km"
         )
 
+    def test_format_distance_label_miles_unit(self) -> None:
+        """Distances above 1 km should use miles formatting when distance_unit='mi'."""
+        assert (
+            helpers.format_distance_label(
+                1609,
+                language_code="en",
+                half_marathon_distance_m=21097,
+                marathon_distance_m=42195,
+                distance_unit="mi",
+            )
+            == pytest.approx("1.0 mi", abs=0.1)  # type: ignore[arg-type]
+        )
+        assert (
+            helpers.format_distance_label(
+                5000,
+                language_code="en",
+                half_marathon_distance_m=21097,
+                marathon_distance_m=42195,
+                distance_unit="mi",
+            )
+            == "3.1 mi"
+        )
+
+    def test_format_distance_label_short_always_meters(self) -> None:
+        """Distances below 1 km should always be shown in meters regardless of unit."""
+        assert (
+            helpers.format_distance_label(
+                800,
+                language_code="en",
+                half_marathon_distance_m=21097,
+                marathon_distance_m=42195,
+                distance_unit="mi",
+            )
+            == "800 m"
+        )
+
+    def test_format_distance_label_special_distances_ignore_unit(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Named marathon distances should be translated regardless of unit setting."""
+
+        def _translate(message: str, language: str, **_kwargs: str) -> str:
+            return f"{language}:{message}"
+
+        monkeypatch.setattr(helpers, "translate", _translate)
+
+        assert (
+            helpers.format_distance_label(
+                21097,
+                language_code="en",
+                half_marathon_distance_m=21097,
+                marathon_distance_m=42195,
+                distance_unit="mi",
+            )
+            == "en:Half-marathon"
+        )
+
     def test_format_duration_label(self) -> None:
         """Durations should be rendered as s, min/s, or h/min/s."""
         assert helpers.format_duration_label(5.0) == "5 s"

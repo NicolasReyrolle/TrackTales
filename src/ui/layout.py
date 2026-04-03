@@ -62,6 +62,7 @@ from ui.workout_table import (
     render_duration_range_selector,
     render_workout_table,
 )
+from units import KG_TO_LBS
 
 # Get logger for this module
 _logger = logging.getLogger(__name__)
@@ -129,7 +130,7 @@ def _build_fast_health_graphs() -> dict[str, dict[str, float | int | None]]:
     )
 
     # Apple Health stores body mass in kg; convert to lbs when the user prefers imperial weight.
-    weight_factor = 2.20462 if get_weight_unit() == "lbs" else 1.0
+    weight_factor = KG_TO_LBS if get_weight_unit() == "lbs" else 1.0
     body_mass_series = body_mass_stats.assign(
         period=body_mass_stats["period"].astype(str),
         avg=body_mass_stats["avg"] * weight_factor,
@@ -563,12 +564,16 @@ def render_header() -> None:
         ).props(BUTTON_FLAT_ROUND_PROPS)
 
         # Preferences menu (language + unit system)
+        current_language = get_language()
         current_system = get_unit_system()
         with ui.button(icon="tune").props(BUTTON_FLAT_ROUND_PROPS):
             with ui.menu():
                 ui.label(t("Language")).classes(PREF_SECTION_LABEL_CLASSES)
                 for code, name in LANGUAGES.items():
-                    ui.menu_item(name, on_click=lambda _event, c=code: _change_language(c))
+                    ui.menu_item(
+                        f"{'✓ ' if code == current_language else ''}{name}",
+                        on_click=lambda _event, c=code: _change_language(c),
+                    )
                 ui.separator()
                 ui.label(t("Units")).classes(PREF_SECTION_LABEL_CLASSES)
                 for system_code, system_label in UNIT_SYSTEMS.items():

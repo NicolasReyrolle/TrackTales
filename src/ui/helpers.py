@@ -10,6 +10,7 @@ from babel.core import default_locale
 from babel.numbers import format_decimal
 
 from i18n import translate
+from units import METERS_TO_MILES
 
 
 class _SupportsStrftime(Protocol):
@@ -199,7 +200,7 @@ def format_distance_label(
     if rounded_distance < 1000:
         return f"{rounded_distance} m"
     if distance_unit == "mi":
-        return f"{distance_m / 1609.34:.1f} mi"
+        return f"{distance_m * METERS_TO_MILES:.1f} mi"
     return f"{distance_m / 1000:.1f} km"
 
 

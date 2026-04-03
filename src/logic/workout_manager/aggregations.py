@@ -6,6 +6,8 @@ from typing import Any, cast
 
 import pandas as pd
 
+from units import METERS_TO_FEET, METERS_TO_MILES
+
 
 class WorkoutManagerAggregationsMixin:
     """Filtering, aggregation, and metric accessors for workout data."""
@@ -64,10 +66,9 @@ class WorkoutManagerAggregationsMixin:
         if unit == "m":
             return 1
         if unit == "mi":
-            return 1609.34
+            return 1 / METERS_TO_MILES
         if unit == "ft":
-            # 1 foot = 0.3048 metres; dividing by 0.3048 converts metres to feet
-            return 0.3048
+            return 1 / METERS_TO_FEET
         raise ValueError(f"Unsupported unit: {unit}")
 
     def _get_aggregate_total(

@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from nicegui import ui
 
-from app_state import METERS_TO_FEET, get_distance_unit, get_elevation_unit, state
+from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
 from ui.css import (
@@ -17,6 +17,7 @@ from ui.css import (
     TABLE_FULL_CLASSES,
 )
 from ui.helpers import format_date_label, format_duration_label
+from units import METERS_TO_FEET, METERS_TO_MILES
 
 _logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ def _build_workout_rows() -> list[dict[str, Any]]:
     # preferred distance unit (km or mi); convert to metres for filtering.
     dist_range = state.distance_range_km
     distance_unit = get_distance_unit()
-    dist_divisor = 1609.34 if distance_unit == "mi" else 1000.0
+    dist_divisor = 1 / METERS_TO_MILES if distance_unit == "mi" else 1000.0
     dist_min_m = dist_range.get("min", 0.0) * dist_divisor
     dist_max_m = dist_range.get("max", 0.0) * dist_divisor
     if "distance" in df.columns and dist_min_m < dist_max_m:
@@ -187,7 +188,7 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
         return _MISSING_SORT, "–"
     if distance_raw > 0:
         if distance_unit == "mi":
-            distance_display = f"{distance_raw / 1609.34:.1f} mi"
+            distance_display = f"{distance_raw * METERS_TO_MILES:.1f} mi"
         else:
             distance_display = f"{distance_raw / 1000:.1f} km"
     else:

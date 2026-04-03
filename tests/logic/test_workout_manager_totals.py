@@ -745,7 +745,7 @@ class TestGetLongestWorkout:
             pd.DataFrame(
                 {
                     "activityType": ["Running"],
-                    "distance": [1609.34],  # 1 mile
+                    "distance": [1609.344],  # exactly 1 mile in metres
                 }
             )
         )
@@ -838,7 +838,7 @@ class TestGetLongestWorkoutDetails:
             pd.DataFrame(
                 {
                     "activityType": ["Running"],
-                    "distance": [1609.34],  # 1 mile
+                    "distance": [1609.344],  # exactly 1 mile in metres
                     "duration": [600.0],
                     "startDate": pd.to_datetime(["2024-06-01"]),
                 }

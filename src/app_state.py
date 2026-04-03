@@ -6,6 +6,7 @@ from typing import Any, cast
 
 from nicegui import app, ui
 
+from i18n import DEFAULT_LANGUAGE as DEFAULT_LANGUAGE  # noqa: PLC0414
 from logic.records_by_type import RecordsByType
 from logic.workout_manager import WorkoutManager
 
@@ -17,9 +18,6 @@ from logic.workout_manager import WorkoutManager
 UNIT_SYSTEMS: dict[str, str] = {"metric": "Metric", "imperial": "Imperial"}
 
 DEFAULT_UNIT_SYSTEM: str = "metric"
-
-#: Conversion factor: multiply metres by this value to obtain feet.
-METERS_TO_FEET: float = 1 / 0.3048
 
 
 def get_unit_system() -> str:

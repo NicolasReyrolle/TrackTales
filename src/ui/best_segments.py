@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from nicegui import ui
 
-from app_state import METERS_TO_FEET, get_distance_unit, get_elevation_unit, state
+from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from logic.workout_manager import (
     HALF_MARATHON_DISTANCE_M,
@@ -21,8 +21,135 @@ from ui.css import (
     TABLE_FULL_CLASSES,
 )
 from ui.helpers import format_date_label, format_distance_label, format_duration_label
+from units import METERS_TO_FEET, METERS_TO_MILES
 
 _logger = logging.getLogger(__name__)
+
+
+#: Power confidence metadata used to choose an icon and tooltip for each row.
+_CONFIDENCE_META: dict[str, dict[str, str]] = {
+    "measured": {"icon": "sensors", "tooltip_key": "Measured from segment samples"},
+    "overlap_estimated": {
+        "icon": "insights",
+        "tooltip_key": "Estimated from overlapping power intervals",
+    },
+    "workout_fallback": {
+        "icon": "directions_run",
+        "tooltip_key": "Using workout average power fallback",
+    },
+    "missing": {"icon": "help_outline", "tooltip_key": "No matching power data"},
+}
+
+
+def _resolve_confidence_key(power_w: Any, power_confidence: Any) -> str:
+    """Return the confidence metadata key for *power_confidence* / *power_w*."""
+    if power_confidence in _CONFIDENCE_META:
+        return str(power_confidence)
+    if power_w is not None and not pd.isna(power_w):
+        return "measured"
+    return "missing"
+
+
+def _format_speed(distance_m: float, duration_s: float, distance_unit: str) -> str:
+    """Return a formatted average speed string for the segment."""
+    if duration_s <= 0:
+        speed = 0.0
+    elif distance_unit == "mi":
+        speed = (distance_m * METERS_TO_MILES) / (duration_s / 3600)
+    else:
+        speed = (distance_m / 1000) / (duration_s / 3600)
+    unit_label = "mi/h" if distance_unit == "mi" else "km/h"
+    return f"{speed:.2f} {unit_label}"
+
+
+def _format_elevation(elevation_change_m: float, elevation_unit: str) -> str:
+    """Return a formatted elevation change string."""
+    if elevation_unit == "ft":
+        return f"{elevation_change_m * METERS_TO_FEET:.1f} ft"
+    return f"{elevation_change_m:.1f} m"
+
+
+def _format_segment_entry(
+    distance_m: float,
+    duration_s: float,
+    elevation_change_m: float,
+    start_date: Any,
+    power_w: Any,
+    power_confidence: Any,
+    language_code: str,
+    distance_unit: str,
+    elevation_unit: str,
+) -> dict[str, str]:
+    """Format a single segment record into a display dictionary."""
+    avg_power_str = (
+        f"{float(power_w):.0f} W" if power_w is not None and not pd.isna(power_w) else "–"
+    )
+    confidence_key = _resolve_confidence_key(power_w, power_confidence)
+    confidence_cfg = _CONFIDENCE_META[confidence_key]
+    return {
+        "distance": format_distance_label(
+            distance_m,
+            language_code,
+            HALF_MARATHON_DISTANCE_M,
+            MARATHON_DISTANCE_M,
+            distance_unit,
+        ),
+        "duration": format_duration_label(duration_s),
+        "elevation_change": _format_elevation(elevation_change_m, elevation_unit),
+        "average_speed": _format_speed(distance_m, duration_s, distance_unit),
+        "avg_power": avg_power_str,
+        "avg_power_confidence_icon": str(confidence_cfg["icon"]),
+        "avg_power_confidence_tooltip": t(confidence_cfg["tooltip_key"]),
+        "start_date": format_date_label(start_date, language_code),
+    }
+
+
+def _build_distance_group_row(
+    records: list[Any],
+    language_code: str,
+    distance_unit: str,
+    elevation_unit: str,
+) -> dict[str, Any] | None:
+    """Build a parent row with children for one distance group."""
+    if not records:
+        return None
+
+    start_date = getattr(records[0], "startDate", None)
+    if start_date is None:
+        return None
+
+    distance_m = float(getattr(records[0], "distance", 0.0))
+    kwargs = dict(
+        language_code=language_code, distance_unit=distance_unit, elevation_unit=elevation_unit
+    )
+
+    children = [
+        _format_segment_entry(
+            distance_m,
+            float(getattr(rec, "duration_s", 0.0)),
+            float(getattr(rec, "elevation_change_m", 0.0)),
+            getattr(rec, "startDate"),
+            getattr(rec, "segment_avg_power", None),
+            getattr(rec, "segment_power_confidence", None),
+            **kwargs,
+        )
+        for rec in records[1:]
+        if getattr(rec, "startDate", None) is not None
+    ]
+
+    return {
+        **_format_segment_entry(
+            distance_m,
+            float(getattr(records[0], "duration_s", 0.0)),
+            float(getattr(records[0], "elevation_change_m", 0.0)),
+            start_date,
+            getattr(records[0], "segment_avg_power", None),
+            getattr(records[0], "segment_power_confidence", None),
+            **kwargs,
+        ),
+        "id": str(int(distance_m)),
+        "children": children,
+    }
 
 
 def _build_best_segments_rows() -> list[dict[str, Any]]:
@@ -39,117 +166,19 @@ def _build_best_segments_rows() -> list[dict[str, Any]]:
     )
     _logger.debug("Best segments data:\n%s", best_segments)
 
-    # Annotate with per-segment average power from individual RunningPower records,
-    # falling back to workout-level statistics when segment power cannot be derived
-    # from those records.
     running_power_df = state.records_by_type.get("RunningPower")
     annotated = state.workouts.annotate_segments_with_power(best_segments, running_power_df)
 
     language_code = get_language()
     distance_unit = get_distance_unit()
     elevation_unit = get_elevation_unit()
-    confidence_meta = {
-        "measured": {
-            "icon": "sensors",
-            "tooltip": t("Measured from segment samples"),
-        },
-        "overlap_estimated": {
-            "icon": "insights",
-            "tooltip": t("Estimated from overlapping power intervals"),
-        },
-        "workout_fallback": {
-            "icon": "directions_run",
-            "tooltip": t("Using workout average power fallback"),
-        },
-        "missing": {
-            "icon": "help_outline",
-            "tooltip": t("No matching power data"),
-        },
-    }
-
-    def _format_entry(
-        distance_m: float,
-        duration_s: float,
-        elevation_change_m: float,
-        start_date: Any,
-        power_w: Any,
-        power_confidence: Any,
-    ) -> dict[str, str]:
-        if distance_unit == "mi":
-            average_speed = (distance_m / 1609.34) / (duration_s / 3600) if duration_s > 0 else 0.0
-            speed_str = f"{average_speed:.2f} mi/h"
-        else:
-            average_speed = (distance_m / 1000) / (duration_s / 3600) if duration_s > 0 else 0.0
-            speed_str = f"{average_speed:.2f} km/h"
-        avg_power_str = (
-            f"{float(power_w):.0f} W" if power_w is not None and not pd.isna(power_w) else "–"
-        )
-        if power_confidence in confidence_meta:
-            confidence_key = str(power_confidence)
-        elif power_w is not None and not pd.isna(power_w):
-            confidence_key = "measured"
-        else:
-            confidence_key = "missing"
-        confidence_cfg = confidence_meta[confidence_key]
-        if elevation_unit == "ft":
-            elevation_display = f"{elevation_change_m * METERS_TO_FEET:.1f} ft"
-        else:
-            elevation_display = f"{elevation_change_m:.1f} m"
-        return {
-            "distance": format_distance_label(
-                distance_m,
-                language_code,
-                HALF_MARATHON_DISTANCE_M,
-                MARATHON_DISTANCE_M,
-                distance_unit,
-            ),
-            "duration": format_duration_label(duration_s),
-            "elevation_change": elevation_display,
-            "average_speed": speed_str,
-            "avg_power": avg_power_str,
-            "avg_power_confidence_icon": str(confidence_cfg["icon"]),
-            "avg_power_confidence_tooltip": str(confidence_cfg["tooltip"]),
-            "start_date": format_date_label(start_date, language_code),
-        }
 
     rows: list[dict[str, Any]] = []
     for _, group_df in annotated.groupby("distance", sort=True):
         records = list(group_df.sort_values("duration_s").itertuples(index=False))
-        if not records:
-            continue
-
-        distance_m = float(getattr(records[0], "distance", 0.0))
-        elevation_change_m = float(getattr(records[0], "elevation_change_m", 0.0))
-        start_date = getattr(records[0], "startDate", None)
-        if start_date is None:
-            continue
-
-        power_w = getattr(records[0], "segment_avg_power", None)
-        power_confidence = getattr(records[0], "segment_power_confidence", None)
-        parent: dict[str, Any] = {
-            **_format_entry(
-                distance_m,
-                float(getattr(records[0], "duration_s", 0.0)),
-                elevation_change_m,
-                start_date,
-                power_w,
-                power_confidence,
-            ),
-            "id": str(int(distance_m)),
-            "children": [
-                _format_entry(
-                    distance_m,
-                    float(getattr(record, "duration_s", 0.0)),
-                    float(getattr(record, "elevation_change_m", 0.0)),
-                    getattr(record, "startDate"),
-                    getattr(record, "segment_avg_power", None),
-                    getattr(record, "segment_power_confidence", None),
-                )
-                for record in records[1:]
-                if getattr(record, "startDate", None) is not None
-            ],
-        }
-        rows.append(parent)
+        row = _build_distance_group_row(records, language_code, distance_unit, elevation_unit)
+        if row is not None:
+            rows.append(row)
 
     return rows
 

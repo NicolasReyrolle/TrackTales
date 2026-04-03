@@ -125,9 +125,9 @@ def _build_distance_group_row(
         return None
 
     distance_m = float(getattr(records[0], "distance", 0.0))
-    kwargs = dict(
-        language_code=language_code, distance_unit=distance_unit, elevation_unit=elevation_unit
-    )
+    kwargs = {
+        "language_code": language_code, "distance_unit": distance_unit, "elevation_unit": elevation_unit
+    }
 
     children = [
         _format_segment_entry(

@@ -78,7 +78,7 @@ python -m nicegui src.apple_health_analyzer
 1. Use the **Activity filter** in the left drawer to focus on specific workout types.
 1. Use the **Date range picker** to analyze specific time periods.
 1. Use the **Aggregate by** selector in the left drawer to change the aggregation period.
-1. Use the **Preferences menu** (⊞ icon in the header) to switch language (EN/FR) or unit system (Metric/Imperial).
+1. Use the **Preferences menu** (tune icon in the header) to switch language (EN/FR) or unit system (Metric/Imperial).
 1. Export your data using the **Export data** menu to download CSV or JSON files.
 
 > **Tip**: You can set a permanent storage secret for sessions by using an environment variable:

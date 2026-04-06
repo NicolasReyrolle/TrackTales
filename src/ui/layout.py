@@ -531,7 +531,7 @@ def _change_unit_system(system: str) -> None:
 
 
 def render_header() -> None:
-    """Generate the application header with a dark mode toggle and language selector."""
+    """Generate the application header with a dark mode toggle and preferences menu."""
     dark = ui.dark_mode()
 
     # Sync initial dark-mode state (browser may have remembered the preference).

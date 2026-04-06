@@ -41,6 +41,7 @@ from ui.css import (
     INPUT_SMALL_CLASSES,
     LABEL_MUTED_CLASSES,
     LABEL_SECTION_CLASSES,
+    PREF_MENU_ITEM_CLASSES,
     PREF_SECTION_LABEL_CLASSES,
     RANGE_SELECTORS_ROW_CLASSES,
     ROW_CENTERED_CLASSES,
@@ -573,14 +574,14 @@ def render_header() -> None:
                     ui.menu_item(
                         f"{'✓ ' if code == current_language else ''}{name}",
                         on_click=lambda _event, c=code: _change_language(c),
-                    )
+                    ).classes(PREF_MENU_ITEM_CLASSES)
                 ui.separator()
                 ui.label(t("Units")).classes(PREF_SECTION_LABEL_CLASSES)
                 for system_code, system_label in UNIT_SYSTEMS.items():
                     ui.menu_item(
                         f"{'✓ ' if system_code == current_system else ''}{t(system_label)}",
                         on_click=lambda _event, s=system_code: _change_unit_system(s),
-                    )
+                    ).classes(PREF_MENU_ITEM_CLASSES)
 
 
 async def pick_file() -> None:

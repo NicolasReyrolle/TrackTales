@@ -47,6 +47,21 @@ _CONFIDENCE_META: dict[str, dict[str, str]] = {
 }
 
 
+def _register_confidence_translations() -> None:
+    """Register confidence tooltip strings for Babel extraction.
+
+    These msgids are referenced via ``_CONFIDENCE_META[...]["tooltip_key"]``
+    and would otherwise be missed by ``pybabel extract``.
+    """
+    t("Measured from segment samples")
+    t("Estimated from overlapping power intervals")
+    t("Using workout average power fallback")
+    t("No matching power data")
+
+
+_register_confidence_translations()
+
+
 def _resolve_confidence_key(power_w: Any, power_confidence: Any) -> str:
     """Return the confidence metadata key for *power_confidence* / *power_w*."""
     if power_confidence in _CONFIDENCE_META:

@@ -324,7 +324,7 @@ class TestBuildWorkoutRowsRangeFiltering:
     def test_distance_range_filter_excludes_outside_rows(self) -> None:
         """Workouts outside the distance range should not appear in the result."""
         original_workouts: Any = state.workouts
-        original_dist = dict(state.distance_range_km)
+        original_dist = dict(state.distance_range)
 
         workouts_mock = self._make_workouts_mock(
             [
@@ -351,11 +351,11 @@ class TestBuildWorkoutRowsRangeFiltering:
 
         try:
             state.workouts = workouts_mock
-            state.distance_range_km = {"min": 5.0, "max": 10.0}
+            state.distance_range = {"min": 5.0, "max": 10.0}
             rows = wt._build_workout_rows()
         finally:
             state.workouts = original_workouts
-            state.distance_range_km = original_dist
+            state.distance_range = original_dist
 
         assert len(rows) == 1
         assert rows[0]["distance_sort"] == pytest.approx(8000.0)
@@ -363,7 +363,7 @@ class TestBuildWorkoutRowsRangeFiltering:
     def test_distance_range_zero_zero_applies_no_filter(self) -> None:
         """Default {"min": 0, "max": 0} state should not filter any workouts."""
         original_workouts: Any = state.workouts
-        original_dist = dict(state.distance_range_km)
+        original_dist = dict(state.distance_range)
 
         workouts_mock = self._make_workouts_mock(
             [
@@ -384,11 +384,11 @@ class TestBuildWorkoutRowsRangeFiltering:
 
         try:
             state.workouts = workouts_mock
-            state.distance_range_km = {"min": 0.0, "max": 0.0}
+            state.distance_range = {"min": 0.0, "max": 0.0}
             rows = wt._build_workout_rows()
         finally:
             state.workouts = original_workouts
-            state.distance_range_km = original_dist
+            state.distance_range = original_dist
 
         assert len(rows) == 2
 
@@ -466,7 +466,7 @@ class TestBuildWorkoutRowsRangeFiltering:
     def test_combined_distance_and_duration_filter(self) -> None:
         """Both distance and duration range filters apply simultaneously."""
         original_workouts: Any = state.workouts
-        original_dist = dict(state.distance_range_km)
+        original_dist = dict(state.distance_range)
         original_dur = dict(state.duration_range_min)
 
         workouts_mock = self._make_workouts_mock(
@@ -497,12 +497,12 @@ class TestBuildWorkoutRowsRangeFiltering:
 
         try:
             state.workouts = workouts_mock
-            state.distance_range_km = {"min": 5.0, "max": 15.0}
+            state.distance_range = {"min": 5.0, "max": 15.0}
             state.duration_range_min = {"min": 30.0, "max": 90.0}
             rows = wt._build_workout_rows()
         finally:
             state.workouts = original_workouts
-            state.distance_range_km = original_dist
+            state.distance_range = original_dist
             state.duration_range_min = original_dur
 
         assert len(rows) == 1

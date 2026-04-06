@@ -73,9 +73,9 @@ def _build_workout_rows() -> list[dict[str, Any]]:
     if df.empty:
         return []
 
-    # Apply distance range filter: state.distance_range_km stores values in the user's
+    # Apply distance range filter: state.distance_range stores values in the user's
     # preferred distance unit (km or mi); convert to metres for filtering.
-    dist_range = state.distance_range_km
+    dist_range = state.distance_range
     distance_unit = get_distance_unit()
     dist_divisor = 1 / METERS_TO_MILES if distance_unit == "mi" else 1000.0
     dist_min_m = dist_range.get("min", 0.0) * dist_divisor
@@ -308,7 +308,7 @@ def render_distance_range_selector() -> None:
         return
 
     with ui.column().classes(RANGE_SELECTOR_COLUMN_CLASSES):
-        dist_range = state.distance_range_km
+        dist_range = state.distance_range
         # Pre-compute translated format string once at render time so the
         # bind_text_from backward never calls t() in a deferred binding context
         # where app.storage.user may not yet be available (causing English reversion).
@@ -322,7 +322,7 @@ def render_distance_range_selector() -> None:
             )
         ).classes(RANGE_LABEL_CLASSES).bind_text_from(
             state,
-            "distance_range_km",
+            "distance_range",
             backward=lambda r: dist_label_fmt.format(
                 lo=str(int(r.get("min", slider_min))),
                 hi=str(int(r.get("max", slider_max))),
@@ -330,7 +330,7 @@ def render_distance_range_selector() -> None:
         )
         ui.range(
             min=slider_min, max=slider_max, step=1, on_change=render_workout_table.refresh
-        ).bind_value(state, "distance_range_km").bind_enabled_from(state, "file_loaded").classes(
+        ).bind_value(state, "distance_range").bind_enabled_from(state, "file_loaded").classes(
             TABLE_FULL_CLASSES
         )
 

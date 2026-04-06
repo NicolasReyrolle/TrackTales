@@ -20,6 +20,21 @@ UNIT_SYSTEMS: dict[str, str] = {"metric": "Metric", "imperial": "Imperial"}
 DEFAULT_UNIT_SYSTEM: str = "metric"
 
 
+def _register_unit_system_translations() -> None:
+    """Register unit-system labels for Babel extraction.
+
+    These literals are translated dynamically elsewhere, so Babel needs literal
+    ``t("...")`` calls in scanned code to keep them in ``messages.pot``.
+    """
+    from i18n import t  # noqa: PLC0415
+
+    t("Metric")
+    t("Imperial")
+
+
+_register_unit_system_translations()
+
+
 def get_unit_system() -> str:
     """Return the active unit system from NiceGUI user storage.
 
@@ -120,9 +135,9 @@ class AppState:
         self.activity_options: list[str] = ["All"]
         self.date_range_text: str = ""
         self.trends_period: str = "M"
-        # Distance range filter for the workout table (values in km).
+        # Distance range filter for the workout table (values in the user's preferred unit).
         # Initialised to {"min": 0.0, "max": 0.0}; reset to full dataset bounds on file load.
-        self.distance_range_km: dict[str, float] = {"min": 0.0, "max": 0.0}
+        self.distance_range: dict[str, float] = {"min": 0.0, "max": 0.0}
         # Duration range filter for the workout table (values in minutes).
         # Initialised to {"min": 0.0, "max": 0.0}; reset to full dataset bounds on file load.
         self.duration_range_min: dict[str, float] = {"min": 0.0, "max": 0.0}

@@ -396,7 +396,7 @@ def refresh_data() -> None:
         start_date=state.start_date,
         end_date=state.end_date,
     )
-    state.distance_range_km = {"min": math.floor(dist_min), "max": math.ceil(dist_max)}
+    state.distance_range = {"min": math.floor(dist_min), "max": math.ceil(dist_max)}
     dur_min, dur_max = state.workouts.get_duration_bounds(
         activity_type=state.selected_activity_type,
         start_date=state.start_date,

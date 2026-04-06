@@ -455,7 +455,7 @@ async def test_load_file_guards_success_and_error() -> None:
     original_activity_options = list(state.activity_options)
     original_workouts = state.workouts
     original_records = state.records_by_type
-    original_distance_range = dict(state.distance_range_km)
+    original_distance_range = dict(state.distance_range)
     original_duration_range = dict(state.duration_range_min)
 
     state.input_file = SimpleNamespace(value="")  # type: ignore[assignment]
@@ -532,7 +532,7 @@ async def test_load_file_guards_success_and_error() -> None:
         state.activity_options = original_activity_options
         state.workouts = original_workouts
         state.records_by_type = original_records
-        state.distance_range_km = original_distance_range
+        state.distance_range = original_distance_range
         state.duration_range_min = original_duration_range
 
 

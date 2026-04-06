@@ -191,8 +191,8 @@ class TestLanguageSwitching:
         await user.should_see("Apple Health Analyzer")
         await user.should_see("Apple Health export file")
 
-        # Open the language menu and select French
-        user.find("language").click()
+        # Open the preferences menu and select French
+        user.find("tune").click()
         await asyncio.sleep(0.1)
         change_language = cast(Callable[[str], None], getattr(layout_module, "_change_language"))
         change_language("fr")
@@ -426,7 +426,7 @@ class TestStatCards:
         await user.should_see("Duration")
         await user.should_see("h")
         await user.should_see("Elevation")
-        await user.should_see("km")
+        await user.should_see("m")
         await user.should_see("Calories")
         await user.should_see("kcal")
 
@@ -451,11 +451,11 @@ class TestStatCards:
         # - 1 workout
         # - 8.95512 km distance (rounded to 9)
         # - 60.887 minutes duration (approximately 1 hour)
-        # - 6575 cm elevation (approximately 0.066 km)
+        # - 6575 cm elevation (approximately 65.75 m)
         assert state.metrics["count"] == 1
         assert state.metrics["distance"] == 9
         assert state.metrics["duration"] == 1  # 60.887 minutes ≈ 1 hour
-        assert state.metrics["elevation"] == 0  # 6575 cm = 65.75 m → 0
+        assert state.metrics["elevation"] == 66  # 6575 cm = 65.75 m → 66 m (metric default)
         assert state.metrics["calories"] == 1655  # ActiveEnergyBurned from fixture
 
         # Verify the values are displayed in the UI
@@ -463,8 +463,8 @@ class TestStatCards:
         await user.should_see("9")  # Distance
         # Duration is rendered as separate value + unit labels
         await user.should_see("h")
-        await user.should_see("0")  # Elevation value displayed
-        await user.should_see("km")  # Elevation unit
+        await user.should_see("66")  # Elevation value displayed
+        await user.should_see("m")  # Elevation unit (metric default)
         await user.should_see(format_integer(1655))  # Calories
         await user.should_see("kcal")  # Calories unit
         # Small delay before teardown

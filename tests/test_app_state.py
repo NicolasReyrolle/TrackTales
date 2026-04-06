@@ -174,3 +174,33 @@ class TestAppStateBestSegmentsState:
         assert app_state.best_segments_loaded is False
         assert app_state.best_segments_task is None
         assert app_state.selected_main_tab == "summary"
+
+
+class TestUnitPreferenceFunctions:
+    """Tests for unit preference module-level functions."""
+
+    def test_get_unit_system_falls_back_to_metric_without_storage(self) -> None:
+        """get_unit_system returns 'metric' when NiceGUI storage is unavailable."""
+        from app_state import get_unit_system
+
+        assert get_unit_system() == "metric"
+
+    def test_get_distance_unit_falls_back_to_km_without_storage(self) -> None:
+        """get_distance_unit returns 'km' (metric default) when storage is unavailable."""
+        from app_state import get_distance_unit
+
+        # In the test environment there is no active NiceGUI session, so
+        # app.storage.user is not available; the function should default to "km".
+        assert get_distance_unit() == "km"
+
+    def test_get_elevation_unit_falls_back_to_m_without_storage(self) -> None:
+        """get_elevation_unit returns 'm' (metric default) when storage is unavailable."""
+        from app_state import get_elevation_unit
+
+        assert get_elevation_unit() == "m"
+
+    def test_get_weight_unit_falls_back_to_kg_without_storage(self) -> None:
+        """get_weight_unit returns 'kg' (metric default) when storage is unavailable."""
+        from app_state import get_weight_unit
+
+        assert get_weight_unit() == "kg"

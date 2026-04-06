@@ -569,6 +569,116 @@ class TestBestSegmentsTabRendering:
             state.best_segments_loaded = original_loaded
 
 
+class TestBestSegmentsHelpers:
+    """Unit tests for the pure helper functions in ui.best_segments."""
+
+    def test_resolve_confidence_key_returns_key_when_known(self) -> None:
+        """Known power_confidence values should be returned directly."""
+        from ui.best_segments import _resolve_confidence_key
+
+        assert _resolve_confidence_key(None, "measured") == "measured"
+        assert _resolve_confidence_key(None, "overlap_estimated") == "overlap_estimated"
+        assert _resolve_confidence_key(None, "workout_fallback") == "workout_fallback"
+        assert _resolve_confidence_key(None, "missing") == "missing"
+
+    def test_resolve_confidence_key_returns_measured_for_unknown_key_with_power(self) -> None:
+        """Unknown confidence key with valid power_w should resolve to 'measured'."""
+        from ui.best_segments import _resolve_confidence_key
+
+        assert _resolve_confidence_key(250.0, "some_unknown_key") == "measured"
+        assert _resolve_confidence_key(0.0, None) == "measured"
+
+    def test_resolve_confidence_key_returns_missing_for_unknown_key_without_power(self) -> None:
+        """Unknown confidence key with missing power_w should resolve to 'missing'."""
+        from ui.best_segments import _resolve_confidence_key
+
+        assert _resolve_confidence_key(None, "unknown") == "missing"
+        assert _resolve_confidence_key(None, None) == "missing"
+
+    def test_format_speed_zero_duration_returns_zero(self) -> None:
+        """Speed should be 0.00 when duration_s is zero or negative."""
+        from ui.best_segments import _format_speed
+
+        result = _format_speed(10000.0, 0.0, "km")
+        assert result == "0.00 km/h"
+
+        result_neg = _format_speed(10000.0, -5.0, "km")
+        assert result_neg == "0.00 km/h"
+
+    def test_format_speed_imperial(self) -> None:
+        """Speed in mi/h should be returned when distance_unit is 'mi'."""
+        from ui.best_segments import _format_speed
+        from units import METERS_TO_MILES
+
+        distance_m = 1609.344  # exactly 1 mile
+        duration_s = 3600.0  # 1 hour → 1.00 mi/h
+        result = _format_speed(distance_m, duration_s, "mi")
+        expected_speed = (distance_m * METERS_TO_MILES) / (duration_s / 3600)
+        assert result == f"{expected_speed:.2f} mi/h"
+
+    def test_format_elevation_imperial(self) -> None:
+        """Elevation in feet should be returned when elevation_unit is 'ft'."""
+        from ui.best_segments import _format_elevation
+        from units import METERS_TO_FEET
+
+        result = _format_elevation(100.0, "ft")
+        expected = f"{100.0 * METERS_TO_FEET:.1f} ft"
+        assert result == expected
+
+    def test_format_elevation_metric(self) -> None:
+        """Elevation in metres should be returned when elevation_unit is 'm'."""
+        from ui.best_segments import _format_elevation
+
+        assert _format_elevation(50.5, "m") == "50.5 m"
+
+    async def test_load_best_segments_data_uses_imperial_units(self) -> None:
+        """When unit system is imperial, segments should show mi and ft."""
+        original_workouts: Any = state.workouts
+        original_file_loaded = state.file_loaded
+        original_rows = state.best_segments_rows
+        original_loading = state.best_segments_loading
+        original_loaded = state.best_segments_loaded
+
+        workouts_mock = MagicMock()
+        workouts_mock.get_best_segments.return_value = pd.DataFrame(
+            [
+                {
+                    "startDate": pd.Timestamp("2025-09-16"),
+                    "distance": 1609.344,  # 1 mile
+                    "duration_s": 600.0,
+                    "elevation_change_m": 0.3048,  # 1 foot
+                }
+            ]
+        )
+        workouts_mock.annotate_segments_with_power.side_effect = _annotate_with_missing_power
+
+        try:
+            state.workouts = workouts_mock
+            state.file_loaded = True
+            state.best_segments_rows = []
+            state.best_segments_loading = False
+            state.best_segments_loaded = False
+
+            with (
+                patch("ui.layout.render_best_segments_tab.refresh"),
+                patch("ui.best_segments.get_distance_unit", return_value="mi"),
+                patch("ui.best_segments.get_elevation_unit", return_value="ft"),
+            ):
+                await layout.load_best_segments_data(force=True)
+
+            assert state.best_segments_rows
+            row = state.best_segments_rows[0]
+            assert row["distance"].endswith("mi")
+            assert row["elevation_change"].endswith("ft")
+            assert row["average_speed"].endswith("mi/h")
+        finally:
+            state.workouts = original_workouts
+            state.file_loaded = original_file_loaded
+            state.best_segments_rows = original_rows
+            state.best_segments_loading = original_loading
+            state.best_segments_loaded = original_loaded
+
+
 def test_render_body_tab_change_to_best_segments_schedules_async_load() -> None:
     """Selecting the best-segments tab should schedule async loading."""
     tabs_created: list[DummyTabs] = []

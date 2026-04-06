@@ -6,6 +6,8 @@ from typing import Any, cast
 
 import pandas as pd
 
+from units import METERS_TO_FEET, METERS_TO_MILES
+
 
 class WorkoutManagerAggregationsMixin:
     """Filtering, aggregation, and metric accessors for workout data."""
@@ -57,14 +59,16 @@ class WorkoutManagerAggregationsMixin:
         excluded = exclude_columns if exclude_columns is not None else self.DEFAULT_EXCLUDED_COLUMNS
         return [col for col in self.workouts.columns if col not in excluded]
 
-    def _get_distance_divisor(self, unit: str) -> float:
-        """Get the divisor for distance conversion based on unit."""
+    def _get_length_unit_divisor(self, unit: str) -> float:
+        """Get the divisor to convert meters to the given length unit (distance or elevation)."""
         if unit == "km":
             return 1000
         if unit == "m":
             return 1
         if unit == "mi":
-            return 1609.34
+            return 1 / METERS_TO_MILES
+        if unit == "ft":
+            return 1 / METERS_TO_FEET
         raise ValueError(f"Unsupported unit: {unit}")
 
     def _get_aggregate_total(
@@ -195,14 +199,14 @@ class WorkoutManagerAggregationsMixin:
         end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total distance optionally per activity_type, and in the given unit."""
-        divisor = self._get_distance_divisor(unit)
+        divisor = self._get_length_unit_divisor(unit)
         return self._get_aggregate_total(
             activity_type, "distance", divisor=divisor, start_date=start_date, end_date=end_date
         )
 
     def convert_distance(self, unit: str, total_distance_meters: float) -> float:
         """Convert distance in meters to the specified unit."""
-        divisor = self._get_distance_divisor(unit)
+        divisor = self._get_length_unit_divisor(unit)
         return total_distance_meters / divisor
 
     def get_total_duration(
@@ -224,7 +228,7 @@ class WorkoutManagerAggregationsMixin:
         end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total elevation gain of workouts in the specified unit."""
-        divisor = self._get_distance_divisor(unit)
+        divisor = self._get_length_unit_divisor(unit)
         return self._get_aggregate_total(
             activity_type,
             "ElevationAscended",
@@ -291,7 +295,7 @@ class WorkoutManagerAggregationsMixin:
         return self._aggregate_by_activity(
             "distance",
             lambda x: x.sum(),
-            lambda x: x.div(self._get_distance_divisor(unit)),
+            lambda x: x.div(self._get_length_unit_divisor(unit)),
             combination_threshold=combination_threshold,
             start_date=start_date,
             end_date=end_date,
@@ -311,7 +315,7 @@ class WorkoutManagerAggregationsMixin:
             "distance",
             period,
             lambda x: x.sum(),
-            lambda x: x.div(self._get_distance_divisor(unit)),
+            lambda x: x.div(self._get_length_unit_divisor(unit)),
             filter_zeros=False,
             activity_type=activity_type,
             fill_missing_periods=fill_missing_periods,
@@ -404,7 +408,7 @@ class WorkoutManagerAggregationsMixin:
         return self._aggregate_by_activity(
             "ElevationAscended",
             lambda x: x.sum(),
-            lambda x: x.div(self._get_distance_divisor(unit)),
+            lambda x: x.div(self._get_length_unit_divisor(unit)),
             filter_zeros=False,
             combination_threshold=combination_threshold,
             start_date=start_date,
@@ -425,7 +429,7 @@ class WorkoutManagerAggregationsMixin:
             "ElevationAscended",
             period,
             lambda x: x.sum(),
-            lambda x: x.div(self._get_distance_divisor(unit)),
+            lambda x: x.div(self._get_length_unit_divisor(unit)),
             filter_zeros=False,
             activity_type=activity_type,
             fill_missing_periods=fill_missing_periods,
@@ -495,7 +499,7 @@ class WorkoutManagerAggregationsMixin:
         if pd.isna(max_distance):
             return 0.0
 
-        divisor = self._get_distance_divisor(unit)
+        divisor = self._get_length_unit_divisor(unit)
         return float(max_distance) / divisor
 
     def get_longest_workout_details(
@@ -532,7 +536,7 @@ class WorkoutManagerAggregationsMixin:
         idx = distance_series.idxmax()
 
         row = filtered.loc[[idx]].iloc[0]
-        divisor = self._get_distance_divisor(unit)
+        divisor = self._get_length_unit_divisor(unit)
         raw_distance: float = float(row["distance"])
         raw_duration_val = row["duration"] if "duration" in filtered.columns else None
         raw_duration: float | None = (
@@ -567,7 +571,7 @@ class WorkoutManagerAggregationsMixin:
         distances = distances[distances > 0]
         if distances.empty:
             return 0.0, 0.0
-        divisor = self._get_distance_divisor(unit)
+        divisor = self._get_length_unit_divisor(unit)
         return float(distances.min()) / divisor, float(distances.max()) / divisor
 
     def get_duration_bounds(

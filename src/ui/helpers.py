@@ -10,6 +10,7 @@ from babel.core import default_locale
 from babel.numbers import format_decimal
 
 from i18n import translate
+from units import METERS_TO_MILES
 
 
 class _SupportsStrftime(Protocol):
@@ -179,8 +180,17 @@ def format_distance_label(
     language_code: str,
     half_marathon_distance_m: int,
     marathon_distance_m: int,
+    distance_unit: str = "km",
 ) -> str:
-    """Format a best-segment distance label with special marathon names."""
+    """Format a best-segment distance label with special marathon names.
+
+    Args:
+        distance_m: Distance in metres.
+        language_code: Active language code used for translated names.
+        half_marathon_distance_m: Half-marathon reference distance in metres.
+        marathon_distance_m: Marathon reference distance in metres.
+        distance_unit: Display unit – ``"km"`` (default) or ``"mi"``.
+    """
     normalized_language_code = _normalize_language_code(language_code)
     rounded_distance = int(round(distance_m))
     if rounded_distance == half_marathon_distance_m:
@@ -189,6 +199,8 @@ def format_distance_label(
         return translate("Marathon", language=normalized_language_code)
     if rounded_distance < 1000:
         return f"{rounded_distance} m"
+    if distance_unit == "mi":
+        return f"{distance_m * METERS_TO_MILES:.1f} mi"
     return f"{distance_m / 1000:.1f} km"
 
 

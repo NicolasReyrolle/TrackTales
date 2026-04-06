@@ -2,17 +2,15 @@
 
 This document contains development, testing, and maintenance notes for `apple-health-analyzer`.
 
-## Roadmap and Planning
+## Requesting Enhancements or Reporting Issues
 
-Roadmap planning is issue-driven and tracked in GitHub milestones/issues rather than a local `roadmap.md` file.
+Use the standard GitHub workflow for all feedback:
 
-Current top-level roadmap issues:
+- **Bug reports**: [Open a new issue](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/new?template=bug_report.md)
+- **Feature requests**: [Open a new issue](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/new?template=feature_request.md)
+- **Discussions**: Use [GitHub Discussions](https://github.com/NicolasReyrolle/apple-health-analyzer/discussions)
 
-- P1 Health Data: <https://github.com/NicolasReyrolle/apple-health-analyzer/issues/110>
-- P2 Visualizations: <https://github.com/NicolasReyrolle/apple-health-analyzer/issues/111>
-- P3 Routes: <https://github.com/NicolasReyrolle/apple-health-analyzer/issues/112>
-- P4 Analytics: <https://github.com/NicolasReyrolle/apple-health-analyzer/issues/113>
-- Quick Wins umbrella: <https://github.com/NicolasReyrolle/apple-health-analyzer/issues/114>
+Search [existing issues](https://github.com/NicolasReyrolle/apple-health-analyzer/issues) first to avoid duplicates.
 
 ## Development Setup
 
@@ -107,7 +105,7 @@ Translation workflows are documented in [src/i18n/locales/README.md](src/i18n/lo
 
 Runtime notes:
 
-- Language is session-based and changeable from the header menu.
+- Language and unit system (Metric/Imperial) are session-based and changeable from the header preferences menu.
 - Loading/progress messages are localized in UI.
 - Date picker labels are sourced from gettext catalogs.
 - `.mo` files are auto-generated at startup when missing/outdated.

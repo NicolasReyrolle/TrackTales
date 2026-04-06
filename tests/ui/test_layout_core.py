@@ -370,7 +370,7 @@ def test_render_header_dark_mode_callbacks_update_state_and_refresh_graphs() -> 
         if icon in {"dark_mode", "light_mode"}:
             callbacks[icon] = on_click
             return _DummyButton(on_click=on_click)
-        if icon == "language":
+        if icon == "tune":
             return _DummyButton(on_click=on_click, context=True)
         return _DummyButton(on_click=on_click)
 
@@ -384,32 +384,33 @@ def test_render_header_dark_mode_callbacks_update_state_and_refresh_graphs() -> 
                         with patch("ui.layout.ui.button", side_effect=_button_factory):
                             with patch("ui.layout.ui.menu", return_value=_DummyRow()):
                                 with patch("ui.layout.ui.menu_item"):
-                                    with patch("ui.layout.LANGUAGES", {}):
-                                        with patch(
-                                            "ui.layout.render_activity_graphs.refresh"
-                                        ) as act:
+                                    with patch("ui.layout.ui.separator"):
+                                        with patch("ui.layout.LANGUAGES", {}):
                                             with patch(
-                                                "ui.layout.render_trends_graphs.refresh"
-                                            ) as trends:
+                                                "ui.layout.render_activity_graphs.refresh"
+                                            ) as act:
                                                 with patch(
-                                                    "ui.layout.render_health_data_tab.refresh"
-                                                ) as health:
-                                                    layout.render_header()
+                                                    "ui.layout.render_trends_graphs.refresh"
+                                                ) as trends:
+                                                    with patch(
+                                                        "ui.layout.render_health_data_tab.refresh"
+                                                    ) as health:
+                                                        layout.render_header()
 
-                                                    assert state.dark_mode_enabled is True
+                                                        assert state.dark_mode_enabled is True
 
-                                                    callbacks["light_mode"]()
-                                                    assert dark_mode.disabled is True
-                                                    assert state.dark_mode_enabled is False
-                                                    assert act.call_count == 1
-                                                    assert trends.call_count == 1
-                                                    assert health.call_count == 1
+                                                        callbacks["light_mode"]()
+                                                        assert dark_mode.disabled is True
+                                                        assert state.dark_mode_enabled is False
+                                                        assert act.call_count == 1
+                                                        assert trends.call_count == 1
+                                                        assert health.call_count == 1
 
-                                                    callbacks["dark_mode"]()
-                                                    assert dark_mode.enabled is True
-                                                    assert state.dark_mode_enabled is True
-                                                    assert act.call_count == 2
-                                                    assert trends.call_count == 2
-                                                    assert health.call_count == 2
+                                                        callbacks["dark_mode"]()
+                                                        assert dark_mode.enabled is True
+                                                        assert state.dark_mode_enabled is True
+                                                        assert act.call_count == 2
+                                                        assert trends.call_count == 2
+                                                        assert health.call_count == 2
     finally:
         state.dark_mode_enabled = original_dark_mode_enabled

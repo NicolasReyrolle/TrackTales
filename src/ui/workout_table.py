@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from nicegui import ui
 
-from app_state import state
+from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
 from ui.css import (
@@ -17,6 +17,7 @@ from ui.css import (
     TABLE_FULL_CLASSES,
 )
 from ui.helpers import format_date_label, format_duration_label
+from units import METERS_TO_FEET, METERS_TO_MILES
 
 _logger = logging.getLogger(__name__)
 
@@ -72,10 +73,13 @@ def _build_workout_rows() -> list[dict[str, Any]]:
     if df.empty:
         return []
 
-    # Apply distance range filter (convert km to metres, the canonical storage unit).
-    dist_range = state.distance_range_km
-    dist_min_m = dist_range.get("min", 0.0) * 1000.0
-    dist_max_m = dist_range.get("max", 0.0) * 1000.0
+    # Apply distance range filter: state.distance_range stores values in the user's
+    # preferred distance unit (km or mi); convert to metres for filtering.
+    dist_range = state.distance_range
+    distance_unit = get_distance_unit()
+    dist_divisor = 1 / METERS_TO_MILES if distance_unit == "mi" else 1000.0
+    dist_min_m = dist_range.get("min", 0.0) * dist_divisor
+    dist_max_m = dist_range.get("max", 0.0) * dist_divisor
     if "distance" in df.columns and dist_min_m < dist_max_m:
         dist = df["distance"].fillna(0.0)
         df = df[(dist >= dist_min_m) & (dist <= dist_max_m)]
@@ -95,22 +99,31 @@ def _build_workout_rows() -> list[dict[str, Any]]:
         df = df.sort_values("startDate", ascending=False)
 
     language_code = get_language()
+    elevation_unit = get_elevation_unit()
     rows: list[dict[str, Any]] = []
 
     for idx, (_, row) in enumerate(df.iterrows()):
-        row_data = _extract_row_data(row, idx, language_code)
+        row_data = _extract_row_data(row, idx, language_code, distance_unit, elevation_unit)
         rows.append(row_data)
 
     return rows
 
 
-def _extract_row_data(row: Any, idx: int, language_code: str) -> dict[str, Any]:
+def _extract_row_data(
+    row: Any,
+    idx: int,
+    language_code: str,
+    distance_unit: str = "km",
+    elevation_unit: str = "m",
+) -> dict[str, Any]:
     """Extract and format a single workout row.
 
     Args:
         row: A pandas Series representing a workout.
         idx: The row index.
         language_code: The current language code for date formatting.
+        distance_unit: The display unit for distance values (``"km"`` or ``"mi"``).
+        elevation_unit: The display unit for elevation values (``"m"`` or ``"ft"``).
 
     Returns:
         A dictionary with sort and display values for all columns.
@@ -119,7 +132,7 @@ def _extract_row_data(row: Any, idx: int, language_code: str) -> dict[str, Any]:
     raw_activity = str(row.get("activityType") or "")
     activity_type = activity_display_label(raw_activity) if raw_activity else "–"
     duration_sort, duration_display = _build_field_pair(row.get("duration"), format_duration_label)
-    distance_sort, distance_display = _extract_distance_field(row)
+    distance_sort, distance_display = _extract_distance_field(row, distance_unit)
     calories_sort, calories_display = _build_field_pair(
         row.get("sumActiveEnergyBurned"),
         lambda v: f"{int(round(v))} kcal",
@@ -128,10 +141,16 @@ def _extract_row_data(row: Any, idx: int, language_code: str) -> dict[str, Any]:
         row.get("averageHeartRate"),
         lambda v: f"{int(round(v))} bpm",
     )
-    elev_sort, elev_display = _build_field_pair(
-        row.get("ElevationAscended"),
-        lambda v: f"{int(round(v))} m",
-    )
+    if elevation_unit == "ft":
+        elev_sort, elev_display = _build_field_pair(
+            row.get("ElevationAscended"),
+            lambda v: f"{int(round(v * METERS_TO_FEET))} ft",
+        )
+    else:
+        elev_sort, elev_display = _build_field_pair(
+            row.get("ElevationAscended"),
+            lambda v: f"{int(round(v))} m",
+        )
     power_sort, power_display = _build_field_pair(
         row.get("averageRunningPower"),
         lambda v: f"{int(round(v))} W",
@@ -166,13 +185,16 @@ def _extract_date_field(row: Any, language_code: str) -> tuple[float, str]:
     return date_sort, date_display
 
 
-def _extract_distance_field(row: Any) -> tuple[float | str, str]:
+def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float | str, str]:
     """Extract distance sort and display values (stored in metres)."""
     distance_raw = _safe_float(row.get("distance"))
     if distance_raw is None:
         return _MISSING_SORT, "–"
     if distance_raw > 0:
-        distance_display = f"{distance_raw / 1000:.1f} km"
+        if distance_unit == "mi":
+            distance_display = f"{distance_raw * METERS_TO_MILES:.1f} mi"
+        else:
+            distance_display = f"{distance_raw / 1000:.1f} km"
     else:
         distance_display = "–"
     return distance_raw, distance_display
@@ -275,24 +297,28 @@ def render_workout_table() -> None:
 @ui.refreshable
 def render_distance_range_selector() -> None:
     """Render the distance range slider for the workout table filter."""
-    min_km, max_km = state.workouts.get_distance_bounds(
+    distance_unit = get_distance_unit()
+    min_dist, max_dist = state.workouts.get_distance_bounds(
+        unit=distance_unit,
         activity_type=state.selected_activity_type,
         start_date=state.start_date,
         end_date=state.end_date,
     )
-    slider_min = math.floor(min_km)
-    slider_max = math.ceil(max_km)
+    slider_min = math.floor(min_dist)
+    slider_max = math.ceil(max_dist)
 
     # No meaningful range to filter (no data or all workouts have the same distance).
     if slider_min >= slider_max:
         return
 
     with ui.column().classes(RANGE_SELECTOR_COLUMN_CLASSES):
-        dist_range = state.distance_range_km
+        dist_range = state.distance_range
         # Pre-compute translated format string once at render time so the
         # bind_text_from backward never calls t() in a deferred binding context
         # where app.storage.user may not yet be available (causing English reversion).
-        dist_label_fmt = t("Distance: {lo} – {hi} km")
+        dist_label_fmt = t("Distance: {lo} – {hi} {unit}").format(
+            lo="{lo}", hi="{hi}", unit=distance_unit
+        )
         ui.label(
             dist_label_fmt.format(
                 lo=str(int(dist_range.get("min", slider_min))),
@@ -300,7 +326,7 @@ def render_distance_range_selector() -> None:
             )
         ).classes(RANGE_LABEL_CLASSES).bind_text_from(
             state,
-            "distance_range_km",
+            "distance_range",
             backward=lambda r: dist_label_fmt.format(
                 lo=str(int(r.get("min", slider_min))),
                 hi=str(int(r.get("max", slider_max))),
@@ -308,7 +334,7 @@ def render_distance_range_selector() -> None:
         )
         ui.range(
             min=slider_min, max=slider_max, step=1, on_change=render_workout_table.refresh
-        ).bind_value(state, "distance_range_km").bind_enabled_from(state, "file_loaded").classes(
+        ).bind_value(state, "distance_range").bind_enabled_from(state, "file_loaded").classes(
             TABLE_FULL_CLASSES
         )
 

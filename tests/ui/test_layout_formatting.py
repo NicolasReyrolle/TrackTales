@@ -155,13 +155,13 @@ def test_refresh_data_passes_date_range_to_workouts() -> None:
 
         workouts_mock.get_count.assert_called_once_with("Running", expected_start, expected_end)
         workouts_mock.get_total_distance.assert_called_once_with(
-            "Running", start_date=expected_start, end_date=expected_end
+            "Running", unit="km", start_date=expected_start, end_date=expected_end
         )
         workouts_mock.get_total_duration.assert_called_once_with(
             "Running", start_date=expected_start, end_date=expected_end
         )
         workouts_mock.get_total_elevation.assert_called_once_with(
-            "Running", start_date=expected_start, end_date=expected_end
+            "Running", unit="m", start_date=expected_start, end_date=expected_end
         )
         workouts_mock.get_total_calories.assert_called_once_with(
             "Running", start_date=expected_start, end_date=expected_end

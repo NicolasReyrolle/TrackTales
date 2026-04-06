@@ -23,6 +23,7 @@ If you are contributing or maintaining the project, see [MAINTAINERS.md](MAINTAI
 - **Gap-Aware Time Series**: Missing periods are preserved in health-data charts, so the x-axis remains continuous and missing measurements are explicit (not coerced to zero). For line charts, inferred bridge segments are visually distinct from measured segments.
 - **Route Parts Handling**: Workouts with multiple GPX route files are preserved as independent route parts for segment analysis and also exposed as a merged compatibility route.
 - **Multilingual UI (EN/FR)**: gettext-based translations for labels, tabs, date picker locale labels, notifications, and loading/progress status messages.
+- **Unit System Preference**: Switch between Metric (km, kg, m) and Imperial (mi, lbs, ft) from the preferences menu; all stats, charts, and tables update accordingly.
 - **Data Export**: Convert your data into clean **CSV** or **JSON** formats for further analysis in Excel, Python, or other tools.
 - All processing happens locally on your machine.
 - **Modern UI**: Dark/Light mode support with a responsive layout.
@@ -77,6 +78,7 @@ python -m nicegui src.apple_health_analyzer
 1. Use the **Activity filter** in the left drawer to focus on specific workout types.
 1. Use the **Date range picker** to analyze specific time periods.
 1. Use the **Aggregate by** selector in the left drawer to change the aggregation period.
+1. Use the **Preferences menu** (tune icon in the header) to switch language (EN/FR) or unit system (Metric/Imperial).
 1. Export your data using the **Export data** menu to download CSV or JSON files.
 
 > **Tip**: You can set a permanent storage secret for sessions by using an environment variable:
@@ -124,15 +126,15 @@ Best segments are computed with a route-aware sliding-window search on running w
 - Segment power is estimated from `RunningPower` records in priority order: direct window match, overlap-based estimate, then workout-level fallback.
 - Evolution charts keep interior missing periods as gaps while trimming leading/trailing empty periods.
 
-## 🗂️ Roadmap Tracking
+## 💬 Requesting Enhancements or Reporting Issues
 
-Roadmap planning is tracked in GitHub Issues and milestones (instead of a local `roadmap.md` file). See:
+Feedback, bug reports, and feature requests are welcome! Please use the standard GitHub workflows:
 
-- [P1 - Health Data](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/110)
-- [P2 - Visualizations](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/111)
-- [P3 - Routes](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/112)
-- [P4 - Analytics](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/113)
-- [Quick Wins](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/114)
+- **Bug reports**: [Open a new issue](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/new?template=bug_report.md) and describe the problem, steps to reproduce, and expected behaviour.
+- **Feature requests**: [Open a new issue](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/new?template=feature_request.md) and describe the enhancement and its motivation.
+- **Questions or discussions**: Use [GitHub Discussions](https://github.com/NicolasReyrolle/apple-health-analyzer/discussions) for open-ended questions or design ideas.
+
+Please search [existing issues](https://github.com/NicolasReyrolle/apple-health-analyzer/issues) before opening a new one to avoid duplicates.
 
 ### Workout manager package layout
 

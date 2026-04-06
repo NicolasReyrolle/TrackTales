@@ -10,7 +10,14 @@ from typing import Any, cast
 import pandas as pd
 from nicegui import app, ui
 
-from app_state import state
+from app_state import (
+    UNIT_SYSTEMS,
+    get_distance_unit,
+    get_elevation_unit,
+    get_unit_system,
+    get_weight_unit,
+    state,
+)
 from assets import APP_ICON_BASE64
 from i18n import LANGUAGES, get_language, t
 from i18n.activity_types import build_activity_select_options, translate_activity_value_map
@@ -34,6 +41,8 @@ from ui.css import (
     INPUT_SMALL_CLASSES,
     LABEL_MUTED_CLASSES,
     LABEL_SECTION_CLASSES,
+    PREF_MENU_ITEM_CLASSES,
+    PREF_SECTION_LABEL_CLASSES,
     RANGE_SELECTORS_ROW_CLASSES,
     ROW_CENTERED_CLASSES,
     ROW_FULL_ITEMS_CLASSES,
@@ -54,6 +63,7 @@ from ui.workout_table import (
     render_duration_range_selector,
     render_workout_table,
 )
+from units import KG_TO_LBS
 
 # Get logger for this module
 _logger = logging.getLogger(__name__)
@@ -119,17 +129,21 @@ def _build_fast_health_graphs() -> dict[str, dict[str, float | int | None]]:
         start_date=state.start_date,
         end_date=state.end_date,
     )
+
+    # Apple Health stores body mass in kg; convert to lbs when the user prefers imperial weight.
+    weight_factor = KG_TO_LBS if get_weight_unit() == "lbs" else 1.0
+    body_mass_series = body_mass_stats.assign(
+        period=body_mass_stats["period"].astype(str),
+        avg=body_mass_stats["avg"] * weight_factor,
+    )
+
     return {
         "heart_rate": _to_json_safe(
             heart_rate_stats.assign(period=heart_rate_stats["period"].astype(str))
             .set_index("period")["avg"]
             .to_dict()
         ),
-        "body_mass": _to_json_safe(
-            body_mass_stats.assign(period=body_mass_stats["period"].astype(str))
-            .set_index("period")["avg"]
-            .to_dict()
-        ),
+        "body_mass": _to_json_safe(body_mass_series.set_index("period")["avg"].to_dict()),
         "vo2_max": _to_json_safe(
             vo2_max_stats.assign(period=vo2_max_stats["period"].astype(str))
             .set_index("period")["avg"]
@@ -221,19 +235,27 @@ def handle_csv_export() -> None:
 
 def _refresh_summary_metrics() -> None:
     """Refresh global summary metrics and their display values."""
+    dist_unit = get_distance_unit()
+    elev_unit = get_elevation_unit()
     metrics: dict[str, int | float] = state.metrics
     metrics_display: dict[str, str] = state.metrics_display
     metrics["count"] = state.workouts.get_count(
         state.selected_activity_type, state.start_date, state.end_date
     )
     metrics["distance"] = state.workouts.get_total_distance(
-        state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
+        state.selected_activity_type,
+        unit=dist_unit,
+        start_date=state.start_date,
+        end_date=state.end_date,
     )
     metrics["duration"] = state.workouts.get_total_duration(
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
     )
     metrics["elevation"] = state.workouts.get_total_elevation(
-        state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
+        state.selected_activity_type,
+        unit=elev_unit,
+        start_date=state.start_date,
+        end_date=state.end_date,
     )
     metrics["calories"] = state.workouts.get_total_calories(
         state.selected_activity_type, start_date=state.start_date, end_date=state.end_date
@@ -302,6 +324,7 @@ def _set_longest_metric_from_details(
 def _refresh_longest_workout_metrics() -> None:
     """Refresh longest run/walk/cycling metrics and tooltips."""
     language_code = get_language()
+    dist_unit = get_distance_unit()
     metric_configs = [
         ("longest_run", ["Running"]),
         ("longest_walk", ["Walking", "Hiking"]),
@@ -311,6 +334,7 @@ def _refresh_longest_workout_metrics() -> None:
     for metric_key, activity_types in metric_configs:
         details = state.workouts.get_longest_workout_details(
             activity_types,
+            unit=dist_unit,
             start_date=state.start_date,
             end_date=state.end_date,
         )
@@ -365,12 +389,15 @@ def refresh_data() -> None:
 
     # Reset range filter bounds to match the current activity/date filtered dataset so
     # sliders always show a meaningful range and start fully open after a filter change.
+    # Values are stored in the user's preferred distance unit.
+    dist_unit = get_distance_unit()
     dist_min, dist_max = state.workouts.get_distance_bounds(
+        unit=dist_unit,
         activity_type=state.selected_activity_type,
         start_date=state.start_date,
         end_date=state.end_date,
     )
-    state.distance_range_km = {"min": math.floor(dist_min), "max": math.ceil(dist_max)}
+    state.distance_range = {"min": math.floor(dist_min), "max": math.ceil(dist_max)}
     dur_min, dur_max = state.workouts.get_duration_bounds(
         activity_type=state.selected_activity_type,
         start_date=state.start_date,
@@ -497,8 +524,24 @@ def _change_language(language_code: str) -> None:
     ui.navigate.reload()
 
 
+def _refresh_loaded_data_for_unit_change() -> None:
+    """Recompute cached derived data so unit labels and values stay in sync."""
+    if not state.file_loaded:
+        return
+
+    refresh_data()
+
+
+def _change_unit_system(system: str) -> None:
+    """Store the selected unit system and reload the page."""
+    app.storage.user["unit_system"] = system
+    _refresh_loaded_data_for_unit_change()
+    _logger.info("Unit system changed to '%s', reloading page.", system)
+    ui.navigate.reload()
+
+
 def render_header() -> None:
-    """Generate the application header with a dark mode toggle and language selector."""
+    """Generate the application header with a dark mode toggle and preferences menu."""
     dark = ui.dark_mode()
 
     # Sync initial dark-mode state (browser may have remembered the preference).
@@ -530,11 +573,24 @@ def render_header() -> None:
             dark, "value"
         ).props(BUTTON_FLAT_ROUND_PROPS)
 
-        # Language selector (globe icon)
-        with ui.button(icon="language").props(BUTTON_FLAT_ROUND_PROPS):
+        # Preferences menu (language + unit system)
+        current_language = get_language()
+        current_system = get_unit_system()
+        with ui.button(icon="tune").props(BUTTON_FLAT_ROUND_PROPS):
             with ui.menu():
+                ui.label(t("Language")).classes(PREF_SECTION_LABEL_CLASSES)
                 for code, name in LANGUAGES.items():
-                    ui.menu_item(name, on_click=lambda _event, c=code: _change_language(c))
+                    ui.menu_item(
+                        f"{'✓ ' if code == current_language else ''}{name}",
+                        on_click=lambda _event, c=code: _change_language(c),
+                    ).classes(PREF_MENU_ITEM_CLASSES)
+                ui.separator()
+                ui.label(t("Units")).classes(PREF_SECTION_LABEL_CLASSES)
+                for system_code, system_label in UNIT_SYSTEMS.items():
+                    ui.menu_item(
+                        f"{'✓ ' if system_code == current_system else ''}{t(system_label)}",
+                        on_click=lambda _event, s=system_code: _change_unit_system(s),
+                    ).classes(PREF_MENU_ITEM_CLASSES)
 
 
 async def pick_file() -> None:
@@ -697,11 +753,13 @@ def render_body() -> None:
 
     with ui.tab_panels(tabs, value=state.selected_main_tab or "summary").classes(TABS_FULL_CLASSES):
         with ui.tab_panel("summary"):
+            dist_unit = get_distance_unit()
+            elev_unit = get_elevation_unit()
             with ui.row().classes(ROW_CENTERED_CLASSES):
                 stat_card(t("Count"), state.metrics_display, "count")
-                stat_card(t("Distance"), state.metrics_display, "distance", "km")
+                stat_card(t("Distance"), state.metrics_display, "distance", dist_unit)
                 stat_card(t("Duration"), state.metrics_display, "duration", "h")
-                stat_card(t("Elevation"), state.metrics_display, "elevation", "km")
+                stat_card(t("Elevation"), state.metrics_display, "elevation", elev_unit)
             with ui.row().classes(ROW_CENTERED_CLASSES):
                 stat_card(t("Calories"), state.metrics_display, "calories", "kcal")
             with ui.row().classes(ROW_CENTERED_CLASSES):
@@ -709,7 +767,7 @@ def render_body() -> None:
                     t("Longest Run"),
                     state.metrics_display,
                     "longest_run",
-                    "km",
+                    dist_unit,
                     tooltip_ref=state.metrics_tooltip,
                     tooltip_key="longest_run",
                 )
@@ -717,7 +775,7 @@ def render_body() -> None:
                     t("Longest Walk/Hike"),
                     state.metrics_display,
                     "longest_walk",
-                    "km",
+                    dist_unit,
                     tooltip_ref=state.metrics_tooltip,
                     tooltip_key="longest_walk",
                 )
@@ -725,7 +783,7 @@ def render_body() -> None:
                     t("Longest Cycling"),
                     state.metrics_display,
                     "longest_cycling",
-                    "km",
+                    dist_unit,
                     tooltip_ref=state.metrics_tooltip,
                     tooltip_key="longest_cycling",
                 )
@@ -752,6 +810,8 @@ def render_body() -> None:
 @ui.refreshable
 def render_activity_graphs() -> None:
     """Render graphs by activity type."""
+    dist_unit = get_distance_unit()
+    elev_unit = get_elevation_unit()
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_pie_rose_graph(
             t("Count by activity"),
@@ -765,10 +825,12 @@ def render_activity_graphs() -> None:
             t("Distance by activity"),
             translate_activity_value_map(
                 state.workouts.get_distance_by_activity(
-                    start_date=state.start_date, end_date=state.end_date
+                    unit=dist_unit,
+                    start_date=state.start_date,
+                    end_date=state.end_date,
                 )
             ),
-            "km",
+            dist_unit,
         )
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_pie_rose_graph(
@@ -790,16 +852,16 @@ def render_activity_graphs() -> None:
             "h",
         )
     with ui.row().classes(ROW_CENTERED_CLASSES):
-        # Display elevation in meters (not km like the stat card) because per-activity
-        # values can be small and would show as 0.0X km, making the chart less readable
         render_pie_rose_graph(
             t("Elevation by activity"),
             translate_activity_value_map(
                 state.workouts.get_elevation_by_activity(
-                    start_date=state.start_date, end_date=state.end_date
+                    unit=elev_unit,
+                    start_date=state.start_date,
+                    end_date=state.end_date,
                 )
             ),
-            "m",
+            elev_unit,
         )
 
 
@@ -811,6 +873,8 @@ def render_trends_tab() -> None:
 @ui.refreshable
 def render_trends_graphs() -> None:
     """Render trend graphs."""
+    dist_unit = get_distance_unit()
+    elev_unit = get_elevation_unit()
     period_label = t(period_code_to_label(state.trends_period))
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
@@ -826,11 +890,12 @@ def render_trends_graphs() -> None:
             t("Distance by {period}", period=period_label),
             state.workouts.get_distance_by_period(
                 state.trends_period,
+                unit=dist_unit,
                 activity_type=state.selected_activity_type,
                 start_date=state.start_date,
                 end_date=state.end_date,
             ),
-            "km",
+            dist_unit,
         )
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
@@ -854,18 +919,16 @@ def render_trends_graphs() -> None:
             "h",
         )
     with ui.row().classes(ROW_CENTERED_CLASSES):
-        # Display elevation in meters (not km like the stat card) because values for the
-        # selected period can be small and would show as 0.0X km, making the chart less readable
         render_generic_graph(
             t("Elevation by {period}", period=period_label),
             state.workouts.get_elevation_by_period(
                 state.trends_period,
                 activity_type=state.selected_activity_type,
-                unit="m",
+                unit=elev_unit,
                 start_date=state.start_date,
                 end_date=state.end_date,
             ),
-            "m",
+            elev_unit,
         )
 
 
@@ -883,6 +946,7 @@ def render_health_data_tab() -> None:
         ui.label(t("Open this tab to load health data.")).classes(LABEL_MUTED_CLASSES)
         return
 
+    weight_unit = get_weight_unit()
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
             t("Resting HR frequency over time"),
@@ -893,7 +957,7 @@ def render_health_data_tab() -> None:
         render_generic_graph(
             t("Body Mass over time"),
             state.health_data_graphs.get("body_mass", {}),
-            "kg",
+            weight_unit,
             graph_type="line",
         )
 

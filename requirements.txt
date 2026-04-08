@@ -1,4 +1,4 @@
 babel==2.18.0
 defusedxml==0.7.1
-nicegui==3.9.0
+nicegui==3.10.0
 pandas==2.3.3

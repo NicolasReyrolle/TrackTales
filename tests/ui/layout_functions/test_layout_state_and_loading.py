@@ -78,7 +78,7 @@ def test_build_health_data_graphs_handles_empty_cp_evolution() -> None:
     original_workouts = state.workouts
 
     records_mock = MagicMock()
-    records_mock.heart_rate_stats.return_value = pd.DataFrame(
+    records_mock.resting_heart_rate_stats.return_value = pd.DataFrame(
         {"period": [pd.Period("2025-01", freq="M")], "avg": [60.0]}
     )
     records_mock.weight_stats.return_value = pd.DataFrame(

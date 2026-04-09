@@ -112,10 +112,9 @@ def _to_json_safe(d: dict[Any, Any]) -> dict[str, float | int | None]:
 
 
 def _build_fast_health_graphs() -> dict[str, dict[str, float | int | None]]:
-    """Build chart series for fast health graphs (HR, body mass, VO2 max)."""
-    heart_rate_stats = state.records_by_type.heart_rate_stats(
+    """Build chart series for fast health graphs (resting HR, body mass, VO2 max)."""
+    resting_heart_rate_stats = state.records_by_type.resting_heart_rate_stats(
         period=state.trends_period,
-        context=RecordsByType.HeartRateMeasureContext.SEDENTARY,
         start_date=state.start_date,
         end_date=state.end_date,
     )
@@ -139,7 +138,7 @@ def _build_fast_health_graphs() -> dict[str, dict[str, float | int | None]]:
 
     return {
         "heart_rate": _to_json_safe(
-            heart_rate_stats.assign(period=heart_rate_stats["period"].astype(str))
+            resting_heart_rate_stats.assign(period=resting_heart_rate_stats["period"].astype(str))
             .set_index("period")["avg"]
             .to_dict()
         ),

@@ -49,6 +49,24 @@ class TestRecordsByTypeGetters:
         assert body_mass_result is body_mass_df
         assert vo2_max_result is vo2_max_df
 
+    def test_resting_heart_rate_returns_expected_dataframe(self) -> None:
+        """Expose resting heart rate data via resting_heart_rate helper."""
+        resting_hr_df = pd.DataFrame({"value": [55, 58]})
+        records = RecordsByType({"RestingHeartRate": resting_hr_df})
+
+        result = records.resting_heart_rate()
+
+        assert result is resting_hr_df
+
+    def test_resting_heart_rate_returns_empty_when_missing(self) -> None:
+        """Return empty DataFrame when no RestingHeartRate data is present."""
+        records = RecordsByType({})
+
+        result = records.resting_heart_rate()
+
+        assert isinstance(result, pd.DataFrame)
+        assert result.empty
+
 
 class TestRecordsByTypeStatsByPeriod:
     """Test period-based aggregation logic."""
@@ -220,6 +238,24 @@ class TestRecordsByTypeConvenienceStats:
         assert result.iloc[0]["count"] == 2
         assert result.iloc[0]["avg"] == pytest.approx(68.5, abs=1e-9)  # type: ignore[arg-type]
 
+    def test_resting_heart_rate_stats_uses_resting_heart_rate_type(self) -> None:
+        """Use the RestingHeartRate type constant in resting_heart_rate_stats."""
+        resting_hr_df = pd.DataFrame(
+            {
+                "startDate": ["2024-01-01", "2024-01-02"],
+                "value": [55, 57],
+            }
+        )
+        records = RecordsByType({"RestingHeartRate": resting_hr_df})
+
+        result = records.resting_heart_rate_stats("M")
+
+        assert len(result) == 1
+        assert result.iloc[0]["avg"] == pytest.approx(56.0, abs=1e-9)  # type: ignore[arg-type]
+        assert result.iloc[0]["min"] == pytest.approx(55.0, abs=1e-9)  # type: ignore[arg-type]
+        assert result.iloc[0]["max"] == pytest.approx(57.0, abs=1e-9)  # type: ignore[arg-type]
+        assert result.iloc[0]["count"] == 2
+
     def test_weight_stats_uses_body_mass_type(self) -> None:
         """Use the BodyMass type constant in weight_stats."""
         body_mass_df = pd.DataFrame(
@@ -333,6 +369,32 @@ class TestRecordsByTypeConvenienceStats:
         assert list(result.columns) == ["period", "avg", "min", "max", "count"]
         assert not result.empty
         assert int(result["count"].sum()) == len(vo2_max_df)
+        assert (result["min"] <= result["avg"]).all()
+        assert (result["avg"] <= result["max"]).all()
+
+    def test_resting_heart_rate_stats_from_export_sample_zip(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """Aggregate resting heart rate stats from the record_resting_heart_rate.xml fixture."""
+        xml_content = build_health_export_xml(
+            [load_export_fragment("record_resting_heart_rate.xml")]
+        )
+        zip_path = create_health_zip(xml_content=xml_content)
+
+        with ExportParser() as parser:
+            parsed = parser.parse(str(zip_path))
+
+        records = RecordsByType(data=parsed.records_by_type)
+        resting_hr_df = records.resting_heart_rate()
+        result = records.resting_heart_rate_stats("M")
+
+        assert not resting_hr_df.empty
+        assert list(result.columns) == ["period", "avg", "min", "max", "count"]
+        assert not result.empty
+        assert int(result["count"].sum()) == len(resting_hr_df)
         assert (result["min"] <= result["avg"]).all()
         assert (result["avg"] <= result["max"]).all()
 

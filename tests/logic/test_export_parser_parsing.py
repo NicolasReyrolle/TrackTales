@@ -283,3 +283,22 @@ class TestExtractHealthDataRecord:
         result = parser._extract_health_data_record(elem)  # type: ignore[misc]
 
         assert result is None
+
+    def test_extract_resting_heart_rate_record_basic(self) -> None:
+        """Test extracting a basic resting heart rate record."""
+        elem = Element(
+            "Record",
+            attrib={
+                "type": "HKQuantityTypeIdentifierRestingHeartRate",
+                "value": "58",
+                "startDate": "2022-01-17 06:00:00 +0100",
+                "unit": "count/min",
+            },
+        )
+        parser = ep.ExportParser()
+        record_type, record_data = parser._extract_health_data_record(elem)  # type: ignore[misc]
+
+        assert record_type == "RestingHeartRate"
+        assert record_data["type"] == "RestingHeartRate"
+        assert record_data["value"] == 58
+        assert record_data["startDate"] == "2022-01-17 06:00:00 +0100"

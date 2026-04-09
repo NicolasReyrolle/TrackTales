@@ -14,6 +14,7 @@ class RecordsByType:
     data: dict[str, pd.DataFrame]
 
     HEART_RATE_TYPE = "HeartRate"
+    RESTING_HEART_RATE_TYPE = "RestingHeartRate"
     BODY_MASS_TYPE = "BodyMass"
     VO2_MAX_TYPE = "VO2Max"
 
@@ -31,6 +32,10 @@ class RecordsByType:
     def heart_rate(self) -> pd.DataFrame:
         """Return DataFrame for heart rate records."""
         return self.get(self.HEART_RATE_TYPE)
+
+    def resting_heart_rate(self) -> pd.DataFrame:
+        """Return DataFrame for resting heart rate records."""
+        return self.get(self.RESTING_HEART_RATE_TYPE)
 
     def weight(self) -> pd.DataFrame:
         """Return DataFrame for weight records."""
@@ -145,6 +150,24 @@ class RecordsByType:
             self.HEART_RATE_TYPE,
             period=period,
             query_filter=query_filter,
+            round_decimals=round_decimals,
+            fill_missing_periods=fill_missing_periods,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    def resting_heart_rate_stats(
+        self,
+        period: str = "M",
+        round_decimals: int = 2,
+        fill_missing_periods: bool = True,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> pd.DataFrame:
+        """Return aggregated resting heart rate stats by period."""
+        return self.stats_by_period(
+            self.RESTING_HEART_RATE_TYPE,
+            period=period,
             round_decimals=round_decimals,
             fill_missing_periods=fill_missing_periods,
             start_date=start_date,

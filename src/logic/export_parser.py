@@ -23,7 +23,9 @@ _logger = logging.getLogger(__name__)
 WORKOUT_PROGRESS_INTERVAL = 100  # Report progress every N workouts
 
 # Only parse record types that the application currently supports to limit memory usage.
-SUPPORTED_RECORD_TYPES = frozenset({"HeartRate", "BodyMass", "VO2Max", "RunningPower"})
+SUPPORTED_RECORD_TYPES = frozenset(
+    {"HeartRate", "RestingHeartRate", "BodyMass", "VO2Max", "RunningPower"}
+)
 
 
 class ExportParser:

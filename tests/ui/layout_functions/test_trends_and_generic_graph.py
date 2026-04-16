@@ -171,8 +171,11 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": 20}
 
         with (
+            patch("ui.layout.ui.dialog", return_value=MagicMock()),
             patch("ui.layout.ui.card", return_value=DummyRow()),
+            patch("ui.layout.ui.row", return_value=DummyRow()),
             patch("ui.layout.ui.label"),
+            patch("ui.layout.ui.button", return_value=DummyComponent()),
             patch("ui.layout.ui.echart") as echart_mock,
         ):
             layout.render_generic_graph("Distance by month", values, "km")
@@ -188,8 +191,11 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": 20}
 
         with (
+            patch("ui.layout.ui.dialog", return_value=MagicMock()),
             patch("ui.layout.ui.card", return_value=DummyRow()),
+            patch("ui.layout.ui.row", return_value=DummyRow()),
             patch("ui.layout.ui.label"),
+            patch("ui.layout.ui.button", return_value=DummyComponent()),
             patch("ui.layout.ui.echart") as echart_mock,
         ):
             layout.render_generic_graph("Distance by month", values, "km", show_trend=False)
@@ -204,8 +210,11 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": None, "2024-03": 20}
 
         with (
+            patch("ui.layout.ui.dialog", return_value=MagicMock()),
             patch("ui.layout.ui.card", return_value=DummyRow()),
+            patch("ui.layout.ui.row", return_value=DummyRow()),
             patch("ui.layout.ui.label"),
+            patch("ui.layout.ui.button", return_value=DummyComponent()),
             patch("ui.layout.ui.echart") as echart_mock,
         ):
             layout.render_generic_graph(
@@ -223,6 +232,26 @@ class TestRenderGenericGraph:
         assert series[0]["connectNulls"] is True
         assert series[1]["type"] == "line"
         assert series[1]["connectNulls"] is False
+
+    def test_render_generic_graph_has_datazoom_and_toolbox(self) -> None:
+        """Bar charts should include inside dataZoom and a toolbox for restore/save."""
+        values = {"2024-01": 10, "2024-02": 20}
+
+        with (
+            patch("ui.layout.ui.dialog", return_value=MagicMock()),
+            patch("ui.layout.ui.card", return_value=DummyRow()),
+            patch("ui.layout.ui.row", return_value=DummyRow()),
+            patch("ui.layout.ui.label"),
+            patch("ui.layout.ui.button", return_value=DummyComponent()),
+            patch("ui.layout.ui.echart") as echart_mock,
+        ):
+            layout.render_generic_graph("Distance by month", values, "km")
+
+        chart_options = echart_mock.call_args.args[0]
+        assert "dataZoom" in chart_options
+        zoom_types = [z["type"] for z in chart_options["dataZoom"]]  # type: ignore[index]
+        assert "inside" in zoom_types
+        assert "toolbox" in chart_options
 
 
 class TestChartsModuleComponents:
@@ -254,8 +283,11 @@ class TestChartsModuleComponents:
         values = {"Running": 3, "Cycling": 1}
 
         with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
             patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
             patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
             patch("ui.charts.ui.echart") as echart_mock,
         ):
             charts.render_pie_rose_graph("Activities", values)

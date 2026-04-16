@@ -148,3 +148,13 @@ body.body--dark .q-table tbody tr:not(.q-tr--no-hover):hover td,
     display: inline-block;
     width: 28px;
 }
+
+/* ===================================================================
+   Fullscreen chart dialog: the card fills the entire dialog viewport
+   with no rounded corners.  The EChart child uses flex-1/min-h-0 to
+   grow and fill the remaining height without overflow.
+   =================================================================== */
+.chart-fullscreen-card {
+    border-radius: 0 !important;
+    overflow: hidden;
+}

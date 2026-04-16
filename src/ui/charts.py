@@ -6,8 +6,12 @@ from nicegui import ui
 
 from app_state import state
 from ui.css import (
+    BUTTON_DENSE_PROPS,
     BUTTON_FLAT_ROUND_PROPS,
     CHART_CARD_CLASSES,
+    CHART_FULLSCREEN_CARD_CLASSES,
+    CHART_HEADER_ROW_CLASSES,
+    ECHART_FULLSCREEN_CLASSES,
     LABEL_UPPERCASE_CLASSES,
     ROW_CENTERED_CLASSES,
     STAT_CARD_CLASSES,
@@ -84,26 +88,40 @@ def render_pie_rose_graph(label: str, values: Mapping[str, float | int], unit: s
 
     # Include unit in chart title when one is provided
     title_text = f"{label} ({unit})" if unit else label
+    value_suffix = f" {unit}" if unit else ""
+
+    chart_config: dict[str, object] = {
+        "backgroundColor": "transparent",
+        "darkMode": state.dark_mode_enabled,
+        "tooltip": {
+            "trigger": "item",
+            "formatter": f"<b>{{b}}</b><br/>{{c}}{value_suffix}<br/>({{d}}%)",
+        },
+        "toolbox": {"feature": {"saveAsImage": {}}},
+        "series": [
+            {
+                "type": "pie",
+                "name": label,
+                "data": chart_data,
+                "roseType": "rose",
+                "radius": ["10", "60"],
+                "center": ["50%", "50%"],
+            },
+        ],
+    }
+
+    with ui.dialog().props("maximized") as dialog:
+        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+            ui.echart(chart_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
-        ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
-        ui.echart(
-            {
-                "backgroundColor": "transparent",
-                "darkMode": state.dark_mode_enabled,
-                "tooltip": {"trigger": "item", "formatter": f"{{b}}: {{c}} {unit} ({{d}}%)"},
-                "series": [
-                    {
-                        "type": "pie",
-                        "name": label,
-                        "data": chart_data,
-                        "roseType": "rose",
-                        "radius": ["10", "60"],
-                        "center": ["50%", "50%"],
-                    },
-                ],
-            }
-        )
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
+        ui.echart(chart_config)
 
 
 def render_generic_graph(
@@ -123,6 +141,7 @@ def render_generic_graph(
     # Extract raw lists for the axes and series
     categories = [d["name"] for d in chart_data]
     data_points = list(values.values())
+    value_suffix = f" {unit}" if unit else ""
 
     if graph_type == "line":
         # Two-layer approach: a muted "bridge" series beneath (connectNulls=True) makes the
@@ -149,8 +168,13 @@ def render_generic_graph(
                 "z": 2,
             },
         ]
+        # c0 = bridge (hidden from tooltip), c1 = actual measured value
+        tooltip_formatter = f"<b>{{b}}</b><br/>{{c1}}{value_suffix}"
     else:
         series = [{"data": data_points, "type": graph_type}]
+        # c0 = bar/area value
+        tooltip_formatter = f"<b>{{b}}</b><br/>{{c0}}{value_suffix}"
+
     if show_trend:
         series.append(
             {
@@ -166,24 +190,51 @@ def render_generic_graph(
             }
         )
 
-    with ui.card().classes(CHART_CARD_CLASSES):
-        ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
-        ui.echart(
-            {
-                "backgroundColor": "transparent",
-                "darkMode": state.dark_mode_enabled,
-                "tooltip": {"trigger": "axis", "formatter": f"{{b}}: {{c}} {unit}"},
-                "xAxis": {
-                    "type": "category",
-                    "data": categories,
-                    "axisTick": {"alignWithLabel": True},
-                },
-                "yAxis": {
-                    "type": "value",
-                    "scale": True,
-                    "name": unit,
-                    "nameLocation": "end",
-                },
-                "series": series,
+    base_config: dict[str, object] = {
+        "backgroundColor": "transparent",
+        "darkMode": state.dark_mode_enabled,
+        "tooltip": {
+            "trigger": "axis",
+            "axisPointer": {"type": "cross"},
+            "formatter": tooltip_formatter,
+        },
+        "xAxis": {
+            "type": "category",
+            "data": categories,
+            "axisTick": {"alignWithLabel": True},
+        },
+        "yAxis": {
+            "type": "value",
+            "scale": True,
+            "name": unit,
+            "nameLocation": "end",
+        },
+        "toolbox": {
+            "feature": {
+                "restore": {},
+                "saveAsImage": {},
             }
-        )
+        },
+        "series": series,
+    }
+
+    # Card chart: scroll/pinch zoom only (compact card has no space for a slider)
+    card_config = dict(base_config)
+    card_config["dataZoom"] = [{"type": "inside"}]
+
+    # Fullscreen chart: both inside zoom and a visible range slider
+    fullscreen_config = dict(base_config)
+    fullscreen_config["dataZoom"] = [{"type": "inside"}, {"type": "slider"}]
+
+    with ui.dialog().props("maximized") as dialog:
+        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+            ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
+
+    with ui.card().classes(CHART_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
+        ui.echart(card_config)

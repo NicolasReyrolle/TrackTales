@@ -14,6 +14,7 @@ If you are contributing or maintaining the project, see [MAINTAINERS.md](MAINTAI
 - **ZIP Parsing**: Directly select and parse your `export.zip` file from Apple Health.
 - **Workout Extraction**: Focused on running workouts with detailed metrics (distance, duration, METs, heart rate, power, etc.).
 - **Visual Statistics**: Real-time summary of total activities, distance, duration, elevation, and calories with interactive charts (pie/rose charts for activity breakdown, bar charts with trend lines for time-based analysis).
+- **Interactive Charts**: Every chart supports zoom and pan (mouse scroll, pinch, or trackpad gesture). Click the ⛶ fullscreen button on any chart to open it in a maximized view with a range-slider for precise zoom control. Tooltips are rich HTML with bold labels and value+unit on each axis hover.
 - **Health Data Insights**: Dedicated Health Data tab with period-based trends for resting heart rate, body mass, VO2 max, **Critical Power (CP)**, and **W'**. Fast metrics load immediately and CP/W' fill in progressively in the background.
 - **Best Segments Tab**: Computes and displays best running segments from 100m to 100km with expandable runner-up rows, formatted durations, localized labels, and segment power confidence.
 - **Robust Segment Distance Model**: Segment search uses GPX speed integration with safeguards for export edge cases (window clipping, final unpaired pause trimming, strict reversal-only trace splits, and realistic workout-level distance normalization).

@@ -30,8 +30,8 @@ class TestRenderTrendsGraphs:
             state.workouts = workouts_mock
             state.selected_activity_type = "Running"
 
-            with patch("ui.layout.ui.row", return_value=DummyRow()):
-                with patch("ui.layout.render_generic_graph") as render_graph_mock:
+            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
+                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
             assert render_graph_mock.call_count == 5
@@ -78,8 +78,8 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "W"
 
-            with patch("ui.layout.ui.row", return_value=DummyRow()):
-                with patch("ui.layout.render_generic_graph") as render_graph_mock:
+            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
+                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
@@ -114,8 +114,8 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "Q"
 
-            with patch("ui.layout.ui.row", return_value=DummyRow()):
-                with patch("ui.layout.render_generic_graph") as render_graph_mock:
+            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
+                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
@@ -147,8 +147,8 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "Y"
 
-            with patch("ui.layout.ui.row", return_value=DummyRow()):
-                with patch("ui.layout.render_generic_graph") as render_graph_mock:
+            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
+                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
@@ -171,11 +171,14 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": 20}
 
         with (
-            patch("ui.layout.ui.card", return_value=DummyRow()),
-            patch("ui.layout.ui.label"),
-            patch("ui.layout.ui.echart") as echart_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
         ):
-            layout.render_generic_graph("Distance by month", values, "km")
+            charts.render_generic_graph("Distance by month", values, "km")
 
         chart_options = echart_mock.call_args.args[0]
         series = chart_options["series"]
@@ -188,11 +191,14 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": 20}
 
         with (
-            patch("ui.layout.ui.card", return_value=DummyRow()),
-            patch("ui.layout.ui.label"),
-            patch("ui.layout.ui.echart") as echart_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
         ):
-            layout.render_generic_graph("Distance by month", values, "km", show_trend=False)
+            charts.render_generic_graph("Distance by month", values, "km", show_trend=False)
 
         chart_options = echart_mock.call_args.args[0]
         series = chart_options["series"]
@@ -204,11 +210,14 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": None, "2024-03": 20}
 
         with (
-            patch("ui.layout.ui.card", return_value=DummyRow()),
-            patch("ui.layout.ui.label"),
-            patch("ui.layout.ui.echart") as echart_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
         ):
-            layout.render_generic_graph(
+            charts.render_generic_graph(
                 "Distance by month",
                 values,
                 "km",
@@ -223,6 +232,26 @@ class TestRenderGenericGraph:
         assert series[0]["connectNulls"] is True
         assert series[1]["type"] == "line"
         assert series[1]["connectNulls"] is False
+
+    def test_render_generic_graph_has_datazoom_and_toolbox(self) -> None:
+        """Bar charts should include inside dataZoom and a toolbox for restore/save."""
+        values = {"2024-01": 10, "2024-02": 20}
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_generic_graph("Distance by month", values, "km")
+
+        chart_options = echart_mock.call_args.args[0]
+        assert "dataZoom" in chart_options
+        zoom_types = [z["type"] for z in chart_options["dataZoom"]]  # type: ignore[index]
+        assert "inside" in zoom_types
+        assert "toolbox" in chart_options
 
 
 class TestChartsModuleComponents:
@@ -254,8 +283,11 @@ class TestChartsModuleComponents:
         values = {"Running": 3, "Cycling": 1}
 
         with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
             patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
             patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
             patch("ui.charts.ui.echart") as echart_mock,
         ):
             charts.render_pie_rose_graph("Activities", values)
@@ -269,3 +301,47 @@ class TestChartsModuleComponents:
             {"value": 3, "name": "Running"},
             {"value": 1, "name": "Cycling"},
         ]
+
+    def test_render_pie_rose_graph_uses_fullscreen_values_in_dialog(self) -> None:
+        """When fullscreen_values is given, the fullscreen echart should use that data."""
+        card_values = {"Running": 3, "Others": 1}
+        fullscreen_values = {"Running": 3, "Cycling": 1, "Walking": 0}
+
+        echart_calls: list[dict] = []
+
+        def capture_echart(config: dict, *_a, **_kw):
+            echart_calls.append(config)
+            return DummyComponent()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", side_effect=capture_echart),
+        ):
+            charts.render_pie_rose_graph(
+                "Activities", card_values, fullscreen_values=fullscreen_values
+            )
+
+        # First echart call is fullscreen (inside dialog), second is the card
+        assert len(echart_calls) == 2
+        fullscreen_config = echart_calls[0]
+        card_data = echart_calls[1]["series"][0]["data"]
+        fullscreen_data = fullscreen_config["series"][0]["data"]
+        assert fullscreen_data == [
+            {"value": 3, "name": "Running"},
+            {"value": 1, "name": "Cycling"},
+            {"value": 0, "name": "Walking"},
+        ]
+        assert card_data == [
+            {"value": 3, "name": "Running"},
+            {"value": 1, "name": "Others"},
+        ]
+        # Fullscreen uses a larger radius; card uses the compact radius
+        assert fullscreen_config["series"][0]["radius"] == ["15%", "75%"]
+        assert echart_calls[1]["series"][0]["radius"] == ["10%", "60%"]
+        # dataZoom is not added to pie charts (it has no effect on them)
+        assert "dataZoom" not in fullscreen_config
+        assert "dataZoom" not in echart_calls[1]

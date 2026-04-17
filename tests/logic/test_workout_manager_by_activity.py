@@ -624,7 +624,7 @@ class TestGetElevationByActivity:
         assert result == {"Hiking": 5, "Running": 3, "Others": 1}
 
     def test_get_elevation_by_activity_zero_elevation(self) -> None:
-        """Test get_elevation_by_activity with zero elevation."""
+        """Activities with zero elevation should be excluded from the result."""
         workouts = wm.WorkoutManager(
             pd.DataFrame(
                 {
@@ -636,4 +636,21 @@ class TestGetElevationByActivity:
 
         result = workouts.get_elevation_by_activity()
 
-        assert result == {"Running": 0}
+        assert result == {}
+
+    def test_get_elevation_by_activity_mixed_zero_nonzero(self) -> None:
+        """Only activities with non-zero elevation should be returned."""
+        workouts = wm.WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running", "Swimming", "Hiking"],
+                    "ElevationAscended": [500, 0, 2000],
+                }
+            )
+        )
+
+        result = workouts.get_elevation_by_activity(unit="m")
+
+        assert "Swimming" not in result
+        assert result["Running"] == 500
+        assert result["Hiking"] == 2000

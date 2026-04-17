@@ -307,7 +307,7 @@ class TestElevationByActivityEdgeCases:
     """Test suite for edge cases in get_elevation_by_activity."""
 
     def test_get_elevation_by_activity_all_values_below_threshold(self) -> None:
-        """Test elevation by activity when all values are below threshold."""
+        """Activities that round to zero elevation are excluded from results."""
         workouts = wm.WorkoutManager(
             pd.DataFrame(
                 {
@@ -324,10 +324,8 @@ class TestElevationByActivityEdgeCases:
         # Walk1(0.1) cumulative=0.1 <= 0.225 → grouped to Others
         # Walk2(0.15) cumulative=0.25 > 0.225 → stays separate
         # Walk3(0.2) stays separate
-        # After rounding: all values round to 0 (filter_zeros=False so they remain)
-        assert result == {"Walk2": 0, "Walk3": 0, "Others": 0}
-        # Total is preserved (all round to 0)
-        assert sum(result.values()) == 0
+        # After rounding: all values round to 0 → all filtered out (filter_zeros=True)
+        assert result == {}
 
 
 class TestCaloriesByActivityEdgeCases:

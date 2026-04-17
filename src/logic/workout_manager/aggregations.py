@@ -409,7 +409,7 @@ class WorkoutManagerAggregationsMixin:
             "ElevationAscended",
             lambda x: x.sum(),
             lambda x: x.div(self._get_length_unit_divisor(unit)),
-            filter_zeros=False,
+            filter_zeros=True,
             combination_threshold=combination_threshold,
             start_date=start_date,
             end_date=end_date,

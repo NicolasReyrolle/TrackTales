@@ -20,14 +20,13 @@ from app_state import (
 )
 from assets import APP_ICON_BASE64
 from i18n import LANGUAGES, get_language, t
-from i18n.activity_types import build_activity_select_options, translate_activity_value_map
+from i18n.activity_types import build_activity_select_options
 from logic.export_parser import ExportParser
 from logic.records_by_type import RecordsByType
 from logic.workout_manager import WorkoutManager
+from ui.activities_tab import render_activity_graphs
 from ui.best_segments import load_best_segments_data, render_best_segments_tab
 from ui.charts import (
-    render_generic_graph,
-    render_pie_rose_graph,
     stat_card,
 )
 from ui.css import (
@@ -48,16 +47,17 @@ from ui.css import (
     ROW_FULL_ITEMS_CLASSES,
     TABS_FULL_CLASSES,
 )
+from ui.health_data_tab import render_health_data_tab
 from ui.helpers import (
     format_date_label,
     format_duration_label,
     format_float,
     format_integer,
-    period_code_to_label,
     qdate_locale_json,
     translate_parser_progress_message,
 )
 from ui.local_file_picker import LocalFilePicker
+from ui.trends_tab import render_trends_graphs, render_trends_tab
 from ui.workout_table import (
     render_distance_range_selector,
     render_duration_range_selector,
@@ -804,186 +804,3 @@ def render_body() -> None:
 
         with ui.tab_panel("best_segments"):
             render_best_segments_tab()
-
-
-@ui.refreshable
-def render_activity_graphs() -> None:
-    """Render graphs by activity type."""
-    dist_unit = get_distance_unit()
-    elev_unit = get_elevation_unit()
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_pie_rose_graph(
-            t("Count by activity"),
-            translate_activity_value_map(
-                state.workouts.get_count_by_activity(
-                    start_date=state.start_date, end_date=state.end_date
-                )
-            ),
-        )
-        render_pie_rose_graph(
-            t("Distance by activity"),
-            translate_activity_value_map(
-                state.workouts.get_distance_by_activity(
-                    unit=dist_unit,
-                    start_date=state.start_date,
-                    end_date=state.end_date,
-                )
-            ),
-            dist_unit,
-        )
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_pie_rose_graph(
-            t("Calories by activity"),
-            translate_activity_value_map(
-                state.workouts.get_calories_by_activity(
-                    start_date=state.start_date, end_date=state.end_date
-                )
-            ),
-            "kcal",
-        )
-        render_pie_rose_graph(
-            t("Duration by activity"),
-            translate_activity_value_map(
-                state.workouts.get_duration_by_activity(
-                    start_date=state.start_date, end_date=state.end_date
-                )
-            ),
-            "h",
-        )
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_pie_rose_graph(
-            t("Elevation by activity"),
-            translate_activity_value_map(
-                state.workouts.get_elevation_by_activity(
-                    unit=elev_unit,
-                    start_date=state.start_date,
-                    end_date=state.end_date,
-                )
-            ),
-            elev_unit,
-        )
-
-
-def render_trends_tab() -> None:
-    """Render the trends tab with trend graphs."""
-    render_trends_graphs()
-
-
-@ui.refreshable
-def render_trends_graphs() -> None:
-    """Render trend graphs."""
-    dist_unit = get_distance_unit()
-    elev_unit = get_elevation_unit()
-    period_label = t(period_code_to_label(state.trends_period))
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_generic_graph(
-            t("Count by {period}", period=period_label),
-            state.workouts.get_count_by_period(
-                state.trends_period,
-                activity_type=state.selected_activity_type,
-                start_date=state.start_date,
-                end_date=state.end_date,
-            ),
-        )
-        render_generic_graph(
-            t("Distance by {period}", period=period_label),
-            state.workouts.get_distance_by_period(
-                state.trends_period,
-                unit=dist_unit,
-                activity_type=state.selected_activity_type,
-                start_date=state.start_date,
-                end_date=state.end_date,
-            ),
-            dist_unit,
-        )
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_generic_graph(
-            t("Calories by {period}", period=period_label),
-            state.workouts.get_calories_by_period(
-                state.trends_period,
-                activity_type=state.selected_activity_type,
-                start_date=state.start_date,
-                end_date=state.end_date,
-            ),
-            "kcal",
-        )
-        render_generic_graph(
-            t("Duration by {period}", period=period_label),
-            state.workouts.get_duration_by_period(
-                state.trends_period,
-                activity_type=state.selected_activity_type,
-                start_date=state.start_date,
-                end_date=state.end_date,
-            ),
-            "h",
-        )
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_generic_graph(
-            t("Elevation by {period}", period=period_label),
-            state.workouts.get_elevation_by_period(
-                state.trends_period,
-                activity_type=state.selected_activity_type,
-                unit=elev_unit,
-                start_date=state.start_date,
-                end_date=state.end_date,
-            ),
-            elev_unit,
-        )
-
-
-@ui.refreshable
-def render_health_data_tab() -> None:
-    """Render the health data tab with filters and graphs."""
-
-    if state.health_data_loading:
-        with ui.row().classes(ROW_CENTERED_CLASSES):
-            ui.spinner(size="lg")
-            ui.label(t("Loading health data..."))
-        return
-
-    if not state.health_data_loaded:
-        ui.label(t("Open this tab to load health data.")).classes(LABEL_MUTED_CLASSES)
-        return
-
-    weight_unit = get_weight_unit()
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_generic_graph(
-            t("Resting HR frequency over time"),
-            state.health_data_graphs.get("heart_rate", {}),
-            "bpm",
-            graph_type="line",
-        )
-        render_generic_graph(
-            t("Body Mass over time"),
-            state.health_data_graphs.get("body_mass", {}),
-            weight_unit,
-            graph_type="line",
-        )
-
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_generic_graph(
-            t("VO2 Max over time"),
-            state.health_data_graphs.get("vo2_max", {}),
-            "ml/kg/min",
-            graph_type="line",
-        )
-
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        if state.health_data_cp_loading:
-            ui.spinner(size="lg")
-            ui.label(t("Loading Critical Power data..."))
-        else:
-            render_generic_graph(
-                t("Critical Power (CP) over time"),
-                state.health_data_graphs.get("critical_power", {}),
-                "W",
-                graph_type="line",
-                show_trend=False,
-            )
-            render_generic_graph(
-                t("W' over time"),
-                state.health_data_graphs.get("w_prime", {}),
-                "kJ",
-                graph_type="line",
-                show_trend=False,
-            )

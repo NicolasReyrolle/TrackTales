@@ -1,13 +1,19 @@
 """Shared UI chart and card components for Apple Health Analyzer."""
 
+import copy
 from collections.abc import Mapping
 
 from nicegui import ui
 
 from app_state import state
+from i18n import t
 from ui.css import (
+    BUTTON_DENSE_PROPS,
     BUTTON_FLAT_ROUND_PROPS,
     CHART_CARD_CLASSES,
+    CHART_FULLSCREEN_CARD_CLASSES,
+    CHART_HEADER_ROW_CLASSES,
+    ECHART_FULLSCREEN_CLASSES,
     LABEL_UPPERCASE_CLASSES,
     ROW_CENTERED_CLASSES,
     STAT_CARD_CLASSES,
@@ -27,6 +33,21 @@ __all__ = [
     "render_pie_rose_graph",
     "stat_card",
 ]
+
+_SAVE_AS_IMAGE = "Save as Image"
+_RESTORE = "Restore"
+
+
+def _toolbox_config(*, restore: bool = False) -> dict[str, object]:
+    """Build an ECharts toolbox configuration dict.
+
+    Args:
+        restore: When True, adds a ``restore`` button that resets the chart zoom.
+    """
+    feature: dict[str, object] = {"saveAsImage": {"title": t(_SAVE_AS_IMAGE)}}
+    if restore:
+        feature["restore"] = {"title": t(_RESTORE)}
+    return {"feature": feature}
 
 
 def stat_card(
@@ -75,35 +96,90 @@ def stat_card(
             )
 
 
-def render_pie_rose_graph(label: str, values: Mapping[str, float | int], unit: str = "") -> None:
-    """Render a pie/rose graph for the given values."""
+def render_pie_rose_graph(
+    label: str,
+    values: Mapping[str, float | int],
+    unit: str = "",
+    fullscreen_values: Mapping[str, float | int] | None = None,
+) -> None:
+    """Render a pie/rose graph for the given values.
+
+    Args:
+        label: Chart title.
+        values: Mapping of category name to numeric value (used in the card view).
+        unit: Optional unit suffix appended to tooltip values and chart title.
+        fullscreen_values: Alternative data mapping used exclusively in the fullscreen chart.
+            When provided (e.g. ungrouped data), overrides ``values`` for the fullscreen view.
+    """
 
     chart_data: list[dict[str, float | int | str]] = [
         {"value": v, "name": k} for k, v in values.items()
     ]
 
+    fullscreen_chart_data: list[dict[str, float | int | str]] = (
+        [{"value": v, "name": k} for k, v in fullscreen_values.items()]
+        if fullscreen_values is not None
+        else chart_data
+    )
+
     # Include unit in chart title when one is provided
     title_text = f"{label} ({unit})" if unit else label
+    value_suffix = f" {unit}" if unit else ""
+
+    _shared: dict[str, object] = {
+        "backgroundColor": "transparent",
+        "darkMode": state.dark_mode_enabled,
+        "tooltip": {
+            "trigger": "item",
+            "renderMode": "richText",
+            "formatter": f"{{b}}\n{{c}}{value_suffix}\n({{d}}%)",
+        },
+        "toolbox": _toolbox_config(),
+    }
+
+    # Card chart: compact fixed-pixel radius (fits the w-100 h-80 card)
+    card_chart_config: dict[str, object] = {
+        **_shared,
+        "series": [
+            {
+                "type": "pie",
+                "name": label,
+                "data": chart_data,
+                "roseType": "rose",
+                "radius": ["10%", "60%"],
+                "center": ["50%", "50%"],
+            },
+        ],
+    }
+
+    # Fullscreen chart: larger radius fills the viewport, all slices shown (minAngle: 0).
+    fullscreen_chart_config: dict[str, object] = {
+        **copy.deepcopy(_shared),
+        "series": [
+            {
+                "type": "pie",
+                "name": label,
+                "data": fullscreen_chart_data,
+                "roseType": "rose",
+                "radius": ["15%", "75%"],
+                "center": ["50%", "50%"],
+                "minAngle": 0,
+            },
+        ],
+    }
+
+    with ui.dialog().props("maximized") as dialog:
+        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+            ui.echart(fullscreen_chart_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
-        ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
-        ui.echart(
-            {
-                "backgroundColor": "transparent",
-                "darkMode": state.dark_mode_enabled,
-                "tooltip": {"trigger": "item", "formatter": f"{{b}}: {{c}} {unit} ({{d}}%)"},
-                "series": [
-                    {
-                        "type": "pie",
-                        "name": label,
-                        "data": chart_data,
-                        "roseType": "rose",
-                        "radius": ["10", "60"],
-                        "center": ["50%", "50%"],
-                    },
-                ],
-            }
-        )
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
+        ui.echart(card_chart_config)
 
 
 def render_generic_graph(
@@ -123,6 +199,7 @@ def render_generic_graph(
     # Extract raw lists for the axes and series
     categories = [d["name"] for d in chart_data]
     data_points = list(values.values())
+    value_suffix = f" {unit}" if unit else ""
 
     if graph_type == "line":
         # Two-layer approach: a muted "bridge" series beneath (connectNulls=True) makes the
@@ -149,8 +226,13 @@ def render_generic_graph(
                 "z": 2,
             },
         ]
+        # c0 = bridge (hidden from tooltip), c1 = actual measured value
+        tooltip_formatter = f"{{b}}\n{{c1}}{value_suffix}"
     else:
         series = [{"data": data_points, "type": graph_type}]
+        # c0 = bar/area value
+        tooltip_formatter = f"{{b}}\n{{c0}}{value_suffix}"
+
     if show_trend:
         series.append(
             {
@@ -166,24 +248,48 @@ def render_generic_graph(
             }
         )
 
+    base_config: dict[str, object] = {
+        "backgroundColor": "transparent",
+        "darkMode": state.dark_mode_enabled,
+        "tooltip": {
+            "trigger": "axis",
+            "axisPointer": {"type": "cross"},
+            "renderMode": "richText",
+            "formatter": tooltip_formatter,
+        },
+        "xAxis": {
+            "type": "category",
+            "data": categories,
+            "axisTick": {"alignWithLabel": True},
+        },
+        "yAxis": {
+            "type": "value",
+            "scale": True,
+            "name": unit,
+            "nameLocation": "end",
+        },
+        "series": series,
+    }
+
+    # Card chart: scroll/pinch zoom only (no slider, no restore button)
+    card_config = copy.deepcopy(base_config)
+    card_config["dataZoom"] = [{"type": "inside"}]
+    card_config["toolbox"] = _toolbox_config()
+
+    # Fullscreen chart: inside zoom + visible slider + restore button
+    fullscreen_config = copy.deepcopy(base_config)
+    fullscreen_config["dataZoom"] = [{"type": "inside"}, {"type": "slider"}]
+    fullscreen_config["toolbox"] = _toolbox_config(restore=True)
+
+    with ui.dialog().props("maximized") as dialog:
+        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+            ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
+
     with ui.card().classes(CHART_CARD_CLASSES):
-        ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
-        ui.echart(
-            {
-                "backgroundColor": "transparent",
-                "darkMode": state.dark_mode_enabled,
-                "tooltip": {"trigger": "axis", "formatter": f"{{b}}: {{c}} {unit}"},
-                "xAxis": {
-                    "type": "category",
-                    "data": categories,
-                    "axisTick": {"alignWithLabel": True},
-                },
-                "yAxis": {
-                    "type": "value",
-                    "scale": True,
-                    "name": unit,
-                    "nameLocation": "end",
-                },
-                "series": series,
-            }
-        )
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
+        ui.echart(card_config)

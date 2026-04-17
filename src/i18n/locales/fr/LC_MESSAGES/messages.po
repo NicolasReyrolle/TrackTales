@@ -307,6 +307,13 @@ msgstr "Masse corporelle au fil du temps"
 msgid "VO2 Max over time"
 msgstr "VO2 Max au fil du temps"
 
+# Chart toolbox action labels
+msgid "Save as Image"
+msgstr "Enregistrer l'image"
+
+msgid "Restore"
+msgstr "Réinitialiser"
+
 # QDate locale labels
 msgid "Sunday"
 msgstr "dimanche"

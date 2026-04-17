@@ -58,6 +58,9 @@ class DummyComponent:
         """Return self for props chaining."""
         return self
 
+    def update(self, *_args: Any, **_kwargs: Any) -> None:
+        """No-op stub for NiceGUI element.update()."""
+
 
 class DummyContext(DummyComponent):
     """Context-manager capable component stub."""

@@ -119,6 +119,19 @@ STAT_CARD_UNIT_CLASSES = "text-xs text-gray-400"
 #: Chart card container dimensions and centring.
 CHART_CARD_CLASSES = "w-100 h-80 items-center justify-center shadow-sm"
 
+#: Row inside a chart card: title label on the left, action button on the right.
+CHART_HEADER_ROW_CLASSES = "w-full justify-between items-center"
+
+#: Dense flat round button for compact icon actions inside chart cards.
+BUTTON_DENSE_PROPS = "flat round dense"
+
+#: Card inside the fullscreen dialog: fills the dialog area as a flex column so
+#: the header keeps its natural height and the chart can grow to fill the rest.
+CHART_FULLSCREEN_CARD_CLASSES = "w-screen h-screen flex flex-col chart-fullscreen-card"
+
+#: ECharts element inside the fullscreen dialog: grows to fill remaining height.
+ECHART_FULLSCREEN_CLASSES = "w-full flex-1 min-h-0"
+
 # ---------------------------------------------------------------------------
 # Tabs
 # ---------------------------------------------------------------------------

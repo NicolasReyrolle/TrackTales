@@ -302,6 +302,13 @@ msgstr ""
 msgid "VO2 Max over time"
 msgstr ""
 
+# Chart toolbox action labels
+msgid "Save as Image"
+msgstr ""
+
+msgid "Restore"
+msgstr ""
+
 # QDate locale labels
 msgid "Sunday"
 msgstr ""

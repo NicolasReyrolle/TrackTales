@@ -309,7 +309,7 @@ msgstr "VO2 Max au fil du temps"
 
 # Chart toolbox action labels
 msgid "Save as Image"
-msgstr "Enregistrer en image"
+msgstr "Enregistrer l'image"
 
 msgid "Restore"
 msgstr "Réinitialiser"

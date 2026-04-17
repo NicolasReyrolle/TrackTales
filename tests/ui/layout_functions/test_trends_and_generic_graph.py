@@ -30,8 +30,8 @@ class TestRenderTrendsGraphs:
             state.workouts = workouts_mock
             state.selected_activity_type = "Running"
 
-            with patch("ui.layout.ui.row", return_value=DummyRow()):
-                with patch("ui.layout.render_generic_graph") as render_graph_mock:
+            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
+                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
             assert render_graph_mock.call_count == 5
@@ -78,8 +78,8 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "W"
 
-            with patch("ui.layout.ui.row", return_value=DummyRow()):
-                with patch("ui.layout.render_generic_graph") as render_graph_mock:
+            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
+                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
@@ -114,8 +114,8 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "Q"
 
-            with patch("ui.layout.ui.row", return_value=DummyRow()):
-                with patch("ui.layout.render_generic_graph") as render_graph_mock:
+            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
+                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
@@ -147,8 +147,8 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "Y"
 
-            with patch("ui.layout.ui.row", return_value=DummyRow()):
-                with patch("ui.layout.render_generic_graph") as render_graph_mock:
+            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
+                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
@@ -171,14 +171,14 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": 20}
 
         with (
-            patch("ui.layout.ui.dialog", return_value=MagicMock()),
-            patch("ui.layout.ui.card", return_value=DummyRow()),
-            patch("ui.layout.ui.row", return_value=DummyRow()),
-            patch("ui.layout.ui.label"),
-            patch("ui.layout.ui.button", return_value=DummyComponent()),
-            patch("ui.layout.ui.echart") as echart_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
         ):
-            layout.render_generic_graph("Distance by month", values, "km")
+            charts.render_generic_graph("Distance by month", values, "km")
 
         chart_options = echart_mock.call_args.args[0]
         series = chart_options["series"]
@@ -191,14 +191,14 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": 20}
 
         with (
-            patch("ui.layout.ui.dialog", return_value=MagicMock()),
-            patch("ui.layout.ui.card", return_value=DummyRow()),
-            patch("ui.layout.ui.row", return_value=DummyRow()),
-            patch("ui.layout.ui.label"),
-            patch("ui.layout.ui.button", return_value=DummyComponent()),
-            patch("ui.layout.ui.echart") as echart_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
         ):
-            layout.render_generic_graph("Distance by month", values, "km", show_trend=False)
+            charts.render_generic_graph("Distance by month", values, "km", show_trend=False)
 
         chart_options = echart_mock.call_args.args[0]
         series = chart_options["series"]
@@ -210,14 +210,14 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": None, "2024-03": 20}
 
         with (
-            patch("ui.layout.ui.dialog", return_value=MagicMock()),
-            patch("ui.layout.ui.card", return_value=DummyRow()),
-            patch("ui.layout.ui.row", return_value=DummyRow()),
-            patch("ui.layout.ui.label"),
-            patch("ui.layout.ui.button", return_value=DummyComponent()),
-            patch("ui.layout.ui.echart") as echart_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
         ):
-            layout.render_generic_graph(
+            charts.render_generic_graph(
                 "Distance by month",
                 values,
                 "km",
@@ -238,14 +238,14 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": 20}
 
         with (
-            patch("ui.layout.ui.dialog", return_value=MagicMock()),
-            patch("ui.layout.ui.card", return_value=DummyRow()),
-            patch("ui.layout.ui.row", return_value=DummyRow()),
-            patch("ui.layout.ui.label"),
-            patch("ui.layout.ui.button", return_value=DummyComponent()),
-            patch("ui.layout.ui.echart") as echart_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
         ):
-            layout.render_generic_graph("Distance by month", values, "km")
+            charts.render_generic_graph("Distance by month", values, "km")
 
         chart_options = echart_mock.call_args.args[0]
         assert "dataZoom" in chart_options

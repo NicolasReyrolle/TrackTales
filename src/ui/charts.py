@@ -34,6 +34,21 @@ __all__ = [
     "stat_card",
 ]
 
+_SAVE_AS_IMAGE = "Save as Image"
+_RESTORE = "Restore"
+
+
+def _toolbox_config(*, restore: bool = False) -> dict[str, object]:
+    """Build an ECharts toolbox configuration dict.
+
+    Args:
+        restore: When True, adds a ``restore`` button that resets the chart zoom.
+    """
+    feature: dict[str, object] = {"saveAsImage": {"title": t(_SAVE_AS_IMAGE)}}
+    if restore:
+        feature["restore"] = {"title": t(_RESTORE)}
+    return {"feature": feature}
+
 
 def stat_card(
     label: str,
@@ -118,11 +133,7 @@ def render_pie_rose_graph(
             "trigger": "item",
             "formatter": f"<b>{{b}}</b><br/>{{c}}{value_suffix}<br/>({{d}}%)",
         },
-        "toolbox": {
-            "feature": {
-                "saveAsImage": {"title": t("Save as Image")},
-            }
-        },
+        "toolbox": _toolbox_config(),
     }
 
     # Card chart: compact fixed-pixel radius (fits the w-100 h-80 card)
@@ -144,12 +155,7 @@ def render_pie_rose_graph(
     # dataZoom slider mirrors the slider shown in bar/line fullscreen charts.
     fullscreen_chart_config: dict[str, object] = {
         **copy.deepcopy(_shared),
-        "toolbox": {
-            "feature": {
-                "restore": {"title": t("Restore")},
-                "saveAsImage": {"title": t("Save as Image")},
-            }
-        },
+        "toolbox": _toolbox_config(restore=True),
         "dataZoom": [{"type": "inside"}, {"type": "slider"}],
         "series": [
             {
@@ -269,17 +275,12 @@ def render_generic_graph(
     # Card chart: scroll/pinch zoom only (no slider, no restore button)
     card_config = copy.deepcopy(base_config)
     card_config["dataZoom"] = [{"type": "inside"}]
-    card_config["toolbox"] = {"feature": {"saveAsImage": {"title": t("Save as Image")}}}
+    card_config["toolbox"] = _toolbox_config()
 
     # Fullscreen chart: inside zoom + visible slider + restore button
     fullscreen_config = copy.deepcopy(base_config)
     fullscreen_config["dataZoom"] = [{"type": "inside"}, {"type": "slider"}]
-    fullscreen_config["toolbox"] = {
-        "feature": {
-            "restore": {"title": t("Restore")},
-            "saveAsImage": {"title": t("Save as Image")},
-        }
-    }
+    fullscreen_config["toolbox"] = _toolbox_config(restore=True)
 
     with ui.dialog().props("maximized") as dialog:
         with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):

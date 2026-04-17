@@ -31,8 +31,8 @@ class TestRenderHealthDataTab:
             state.health_data_loaded = False
 
             with (
-                patch("ui.layout.ui.label") as label_mock,
-                patch("ui.layout.render_generic_graph") as render_generic_graph_mock,
+                patch("ui.health_data_tab.ui.label") as label_mock,
+                patch("ui.health_data_tab.render_generic_graph") as render_generic_graph_mock,
             ):
                 layout.render_health_data_tab.func()
 
@@ -56,10 +56,10 @@ class TestRenderHealthDataTab:
             state.health_data_loaded = False
 
             with (
-                patch("ui.layout.ui.row", return_value=DummyRow()),
-                patch("ui.layout.ui.spinner") as spinner_mock,
-                patch("ui.layout.ui.label") as label_mock,
-                patch("ui.layout.render_generic_graph") as render_generic_graph_mock,
+                patch("ui.health_data_tab.ui.row", return_value=DummyRow()),
+                patch("ui.health_data_tab.ui.spinner") as spinner_mock,
+                patch("ui.health_data_tab.ui.label") as label_mock,
+                patch("ui.health_data_tab.render_generic_graph") as render_generic_graph_mock,
             ):
                 layout.render_health_data_tab.func()
 
@@ -94,8 +94,8 @@ class TestRenderHealthDataTab:
             }
 
             with (
-                patch("ui.layout.ui.row", return_value=DummyRow()),
-                patch("ui.layout.render_generic_graph") as render_generic_graph_mock,
+                patch("ui.health_data_tab.ui.row", return_value=DummyRow()),
+                patch("ui.health_data_tab.render_generic_graph") as render_generic_graph_mock,
             ):
                 layout.render_health_data_tab.func()
 
@@ -131,10 +131,10 @@ class TestRenderHealthDataTab:
             }
 
             with (
-                patch("ui.layout.ui.row", return_value=DummyRow()),
-                patch("ui.layout.ui.spinner") as spinner_mock,
-                patch("ui.layout.ui.label") as label_mock,
-                patch("ui.layout.render_generic_graph") as render_generic_graph_mock,
+                patch("ui.health_data_tab.ui.row", return_value=DummyRow()),
+                patch("ui.health_data_tab.ui.spinner") as spinner_mock,
+                patch("ui.health_data_tab.ui.label") as label_mock,
+                patch("ui.health_data_tab.render_generic_graph") as render_generic_graph_mock,
             ):
                 layout.render_health_data_tab.func()
 

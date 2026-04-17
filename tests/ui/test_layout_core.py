@@ -98,8 +98,8 @@ def test_render_activity_graphs_renders_all_charts() -> None:
 
     try:
         state.workouts = workouts_mock
-        with patch("ui.layout.ui.row", return_value=_DummyRow()):
-            with patch("ui.layout.render_pie_rose_graph") as render_graph_mock:
+        with patch("ui.activities_tab.ui.row", return_value=_DummyRow()):
+            with patch("ui.activities_tab.render_pie_rose_graph") as render_graph_mock:
                 layout.render_activity_graphs.func()
 
         assert render_graph_mock.call_count == 5
@@ -195,7 +195,7 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
 def test_render_trends_tab_only_renders_graphs() -> None:
     """Test that render_trends_tab no longer renders the period selector."""
 
-    with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
+    with patch("ui.trends_tab.render_trends_graphs") as render_graphs_mock:
         with patch("ui.layout.ui.label") as label_mock:
             with patch("ui.layout.ui.radio") as radio_mock:
                 layout.render_trends_tab()

@@ -312,8 +312,8 @@ GENERIC_FIELDS: list[FieldDefinition] = [
         presence=FieldPresence.OPTIONAL,
         description=(
             "Relative humidity from HKWeatherHumidity MetadataEntry. "
-            "Original value (e.g. '6400 %') is divided by 100 to yield a fraction; "
-            "multiply by 100 when displaying as a percentage."
+            "ExportParser._parse_value() parses values such as '6400 %' to 64.0, "
+            "so this field is already stored as a percent value for display."
         ),
     ),
     FieldDefinition(

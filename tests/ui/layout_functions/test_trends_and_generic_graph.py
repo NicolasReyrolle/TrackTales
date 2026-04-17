@@ -339,6 +339,117 @@ class TestChartsModuleComponents:
             {"value": 3, "name": "Running"},
             {"value": 1, "name": "Others"},
         ]
-        # Fullscreen should have a dataZoom slider; card should not
-        assert "dataZoom" in fullscreen_config
+        # Fullscreen uses a larger radius; card uses the compact radius
+        assert fullscreen_config["series"][0]["radius"] == ["15%", "75%"]
+        assert echart_calls[1]["series"][0]["radius"] == ["10%", "60%"]
+        # dataZoom is not added to pie charts (it has no effect on them)
+        assert "dataZoom" not in fullscreen_config
         assert "dataZoom" not in echart_calls[1]
+
+
+class TestParseDateStr:
+    """Tests for the private _parse_date_str helper."""
+
+    def test_parse_date_slash_format(self) -> None:
+        """YYYY/MM/DD is accepted."""
+        from datetime import datetime
+
+        result = charts._parse_date_str("2024/06/15")  # type: ignore[attr-defined]
+        assert result == datetime(2024, 6, 15)
+
+    def test_parse_date_dash_format(self) -> None:
+        """YYYY-MM-DD is accepted."""
+        from datetime import datetime
+
+        result = charts._parse_date_str("2024-06-15")  # type: ignore[attr-defined]
+        assert result == datetime(2024, 6, 15)
+
+    def test_parse_date_invalid_returns_none(self) -> None:
+        """Unrecognised date strings return None."""
+        result = charts._parse_date_str("not-a-date")  # type: ignore[attr-defined]
+        assert result is None
+
+    def test_parse_date_empty_returns_none(self) -> None:
+        """Empty strings return None."""
+        result = charts._parse_date_str("")  # type: ignore[attr-defined]
+        assert result is None
+
+
+class TestPieRoseFullscreenDataFn:
+    """Tests for render_pie_rose_graph fullscreen_data_fn date-range callback."""
+
+    def test_fullscreen_data_fn_date_row_rendered(self) -> None:
+        """When fullscreen_data_fn is provided, an extra row is rendered in the dialog."""
+        row_calls: list[Any] = []
+
+        def counting_row(*args: Any, **kwargs: Any) -> DummyRow:
+            row_calls.append((args, kwargs))
+            return DummyRow()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", side_effect=counting_row),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.input", return_value=DummyComponent()),
+            patch("ui.charts.ui.date", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=DummyComponent()),
+        ):
+            charts.render_pie_rose_graph(
+                "Elevation",
+                {"Running": 500},
+                "m",
+                fullscreen_data_fn=lambda s, e: {"Running": 400},
+            )
+
+        # At least 2 rows created: the header row + the date range row
+        assert len(row_calls) >= 2
+
+    def test_fullscreen_data_fn_updates_echart_on_date_change(self) -> None:
+        """_on_date_change should call fullscreen_data_fn and update the echart."""
+        date_on_change_cb: list[Any] = []
+        echart_elements: list[DummyComponent] = []
+
+        def capture_date(*args: Any, on_change: Any = None, **kwargs: Any) -> DummyComponent:
+            if on_change is not None:
+                date_on_change_cb.append(on_change)
+            return DummyComponent()
+
+        def capture_echart(config: dict, *args: Any, **kwargs: Any) -> DummyComponent:
+            elem = DummyComponent()
+            elem.options = config  # type: ignore[attr-defined]
+            echart_elements.append(elem)
+            return elem
+
+        new_data: dict[str, int] = {"Hiking": 999}
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.input", return_value=DummyComponent()),
+            patch("ui.charts.ui.date", side_effect=capture_date),
+            patch("ui.charts.ui.echart", side_effect=capture_echart),
+        ):
+            charts.render_pie_rose_graph(
+                "Elevation",
+                {"Running": 500},
+                "m",
+                fullscreen_data_fn=lambda s, e: new_data,
+            )
+
+        assert len(date_on_change_cb) == 1, "Expected exactly one on_change callback registered"
+
+        # Simulate user selecting a date range
+        fake_event = MagicMock()
+        fake_event.value = {"from": "2024/01/01", "to": "2024/12/31"}
+        date_on_change_cb[0](fake_event)
+
+        # The fullscreen echart (first echart created) should now have updated data
+        fs_echart = echart_elements[0]
+        assert fs_echart.options["series"][0]["data"] == [  # type: ignore[index]
+            {"value": 999, "name": "Hiking"}
+        ]

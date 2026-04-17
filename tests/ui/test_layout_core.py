@@ -104,19 +104,35 @@ def test_render_activity_graphs_renders_all_charts() -> None:
 
         assert render_graph_mock.call_count == 5
         render_graph_mock.assert_any_call(
-            "Count by activity", {"Running": 1}, fullscreen_values=ANY
+            "Count by activity", {"Running": 1}, fullscreen_values=ANY, fullscreen_data_fn=ANY
         )
         render_graph_mock.assert_any_call(
-            "Distance by activity", {"Running": 5}, "km", fullscreen_values=ANY
+            "Distance by activity",
+            {"Running": 5},
+            "km",
+            fullscreen_values=ANY,
+            fullscreen_data_fn=ANY,
         )
         render_graph_mock.assert_any_call(
-            "Calories by activity", {"Running": 200}, "kcal", fullscreen_values=ANY
+            "Calories by activity",
+            {"Running": 200},
+            "kcal",
+            fullscreen_values=ANY,
+            fullscreen_data_fn=ANY,
         )
         render_graph_mock.assert_any_call(
-            "Duration by activity", {"Running": 1}, "h", fullscreen_values=ANY
+            "Duration by activity",
+            {"Running": 1},
+            "h",
+            fullscreen_values=ANY,
+            fullscreen_data_fn=ANY,
         )
         render_graph_mock.assert_any_call(
-            "Elevation by activity", {"Running": 1}, "m", fullscreen_values=ANY
+            "Elevation by activity",
+            {"Running": 1},
+            "m",
+            fullscreen_values=ANY,
+            fullscreen_data_fn=ANY,
         )
     finally:
         state.workouts = original_workouts

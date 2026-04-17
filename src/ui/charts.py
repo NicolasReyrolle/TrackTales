@@ -1,23 +1,19 @@
 """Shared UI chart and card components for Apple Health Analyzer."""
 
 import copy
-from collections.abc import Callable, Mapping
-from datetime import datetime
-from typing import Any
+from collections.abc import Mapping
 
 from nicegui import ui
 
 from app_state import state
-from i18n import get_language, t
+from i18n import t
 from ui.css import (
     BUTTON_DENSE_PROPS,
     BUTTON_FLAT_ROUND_PROPS,
     CHART_CARD_CLASSES,
     CHART_FULLSCREEN_CARD_CLASSES,
     CHART_HEADER_ROW_CLASSES,
-    DATE_ROW_CLASSES,
     ECHART_FULLSCREEN_CLASSES,
-    INPUT_MEDIUM_CLASSES,
     LABEL_UPPERCASE_CLASSES,
     ROW_CENTERED_CLASSES,
     STAT_CARD_CLASSES,
@@ -26,7 +22,7 @@ from ui.css import (
     STAT_CARD_VALUE_CLASSES,
     STAT_CARD_VALUE_ROW_CLASSES,
 )
-from ui.helpers import calculate_moving_average, qdate_locale_json
+from ui.helpers import calculate_moving_average
 
 # Re-export constants that other modules import from this module for compatibility.
 __all__ = [
@@ -52,16 +48,6 @@ def _toolbox_config(*, restore: bool = False) -> dict[str, object]:
     if restore:
         feature["restore"] = {"title": t(_RESTORE)}
     return {"feature": feature}
-
-
-def _parse_date_str(date_str: str) -> datetime | None:
-    """Parse a date string in YYYY/MM/DD or YYYY-MM-DD format."""
-    for fmt in ("%Y/%m/%d", "%Y-%m-%d"):
-        try:
-            return datetime.strptime(date_str.strip(), fmt)
-        except ValueError:
-            continue
-    return None
 
 
 def stat_card(
@@ -115,9 +101,6 @@ def render_pie_rose_graph(
     values: Mapping[str, float | int],
     unit: str = "",
     fullscreen_values: Mapping[str, float | int] | None = None,
-    fullscreen_data_fn: (
-        Callable[[datetime | None, datetime | None], Mapping[str, float | int]] | None
-    ) = None,
 ) -> None:
     """Render a pie/rose graph for the given values.
 
@@ -127,10 +110,6 @@ def render_pie_rose_graph(
         unit: Optional unit suffix appended to tooltip values and chart title.
         fullscreen_values: Alternative data mapping used exclusively in the fullscreen chart.
             When provided (e.g. ungrouped data), overrides ``values`` for the fullscreen view.
-        fullscreen_data_fn: Optional callable ``(start_date, end_date) → data`` used to
-            refresh the fullscreen chart when the user changes the date range inside the
-            fullscreen dialog.  When provided, a compact date-range selector is rendered
-            inside the fullscreen dialog.
     """
 
     chart_data: list[dict[str, float | int | str]] = [
@@ -173,8 +152,6 @@ def render_pie_rose_graph(
     }
 
     # Fullscreen chart: larger radius fills the viewport, all slices shown (minAngle: 0).
-    # dataZoom has no effect on pie charts (no axis), so it is omitted here;
-    # date-range filtering is provided by the inline date picker rendered below.
     fullscreen_chart_config: dict[str, object] = {
         **copy.deepcopy(_shared),
         "series": [
@@ -190,59 +167,12 @@ def render_pie_rose_graph(
         ],
     }
 
-    # Mutable forward reference so the date-change closure can reach the echart
-    # element after it is created below.
-    _echart_ref: list[Any] = [None]
-
     with ui.dialog().props("maximized") as dialog:
         with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
             with ui.row().classes(CHART_HEADER_ROW_CLASSES):
                 ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
                 ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
-
-            if fullscreen_data_fn is not None:
-                min_date, max_date = state.workouts.get_date_bounds()
-                date_locale = qdate_locale_json(get_language())
-
-                def _on_date_change(e: Any) -> None:
-                    val = e.value
-                    if isinstance(val, dict) and "from" in val and "to" in val:
-                        start_d = _parse_date_str(val["from"])
-                        end_d = _parse_date_str(val["to"])
-                    else:
-                        start_d = end_d = None
-                    if _echart_ref[0] is not None:
-                        new_vals = fullscreen_data_fn(start_d, end_d)
-                        _echart_ref[0].options["series"][0]["data"] = [
-                            {"value": v, "name": k} for k, v in new_vals.items()
-                        ]
-                        _echart_ref[0].update()
-
-                with ui.row().classes(DATE_ROW_CLASSES):
-                    date_input = (
-                        ui.input(t("Date range")).classes(INPUT_MEDIUM_CLASSES).props("clearable")
-                    )
-                    if state.date_range_text:
-                        date_input.value = state.date_range_text
-                    ui.date(on_change=_on_date_change).props(
-                        f'range default-year-month="{max_date[:7]}" '
-                        f":locale='{date_locale}' "
-                        f''':options="date => date >= '{min_date}' && date <= '{max_date}'"'''
-                    ).bind_value(
-                        date_input,
-                        forward=lambda x: (
-                            f"{x['from']} - {x['to']}"
-                            if isinstance(x, dict) and "from" in x
-                            else str(x or "")
-                        ),
-                        backward=lambda x: (
-                            {"from": x.split(" - ")[0], "to": x.split(" - ")[1]}
-                            if " - " in (x or "")
-                            else None
-                        ),
-                    )
-
-            _echart_ref[0] = ui.echart(fullscreen_chart_config).classes(ECHART_FULLSCREEN_CLASSES)
+            ui.echart(fullscreen_chart_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):

@@ -125,8 +125,9 @@ CHART_HEADER_ROW_CLASSES = "w-full justify-between items-center"
 #: Dense flat round button for compact icon actions inside chart cards.
 BUTTON_DENSE_PROPS = "flat round dense"
 
-#: Card inside the fullscreen dialog: fills the dialog area, no rounded corners.
-CHART_FULLSCREEN_CARD_CLASSES = "w-screen h-screen chart-fullscreen-card"
+#: Card inside the fullscreen dialog: fills the dialog area as a flex column so
+#: the header keeps its natural height and the chart can grow to fill the rest.
+CHART_FULLSCREEN_CARD_CLASSES = "w-screen h-screen flex flex-col chart-fullscreen-card"
 
 #: ECharts element inside the fullscreen dialog: grows to fill remaining height.
 ECHART_FULLSCREEN_CLASSES = "w-full flex-1 min-h-0"

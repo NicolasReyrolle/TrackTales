@@ -131,7 +131,8 @@ def render_pie_rose_graph(
         "darkMode": state.dark_mode_enabled,
         "tooltip": {
             "trigger": "item",
-            "formatter": f"<b>{{b}}</b><br/>{{c}}{value_suffix}<br/>({{d}}%)",
+            "renderMode": "richText",
+            "formatter": f"{{b}}\n{{c}}{value_suffix}\n({{d}}%)",
         },
         "toolbox": _toolbox_config(),
     }
@@ -226,11 +227,11 @@ def render_generic_graph(
             },
         ]
         # c0 = bridge (hidden from tooltip), c1 = actual measured value
-        tooltip_formatter = f"<b>{{b}}</b><br/>{{c1}}{value_suffix}"
+        tooltip_formatter = f"{{b}}\n{{c1}}{value_suffix}"
     else:
         series = [{"data": data_points, "type": graph_type}]
         # c0 = bar/area value
-        tooltip_formatter = f"<b>{{b}}</b><br/>{{c0}}{value_suffix}"
+        tooltip_formatter = f"{{b}}\n{{c0}}{value_suffix}"
 
     if show_trend:
         series.append(
@@ -253,6 +254,7 @@ def render_generic_graph(
         "tooltip": {
             "trigger": "axis",
             "axisPointer": {"type": "cross"},
+            "renderMode": "richText",
             "formatter": tooltip_formatter,
         },
         "xAxis": {

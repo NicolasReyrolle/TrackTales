@@ -328,7 +328,12 @@ GENERIC_FIELDS: list[FieldDefinition] = [
         presence=FieldPresence.OPTIONAL,
         description=(
             "Average metabolic equivalent of task from HKAverageMETs MetadataEntry. "
-            "Indicates exercise intensity relative to resting metabolic rate."
+            "Indicates exercise intensity relative to resting metabolic rate. "
+            "Apple Health exports use either 'kcal/hr·kg' (middle-dot) or 'kcal/hr-kg' "
+            "(hyphen) depending on the device/iOS version; both represent the same unit. "
+            "The raw unit string is stored in AverageMETsUnit by the parser. "
+            "The canonical display unit defined here ('kcal/hr·kg') should be used by "
+            "the UI regardless of the raw unit string in the export."
         ),
     ),
 ]

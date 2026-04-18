@@ -137,6 +137,7 @@ SWIMMING_STROKE_STYLES: dict[int, str] = {
 #: to convert a raw integer to a label.
 ENUM_DISPLAY_VALUES: dict[str, dict[int, str]] = {
     "SwimmingLocationType": SWIMMING_LOCATION_TYPES,
+    "SwimmingStrokeStyle": SWIMMING_STROKE_STYLES,
 }
 
 

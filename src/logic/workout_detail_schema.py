@@ -144,8 +144,11 @@ ENUM_DISPLAY_VALUES: dict[str, dict[int, str]] = {
 # Generic fields — shown for every workout type
 # ---------------------------------------------------------------------------
 
-#: Fields common to all workout types.  These mirror the columns displayed in the
-#: workout table plus additional Apple Health Kit attributes present on every workout.
+#: Fields common to all workout types. These mirror the subset of workout-table
+#: columns that apply across all workout types, plus additional Apple Health Kit
+#: attributes present on every workout. Type-specific workout-table columns (for
+#: example, running-only metrics such as average running power) belong in the
+#: relevant per-type field definitions rather than in :data:`GENERIC_FIELDS`.
 #:
 #: Ordering follows the recommended display priority: identity fields first, then
 #: performance, then environmental context.

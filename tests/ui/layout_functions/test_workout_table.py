@@ -200,6 +200,31 @@ class TestBuildWorkoutRows:
         assert len(set(ids)) == len(ids)
 
 
+class TestFindRowIndex:
+    """Tests for _find_row_index()."""
+
+    def test_returns_correct_index_for_matching_id(self) -> None:
+        """Should return the index of the row whose id matches."""
+        rows: list[dict[str, Any]] = [
+            {"id": "a", "activity_type": "Running"},
+            {"id": "b", "activity_type": "Cycling"},
+            {"id": "c", "activity_type": "Walking"},
+        ]
+        assert wt._find_row_index("b", rows) == 1
+
+    def test_returns_zero_for_unknown_id(self) -> None:
+        """Should return 0 when the id is not found."""
+        rows: list[dict[str, Any]] = [
+            {"id": "a"},
+            {"id": "b"},
+        ]
+        assert wt._find_row_index("xyz", rows) == 0
+
+    def test_returns_zero_for_empty_rows(self) -> None:
+        """Should return 0 when the row list is empty."""
+        assert wt._find_row_index("any", []) == 0
+
+
 class TestRenderWorkoutTable:
     """Tests for render_workout_table()."""
 
@@ -244,13 +269,17 @@ class TestRenderWorkoutTable:
             state.file_loaded = True
             state.workouts = workouts_mock
 
-            with patch("ui.workout_table.ui.table", return_value=table_stub) as table_mock:
+            with (
+                patch("ui.workout_table.ui.table", return_value=table_stub) as table_mock,
+                patch("ui.workout_table.create_workout_detail_modal", return_value=lambda _: None),
+            ):
                 wt.render_workout_table.func()
 
             table_mock.assert_called_once()
-            # One slot per column: date, activity_type, duration, distance, calories,
-            # avg_hr, elevation, avg_power
-            assert len(table_stub.slots) == 8
+            # One slot per data column plus the actions column:
+            # date, activity_type, duration, distance, calories,
+            # avg_hr, elevation, avg_power, actions
+            assert len(table_stub.slots) == 9
             slot_names = [s[0] for s in table_stub.slots]
             assert "body-cell-date" in slot_names
             assert "body-cell-activity_type" in slot_names
@@ -260,6 +289,7 @@ class TestRenderWorkoutTable:
             assert "body-cell-avg_hr" in slot_names
             assert "body-cell-elevation" in slot_names
             assert "body-cell-avg_power" in slot_names
+            assert "body-cell-actions" in slot_names
         finally:
             state.file_loaded = original_file_loaded
             state.workouts = original_workouts
@@ -284,7 +314,10 @@ class TestRenderWorkoutTable:
             state.file_loaded = True
             state.workouts = workouts_mock
 
-            with patch("ui.workout_table.ui.table", return_value=DummyTable()) as table_mock:
+            with (
+                patch("ui.workout_table.ui.table", return_value=DummyTable()) as table_mock,
+                patch("ui.workout_table.create_workout_detail_modal", return_value=lambda _: None),
+            ):
                 wt.render_workout_table.func()
 
             call_kwargs = table_mock.call_args

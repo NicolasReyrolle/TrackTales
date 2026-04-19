@@ -136,6 +136,12 @@ msgstr ""
 msgid "Avg HR"
 msgstr ""
 
+msgid "Details"
+msgstr ""
+
+msgid "Elevation Gain"
+msgstr ""
+
 msgid "Loading health data..."
 msgstr ""
 

@@ -318,7 +318,8 @@ def render_workout_table() -> None:
     table.add_slot(
         "body-cell-actions",
         '<q-td :props="props">'
-        f'<q-btn flat round dense icon="info" aria-label="{details_tooltip}" title="{details_tooltip}"'
+        f'<q-btn flat round dense icon="info" aria-label="{details_tooltip}" '
+        f'title="{details_tooltip}"'
         " @click=\"$parent.$emit('open_detail', props.row.id)\">"
         f"<q-tooltip>{details_tooltip}</q-tooltip>"
         "</q-btn></q-td>",

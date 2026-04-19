@@ -332,6 +332,21 @@ GENERIC_FIELDS: list[FieldDefinition] = [
 
 
 # ---------------------------------------------------------------------------
+# Shared field definitions reused across multiple activity types
+# ---------------------------------------------------------------------------
+
+#: Step count field, shared by Running, Hiking, and Walking.
+_STEP_COUNT_FIELD: FieldDefinition = FieldDefinition(
+    field_name="sumStepCount",
+    display_name="Step Count",
+    unit="steps",
+    field_type=FieldType.NUMBER,
+    presence=FieldPresence.OPTIONAL,
+    description="Sum of HKQuantityTypeIdentifierStepCount WorkoutStatistics.",
+)
+
+
+# ---------------------------------------------------------------------------
 # Per-type fields — shown only for a specific activity type
 # ---------------------------------------------------------------------------
 
@@ -408,14 +423,7 @@ _RUNNING_FIELDS: list[FieldDefinition] = [
             "Time each foot spends on the ground per stride in milliseconds."
         ),
     ),
-    FieldDefinition(
-        field_name="sumStepCount",
-        display_name="Step Count",
-        unit="steps",
-        field_type=FieldType.NUMBER,
-        presence=FieldPresence.OPTIONAL,
-        description="Sum of HKQuantityTypeIdentifierStepCount WorkoutStatistics.",
-    ),
+    _STEP_COUNT_FIELD,
 ]
 
 #: Type-specific fields for cycling workouts.
@@ -512,26 +520,12 @@ _SWIMMING_FIELDS: list[FieldDefinition] = [
 #: because it applies to all outdoor activities.  The fields below complement the generic
 #: set with hiking-specific metrics.
 _HIKING_FIELDS: list[FieldDefinition] = [
-    FieldDefinition(
-        field_name="sumStepCount",
-        display_name="Step Count",
-        unit="steps",
-        field_type=FieldType.NUMBER,
-        presence=FieldPresence.OPTIONAL,
-        description="Sum of HKQuantityTypeIdentifierStepCount WorkoutStatistics.",
-    ),
+    _STEP_COUNT_FIELD,
 ]
 
 #: Type-specific fields for walking workouts.
 _WALKING_FIELDS: list[FieldDefinition] = [
-    FieldDefinition(
-        field_name="sumStepCount",
-        display_name="Step Count",
-        unit="steps",
-        field_type=FieldType.NUMBER,
-        presence=FieldPresence.OPTIONAL,
-        description="Sum of HKQuantityTypeIdentifierStepCount WorkoutStatistics.",
-    ),
+    _STEP_COUNT_FIELD,
     FieldDefinition(
         field_name="averageWalkingCadence",
         display_name="Avg Cadence",

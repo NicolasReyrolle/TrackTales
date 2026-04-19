@@ -201,12 +201,12 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
     return distance_raw, distance_display
 
 
-def _find_row_index(row_id: str, rows: list[dict[str, Any]]) -> int:
-    """Return the index of the row with matching *row_id*, or ``0`` as fallback."""
+def _find_row_index(row_id: str, rows: list[dict[str, Any]]) -> int | None:
+    """Return the index of the row with matching *row_id*, or ``None`` if missing."""
     for i, row in enumerate(rows):
-        if row["id"] == row_id:
+        if row.get("id") == row_id:
             return i
-    return 0
+    return None
 
 
 @ui.refreshable

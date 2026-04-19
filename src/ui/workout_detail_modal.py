@@ -1,7 +1,7 @@
 """Workout detail modal dialog for Apple Health Analyzer."""
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, TypeAlias
 
 from nicegui import ui
 
@@ -18,17 +18,23 @@ from ui.css import (
     MODAL_NAV_ROW_CLASSES,
 )
 
-#: Ordered list of ``(row_key, i18n_label)`` for the generic detail view.
+#: Callable returning a translated label string; alias for readability.
+_LabelFn: TypeAlias = Callable[[], str]
+
+#: Ordered list of ``(row_key, label_fn)`` for the generic detail view.
+#: Each ``label_fn`` is a zero-argument callable that returns the translated
+#: label at render time.  Using literal ``t("…")`` calls inside the lambdas
+#: lets ``pybabel extract`` discover every msgid during catalog regeneration.
 #: Fields whose value is ``"–"`` (missing) are hidden automatically.
-_FIELD_DISPLAY: list[tuple[str, str]] = [
-    ("date", "Date"),
-    ("activity_type", "Activity"),
-    ("duration", "Duration"),
-    ("distance", "Distance"),
-    ("calories", "Calories"),
-    ("avg_hr", "Avg HR"),
-    ("elevation", "Elevation Gain"),
-    ("avg_power", "Avg Power"),
+_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
+    ("date", lambda: t("Date")),
+    ("activity_type", lambda: t("Activity")),
+    ("duration", lambda: t("Duration")),
+    ("distance", lambda: t("Distance")),
+    ("calories", lambda: t("Calories")),
+    ("avg_hr", lambda: t("Avg HR")),
+    ("elevation", lambda: t("Elevation Gain")),
+    ("avg_power", lambda: t("Avg Power")),
 ]
 
 
@@ -82,9 +88,9 @@ def create_workout_detail_modal(
             # ---- Generic field rows ----
             # Each row is shown/hidden based on whether the value is missing.
             field_rows: dict[str, tuple[Any, Any]] = {}
-            for field_key, label_text in _FIELD_DISPLAY:
+            for field_key, label_fn in _FIELD_DISPLAY:
                 with ui.row().classes(MODAL_FIELD_ROW_CLASSES) as frow:
-                    ui.label(t(label_text)).classes(MODAL_FIELD_LABEL_CLASSES)
+                    ui.label(label_fn()).classes(MODAL_FIELD_LABEL_CLASSES)
                     value_el = ui.label().classes(MODAL_FIELD_VALUE_CLASSES)
                 field_rows[field_key] = (frow, value_el)
 

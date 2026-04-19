@@ -93,9 +93,10 @@ class TestFieldDisplay:
             assert expected in field_keys
 
     def test_labels_are_non_empty_strings(self) -> None:
-        """Every label in _FIELD_DISPLAY should be a non-empty string."""
-        for _key, label in wdm._FIELD_DISPLAY:
-            assert label and isinstance(label, str)
+        """Every label in _FIELD_DISPLAY should be a callable returning a non-empty string."""
+        for _key, label_fn in wdm._FIELD_DISPLAY:
+            assert callable(label_fn)
+            assert label_fn() and isinstance(label_fn(), str)
 
 
 class TestCreateWorkoutDetailModal:

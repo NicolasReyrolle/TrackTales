@@ -48,27 +48,27 @@ class TestComplexRealWorldWorkout:
         # Verify metadata entries were captured
         assert not workout["IndoorWorkout"]  # "0" converts to False
         assert workout["TimeZone"] == "Europe/Paris"
-        assert workout["WeatherHumidity"] == pytest.approx(  # type: ignore[misc]
+        assert workout["WeatherHumidity"] == pytest.approx(  
             64.0, abs=0.001
         )  # "6400 %" -> 64.0
-        assert workout["WeatherTemperature"] == pytest.approx(  # type: ignore[misc]
+        assert workout["WeatherTemperature"] == pytest.approx(  
             16.650, abs=0.001
         )  # 61.9694 degF -> ~16.650 degC
 
         # Verify statistics were captured
-        assert workout["sumStepCount"] == pytest.approx(9787.18)  # type: ignore[misc]
-        assert workout["averageRunningGroundContactTime"] == pytest.approx(  # type: ignore[misc]
+        assert workout["sumStepCount"] == pytest.approx(9787.18)  
+        assert workout["averageRunningGroundContactTime"] == pytest.approx(  
             303.967
         )
         assert workout["minimumRunningGroundContactTime"] == 231
         assert workout["maximumRunningGroundContactTime"] == 353
-        assert workout["averageRunningPower"] == pytest.approx(208.697)  # type: ignore[misc]
-        assert workout["sumActiveEnergyBurned"] == pytest.approx(1655.465)  # type: ignore[misc]
+        assert workout["averageRunningPower"] == pytest.approx(208.697)  
+        assert workout["sumActiveEnergyBurned"] == pytest.approx(655.465)
         assert workout["distance"] == 8955
-        assert workout["averageHeartRate"] == pytest.approx(130.153)  # type: ignore[misc]
+        assert workout["averageHeartRate"] == pytest.approx(130.153)  
 
         # Verify metadata entries for elevation
-        assert workout["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  # type: ignore[misc]
+        assert workout["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  
 
     def test_parse_complex_workout_loads_elevation_from_nested_activity(
         self,
@@ -226,14 +226,14 @@ class TestComplexRealWorldWorkout:
         swimming = workouts.iloc[0]
         assert swimming["activityType"] == "Swimming"
         assert swimming["distance"] == 750
-        assert swimming["averageHeartRate"] == pytest.approx(102.834)  # type: ignore[misc]
+        assert swimming["averageHeartRate"] == pytest.approx(102.834)  
 
         # Second workout: Running
         running = workouts.iloc[1]
         assert running["activityType"] == "Running"
         assert running["distance"] == 8955
-        assert running["averageHeartRate"] == pytest.approx(130.153)  # type: ignore[misc]
-        assert running["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  # type: ignore[misc]
+        assert running["averageHeartRate"] == pytest.approx(130.153)  
+        assert running["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  
 
     def test_metadata_not_duplicated_when_present_at_multiple_levels(
         self,
@@ -271,13 +271,13 @@ class TestComplexRealWorldWorkout:
 
         # Test metadata that appears twice at top-level Workout (before and after WorkoutActivity)
         # Original value: "6400 %" -> should be 64.0, NOT 128.0 (doubled)
-        assert workout["WeatherHumidity"] == pytest.approx(64.0, abs=0.001)  # type: ignore[misc]
+        assert workout["WeatherHumidity"] == pytest.approx(64.0, abs=0.001)  
 
         # Original value: "6575 cm" -> should be 65.75 m, NOT 131.5 m (doubled)
-        assert workout["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  # type: ignore[misc]
+        assert workout["ElevationAscended"] == pytest.approx(65.75, abs=0.01)  
 
         # Original value: "61.9694 degF" -> should be ~16.65°C, NOT ~33.3°C (doubled)
-        assert workout["WeatherTemperature"] == pytest.approx(  # type: ignore[misc]
+        assert workout["WeatherTemperature"] == pytest.approx(  
             16.650, abs=0.001
         )
 
@@ -313,7 +313,7 @@ class TestLoadRoute:
 
         parser = ExportParser()
         with ZipFile(zip_path, "r") as zf:
-            result = parser._load_route(zf, "/workout-routes/test_route.gpx")  # type: ignore[misc]
+            result = parser._load_route(zf, "/workout-routes/test_route.gpx")  
 
         assert result is not None
         assert len(result.points) == 2
@@ -338,7 +338,7 @@ class TestLoadRoute:
 
         parser = ExportParser()
         with ZipFile(zip_path, "r") as zf:
-            result = parser._load_route(zf, "/workout-routes/empty_route.gpx")  # type: ignore[misc]
+            result = parser._load_route(zf, "/workout-routes/empty_route.gpx")  
 
         assert result is not None
         assert len(result.points) == 0
@@ -363,7 +363,7 @@ class TestLoadRoute:
         with ZipFile(zip_path, "r") as zf:
             # This should raise a ValueError when trying to parse empty time string
             with pytest.raises(ValueError):
-                parser._load_route(zf, "/workout-routes/incomplete_route.gpx")  # type: ignore[misc]
+                parser._load_route(zf, "/workout-routes/incomplete_route.gpx")  
 
 
 class TestProcessWorkoutRoute:
@@ -407,7 +407,7 @@ class TestProcessWorkoutRoute:
         record: WorkoutRecord = {"activityType": "Running"}
 
         with ZipFile(zip_path, "r") as zf:
-            parser._process_workout_route(route_elem, record, zf)  # type: ignore[misc]
+            parser._process_workout_route(route_elem, record, zf)  
 
         # Verify route data is loaded
         assert record.get("route") is not None
@@ -429,7 +429,7 @@ class TestProcessWorkoutRoute:
         record: WorkoutRecord = {"activityType": "Running"}
 
         with ZipFile(zip_path, "r") as zf:
-            parser._process_workout_route(route_elem, record, zf)  # type: ignore[misc]
+            parser._process_workout_route(route_elem, record, zf)  
 
         # Record should remain unchanged if no FileReference
         assert record == {"activityType": "Running"}

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 from unittest.mock import patch
 
@@ -83,6 +84,19 @@ class _DummyElement:
         """Exit the context manager; does nothing in the stub."""
 
 
+class _ButtonStub(_DummyElement):
+    """Button stub that captures the *on_click* callback for test introspection."""
+
+    def __init__(self, *_args: Any, **kwargs: Any) -> None:
+        super().__init__(*_args, **kwargs)
+        self._on_click: Callable[[], Any] | None = kwargs.get("on_click")
+
+    def click(self) -> None:
+        """Simulate a user click by invoking the captured *on_click* callback."""
+        if self._on_click is not None:
+            self._on_click()
+
+
 class TestFieldDisplay:
     """Tests for the _FIELD_DISPLAY constant."""
 
@@ -156,3 +170,95 @@ class TestCreateWorkoutDetailModal:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(100)  # Should not raise
+
+    def test_open_at_non_first_row_enables_prev_button(self) -> None:
+        """Opening a non-first row should call props(remove='disabled') on the prev button."""
+        rows = [_make_row(idx=0), _make_row(idx=1)]
+        stub = _DummyElement()
+        created_buttons: list[_ButtonStub] = []
+
+        def make_button(*args: Any, **kwargs: Any) -> _ButtonStub:
+            btn = _ButtonStub(*args, **kwargs)
+            created_buttons.append(btn)
+            return btn
+
+        with (
+            patch("ui.workout_detail_modal.ui.dialog", return_value=stub),
+            patch("ui.workout_detail_modal.ui.card", return_value=stub),
+            patch("ui.workout_detail_modal.ui.row", return_value=stub),
+            patch("ui.workout_detail_modal.ui.label", return_value=stub),
+            patch("ui.workout_detail_modal.ui.button", side_effect=make_button),
+        ):
+            fn = wdm.create_workout_detail_modal(rows)
+
+        prev_btn = created_buttons[1]  # close=0, prev=1, next=2
+        fn(1)  # Open at the second (non-first) row
+        assert "disabled" in prev_btn._props_removed
+
+    def test_navigate_forward_moves_to_next_row(self) -> None:
+        """Clicking the next button should advance to the second row."""
+        rows = [
+            _make_row(idx=0, activity_type="Running"),
+            _make_row(idx=1, activity_type="Cycling"),
+        ]
+        stub = _DummyElement()
+        label_stubs: list[_DummyElement] = []
+        created_buttons: list[_ButtonStub] = []
+
+        def make_label(*_a: Any, **_kw: Any) -> _DummyElement:
+            lbl = _DummyElement()
+            label_stubs.append(lbl)
+            return lbl
+
+        def make_button(*args: Any, **kwargs: Any) -> _ButtonStub:
+            btn = _ButtonStub(*args, **kwargs)
+            created_buttons.append(btn)
+            return btn
+
+        with (
+            patch("ui.workout_detail_modal.ui.dialog", return_value=stub),
+            patch("ui.workout_detail_modal.ui.card", return_value=stub),
+            patch("ui.workout_detail_modal.ui.row", return_value=stub),
+            patch("ui.workout_detail_modal.ui.label", side_effect=make_label),
+            patch("ui.workout_detail_modal.ui.button", side_effect=make_button),
+        ):
+            fn = wdm.create_workout_detail_modal(rows)
+
+        # nav_counter is the last label created (title + 8 field labels + 8 value labels + counter)
+        nav_counter = label_stubs[-1]
+        next_btn = created_buttons[2]  # close=0, prev=1, next=2
+        fn(0)  # Start at row 0 → counter shows "1 / 2"
+        next_btn.click()  # Navigate forward via the captured on_click lambda
+        assert nav_counter._text == "2 / 2"
+
+    def test_navigate_backward_does_nothing_at_first_row(self) -> None:
+        """Clicking prev at the first row should be a no-op (out-of-bounds guard)."""
+        rows = [_make_row(idx=0), _make_row(idx=1)]
+        stub = _DummyElement()
+        label_stubs: list[_DummyElement] = []
+        created_buttons: list[_ButtonStub] = []
+
+        def make_label(*_a: Any, **_kw: Any) -> _DummyElement:
+            lbl = _DummyElement()
+            label_stubs.append(lbl)
+            return lbl
+
+        def make_button(*args: Any, **kwargs: Any) -> _ButtonStub:
+            btn = _ButtonStub(*args, **kwargs)
+            created_buttons.append(btn)
+            return btn
+
+        with (
+            patch("ui.workout_detail_modal.ui.dialog", return_value=stub),
+            patch("ui.workout_detail_modal.ui.card", return_value=stub),
+            patch("ui.workout_detail_modal.ui.row", return_value=stub),
+            patch("ui.workout_detail_modal.ui.label", side_effect=make_label),
+            patch("ui.workout_detail_modal.ui.button", side_effect=make_button),
+        ):
+            fn = wdm.create_workout_detail_modal(rows)
+
+        nav_counter = label_stubs[-1]
+        prev_btn = created_buttons[1]  # close=0, prev=1, next=2
+        fn(0)  # Start at row 0 → counter shows "1 / 2"
+        prev_btn.click()  # Attempt to navigate before the first row
+        assert nav_counter._text == "1 / 2"  # Still on row 0

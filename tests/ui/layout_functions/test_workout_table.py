@@ -212,17 +212,22 @@ class TestFindRowIndex:
         ]
         assert wt._find_row_index("b", rows) == 1
 
-    def test_returns_zero_for_unknown_id(self) -> None:
-        """Should return 0 when the id is not found."""
+    def test_returns_none_for_unknown_id(self) -> None:
+        """Should return None when the id is not found."""
         rows: list[dict[str, Any]] = [
             {"id": "a"},
             {"id": "b"},
         ]
-        assert wt._find_row_index("xyz", rows) == 0
+        assert wt._find_row_index("xyz", rows) is None
 
-    def test_returns_zero_for_empty_rows(self) -> None:
-        """Should return 0 when the row list is empty."""
-        assert wt._find_row_index("any", []) == 0
+    def test_returns_none_for_empty_rows(self) -> None:
+        """Should return None when the row list is empty."""
+        assert wt._find_row_index("any", []) is None
+
+    def test_uses_get_so_missing_key_returns_none(self) -> None:
+        """Should not raise KeyError when a row dict has no 'id' key."""
+        rows: list[dict[str, Any]] = [{"activity_type": "Running"}]
+        assert wt._find_row_index("any", rows) is None
 
 
 class TestRenderWorkoutTable:
@@ -344,6 +349,91 @@ class TestRenderWorkoutTable:
             table_mock.assert_not_called()
         finally:
             state.file_loaded = original_file_loaded
+
+    def test_open_detail_event_fires_for_known_row_id(self) -> None:
+        """Firing 'open_detail' for a known row id should call the open_detail callable."""
+        original_file_loaded = state.file_loaded
+        original_workouts: Any = state.workouts
+
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-09-16"),
+                    "duration": 3660.0,
+                }
+            ]
+        )
+
+        table_stub = DummyTable()
+        open_detail_calls: list[int] = []
+
+        try:
+            state.file_loaded = True
+            state.workouts = workouts_mock
+
+            with (
+                patch("ui.workout_table.ui.table", return_value=table_stub),
+                patch(
+                    "ui.workout_table.create_workout_detail_modal",
+                    return_value=lambda idx: open_detail_calls.append(idx),
+                ),
+            ):
+                wt.render_workout_table.func()
+
+            # Extract the row id that was built for this row.
+            rows = wt._build_workout_rows()
+            assert rows, "Expected at least one row from the mock workouts"
+            row_id = rows[0]["id"]
+
+            # Fire the event as Quasar would when the button is clicked.
+            table_stub.fire("open_detail", row_id)
+
+            assert open_detail_calls == [0]
+        finally:
+            state.file_loaded = original_file_loaded
+            state.workouts = original_workouts
+
+    def test_open_detail_event_ignored_for_unknown_row_id(self) -> None:
+        """Firing 'open_detail' for an unknown row id should be a no-op."""
+        original_file_loaded = state.file_loaded
+        original_workouts: Any = state.workouts
+
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-09-16"),
+                    "duration": 3660.0,
+                }
+            ]
+        )
+
+        table_stub = DummyTable()
+        open_detail_calls: list[int] = []
+
+        try:
+            state.file_loaded = True
+            state.workouts = workouts_mock
+
+            with (
+                patch("ui.workout_table.ui.table", return_value=table_stub),
+                patch(
+                    "ui.workout_table.create_workout_detail_modal",
+                    return_value=lambda idx: open_detail_calls.append(idx),
+                ),
+            ):
+                wt.render_workout_table.func()
+
+            table_stub.fire("open_detail", "nonexistent-id")
+
+            # No calls expected when id is not found.
+            assert open_detail_calls == []
+        finally:
+            state.file_loaded = original_file_loaded
+            state.workouts = original_workouts
 
 
 class TestBuildWorkoutRowsRangeFiltering:

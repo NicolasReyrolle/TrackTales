@@ -2,16 +2,13 @@
 
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import Any, TypedDict
 
 import pandas as pd
 
 from logic.workout_route import WorkoutRoute
 
 _logger = logging.getLogger(__name__)
-
-if TYPE_CHECKING:
-    from pandas import Timestamp
 
 
 class CriticalPowerResult(TypedDict):
@@ -38,8 +35,8 @@ class WorkoutManagerSegmentsMixin:
     def _filter_workouts(
         self,
         activity_type: str = "All",
-        start_date: datetime | "Timestamp" | None = None,
-        end_date: datetime | "Timestamp" | None = None,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
         """Stub for type checking; implemented in WorkoutManagerAggregationsMixin."""
         raise NotImplementedError
@@ -502,7 +499,7 @@ class WorkoutManagerSegmentsMixin:
         long_distance: int = 5000,
         start_date: datetime | pd.Timestamp | None = None,
         end_date: datetime | pd.Timestamp | None = None,
-    ) -> "CriticalPowerResult | None":
+    ) -> CriticalPowerResult | None:
         """Compute Critical Power (CP) and W' using the 2-parameter power-duration model.
 
         The model fits a linear work-time relationship:

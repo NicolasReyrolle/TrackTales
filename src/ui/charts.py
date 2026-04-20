@@ -226,8 +226,9 @@ def render_generic_graph(
                 "z": 2,
             },
         ]
-        # c0 = bridge (hidden from tooltip), c1 = actual measured value
-        tooltip_formatter = f"{{b}}\n{{c1}}{value_suffix}"
+        # ECharts excludes series with tooltip.show:false from the formatter params array,
+        # so the bridge (series[0], hidden) is not counted and the actual data is {c0}.
+        tooltip_formatter = f"{{b}}\n{{c0}}{value_suffix}"
     else:
         series = [{"data": data_points, "type": graph_type}]
         # c0 = bar/area value

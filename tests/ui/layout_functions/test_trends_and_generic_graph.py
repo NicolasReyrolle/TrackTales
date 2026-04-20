@@ -233,6 +233,36 @@ class TestRenderGenericGraph:
         assert series[1]["type"] == "line"
         assert series[1]["connectNulls"] is False
 
+    def test_render_generic_graph_line_tooltip_uses_c0(self) -> None:
+        """Line chart tooltip formatter must use {c0} so the actual data value is shown.
+
+        ECharts excludes series with ``tooltip.show: false`` from the formatter
+        params array, so the bridge series (index 0, hidden) is not counted and
+        the actual measured series becomes {c0}, not {c1}.
+        """
+        values = {"2024-01": 10, "2024-02": 20}
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_generic_graph(
+                "W' over time",
+                values,
+                "kJ",
+                graph_type="line",
+                show_trend=False,
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        formatter = chart_options["tooltip"]["formatter"]
+        assert "{c0}" in formatter, "Line tooltip formatter must reference {c0} for the data value"
+        assert "{c1}" not in formatter, "Line tooltip formatter must not use {c1} (bridge is excluded)"
+
     def test_render_generic_graph_has_datazoom_and_toolbox(self) -> None:
         """Bar charts should include inside dataZoom and a toolbox for restore/save."""
         values = {"2024-01": 10, "2024-02": 20}

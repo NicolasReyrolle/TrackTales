@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, TypedDict, Union
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import pandas as pd
 
@@ -38,8 +38,8 @@ class WorkoutManagerSegmentsMixin:
     def _filter_workouts(
         self,
         activity_type: str = "All",
-        start_date: Union[datetime, "Timestamp"] | None = None,
-        end_date: Union[datetime, "Timestamp"] | None = None,
+        start_date: datetime | "Timestamp" | None = None,
+        end_date: datetime | "Timestamp" | None = None,
     ) -> pd.DataFrame:
         """Stub for type checking; implemented in WorkoutManagerAggregationsMixin."""
         raise NotImplementedError
@@ -502,7 +502,7 @@ class WorkoutManagerSegmentsMixin:
         long_distance: int = 5000,
         start_date: datetime | pd.Timestamp | None = None,
         end_date: datetime | pd.Timestamp | None = None,
-    ) -> Optional["CriticalPowerResult"]:
+    ) -> "CriticalPowerResult | None":
         """Compute Critical Power (CP) and W' using the 2-parameter power-duration model.
 
         The model fits a linear work-time relationship:

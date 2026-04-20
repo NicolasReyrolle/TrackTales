@@ -154,7 +154,7 @@ TABLE_FULL_CLASSES = "w-full"
 # ---------------------------------------------------------------------------
 
 #: Modal card: fixed width, vertically scrollable for tall content.
-MODAL_CARD_CLASSES = "w-96 max-h-[80vh] overflow-y-auto"
+MODAL_CARD_CLASSES = "w-120 max-h-[80vh] overflow-y-auto"
 
 #: Modal header row: title on the left, close button on the right.
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"

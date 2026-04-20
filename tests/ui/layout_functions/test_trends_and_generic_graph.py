@@ -233,6 +233,71 @@ class TestRenderGenericGraph:
         assert series[1]["type"] == "line"
         assert series[1]["connectNulls"] is False
 
+    def test_render_generic_graph_line_tooltip_uses_js_function(self) -> None:
+        """Line chart tooltip must use a JS function formatter with null/n/a handling.
+
+        NiceGUI evaluates dict keys prefixed with ':' as JS expressions.  The
+        formatter is a function so that interpolated null points can display
+        "n/a" instead of showing just the unit suffix.
+        """
+        values = {"2024-01": 10, "2024-02": 20}
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_generic_graph(
+                "W' over time",
+                values,
+                "kJ",
+                graph_type="line",
+                show_trend=False,
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        tooltip = chart_options["tooltip"]
+        # Must use the ":formatter" key (NiceGUI JS eval prefix), not plain "formatter"
+        assert ":formatter" in tooltip, "Line chart must use ':formatter' JS key"
+        assert "formatter" not in tooltip, "Plain 'formatter' key must not be present for line"
+        formatter = tooltip[":formatter"]
+        assert "function(params)" in formatter, "Formatter must be a JS function"
+        assert "n/a" in formatter, "Formatter must handle null values with n/a"
+        assert "kJ" in formatter, "Formatter must include the unit in the non-null branch"
+        assert "{c1}" not in formatter, "Formatter must not reference {c1}"
+
+    def test_render_generic_graph_line_tooltip_null_shows_na(self) -> None:
+        """Line chart tooltip JS function must return 'n/a' (no unit) for null data points."""
+        values = {"2024-01": 10, "2024-02": None, "2024-03": 30}
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_generic_graph(
+                "CP over time",
+                values,
+                "W",
+                graph_type="line",
+                show_trend=False,
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        formatter_js = chart_options["tooltip"][":formatter"]
+        # Verify the null guard returns "n/a" without any unit suffix
+        assert "n/a" in formatter_js
+        # Ensure the unit appears only in the non-null return branch, not next to n/a
+        na_index = formatter_js.index("n/a")
+        unit_index = formatter_js.index(" W")
+        assert unit_index > na_index, "Unit suffix must come after the n/a guard, not inside it"
+
     def test_render_generic_graph_has_datazoom_and_toolbox(self) -> None:
         """Bar charts should include inside dataZoom and a toolbox for restore/save."""
         values = {"2024-01": 10, "2024-02": 20}

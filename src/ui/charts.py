@@ -226,11 +226,23 @@ def render_generic_graph(
                 "z": 2,
             },
         ]
-        # c0 = bridge (hidden from tooltip), c1 = actual measured value
-        tooltip_formatter = f"{{b}}\n{{c1}}{value_suffix}"
+        # NiceGUI evaluates dict keys prefixed with ":" as JavaScript expressions.
+        # ECharts excludes series with tooltip.show:false from the formatter params array,
+        # so the bridge (series[0], hidden) is not counted and the actual data is params[0].
+        # When the value is null (interpolated gap), show "n/a" with no unit suffix.
+        tooltip_formatter_key = ":formatter"
+        tooltip_formatter: str = (
+            "function(params) {"
+            "var name = params[0].name;"
+            "var val = params[0].value;"
+            "if (val === null || val === undefined) { return name + '\\nn/a'; }"
+            f"return name + '\\n' + val + '{value_suffix}';"
+            "}"
+        )
     else:
         series = [{"data": data_points, "type": graph_type}]
         # c0 = bar/area value
+        tooltip_formatter_key = "formatter"
         tooltip_formatter = f"{{b}}\n{{c0}}{value_suffix}"
 
     if show_trend:
@@ -255,7 +267,7 @@ def render_generic_graph(
             "trigger": "axis",
             "axisPointer": {"type": "cross"},
             "renderMode": "richText",
-            "formatter": tooltip_formatter,
+            tooltip_formatter_key: tooltip_formatter,
         },
         "xAxis": {
             "type": "category",

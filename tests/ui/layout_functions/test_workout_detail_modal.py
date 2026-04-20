@@ -56,6 +56,7 @@ class _DummyElement:
 
     def __init__(self, *_args: Any, **_kwargs: Any) -> None:
         self._visible = True
+        self._enabled = True
         self._text = ""
         self._props_added: list[str] = []
         self._props_removed: list[str] = []
@@ -76,6 +77,9 @@ class _DummyElement:
 
     def set_visibility(self, visible: bool) -> None:
         self._visible = visible
+
+    def set_enabled(self, enabled: bool) -> None:
+        self._enabled = enabled
 
     def on(self, *_a: Any, **_kw: Any) -> _DummyElement:
         return self
@@ -213,7 +217,7 @@ class TestCreateWorkoutDetailModal:
         fn(100)  # Should not raise
 
     def test_open_at_non_first_row_enables_prev_button(self) -> None:
-        """Opening a non-first row should call props(remove='disabled') on the prev button."""
+        """Opening a non-first row should call set_enabled(True) on the prev button."""
         rows = [_make_row(idx=0), _make_row(idx=1)]
         created_buttons: list[_ButtonStub] = []
 
@@ -228,8 +232,8 @@ class TestCreateWorkoutDetailModal:
             fn = wdm.create_workout_detail_modal(rows)
 
         prev_btn = created_buttons[1]  # Button order: [0] close, [1] prev, [2] next
-        fn(1)  # Open at the second (non-first) row
-        assert "disabled" in prev_btn._props_removed
+        fn(1)  # Open at the second (non-first) row — prev should be enabled
+        assert prev_btn._enabled is True
 
     def test_navigate_forward_moves_to_next_row(self) -> None:
         """Clicking the next button should advance to the second row."""

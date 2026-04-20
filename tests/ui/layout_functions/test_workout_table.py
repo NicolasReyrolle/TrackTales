@@ -852,6 +852,21 @@ class TestNearestVo2Max:
             state.records_by_type = original
         assert result == "50.0 mL/min·kg"
 
+    def test_returns_dash_when_nearest_record_has_none_value(self) -> None:
+        """Should return '–' when the nearest VO2Max record has a null/NaN value."""
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+
+        # Record exists but value is None (e.g. exported without measurement)
+        vo2_df = pd.DataFrame([{"startDate": "2025-01-01 10:00:00", "value": None}])
+        original = state.records_by_type
+        try:
+            state.records_by_type = RecordsByType(data={"VO2Max": vo2_df})
+            result = wt._nearest_vo2_max(pd.Timestamp("2025-01-01"))
+        finally:
+            state.records_by_type = original
+        assert result == "–"
+
 
 class TestExtractRunningFields:
     """Unit tests for _extract_running_fields()."""
@@ -941,6 +956,36 @@ class TestExtractRunningFields:
         route = WorkoutRoute(points=points)
         row = self._make_row(route=route, distance=3000.0)
         result = wt._extract_running_fields(row, None)
+        assert len(result["splits"]) >= 3
+
+    def test_splits_computed_from_route_parts(self) -> None:
+        """Splits should be merged from route_parts (multiple GPS segments) when present."""
+        from datetime import timedelta
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01 10:00:00").to_pydatetime().replace(tzinfo=None)
+
+        # Two separate route segments, each covering ~1500 m at 3 m/s.
+        def _make_part(t_offset: int, n: int) -> WorkoutRoute:
+            return WorkoutRoute(
+                points=[
+                    RoutePoint(
+                        time=base_time + timedelta(seconds=t_offset + i),
+                        latitude=0.0,
+                        longitude=0.0,
+                        altitude=0.0,
+                        speed=3.0,
+                    )
+                    for i in range(n)
+                ]
+            )
+
+        part1 = _make_part(0, 501)  # 500 s × 3 m/s = 1500 m
+        part2 = _make_part(501, 501)  # another 1500 m segment
+        row = self._make_row(route_parts=[part1, part2], distance=3000.0)
+        result = wt._extract_running_fields(row, None)
+        # Merged route is ≥ 3000 m → at least 3 complete 1 km splits
         assert len(result["splits"]) >= 3
 
     def test_running_fields_included_for_running_workouts(self) -> None:

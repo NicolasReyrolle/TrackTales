@@ -141,6 +141,15 @@ class TestWorkoutRoute:
         assert result is not None
         assert result == pytest.approx(375.0)  # type: ignore[misc]
 
+    def test_find_fastest_segment_returns_none_for_empty_route(self) -> None:
+        """find_fastest_segment should return None immediately for an empty route."""
+        assert WorkoutRoute(points=[]).find_fastest_segment(1000.0) is None
+
+    def test_find_fastest_segment_returns_none_for_single_point_route(self) -> None:
+        """find_fastest_segment should return None when the route has only one point."""
+        route = WorkoutRoute(points=[_point("2024-01-01T10:00:00Z", 0.0, 0.0)])
+        assert route.find_fastest_segment(1000.0) is None
+
     def test_find_fastest_segment_applies_realistic_distance_scaling(self) -> None:
         """A modest route/workout distance mismatch should be normalized."""
         start_time = datetime.fromisoformat("2024-01-01T10:00:00+00:00")
@@ -228,6 +237,15 @@ class TestWorkoutRoute:
         result = route.find_fastest_segment_window(10000.0)
 
         assert result is None
+
+    def test_find_fastest_segment_window_returns_none_for_empty_route(self) -> None:
+        """find_fastest_segment_window should return None immediately for an empty route."""
+        assert WorkoutRoute(points=[]).find_fastest_segment_window(1000.0) is None
+
+    def test_find_fastest_segment_window_returns_none_for_single_point_route(self) -> None:
+        """find_fastest_segment_window should return None when the route has only one point."""
+        route = WorkoutRoute(points=[_point("2024-01-01T10:00:00Z", 0.0, 0.0)])
+        assert route.find_fastest_segment_window(1000.0) is None
 
 
 class TestWorkoutRouteEndToEnd:
@@ -511,3 +529,37 @@ class TestComputeSplits:
         splits_1000 = route.compute_splits(split_distance_m=1000.0)
         # Half the distance → roughly twice as many splits.
         assert len(splits_500) >= 2 * len(splits_1000) - 1
+
+    def test_compute_splits_stops_when_route_boundary_reached(self) -> None:
+        """compute_splits stops gracefully when split_end_idx reaches the route boundary.
+
+        Three points with speed-derived cumulative distances [0, 500, 1000].
+        With distance_scale_factor=2.0 total_scaled=2000m, so splits 1 and 2 both
+        fit (500m each).  When split 3 is attempted, split_start_idx is already at
+        the last point, so the inner search immediately sets split_end_idx to
+        len(points), triggering the safety guard on line 312 of workout_route.py.
+        """
+        base = datetime(2024, 1, 1, 10, 0, 0)
+        # Point 0→1: avg_speed=(0+2)/2=1 m/s × 500s = 500m
+        # Point 1→2: avg_speed=(2+2)/2=2 m/s × 250s = 500m  → cum=[0, 500, 1000]
+        points = [
+            RoutePoint(time=base, latitude=0.0, longitude=0.0, altitude=0.0, speed=0.0),
+            RoutePoint(
+                time=base + timedelta(seconds=500),
+                latitude=0.0,
+                longitude=0.0,
+                altitude=0.0,
+                speed=2.0,
+            ),
+            RoutePoint(
+                time=base + timedelta(seconds=750),
+                latitude=0.0,
+                longitude=0.0,
+                altitude=0.0,
+                speed=2.0,
+            ),
+        ]
+        route = WorkoutRoute(points=points)
+        splits = route.compute_splits(split_distance_m=500.0, distance_scale_factor=2.0)
+        # Two complete splits are found; the third iteration hits the boundary guard.
+        assert len(splits) == 2

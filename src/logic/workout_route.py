@@ -260,3 +260,78 @@ class WorkoutRoute:
                 )
 
         return best
+
+    def compute_splits(
+        self,
+        split_distance_m: float = 1000.0,
+        distance_scale_factor: float = 1.0,
+    ) -> list[dict[str, float | int]]:
+        """Compute per-split pace data from GPS route.
+
+        Each split covers *split_distance_m* of traveled distance.  Only
+        complete splits are returned; any partial final split is omitted.
+
+        Args:
+            split_distance_m: Length of each split in meters (default 1000 m = 1 km).
+            distance_scale_factor: Multiplicative correction applied to cumulative
+                route distances.  Use :meth:`calculate_distance_scale_factor` to
+                derive this value from the workout summary distance.
+
+        Returns:
+            A list of dicts, one per complete split, each containing:
+
+            - ``"split"``:                int   – 1-indexed split number.
+            - ``"duration_s"``:           float – elapsed time for this split (seconds).
+            - ``"pace_min_per_km"``:      float – pace in min/km for this split.
+            - ``"elevation_change_m"``:   float – net altitude change from split
+              start to split end (positive = uphill, negative = downhill).
+        """
+        if len(self.points) < 2 or split_distance_m <= 0:
+            return []
+
+        cum = self._cumulative_distances()
+        total_scaled = cum[-1] * distance_scale_factor if cum else 0.0
+
+        if total_scaled < split_distance_m:
+            return []
+
+        splits: list[dict[str, float | int]] = []
+        split_num = 1
+        split_start_idx = 0
+
+        while True:
+            target_scaled = split_num * split_distance_m
+            if target_scaled > total_scaled:
+                break
+
+            # Find the route point where the scaled cumulative distance reaches the target.
+            target_unscaled = target_scaled / distance_scale_factor
+            split_end_idx = split_start_idx + 1
+            while split_end_idx < len(cum) and cum[split_end_idx] < target_unscaled:
+                split_end_idx += 1
+
+            if split_end_idx >= len(self.points):
+                break
+
+            duration_s = (
+                self.points[split_end_idx].time - self.points[split_start_idx].time
+            ).total_seconds()
+
+            if duration_s > 0:
+                pace_min_per_km = (duration_s / 60.0) * (1000.0 / split_distance_m)
+                elevation_change_m = (
+                    self.points[split_end_idx].altitude - self.points[split_start_idx].altitude
+                )
+                splits.append(
+                    {
+                        "split": split_num,
+                        "duration_s": duration_s,
+                        "pace_min_per_km": pace_min_per_km,
+                        "elevation_change_m": elevation_change_m,
+                    }
+                )
+
+            split_num += 1
+            split_start_idx = split_end_idx
+
+        return splits

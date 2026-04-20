@@ -173,3 +173,18 @@ MODAL_NAV_ROW_CLASSES = "w-full justify-between items-center q-mt-sm"
 
 #: Navigation counter label ("1 / 42") in the modal footer – same style as LABEL_MUTED_CLASSES.
 MODAL_NAV_COUNTER_CLASSES = LABEL_MUTED_CLASSES
+
+#: Section divider row separating generic fields from type-specific sections in the modal.
+MODAL_SECTION_DIVIDER_CLASSES = "w-full border-t q-mt-xs q-mb-xs"
+
+#: Section heading inside the modal (e.g. "Running", "Splits").
+MODAL_SECTION_HEADING_CLASSES = "text-xs text-gray-500 uppercase q-mt-xs"
+
+#: Splits table header cell inside the modal.
+MODAL_SPLITS_HEADER_CLASSES = "text-xs text-gray-400 uppercase w-12 text-right"
+
+#: Splits table data cell inside the modal.
+MODAL_SPLITS_CELL_CLASSES = "text-xs font-medium w-12 text-right"
+
+#: Splits table row inside the modal: evenly-spaced columns.
+MODAL_SPLITS_ROW_CLASSES = "w-full items-center gap-2"

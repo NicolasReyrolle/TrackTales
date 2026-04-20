@@ -10,6 +10,7 @@ from nicegui import ui
 from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
+from logic.workout_route import WorkoutRoute
 from ui.css import (
     LABEL_EMPTY_STATE_CLASSES,
     RANGE_LABEL_CLASSES,
@@ -157,7 +158,7 @@ def _extract_row_data(
         lambda v: f"{int(round(v))} W",
     )
 
-    return {
+    result: dict[str, Any] = {
         "id": f"{date_sort}_{idx}",
         "date_sort": date_sort,
         "date": date_display,
@@ -175,6 +176,13 @@ def _extract_row_data(
         "avg_power_sort": power_sort,
         "avg_power": power_display,
     }
+
+    if raw_activity == "Running":
+        start_date_raw = row.get("startDate")
+        workout_date = start_date_raw if isinstance(start_date_raw, pd.Timestamp) else None
+        result.update(_extract_running_fields(row, workout_date, distance_unit))
+
+    return result
 
 
 def _extract_date_field(row: Any, language_code: str) -> tuple[float, str]:
@@ -201,8 +209,150 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
     return distance_raw, distance_display
 
 
+def _format_pace(speed_km_h: float) -> str:
+    """Convert speed in km/h to a pace string in ``mm:ss /km`` format.
+
+    Args:
+        speed_km_h: Average speed in kilometres per hour.
+
+    Returns:
+        Pace string such as ``"6:42 /km"``, or ``"–"`` when speed is non-positive.
+    """
+    if speed_km_h <= 0:
+        return "–"
+    pace_min = 60.0 / speed_km_h
+    minutes = int(pace_min)
+    seconds = int(round((pace_min - minutes) * 60))
+    if seconds == 60:
+        minutes += 1
+        seconds = 0
+    return f"{minutes}:{seconds:02d} /km"
+
+
+def _nearest_vo2_max(workout_date: pd.Timestamp | None) -> str:
+    """Return the VO2 max value (mL/min·kg) closest in time to *workout_date*.
+
+    Looks up ``state.records_by_type["VO2Max"]`` and finds the record whose
+    ``startDate`` is nearest to *workout_date*.
+
+    Args:
+        workout_date: The workout start date as a :class:`pd.Timestamp`.
+
+    Returns:
+        A formatted string such as ``"50.1 mL/min·kg"``, or ``"–"`` when no
+        VO2 max records are available or *workout_date* is ``None``.
+    """
+    if workout_date is None:
+        return "–"
+    vo2_df: pd.DataFrame = state.records_by_type.get("VO2Max")
+    if vo2_df.empty or "startDate" not in vo2_df.columns or "value" not in vo2_df.columns:
+        return "–"
+
+    dates = pd.to_datetime(vo2_df["startDate"], errors="coerce").dt.tz_localize(None)
+    deltas = (dates - workout_date).abs()
+    min_idx = deltas.idxmin()
+    value = _safe_float(vo2_df.loc[min_idx, "value"])
+    if value is None:
+        return "–"
+    return f"{value:.1f} mL/min·kg"
+
+
+def _extract_running_fields(
+    row: Any,
+    workout_date: pd.Timestamp | None,
+    distance_unit: str = "km",
+) -> dict[str, Any]:
+    """Extract running-specific display fields from a workout DataFrame row.
+
+    Fields are populated only when the corresponding statistics are present.
+    Fields that are absent or ``NaN`` fall back to the missing-data sentinel
+    ``"–"`` so the modal can hide them automatically.
+
+    Args:
+        row: A pandas Series representing a running workout.
+        workout_date: The workout start date used for VO2 max look-up.
+        distance_unit: ``"km"`` or ``"mi"`` (affects split display label).
+
+    Returns:
+        A dict with running-specific display and sort values plus a ``splits``
+        list of per-km split dicts (see :meth:`WorkoutRoute.compute_splits`).
+    """
+    # --- Pace (derived from averageRunningSpeed) ---
+    speed_raw = _safe_float(row.get("averageRunningSpeed"))
+    pace_display = _format_pace(speed_raw) if speed_raw is not None else "–"
+    pace_sort = (60.0 / speed_raw) if speed_raw is not None and speed_raw > 0 else _MISSING_SORT
+
+    # --- Cadence ---
+    cadence_sort, cadence_display = _build_field_pair(
+        row.get("averageRunningCadence"),
+        lambda v: f"{int(round(v))} spm",
+    )
+
+    # --- Stride length ---
+    stride_sort, stride_display = _build_field_pair(
+        row.get("averageRunningStrideLength"),
+        lambda v: f"{v:.2f} m",
+    )
+
+    # --- Vertical oscillation ---
+    _, vo_display = _build_field_pair(
+        row.get("averageRunningVerticalOscillation"),
+        lambda v: f"{v:.1f} cm",
+    )
+
+    # --- Ground contact time ---
+    _, gct_display = _build_field_pair(
+        row.get("averageRunningGroundContactTime"),
+        lambda v: f"{int(round(v))} ms",
+    )
+
+    # --- Step count ---
+    _, step_count_display = _build_field_pair(
+        row.get("sumStepCount"),
+        lambda v: f"{int(round(v))}",
+    )
+
+    # --- VO2 max (nearest record by date) ---
+    vo2_max_display = _nearest_vo2_max(workout_date)
+
+    # --- Per-km splits from GPS route ---
+    splits: list[dict[str, float | int]] = []
+    route_obj = row.get("route")
+    route_parts_obj = row.get("route_parts")
+    if isinstance(route_parts_obj, list) and route_parts_obj:
+        # Merge all route parts for split computation
+        all_points = []
+        for part in route_parts_obj:
+            if isinstance(part, WorkoutRoute):
+                all_points.extend(part.points)
+        if all_points:
+            merged = WorkoutRoute(points=all_points)
+            distance_m = _safe_float(row.get("distance"))
+            scale = WorkoutRoute.calculate_distance_scale_factor(merged.distance_meters, distance_m)
+            split_dist = 1000.0 if distance_unit == "km" else 1609.34
+            splits = merged.compute_splits(split_distance_m=split_dist, distance_scale_factor=scale)
+    elif isinstance(route_obj, WorkoutRoute) and not route_obj.is_empty:
+        distance_m = _safe_float(row.get("distance"))
+        scale = WorkoutRoute.calculate_distance_scale_factor(route_obj.distance_meters, distance_m)
+        split_dist = 1000.0 if distance_unit == "km" else 1609.34
+        splits = route_obj.compute_splits(split_distance_m=split_dist, distance_scale_factor=scale)
+
+    return {
+        "pace_sort": pace_sort,
+        "pace": pace_display,
+        "cadence_sort": cadence_sort,
+        "cadence": cadence_display,
+        "stride_length_sort": stride_sort,
+        "stride_length": stride_display,
+        "vertical_oscillation": vo_display,
+        "ground_contact_time": gct_display,
+        "step_count": step_count_display,
+        "vo2_max": vo2_max_display,
+        "splits": splits,
+    }
+
+
 def _find_row_index(row_id: str, rows: list[dict[str, Any]]) -> int | None:
-    """Return the index of the row with matching *row_id*, or ``None`` if missing."""
     for i, row in enumerate(rows):
         if row.get("id") == row_id:
             return i

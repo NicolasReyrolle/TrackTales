@@ -71,6 +71,9 @@ class _DummyElement:
     def on(self, *_a: Any, **_kw: Any) -> _DummyElement:
         return self
 
+    def clear(self) -> None:
+        """Stub for NiceGUI container clear(); does nothing."""
+
     def open(self) -> None:
         """Stub for dialog.open()."""
 
@@ -134,6 +137,8 @@ class TestCreateWorkoutDetailModal:
             patch("ui.workout_detail_modal.ui.row", return_value=stub),
             patch("ui.workout_detail_modal.ui.label", return_value=stub),
             patch("ui.workout_detail_modal.ui.button", return_value=stub),
+            patch("ui.workout_detail_modal.ui.column", return_value=stub),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
         ):
             fn = wdm.create_workout_detail_modal(rows)
 
@@ -150,6 +155,8 @@ class TestCreateWorkoutDetailModal:
             patch("ui.workout_detail_modal.ui.row", return_value=stub),
             patch("ui.workout_detail_modal.ui.label", return_value=stub),
             patch("ui.workout_detail_modal.ui.button", return_value=stub),
+            patch("ui.workout_detail_modal.ui.column", return_value=stub),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
         ):
             fn = wdm.create_workout_detail_modal(rows)
 
@@ -166,6 +173,8 @@ class TestCreateWorkoutDetailModal:
             patch("ui.workout_detail_modal.ui.row", return_value=stub),
             patch("ui.workout_detail_modal.ui.label", return_value=stub),
             patch("ui.workout_detail_modal.ui.button", return_value=stub),
+            patch("ui.workout_detail_modal.ui.column", return_value=stub),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
         ):
             fn = wdm.create_workout_detail_modal(rows)
 
@@ -188,6 +197,8 @@ class TestCreateWorkoutDetailModal:
             patch("ui.workout_detail_modal.ui.row", return_value=stub),
             patch("ui.workout_detail_modal.ui.label", return_value=stub),
             patch("ui.workout_detail_modal.ui.button", side_effect=make_button),
+            patch("ui.workout_detail_modal.ui.column", return_value=stub),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
         ):
             fn = wdm.create_workout_detail_modal(rows)
 
@@ -221,10 +232,13 @@ class TestCreateWorkoutDetailModal:
             patch("ui.workout_detail_modal.ui.row", return_value=stub),
             patch("ui.workout_detail_modal.ui.label", side_effect=make_label),
             patch("ui.workout_detail_modal.ui.button", side_effect=make_button),
+            patch("ui.workout_detail_modal.ui.column", return_value=stub),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
         ):
             fn = wdm.create_workout_detail_modal(rows)
 
-        # nav_counter is the last label created (title + 8 field labels + 8 value labels + counter)
+        # nav_counter is the last label created (title + field labels + running field labels
+        # + splits-section heading/headers + nav counter)
         nav_counter = label_stubs[-1]
         next_btn = created_buttons[2]  # close=0, prev=1, next=2
         fn(0)  # Start at row 0 → counter shows "1 / 2"
@@ -254,6 +268,8 @@ class TestCreateWorkoutDetailModal:
             patch("ui.workout_detail_modal.ui.row", return_value=stub),
             patch("ui.workout_detail_modal.ui.label", side_effect=make_label),
             patch("ui.workout_detail_modal.ui.button", side_effect=make_button),
+            patch("ui.workout_detail_modal.ui.column", return_value=stub),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
         ):
             fn = wdm.create_workout_detail_modal(rows)
 
@@ -262,3 +278,147 @@ class TestCreateWorkoutDetailModal:
         fn(0)  # Start at row 0 → counter shows "1 / 2"
         prev_btn.click()  # Attempt to navigate before the first row
         assert nav_counter._text == "1 / 2"  # Still on row 0
+
+
+class TestRunningFieldDisplay:
+    """Tests for _RUNNING_FIELD_DISPLAY constant and running section in the modal."""
+
+    def test_all_expected_running_keys_present(self) -> None:
+        """_RUNNING_FIELD_DISPLAY should include pace, cadence, stride length, and VO2 max."""
+        keys = {key for key, _ in wdm._RUNNING_FIELD_DISPLAY}
+        for expected in ["pace", "cadence", "stride_length", "vo2_max"]:
+            assert expected in keys
+
+    def test_running_labels_are_non_empty_strings(self) -> None:
+        """Every label in _RUNNING_FIELD_DISPLAY should be callable and non-empty."""
+        for _key, label_fn in wdm._RUNNING_FIELD_DISPLAY:
+            assert callable(label_fn)
+            assert label_fn() and isinstance(label_fn(), str)
+
+
+class TestFormatSplitPace:
+    """Unit tests for _format_split_pace()."""
+
+    def test_integer_minutes(self) -> None:
+        """An exact integer minute pace should format as 'mm:00'."""
+        assert wdm._format_split_pace(5.0) == "5:00"
+
+    def test_fractional_pace_rounded(self) -> None:
+        """Fractional seconds should be rounded correctly."""
+        # 4.5 min/km → 4 min 30 sec
+        assert wdm._format_split_pace(4.5) == "4:30"
+
+    def test_seconds_rollover(self) -> None:
+        """When rounded seconds == 60, minutes should increment and seconds reset."""
+        # pace where fractional part rounds to 60 → 4.999... ≈ 5:00
+        result = wdm._format_split_pace(4.9999)
+        # should show 5:00 (rollover) rather than 4:60
+        assert "60" not in result
+
+
+class TestFormatElevationChange:
+    """Unit tests for _format_elevation_change()."""
+
+    def test_positive_elevation_shows_plus(self) -> None:
+        """Positive elevation change should show a '+' prefix."""
+        assert wdm._format_elevation_change(5.3) == "+5 m"
+
+    def test_negative_elevation_shows_minus(self) -> None:
+        """Negative elevation change should show a '-' prefix."""
+        assert wdm._format_elevation_change(-2.7) == "-3 m"
+
+    def test_zero_elevation_shows_plus_zero(self) -> None:
+        """Zero elevation change should show '+0 m'."""
+        assert wdm._format_elevation_change(0.0) == "+0 m"
+
+
+class TestRunningModalSection:
+    """Tests for the running-specific section rendering in the modal."""
+
+    def test_running_section_hidden_for_non_running_activity(self) -> None:
+        """Running section should be hidden when activity_type is not 'Running'."""
+        rows = [
+            _make_row(idx=0, activity_type="Cycling"),
+        ]
+        stub = _DummyElement()
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with (
+            patch("ui.workout_detail_modal.ui.dialog", return_value=stub),
+            patch("ui.workout_detail_modal.ui.card", return_value=stub),
+            patch("ui.workout_detail_modal.ui.row", return_value=stub),
+            patch("ui.workout_detail_modal.ui.label", return_value=stub),
+            patch("ui.workout_detail_modal.ui.button", return_value=stub),
+            patch("ui.workout_detail_modal.ui.column", side_effect=make_column),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
+        ):
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        # The running_section (first column stub) should be invisible for Cycling
+        running_section = column_stubs[0]
+        assert not running_section._visible
+
+    def test_running_section_visible_for_running_activity(self) -> None:
+        """Running section should be visible when activity_type is 'Running'."""
+        rows = [
+            {**_make_row(idx=0, activity_type="Running"), "pace": "6:00 /km", "splits": []},
+        ]
+        stub = _DummyElement()
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with (
+            patch("ui.workout_detail_modal.ui.dialog", return_value=stub),
+            patch("ui.workout_detail_modal.ui.card", return_value=stub),
+            patch("ui.workout_detail_modal.ui.row", return_value=stub),
+            patch("ui.workout_detail_modal.ui.label", return_value=stub),
+            patch("ui.workout_detail_modal.ui.button", return_value=stub),
+            patch("ui.workout_detail_modal.ui.column", side_effect=make_column),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
+        ):
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        # The running_section (first column stub) should be visible for Running
+        running_section = column_stubs[0]
+        assert running_section._visible
+
+    def test_splits_section_hidden_when_no_splits(self) -> None:
+        """Splits sub-section should be hidden when splits list is empty."""
+        rows = [
+            {**_make_row(idx=0, activity_type="Running"), "pace": "6:00 /km", "splits": []},
+        ]
+        stub = _DummyElement()
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with (
+            patch("ui.workout_detail_modal.ui.dialog", return_value=stub),
+            patch("ui.workout_detail_modal.ui.card", return_value=stub),
+            patch("ui.workout_detail_modal.ui.row", return_value=stub),
+            patch("ui.workout_detail_modal.ui.label", return_value=stub),
+            patch("ui.workout_detail_modal.ui.button", return_value=stub),
+            patch("ui.workout_detail_modal.ui.column", side_effect=make_column),
+            patch("ui.workout_detail_modal.ui.element", return_value=stub),
+        ):
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        # column_stubs[0] = running_section, column_stubs[1] = splits_section (inner),
+        # column_stubs[2] = splits_body
+        splits_section = column_stubs[1]
+        assert not splits_section._visible

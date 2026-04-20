@@ -16,6 +16,11 @@ from ui.css import (
     MODAL_HEADER_ROW_CLASSES,
     MODAL_NAV_COUNTER_CLASSES,
     MODAL_NAV_ROW_CLASSES,
+    MODAL_SECTION_DIVIDER_CLASSES,
+    MODAL_SECTION_HEADING_CLASSES,
+    MODAL_SPLITS_CELL_CLASSES,
+    MODAL_SPLITS_HEADER_CLASSES,
+    MODAL_SPLITS_ROW_CLASSES,
 )
 
 #: Callable returning a translated label string; alias for readability.
@@ -37,6 +42,55 @@ _FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
     ("avg_power", lambda: t("Avg Power")),
 ]
 
+#: Running-specific fields shown only when the workout is a Running activity.
+#: All values are ``"–"`` for non-running workouts and are hidden automatically.
+_RUNNING_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
+    ("pace", lambda: t("Avg Pace")),
+    ("cadence", lambda: t("Avg Cadence")),
+    ("stride_length", lambda: t("Avg Stride Length")),
+    ("vertical_oscillation", lambda: t("Avg Vertical Oscillation")),
+    ("ground_contact_time", lambda: t("Avg Ground Contact Time")),
+    ("step_count", lambda: t("Step Count")),
+    ("vo2_max", lambda: t("VO₂ Max")),
+]
+
+#: Header columns for the splits table: (row_key, header_label).
+_SPLITS_COLUMNS: list[tuple[str, str]] = [
+    ("split", "km"),
+    ("pace", "/km"),
+    ("elev", "elev"),
+]
+
+
+def _format_split_pace(pace_min_per_km: float) -> str:
+    """Format a pace value (min/km) as a ``mm:ss`` string.
+
+    Args:
+        pace_min_per_km: Pace in minutes per kilometre.
+
+    Returns:
+        Formatted string such as ``"4:32"``.
+    """
+    minutes = int(pace_min_per_km)
+    seconds = int(round((pace_min_per_km - minutes) * 60))
+    if seconds == 60:
+        minutes += 1
+        seconds = 0
+    return f"{minutes}:{seconds:02d}"
+
+
+def _format_elevation_change(elevation_change_m: float) -> str:
+    """Format an elevation change in metres as a compact signed string.
+
+    Args:
+        elevation_change_m: Net elevation change in metres.
+
+    Returns:
+        Formatted string such as ``"+5 m"`` or ``"-2 m"``.
+    """
+    sign = "+" if elevation_change_m >= 0 else ""
+    return f"{sign}{int(round(elevation_change_m))} m"
+
 
 def _update_fields(
     field_rows: dict[str, tuple[Any, Any]],
@@ -52,6 +106,29 @@ def _update_fields(
         frow.set_visibility(has_value)
         if has_value:
             value_el.set_text(value)
+
+
+def _render_splits_rows(
+    splits_body: Any,
+    splits: list[dict[str, float | int]],
+) -> None:
+    """Clear *splits_body* and populate it with one row per split.
+
+    Args:
+        splits_body: A NiceGUI container element (e.g. ``ui.column()``) to
+            render into.
+        splits: List of split dicts as returned by
+            :meth:`~logic.workout_route.WorkoutRoute.compute_splits`.
+    """
+    splits_body.clear()
+    with splits_body:
+        for split in splits:
+            pace_str = _format_split_pace(float(split["pace_min_per_km"]))
+            elev_str = _format_elevation_change(float(split["elevation_change_m"]))
+            with ui.row().classes(MODAL_SPLITS_ROW_CLASSES):
+                ui.label(str(int(split["split"]))).classes(MODAL_SPLITS_CELL_CLASSES)
+                ui.label(pace_str).classes(MODAL_SPLITS_CELL_CLASSES)
+                ui.label(elev_str).classes(MODAL_SPLITS_CELL_CLASSES)
 
 
 def create_workout_detail_modal(
@@ -94,6 +171,29 @@ def create_workout_detail_modal(
                     value_el = ui.label().classes(MODAL_FIELD_VALUE_CLASSES)
                 field_rows[field_key] = (frow, value_el)
 
+            # ---- Running-specific section ----
+            # Shown only when the current workout is a Running activity.
+            with ui.column().classes("w-full") as running_section:
+                ui.element("div").classes(MODAL_SECTION_DIVIDER_CLASSES)
+                ui.label(t("Running")).classes(MODAL_SECTION_HEADING_CLASSES)
+                running_field_rows: dict[str, tuple[Any, Any]] = {}
+                for field_key, label_fn in _RUNNING_FIELD_DISPLAY:
+                    with ui.row().classes(MODAL_FIELD_ROW_CLASSES) as frow:
+                        ui.label(label_fn()).classes(MODAL_FIELD_LABEL_CLASSES)
+                        value_el = ui.label().classes(MODAL_FIELD_VALUE_CLASSES)
+                    running_field_rows[field_key] = (frow, value_el)
+
+                # ---- Splits sub-section ----
+                with ui.column().classes("w-full") as splits_section:
+                    ui.label(t("Splits")).classes(MODAL_SECTION_HEADING_CLASSES)
+                    # Header row
+                    with ui.row().classes(MODAL_SPLITS_ROW_CLASSES):
+                        ui.label(t("km")).classes(MODAL_SPLITS_HEADER_CLASSES)
+                        ui.label(t("Pace")).classes(MODAL_SPLITS_HEADER_CLASSES)
+                        ui.label(t("Elev")).classes(MODAL_SPLITS_HEADER_CLASSES)
+                    # Dynamic body — rebuilt on every refresh
+                    splits_body = ui.column().classes("w-full")
+
             # ---- Navigation footer ----
             with ui.row().classes(MODAL_NAV_ROW_CLASSES):
                 prev_btn = ui.button(
@@ -126,6 +226,15 @@ def create_workout_detail_modal(
             next_btn.props(remove="disabled")
 
         _update_fields(field_rows, row)
+
+        # Show/hide the running section based on activity type
+        is_running = row.get("activity_type") == "Running"
+        running_section.set_visibility(is_running)
+        if is_running:
+            _update_fields(running_field_rows, row)
+            splits = row.get("splits") or []
+            splits_section.set_visibility(bool(splits))
+            _render_splits_rows(splits_body, splits)
 
     def _navigate(delta: int) -> None:
         """Move to the next or previous workout by *delta* steps."""

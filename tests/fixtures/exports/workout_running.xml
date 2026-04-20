@@ -51,7 +51,7 @@
   <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-09-16 16:14:50 +0100" endDate="2025-09-16 17:15:43 +0100" sum="9787.18" unit="count"/>
   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-09-16 16:14:50 +0100" endDate="2025-09-16 17:15:43 +0100" average="303.967" minimum="231" maximum="353" unit="ms"/>
   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-09-16 16:14:50 +0100" endDate="2025-09-16 17:15:43 +0100" average="208.697" minimum="78" maximum="355" unit="W"/>
-  <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-09-16 16:14:50 +0100" endDate="2025-09-16 17:15:43 +0100" sum="1655.465" unit="kcal"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-09-16 16:14:50 +0100" endDate="2025-09-16 17:15:43 +0100" sum="655.465" unit="kcal"/>
   <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-09-16 16:14:50 +0100" endDate="2025-09-16 17:15:43 +0100" sum="107.025" unit="kcal"/>
   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-09-16 16:14:50 +0100" endDate="2025-09-16 17:15:43 +0100" average="8.75138" minimum="7.8" maximum="11.2" unit="cm"/>
   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-09-16 16:14:50 +0100" endDate="2025-09-16 17:15:43 +0100" average="8.93016" minimum="3.64606" maximum="10.6795" unit="km/hr"/>

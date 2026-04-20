@@ -456,7 +456,7 @@ class TestStatCards:
         assert state.metrics["distance"] == 9
         assert state.metrics["duration"] == 1  # 60.887 minutes ≈ 1 hour
         assert state.metrics["elevation"] == 66  # 6575 cm = 65.75 m → 66 m (metric default)
-        assert state.metrics["calories"] == 1655  # ActiveEnergyBurned from fixture
+        assert state.metrics["calories"] == 655  # ActiveEnergyBurned from fixture
 
         # Verify the values are displayed in the UI
         await user.should_see("1")  # Count
@@ -465,7 +465,7 @@ class TestStatCards:
         await user.should_see("h")
         await user.should_see("66")  # Elevation value displayed
         await user.should_see("m")  # Elevation unit (metric default)
-        await user.should_see(format_integer(1655))  # Calories
+        await user.should_see(format_integer(655))  # Calories
         await user.should_see("kcal")  # Calories unit
         # Small delay before teardown
         await asyncio.sleep(0.2)

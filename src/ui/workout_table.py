@@ -17,6 +17,7 @@ from ui.css import (
     TABLE_FULL_CLASSES,
 )
 from ui.helpers import format_date_label, format_duration_label
+from ui.workout_detail_modal import create_workout_detail_modal
 from units import METERS_TO_FEET, METERS_TO_MILES
 
 _logger = logging.getLogger(__name__)
@@ -200,6 +201,14 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
     return distance_raw, distance_display
 
 
+def _find_row_index(row_id: str, rows: list[dict[str, Any]]) -> int | None:
+    """Return the index of the row with matching *row_id*, or ``None`` if missing."""
+    for i, row in enumerate(rows):
+        if row.get("id") == row_id:
+            return i
+    return None
+
+
 @ui.refreshable
 def render_workout_table() -> None:
     """Render the workout details table with sortable numeric columns and pagination."""
@@ -267,7 +276,17 @@ def render_workout_table() -> None:
             "sortable": True,
             "align": "right",
         },
+        {
+            "name": "actions",
+            "label": "",
+            "field": "id",
+            "sortable": False,
+            "align": "center",
+        },
     ]
+
+    # Create the detail modal once; the returned callable opens it at a given index.
+    open_detail = create_workout_detail_modal(rows)
 
     table = ui.table(
         columns=columns,
@@ -292,6 +311,27 @@ def render_workout_table() -> None:
             f"body-cell-{col_name}",
             f'<q-td :props="props">{{{{ props.row.{display_field} }}}}</q-td>',
         )
+
+    # Details button: icon-only button with a tooltip. Uses $parent.$emit so the
+    # event reaches NiceGUI's Python listener (registered on the q-table's wrapper).
+    details_tooltip = t("Details")
+    table.add_slot(
+        "body-cell-actions",
+        '<q-td :props="props">'
+        f'<q-btn flat round dense icon="info" aria-label="{details_tooltip}" '
+        f'title="{details_tooltip}"'
+        " @click=\"$parent.$emit('open_detail', props.row.id)\">"
+        f"<q-tooltip>{details_tooltip}</q-tooltip>"
+        "</q-btn></q-td>",
+    )
+
+    def _handle_open_detail(e: Any) -> None:
+        row_id = str(e.args)
+        row_index = _find_row_index(row_id, rows)
+        if row_index is not None:
+            open_detail(row_index)
+
+    table.on("open_detail", _handle_open_detail)
 
 
 @ui.refreshable

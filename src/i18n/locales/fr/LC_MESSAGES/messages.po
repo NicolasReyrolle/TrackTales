@@ -141,6 +141,12 @@ msgstr "Activité"
 msgid "Avg HR"
 msgstr "FC moy."
 
+msgid "Details"
+msgstr "Détails"
+
+msgid "Elevation Gain"
+msgstr "Dénivelé positif"
+
 msgid "Loading health data..."
 msgstr "Chargement des données de santé..."
 

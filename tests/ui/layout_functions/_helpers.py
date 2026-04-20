@@ -61,6 +61,10 @@ class DummyComponent:
     def update(self, *_args: Any, **_kwargs: Any) -> None:
         """No-op stub for NiceGUI element.update()."""
 
+    def on(self, *_args: Any, **_kwargs: Any) -> DummyComponent:
+        """Return self for on() chaining."""
+        return self
+
 
 class DummyContext(DummyComponent):
     """Context-manager capable component stub."""
@@ -94,11 +98,30 @@ class DummyTabs(DummyContext):
 
 
 class DummyTable(DummyComponent):
-    """Table stub that records slot additions."""
+    """Table stub that records slot additions and event handlers."""
 
     def __init__(self) -> None:
         self.slots: list[tuple[str, str]] = []
+        self._event_handlers: dict[str, Any] = {}
 
     def add_slot(self, slot_name: str, slot_template: str) -> None:
         """Record slot content added by table rendering."""
         self.slots.append((slot_name, slot_template))
+
+    def on(self, event: str, handler: Any, **_kwargs: Any) -> DummyTable:
+        """Record event handlers registered on the table."""
+        self._event_handlers[event] = handler
+        return self
+
+    def fire(self, event: str, args: Any = None) -> None:
+        """Fire a registered event handler with a stub event object."""
+        handler = self._event_handlers.get(event)
+        if handler is None:
+            raise KeyError(f"No handler registered for event '{event}'")
+
+        class _Event:
+            pass
+
+        e = _Event()
+        e.args = args  # type: ignore[attr-defined]
+        handler(e)

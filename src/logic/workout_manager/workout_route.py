@@ -1,7 +1,6 @@
 """WorkoutRoute represents a sequence of GPS points recorded during a workout,
 allowing for calculations of distance, elevation gain/loss, and duration."""
 
-# src/logic/workout_route.py
 from __future__ import annotations
 
 from dataclasses import dataclass, field

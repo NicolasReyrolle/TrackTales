@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from logic.export_parser import ExportParser, WorkoutRecord
-from logic.workout_route import RoutePoint, WorkoutRoute
+from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 
 
 class TestComplexRealWorldWorkout:

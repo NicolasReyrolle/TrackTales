@@ -10,7 +10,7 @@ import pytest
 
 from logic.export_parser import ExportParser
 from logic.workout_manager import WorkoutManager
-from logic.workout_route import RoutePoint, WorkoutRoute
+from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 
 
 def _point(
@@ -455,7 +455,7 @@ class TestComputeSplits:
         splits = route.compute_splits(split_distance_m=1000.0)
         assert len(splits) >= 1
         for split in splits:
-            expected_pace = float(split["duration_s"]) / 60.0 * (1000.0 / 1000.0)
+            expected_pace = float(split["duration_s"]) / 60.0
             assert float(split["pace_min_per_km"]) == pytest.approx(expected_pace)  # type: ignore[misc]
 
     def test_elevation_change_reflects_altitude_difference(self) -> None:

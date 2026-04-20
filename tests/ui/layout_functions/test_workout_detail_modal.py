@@ -207,7 +207,7 @@ class TestCreateWorkoutDetailModal:
         ):
             fn = wdm.create_workout_detail_modal(rows)
 
-        prev_btn = created_buttons[1]  # close=0, prev=1, next=2
+        prev_btn = created_buttons[1]  # Button order: [0] close, [1] prev, [2] next
         fn(1)  # Open at the second (non-first) row
         assert "disabled" in prev_btn._props_removed
 
@@ -245,7 +245,7 @@ class TestCreateWorkoutDetailModal:
         # nav_counter is the last label created (title + field labels + running field labels
         # + splits-section heading/headers + nav counter)
         nav_counter = label_stubs[-1]
-        next_btn = created_buttons[2]  # close=0, prev=1, next=2
+        next_btn = created_buttons[2]  # Button order: [0] close, [1] prev, [2] next
         fn(0)  # Start at row 0 → counter shows "1 / 2"
         next_btn.click()  # Navigate forward via the captured on_click lambda
         assert nav_counter._text == "2 / 2"
@@ -279,7 +279,7 @@ class TestCreateWorkoutDetailModal:
             fn = wdm.create_workout_detail_modal(rows)
 
         nav_counter = label_stubs[-1]
-        prev_btn = created_buttons[1]  # close=0, prev=1, next=2
+        prev_btn = created_buttons[1]  # Button order: [0] close, [1] prev, [2] next
         fn(0)  # Start at row 0 → counter shows "1 / 2"
         prev_btn.click()  # Attempt to navigate before the first row
         assert nav_counter._text == "1 / 2"  # Still on row 0
@@ -423,7 +423,9 @@ class TestRunningModalSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        # column_stubs[0] = running_section, column_stubs[1] = splits_section (inner),
-        # column_stubs[2] = splits_body
+        # Column stub creation order within create_workout_detail_modal:
+        #   column_stubs[0] = running_section (outer running container)
+        #   column_stubs[1] = splits_section  (inner splits visibility wrapper)
+        #   column_stubs[2] = splits_body     (dynamically rebuilt splits rows)
         splits_section = column_stubs[1]
         assert not splits_section._visible

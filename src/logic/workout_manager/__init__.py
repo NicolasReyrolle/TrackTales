@@ -9,6 +9,7 @@ from .manager import (
     WorkoutManager as _WorkoutManager,
 )
 from .segments import CriticalPowerResult
+from .workout_route import RoutePoint, WorkoutRoute
 
 
 class WorkoutManager(_WorkoutManager):
@@ -23,4 +24,6 @@ __all__ = [
     "HALF_MARATHON_DISTANCE_M",
     "MARATHON_DISTANCE_M",
     "CriticalPowerResult",
+    "RoutePoint",
+    "WorkoutRoute",
 ]

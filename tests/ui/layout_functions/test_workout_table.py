@@ -923,7 +923,7 @@ class TestExtractRunningFields:
         """Splits should be computed from a WorkoutRoute when present."""
         from datetime import timedelta
 
-        from logic.workout_route import RoutePoint, WorkoutRoute
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 
         start = pd.Timestamp("2024-01-01 10:00:00")
         base_time = start.to_pydatetime().replace(tzinfo=None)

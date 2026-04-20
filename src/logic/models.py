@@ -2,7 +2,7 @@
 
 from typing import TypedDict
 
-from logic.workout_route import WorkoutRoute
+from logic.workout_manager.workout_route import WorkoutRoute
 
 
 class WorkoutRecordRequired(TypedDict):

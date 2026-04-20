@@ -15,7 +15,7 @@ from defusedxml.ElementTree import iterparse
 
 from logic.models import WorkoutRecord
 from logic.parsed_health_data import ParsedHealthData
-from logic.workout_route import RoutePoint, WorkoutRoute
+from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 
 _logger = logging.getLogger(__name__)
 

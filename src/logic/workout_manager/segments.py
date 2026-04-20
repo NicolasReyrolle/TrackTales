@@ -6,7 +6,7 @@ from typing import Any, TypedDict
 
 import pandas as pd
 
-from logic.workout_route import WorkoutRoute
+from .workout_route import WorkoutRoute
 
 _logger = logging.getLogger(__name__)
 

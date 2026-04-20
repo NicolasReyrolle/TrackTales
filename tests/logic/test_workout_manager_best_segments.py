@@ -10,7 +10,7 @@ import pytest
 
 from logic.export_parser import ExportParser
 from logic.workout_manager import WorkoutManager
-from logic.workout_route import RoutePoint, WorkoutRoute
+from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 
 
 def _two_point_route(

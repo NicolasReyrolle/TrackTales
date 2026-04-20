@@ -10,7 +10,7 @@ from nicegui import ui
 from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
-from logic.workout_route import WorkoutRoute
+from logic.workout_manager.workout_route import WorkoutRoute
 from ui.css import (
     LABEL_EMPTY_STATE_CLASSES,
     RANGE_LABEL_CLASSES,
@@ -257,6 +257,61 @@ def _nearest_vo2_max(workout_date: pd.Timestamp | None) -> str:
     return f"{value:.1f} mL/min·kg"
 
 
+def _compute_splits_from_route(
+    route: WorkoutRoute,
+    distance_m: float | None,
+    split_dist: float,
+) -> list[dict[str, float | int]]:
+    """Compute splits for a single WorkoutRoute object.
+
+    Args:
+        route: The GPS route to compute splits from.
+        distance_m: Optional workout summary distance used for scale correction.
+        split_dist: Split interval in metres.
+
+    Returns:
+        A list of split dicts as returned by :meth:`WorkoutRoute.compute_splits`.
+    """
+    scale = WorkoutRoute.calculate_distance_scale_factor(route.distance_meters, distance_m)
+    return route.compute_splits(split_distance_m=split_dist, distance_scale_factor=scale)
+
+
+def _compute_splits_from_row(
+    row: Any,
+    distance_unit: str,
+) -> list[dict[str, float | int]]:
+    """Compute per-km (or per-mile) GPS splits from a workout DataFrame row.
+
+    Prefers ``route_parts`` (a list of :class:`WorkoutRoute` segments) when
+    present, merging all parts before computing splits.  Falls back to the
+    single ``route`` field when ``route_parts`` is absent or empty.
+
+    Args:
+        row: A pandas Series representing a running workout.
+        distance_unit: ``"km"`` or ``"mi"``; controls the split interval.
+
+    Returns:
+        A list of split dicts, or an empty list when no route data is available.
+    """
+    split_dist = 1000.0 if distance_unit == "km" else 1609.34
+    distance_m = _safe_float(row.get("distance"))
+
+    route_parts = row.get("route_parts")
+    if isinstance(route_parts, list) and route_parts:
+        all_points = [
+            pt for part in route_parts if isinstance(part, WorkoutRoute) for pt in part.points
+        ]
+        if all_points:
+            merged = WorkoutRoute(points=all_points)
+            return _compute_splits_from_route(merged, distance_m, split_dist)
+
+    route_obj = row.get("route")
+    if isinstance(route_obj, WorkoutRoute) and not route_obj.is_empty:
+        return _compute_splits_from_route(route_obj, distance_m, split_dist)
+
+    return []
+
+
 def _extract_running_fields(
     row: Any,
     workout_date: pd.Timestamp | None,
@@ -312,31 +367,6 @@ def _extract_running_fields(
         lambda v: f"{int(round(v))}",
     )
 
-    # --- VO2 max (nearest record by date) ---
-    vo2_max_display = _nearest_vo2_max(workout_date)
-
-    # --- Per-km splits from GPS route ---
-    splits: list[dict[str, float | int]] = []
-    route_obj = row.get("route")
-    route_parts_obj = row.get("route_parts")
-    if isinstance(route_parts_obj, list) and route_parts_obj:
-        # Merge all route parts for split computation
-        all_points = []
-        for part in route_parts_obj:
-            if isinstance(part, WorkoutRoute):
-                all_points.extend(part.points)
-        if all_points:
-            merged = WorkoutRoute(points=all_points)
-            distance_m = _safe_float(row.get("distance"))
-            scale = WorkoutRoute.calculate_distance_scale_factor(merged.distance_meters, distance_m)
-            split_dist = 1000.0 if distance_unit == "km" else 1609.34
-            splits = merged.compute_splits(split_distance_m=split_dist, distance_scale_factor=scale)
-    elif isinstance(route_obj, WorkoutRoute) and not route_obj.is_empty:
-        distance_m = _safe_float(row.get("distance"))
-        scale = WorkoutRoute.calculate_distance_scale_factor(route_obj.distance_meters, distance_m)
-        split_dist = 1000.0 if distance_unit == "km" else 1609.34
-        splits = route_obj.compute_splits(split_distance_m=split_dist, distance_scale_factor=scale)
-
     return {
         "pace_sort": pace_sort,
         "pace": pace_display,
@@ -347,8 +377,8 @@ def _extract_running_fields(
         "vertical_oscillation": vo_display,
         "ground_contact_time": gct_display,
         "step_count": step_count_display,
-        "vo2_max": vo2_max_display,
-        "splits": splits,
+        "vo2_max": _nearest_vo2_max(workout_date),
+        "splits": _compute_splits_from_row(row, distance_unit),
     }
 
 

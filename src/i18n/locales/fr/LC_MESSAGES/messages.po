@@ -719,7 +719,7 @@ msgstr "VO₂ Max"
 
 # Workout detail modal – tab labels and empty-state messages
 msgid "Splits"
-msgstr "Fractionnés"
+msgstr "Intervalles"
 
 msgid "No activity-specific data available."
 msgstr "Aucune donnée spécifique à cette activité."

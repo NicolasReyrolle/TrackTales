@@ -18,6 +18,7 @@ from ui.css import (
     MODAL_NAV_COUNTER_CLASSES,
     MODAL_NAV_ROW_CLASSES,
     MODAL_SPLITS_TABLE_CLASSES,
+    TABLE_DENSE_FLAT_PROPS,
     TABS_FULL_CLASSES,
 )
 
@@ -203,7 +204,7 @@ def create_workout_detail_modal(
                     splits_table = (
                         ui.table(columns=splits_columns, rows=[], row_key="split")
                         .classes(MODAL_SPLITS_TABLE_CLASSES)
-                        .props("dense flat")
+                        .props(TABLE_DENSE_FLAT_PROPS)
                     )
 
             # ---- Navigation footer ----
@@ -234,16 +235,21 @@ def create_workout_detail_modal(
             _update_fields(running_field_rows, row)
 
     def _refresh_splits_tab(row: dict[str, Any]) -> None:
-        """Update splits tab with GPS-based per-km splits."""
+        """Update splits tab with GPS-based per-km or per-mi splits."""
         splits = row.get("splits") or []
         has_splits = bool(splits)
         no_splits_label.set_visibility(not has_splits)
         splits_table.set_visibility(has_splits)
         if has_splits:
+            du = row.get("distance_unit", "km")
+            # Update column header to reflect the active distance unit (km / mi).
+            splits_columns[0]["label"] = du
+            # pace_min_per_km is always stored as min/km; convert to min/mi for imperial.
+            pace_scale = 1.60934 if du == "mi" else 1.0
             splits_table.rows = [
                 {
                     "split": int(s["split"]),
-                    "pace_str": _format_split_pace(float(s["pace_min_per_km"])),
+                    "pace_str": _format_split_pace(float(s["pace_min_per_km"]) * pace_scale),
                     "elev_str": _format_elevation_change(float(s["elevation_change_m"])),
                 }
                 for s in splits

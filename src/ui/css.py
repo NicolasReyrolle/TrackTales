@@ -125,6 +125,9 @@ CHART_HEADER_ROW_CLASSES = "w-full justify-between items-center"
 #: Dense flat round button for compact icon actions inside chart cards.
 BUTTON_DENSE_PROPS = "flat round dense"
 
+#: Dense flat table props for compact read-only tables (e.g. the splits table in the modal).
+TABLE_DENSE_FLAT_PROPS = "dense flat"
+
 #: Card inside the fullscreen dialog: fills the dialog area as a flex column so
 #: the header keeps its natural height and the chart can grow to fill the rest.
 CHART_FULLSCREEN_CARD_CLASSES = "w-screen h-screen flex flex-col chart-fullscreen-card"
@@ -153,8 +156,9 @@ TABLE_FULL_CLASSES = "w-full"
 # Workout detail modal
 # ---------------------------------------------------------------------------
 
-#: Modal card: fixed width, vertically scrollable for tall content.
-MODAL_CARD_CLASSES = "w-120 max-h-[80vh] overflow-y-auto"
+#: Modal card: fixed width (≈ 30 rem / 480 px), vertically scrollable for tall content.
+#: Uses an arbitrary value because ``w-120`` (30 rem) is not in Tailwind's default scale.
+MODAL_CARD_CLASSES = "w-[30rem] max-h-[80vh] overflow-y-auto"
 
 #: Modal header row: title on the left, close button on the right.
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"

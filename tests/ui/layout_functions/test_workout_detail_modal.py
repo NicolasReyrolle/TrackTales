@@ -506,3 +506,36 @@ class TestSplitsTabSection:
         fn(0)
         splits_table = table_stubs[0]
         assert not splits_table._visible
+
+    def test_pace_converted_to_min_per_mi_for_imperial_splits(self) -> None:
+        """Pace values should be scaled from min/km to min/mi when distance_unit is 'mi'."""
+        # pace_min_per_km=6.0 (6:00/km). Converting to /mi: 6.0 * 1.60934 ≈ 9:39/mi.
+        splits_data = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 0.0}]
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
+                "pace": "6:00 /km",
+                "splits": splits_data,
+                "distance_unit": "mi",
+            },
+        ]
+        table_stubs: list[_DummyElement] = []
+
+        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
+            tbl = _DummyElement()
+            table_stubs.append(tbl)
+            return tbl
+
+        with ExitStack() as stack:
+            for p in _all_patches(table_side_effect=make_table):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        splits_table = table_stubs[0]
+        assert splits_table._visible
+        assert len(splits_table.rows) == 1
+        # 6 min/km × 1.60934 ≈ 9.656 min/mi → "9:39"
+        pace_str = splits_table.rows[0]["pace_str"]
+        minutes = int(pace_str.split(":")[0])
+        assert minutes == 9

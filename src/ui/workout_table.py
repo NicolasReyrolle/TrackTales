@@ -210,24 +210,32 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
     return distance_raw, distance_display
 
 
-def _format_pace(speed_km_h: float) -> str:
-    """Convert speed in km/h to a pace string in ``mm:ss /km`` format.
+def _format_pace(speed_km_h: float, distance_unit: str = "km") -> str:
+    """Convert speed in km/h to a pace string using the active distance unit.
 
     Args:
         speed_km_h: Average speed in kilometres per hour.
+        distance_unit: Display unit for the pace (``"km"`` or ``"mi"``).
 
     Returns:
-        Pace string such as ``"6:42 /km"``, or ``"–"`` when speed is non-positive.
+        Pace string such as ``"6:00 /km"`` or ``"9:40 /mi"``, or ``"–"``
+        when speed is non-positive.
     """
     if speed_km_h <= 0:
         return "–"
-    pace_min = 60.0 / speed_km_h
+    if distance_unit == "mi":
+        display_speed = speed_km_h * 1000.0 * METERS_TO_MILES
+        suffix = "/mi"
+    else:
+        display_speed = speed_km_h
+        suffix = "/km"
+    pace_min = 60.0 / display_speed
     minutes = int(pace_min)
     seconds = int(round((pace_min - minutes) * 60))
     if seconds == 60:
         minutes += 1
         seconds = 0
-    return f"{minutes}:{seconds:02d} /km"
+    return f"{minutes}:{seconds:02d} {suffix}"
 
 
 def _nearest_vo2_max(workout_date: pd.Timestamp | None) -> str:
@@ -250,6 +258,8 @@ def _nearest_vo2_max(workout_date: pd.Timestamp | None) -> str:
         return "–"
 
     dates = pd.to_datetime(vo2_df["startDate"], errors="coerce").dt.tz_localize(None)
+    if not dates.notna().any():
+        return "–"
     deltas = (dates - workout_date).abs()
     min_idx = deltas.idxmin()
     value = _safe_float(vo2_df.loc[min_idx, "value"])
@@ -283,9 +293,9 @@ def _compute_splits_from_row(
 ) -> list[dict[str, float | int]]:
     """Compute per-km (or per-mile) GPS splits from a workout DataFrame row.
 
-    Prefers ``route_parts`` (a list of :class:`WorkoutRoute` segments) when
-    present, merging all parts before computing splits.  Falls back to the
-    single ``route`` field when ``route_parts`` is absent or empty.
+    Uses the merged ``route`` field, which :class:`~logic.export_parser.ExportParser`
+    keeps fully de-duplicated even for workouts that have multiple GPS segments
+    (``route_parts``).  If ``route`` is absent or empty, returns an empty list.
 
     Args:
         row: A pandas Series representing a running workout.
@@ -296,15 +306,6 @@ def _compute_splits_from_row(
     """
     split_dist = 1000.0 if distance_unit == "km" else 1609.34
     distance_m = _safe_float(row.get("distance"))
-
-    route_parts = row.get("route_parts")
-    if isinstance(route_parts, list) and route_parts:
-        all_points = [
-            pt for part in route_parts if isinstance(part, WorkoutRoute) for pt in part.points
-        ]
-        if all_points:
-            merged = WorkoutRoute(points=all_points)
-            return _compute_splits_from_route(merged, distance_m, split_dist)
 
     route_obj = row.get("route")
     if isinstance(route_obj, WorkoutRoute) and not route_obj.is_empty:
@@ -335,7 +336,7 @@ def _extract_running_fields(
     """
     # --- Pace (derived from averageRunningSpeed) ---
     speed_raw = _safe_float(row.get("averageRunningSpeed"))
-    pace_display = _format_pace(speed_raw) if speed_raw is not None else "–"
+    pace_display = _format_pace(speed_raw, distance_unit) if speed_raw is not None else "–"
     pace_sort = (60.0 / speed_raw) if speed_raw is not None and speed_raw > 0 else _MISSING_SORT
 
     # --- Cadence ---
@@ -380,6 +381,7 @@ def _extract_running_fields(
         "step_count": step_count_display,
         "vo2_max": _nearest_vo2_max(workout_date),
         "splits": _compute_splits_from_row(row, distance_unit),
+        "distance_unit": distance_unit,
     }
 
 

@@ -810,6 +810,15 @@ class TestFormatPace:
         assert "60" not in result
         assert result == "7:00 /km"
 
+    def test_imperial_speed_produces_per_mile_pace_string(self) -> None:
+        """With distance_unit='mi', pace should be formatted as '… /mi'."""
+        # 10 km/h in mph ≈ 6.214 mph → pace ≈ 9:39 /mi
+        result = wt._format_pace(10.0, "mi")
+        assert result.endswith("/mi")
+        # Sanity: pace should be in the right ballpark (between 9:00 and 10:30 /mi)
+        minutes_part = int(result.split(":")[0])
+        assert 9 <= minutes_part <= 10
+
 
 class TestNearestVo2Max:
     """Unit tests for _nearest_vo2_max()."""
@@ -859,6 +868,26 @@ class TestNearestVo2Max:
 
         # Record exists but value is None (e.g. exported without measurement)
         vo2_df = pd.DataFrame([{"startDate": "2025-01-01 10:00:00", "value": None}])
+        original = state.records_by_type
+        try:
+            state.records_by_type = RecordsByType(data={"VO2Max": vo2_df})
+            result = wt._nearest_vo2_max(pd.Timestamp("2025-01-01"))
+        finally:
+            state.records_by_type = original
+        assert result == "–"
+
+    def test_returns_dash_when_all_dates_are_unparsable(self) -> None:
+        """Should return '–' when all startDate values are unparsable (all-NaT)."""
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+
+        # All startDate values are garbage strings → pd.to_datetime yields all NaT.
+        vo2_df = pd.DataFrame(
+            [
+                {"startDate": "not-a-date", "value": 50.0},
+                {"startDate": "also-not-a-date", "value": 52.0},
+            ]
+        )
         original = state.records_by_type
         try:
             state.records_by_type = RecordsByType(data={"VO2Max": vo2_df})
@@ -928,6 +957,21 @@ class TestExtractRunningFields:
         result = wt._extract_running_fields(row, None)
         assert result["pace"] == "–"
 
+    def test_pace_formatted_in_imperial_mode(self) -> None:
+        """Pace should be formatted as '/mi' when distance_unit is 'mi'."""
+        row = self._make_row(averageRunningSpeed=10.0)
+        result = wt._extract_running_fields(row, None, distance_unit="mi")
+        assert result["pace"].endswith("/mi")
+        assert "km" not in result["pace"]
+
+    def test_distance_unit_stored_in_result(self) -> None:
+        """The distance_unit used for splits and pace should be stored in the result dict."""
+        row = self._make_row()
+        result_km = wt._extract_running_fields(row, None, distance_unit="km")
+        result_mi = wt._extract_running_fields(row, None, distance_unit="mi")
+        assert result_km["distance_unit"] == "km"
+        assert result_mi["distance_unit"] == "mi"
+
     def test_empty_splits_when_no_route(self) -> None:
         """No route data should produce an empty splits list."""
         row = self._make_row()
@@ -959,31 +1003,32 @@ class TestExtractRunningFields:
         assert len(result["splits"]) >= 3
 
     def test_splits_computed_from_route_parts(self) -> None:
-        """Splits should be merged from route_parts (multiple GPS segments) when present."""
+        """Splits should be computed from a pre-merged route (simulating ExportParser output).
+
+        ExportParser always stores the fully de-duplicated merged route in ``row['route']``
+        whenever ``route_parts`` are accumulated.  This test verifies that splits are
+        correctly derived from such a merged route object.
+        """
         from datetime import timedelta
 
         from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 
         base_time = pd.Timestamp("2024-01-01 10:00:00").to_pydatetime().replace(tzinfo=None)
 
-        # Two separate route segments, each covering ~1500 m at 3 m/s.
-        def _make_part(t_offset: int, n: int) -> WorkoutRoute:
-            return WorkoutRoute(
-                points=[
-                    RoutePoint(
-                        time=base_time + timedelta(seconds=t_offset + i),
-                        latitude=0.0,
-                        longitude=0.0,
-                        altitude=0.0,
-                        speed=3.0,
-                    )
-                    for i in range(n)
-                ]
+        # Simulate a merged route built from two segments of ~1500 m each.
+        # Part 1: t=0..500 at 3 m/s → 1500 m; Part 2: t=501..1001 at 3 m/s → 1500 m.
+        merged_points = [
+            RoutePoint(
+                time=base_time + timedelta(seconds=i),
+                latitude=0.0,
+                longitude=0.0,
+                altitude=0.0,
+                speed=3.0,
             )
-
-        part1 = _make_part(0, 501)  # 500 s × 3 m/s = 1500 m
-        part2 = _make_part(501, 501)  # another 1500 m segment
-        row = self._make_row(route_parts=[part1, part2], distance=3000.0)
+            for i in range(1002)  # 1001 intervals × 3 m/s = 3003 m
+        ]
+        merged_route = WorkoutRoute(points=merged_points)
+        row = self._make_row(route=merged_route, distance=3000.0)
         result = wt._extract_running_fields(row, None)
         # Merged route is ≥ 3000 m → at least 3 complete 1 km splits
         assert len(result["splits"]) >= 3

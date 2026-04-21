@@ -112,11 +112,8 @@ def _compute_splits_lazy(row: dict[str, Any]) -> list[dict[str, Any]]:
     # Use the workout-summary distance for GPS-drift scale correction,
     # mirroring the logic in WorkoutRoute.find_fastest_segment.
     distance_sort = row.get("distance_sort")
-    distance_m = (
-        float(distance_sort)
-        if isinstance(distance_sort, (int, float)) and float(distance_sort) > 0
-        else None
-    )
+    distance_sort_f = float(distance_sort) if isinstance(distance_sort, (int, float)) else None
+    distance_m = distance_sort_f if distance_sort_f is not None and distance_sort_f > 0 else None
     scale = WorkoutRoute.calculate_distance_scale_factor(route_obj.distance_meters, distance_m)
     splits = route_obj.compute_splits(split_distance_m=split_dist, distance_scale_factor=scale)
     row["splits"] = splits

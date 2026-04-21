@@ -203,7 +203,7 @@ class TestBuildWorkoutRows:
         """VO2Max dates should be pre-parsed once and used by _nearest_vo2_max for running rows.
 
         When state.records_by_type contains VO2Max data, _build_workout_rows pre-computes
-        the start dates once (line 111) so _nearest_vo2_max can skip re-parsing per workout.
+        the start dates once so _nearest_vo2_max can skip re-parsing per workout.
         """
         from app_state import state
         from logic.records_by_type import RecordsByType

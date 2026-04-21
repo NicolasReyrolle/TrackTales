@@ -385,6 +385,39 @@ class TestFormatElevationChange:
         assert wdm._format_elevation_change(0.0) == "+0 m"
 
 
+class TestFormatSplitRows:
+    """Unit tests for _format_split_rows()."""
+
+    def test_km_pace_not_scaled(self) -> None:
+        """In km mode the pace value should be used as-is."""
+        splits = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 10.0}]
+        rows = wdm._format_split_rows(splits, "km")
+        assert rows[0]["split"] == 1
+        assert rows[0]["pace_str"] == "6:00"
+        assert rows[0]["elev_str"] == "+10 m"
+
+    def test_mi_pace_is_scaled(self) -> None:
+        """In mi mode the pace should be converted to min/mi (slower than min/km)."""
+        splits = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 0.0}]
+        rows_km = wdm._format_split_rows(splits, "km")
+        rows_mi = wdm._format_split_rows(splits, "mi")
+        # min/mi pace should be larger than min/km for the same speed
+        km_minutes = int(rows_km[0]["pace_str"].split(":")[0])
+        mi_minutes = int(rows_mi[0]["pace_str"].split(":")[0])
+        assert mi_minutes > km_minutes
+
+    def test_multiple_splits_returned(self) -> None:
+        """All splits in the input should be present in the output."""
+        splits = [
+            {"split": 1, "pace_min_per_km": 5.0, "elevation_change_m": 2.0},
+            {"split": 2, "pace_min_per_km": 5.5, "elevation_change_m": -1.0},
+        ]
+        rows = wdm._format_split_rows(splits, "km")
+        assert len(rows) == 2
+        assert rows[1]["split"] == 2
+        assert rows[1]["elev_str"] == "-1 m"
+
+
 class TestActivityTabSection:
     """Tests for the Activity tab rendering in the modal."""
 

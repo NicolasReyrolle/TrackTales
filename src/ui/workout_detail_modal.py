@@ -86,6 +86,33 @@ def _format_elevation_change(elevation_change_m: float) -> str:
     return f"{sign}{int(round(elevation_change_m))} m"
 
 
+def _format_split_rows(
+    splits: list[dict[str, Any]],
+    distance_unit: str,
+) -> list[dict[str, Any]]:
+    """Format raw split dicts into display rows suitable for a ``ui.table``.
+
+    Args:
+        splits: List of split dicts from
+            :meth:`~logic.workout_manager.workout_route.WorkoutRoute.compute_splits`.
+        distance_unit: Active distance unit, ``"km"`` or ``"mi"``.  Controls
+            the pace-scale factor applied before formatting.
+
+    Returns:
+        List of row dicts with ``"split"``, ``"pace_str"``, and ``"elev_str"``
+        keys ready for direct assignment to ``ui.table.rows``.
+    """
+    pace_scale = 1.0 / (1000.0 * METERS_TO_MILES) if distance_unit == "mi" else 1.0
+    return [
+        {
+            "split": int(s["split"]),
+            "pace_str": _format_split_pace(float(s["pace_min_per_km"]) * pace_scale),
+            "elev_str": _format_elevation_change(float(s["elevation_change_m"])),
+        }
+        for s in splits
+    ]
+
+
 def _compute_splits_lazy(row: dict[str, Any]) -> list[dict[str, Any]]:
     """Compute GPS splits from the route stored in *row* and cache the result.
 
@@ -288,16 +315,7 @@ def create_workout_detail_modal(
             du = row.get("distance_unit", "km")
             # Update column header to reflect the active distance unit (km / mi).
             splits_columns[0]["label"] = du
-            # pace_min_per_km is always stored as min/km; convert to min/mi for imperial.
-            pace_scale = 1.0 / (1000.0 * METERS_TO_MILES) if du == "mi" else 1.0
-            splits_table.rows = [
-                {
-                    "split": int(s["split"]),
-                    "pace_str": _format_split_pace(float(s["pace_min_per_km"]) * pace_scale),
-                    "elev_str": _format_elevation_change(float(s["elevation_change_m"])),
-                }
-                for s in splits
-            ]
+            splits_table.rows = _format_split_rows(splits, du)
             splits_table.update()
 
     def _refresh() -> None:

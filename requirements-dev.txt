@@ -12,7 +12,7 @@ mypy==1.20.1
 ruff==0.15.11
 
 # Development
-ipython>=8.0.0
+ipython>=8.39.0
 
 # Type stubs
 pandas-stubs==2.3.3.260113

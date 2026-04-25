@@ -631,7 +631,6 @@ class TestTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        # tab_stubs[0] = overview, tab_stubs[1] = activity, tab_stubs[2] = splits
         assert not tab_stubs[1]._enabled
 
     def test_activity_tab_enabled_for_running(self) -> None:
@@ -759,8 +758,6 @@ class TestRowHasRoute:
             for i in range(5)
         ]
         assert wdm._row_has_route({"route": WorkoutRoute(points=points)})
-
-
 
     """Tests for the Splits tab rendering in the modal."""
 

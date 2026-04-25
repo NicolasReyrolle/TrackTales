@@ -1249,7 +1249,7 @@ class TestExtractWeatherFields:
             "activityType": "Walking",
             "startDate": pd.Timestamp("2025-01-01"),
             "duration": 1000.0,
-            "WeatherTemperature": 22.222,  # ~72 °F converted to °C by parser
+            "WeatherTemperature": 22.222,  # stored in °C (≈72 °F before parser conversion)
             "WeatherHumidity": 80.0,       # 80 % (already divided by 100 by parser)
         }
         base.update(kwargs)

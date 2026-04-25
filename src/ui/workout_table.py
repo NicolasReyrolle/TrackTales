@@ -175,7 +175,7 @@ def _extract_row_data(
     _, temp_display = _build_field_pair(
         row.get("WeatherTemperature"),
         lambda v: (
-            f"{v * 9 / 5 + 32:.1f} °F" if temperature_unit == "°F" else f"{v:.1f} °C"
+            f"{_celsius_to_fahrenheit(v):.1f} °F" if temperature_unit == "°F" else f"{v:.1f} °C"
         ),
     )
     _, humidity_display = _build_field_pair(
@@ -237,6 +237,11 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
     else:
         distance_display = "–"
     return distance_raw, distance_display
+
+
+def _celsius_to_fahrenheit(celsius: float) -> float:
+    """Convert a temperature value from Celsius to Fahrenheit."""
+    return celsius * 9 / 5 + 32
 
 
 def _format_pace(speed_km_h: float, distance_unit: str = "km") -> str:

@@ -18,7 +18,7 @@ from ui.css import (
 )
 from ui.helpers import format_date_label, format_duration_label
 from ui.workout_detail_modal import create_workout_detail_modal
-from units import METERS_TO_FEET, METERS_TO_MILES
+from units import METERS_TO_FEET, METERS_TO_MILES, celsius_to_fahrenheit
 
 _logger = logging.getLogger(__name__)
 
@@ -175,7 +175,7 @@ def _extract_row_data(
     _, temp_display = _build_field_pair(
         row.get("WeatherTemperature"),
         lambda v: (
-            f"{_celsius_to_fahrenheit(v):.1f} °F" if temperature_unit == "°F" else f"{v:.1f} °C"
+            f"{celsius_to_fahrenheit(v):.1f} °F" if temperature_unit == "°F" else f"{v:.1f} °C"
         ),
     )
     _, humidity_display = _build_field_pair(
@@ -203,6 +203,10 @@ def _extract_row_data(
         "avg_power": power_display,
         "temperature": temp_display,
         "humidity": humidity_display,
+        # Route and distance_unit stored for all activity types so the Splits
+        # tab can be enabled for any workout that has a GPS route (e.g. Cycling).
+        "route": row.get("route"),
+        "distance_unit": distance_unit,
     }
 
     if raw_activity == "Running":
@@ -237,11 +241,6 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
     else:
         distance_display = "–"
     return distance_raw, distance_display
-
-
-def _celsius_to_fahrenheit(celsius: float) -> float:
-    """Convert a temperature value from Celsius to Fahrenheit."""
-    return celsius * 9 / 5 + 32
 
 
 def _format_pace(speed_km_h: float, distance_unit: str = "km") -> str:
@@ -323,22 +322,15 @@ def _extract_running_fields(
     Fields that are absent or ``NaN`` fall back to the missing-data sentinel
     ``"–"`` so the modal can hide them automatically.
 
-    GPS splits are **not** computed here; instead, the raw
-    :class:`~logic.workout_manager.workout_route.WorkoutRoute` object is stored
-    under the ``"route"`` key so the modal can compute splits lazily on first
-    open (see :func:`~ui.workout_detail_modal.create_workout_detail_modal`).
-
     Args:
         row: A pandas Series representing a running workout.
         workout_date: The workout start date used for VO2 max look-up.
-        distance_unit: ``"km"`` or ``"mi"`` (affects split display label).
+        distance_unit: ``"km"`` or ``"mi"`` (affects pace display label).
         vo2_dates: Pre-parsed, tz-naive VO2Max start dates; passed through to
             :func:`_nearest_vo2_max` to avoid repeating the parse per workout.
 
     Returns:
-        A dict with running-specific display and sort values.  The ``"route"``
-        key holds the :class:`~logic.workout_manager.workout_route.WorkoutRoute`
-        object (or ``None``) for lazy split computation in the modal.
+        A dict with running-specific display and sort values.
     """
     # --- Pace (derived from averageRunningSpeed) ---
     speed_raw = _safe_float(row.get("averageRunningSpeed"))
@@ -386,9 +378,6 @@ def _extract_running_fields(
         "ground_contact_time": gct_display,
         "step_count": step_count_display,
         "vo2_max": _nearest_vo2_max(workout_date, vo2_dates),
-        # Route stored here; splits computed lazily by the modal on first open.
-        "route": row.get("route"),
-        "distance_unit": distance_unit,
     }
 
 
@@ -407,9 +396,7 @@ def _extract_walking_fields(
         distance_unit: ``"km"`` or ``"mi"`` (affects pace display).
 
     Returns:
-        A dict with walking-specific display and sort values.  The ``"route"``
-        key holds the :class:`~logic.workout_manager.workout_route.WorkoutRoute`
-        object (or ``None``) for lazy split computation in the modal.
+        A dict with walking-specific display and sort values.
     """
     # --- Pace (derived from averageWalkingSpeed) ---
     speed_raw = _safe_float(row.get("averageWalkingSpeed"))
@@ -441,9 +428,6 @@ def _extract_walking_fields(
         "cadence": cadence_display,
         "step_length": step_length_display,
         "step_count": step_count_display,
-        # Route stored here; splits computed lazily by the modal on first open.
-        "route": row.get("route"),
-        "distance_unit": distance_unit,
     }
 
 

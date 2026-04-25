@@ -999,16 +999,16 @@ class TestExtractRunningFields:
     def test_distance_unit_stored_in_result(self) -> None:
         """The distance_unit used for splits and pace should be stored in the result dict."""
         row = self._make_row()
-        result_km = wt._extract_running_fields(row, None, distance_unit="km")
-        result_mi = wt._extract_running_fields(row, None, distance_unit="mi")
+        result_km = wt._extract_row_data(row, 0, "en", distance_unit="km")
+        result_mi = wt._extract_row_data(row, 0, "en", distance_unit="mi")
         assert result_km["distance_unit"] == "km"
         assert result_mi["distance_unit"] == "mi"
 
     def test_route_stored_for_lazy_splits_when_no_route(self) -> None:
         """When no route is present the 'route' key should be None (lazy splits return [])."""
         row = self._make_row()
-        result = wt._extract_running_fields(row, None)
-        assert result.get("route") is None
+        result = wt._extract_row_data(row, 0, "en")
+        assert result["route"] is None
         assert "splits" not in result
 
     def test_route_stored_for_lazy_splits_from_route(self) -> None:
@@ -1032,7 +1032,7 @@ class TestExtractRunningFields:
         ]
         route = WorkoutRoute(points=points)
         row = self._make_row(route=route, distance=3000.0)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_row_data(row, 0, "en")
         # Route stored for lazy computation; no pre-computed splits key.
         assert result["route"] is route
         assert "splits" not in result
@@ -1063,7 +1063,7 @@ class TestExtractRunningFields:
         ]
         merged_route = WorkoutRoute(points=merged_points)
         row = self._make_row(route=merged_route, distance=3000.0)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_row_data(row, 0, "en")
         # Route reference stored; no eager split computation.
         assert result["route"] is merged_route
         assert "splits" not in result
@@ -1117,7 +1117,8 @@ class TestExtractRunningFields:
         row = rows[0]
         assert "pace" not in row
         assert "cadence" not in row
-        assert "route" not in row
+        # 'route' is always present in the base result; it is None when there is no GPS data.
+        assert row["route"] is None
 
 
 class TestExtractWalkingFields:
@@ -1176,16 +1177,16 @@ class TestExtractWalkingFields:
     def test_distance_unit_stored_in_result(self) -> None:
         """The distance_unit used for pace should be stored in the result dict."""
         row = self._make_row()
-        result_km = wt._extract_walking_fields(row, distance_unit="km")
-        result_mi = wt._extract_walking_fields(row, distance_unit="mi")
+        result_km = wt._extract_row_data(row, 0, "en", distance_unit="km")
+        result_mi = wt._extract_row_data(row, 0, "en", distance_unit="mi")
         assert result_km["distance_unit"] == "km"
         assert result_mi["distance_unit"] == "mi"
 
     def test_route_stored_for_lazy_splits_when_no_route(self) -> None:
         """When no route is present the 'route' key should be None."""
         row = self._make_row()
-        result = wt._extract_walking_fields(row)
-        assert result.get("route") is None
+        result = wt._extract_row_data(row, 0, "en")
+        assert result["route"] is None
         assert "splits" not in result
 
     def test_walking_fields_included_for_walking_workouts(self) -> None:

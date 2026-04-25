@@ -165,7 +165,7 @@ MODAL_CARD_CLASSES = "w-[30rem]"
 #: resize when switching between Overview, Activity, and Splits tabs.
 #: Overflow-y scrolling is enabled so long content (e.g. many splits) can still
 #: be reached within the fixed area.
-MODAL_TAB_PANELS_CLASSES = "w-full h-[20rem] overflow-y-auto"
+MODAL_TAB_PANELS_CLASSES = "w-full h-[30rem] overflow-y-auto"
 
 #: Modal header row: title on the left, close button on the right.
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"

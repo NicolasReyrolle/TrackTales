@@ -169,6 +169,12 @@ msgstr ""
 msgid "Avg Power"
 msgstr ""
 
+msgid "Temperature"
+msgstr ""
+
+msgid "Humidity"
+msgstr ""
+
 msgid "Measured from segment samples"
 msgstr ""
 

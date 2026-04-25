@@ -999,16 +999,16 @@ class TestExtractRunningFields:
     def test_distance_unit_stored_in_result(self) -> None:
         """The distance_unit used for splits and pace should be stored in the result dict."""
         row = self._make_row()
-        result_km = wt._extract_running_fields(row, None, distance_unit="km")
-        result_mi = wt._extract_running_fields(row, None, distance_unit="mi")
+        result_km = wt._extract_row_data(row, 0, "en", distance_unit="km")
+        result_mi = wt._extract_row_data(row, 0, "en", distance_unit="mi")
         assert result_km["distance_unit"] == "km"
         assert result_mi["distance_unit"] == "mi"
 
     def test_route_stored_for_lazy_splits_when_no_route(self) -> None:
         """When no route is present the 'route' key should be None (lazy splits return [])."""
         row = self._make_row()
-        result = wt._extract_running_fields(row, None)
-        assert result.get("route") is None
+        result = wt._extract_row_data(row, 0, "en")
+        assert result["route"] is None
         assert "splits" not in result
 
     def test_route_stored_for_lazy_splits_from_route(self) -> None:
@@ -1032,7 +1032,7 @@ class TestExtractRunningFields:
         ]
         route = WorkoutRoute(points=points)
         row = self._make_row(route=route, distance=3000.0)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_row_data(row, 0, "en")
         # Route stored for lazy computation; no pre-computed splits key.
         assert result["route"] is route
         assert "splits" not in result
@@ -1063,7 +1063,7 @@ class TestExtractRunningFields:
         ]
         merged_route = WorkoutRoute(points=merged_points)
         row = self._make_row(route=merged_route, distance=3000.0)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_row_data(row, 0, "en")
         # Route reference stored; no eager split computation.
         assert result["route"] is merged_route
         assert "splits" not in result
@@ -1117,4 +1117,232 @@ class TestExtractRunningFields:
         row = rows[0]
         assert "pace" not in row
         assert "cadence" not in row
-        assert "route" not in row
+        # 'route' is always present in the base result; it is None when there is no GPS data.
+        assert row["route"] is None
+
+
+class TestExtractWalkingFields:
+    """Unit tests for _extract_walking_fields()."""
+
+    def _make_row(self, **kwargs: Any) -> dict[str, Any]:
+        """Build a minimal row dict with walking statistics."""
+        base: dict[str, Any] = {
+            "activityType": "Walking",
+            "averageWalkingSpeed": 5.0,  # 5 km/h → 12:00 /km
+            "averageWalkingCadence": 110.0,
+            "averageWalkingStepLength": 0.72,
+            "sumStepCount": 6500.0,
+        }
+        base.update(kwargs)
+        return base
+
+    def test_pace_derived_from_walking_speed(self) -> None:
+        """Pace should be derived from averageWalkingSpeed."""
+        row = self._make_row(averageWalkingSpeed=5.0)
+        result = wt._extract_walking_fields(row)
+        assert result["pace"] == "12:00 /km"
+
+    def test_cadence_formatted(self) -> None:
+        """Cadence should show 'spm' unit."""
+        row = self._make_row(averageWalkingCadence=110.0)
+        result = wt._extract_walking_fields(row)
+        assert result["cadence"] == "110 spm"
+
+    def test_step_length_formatted(self) -> None:
+        """Step length should show 'm' unit to 2 decimal places."""
+        row = self._make_row(averageWalkingStepLength=0.72)
+        result = wt._extract_walking_fields(row)
+        assert result["step_length"] == "0.72 m"
+
+    def test_step_count_formatted(self) -> None:
+        """Step count should be an integer string."""
+        row = self._make_row(sumStepCount=6500.0)
+        result = wt._extract_walking_fields(row)
+        assert result["step_count"] == "6500"
+
+    def test_missing_speed_produces_dash(self) -> None:
+        """Missing averageWalkingSpeed should produce '–' for pace."""
+        row = self._make_row()
+        del row["averageWalkingSpeed"]
+        result = wt._extract_walking_fields(row)
+        assert result["pace"] == "–"
+
+    def test_pace_formatted_in_imperial_mode(self) -> None:
+        """Pace should be formatted as '/mi' when distance_unit is 'mi'."""
+        row = self._make_row(averageWalkingSpeed=5.0)
+        result = wt._extract_walking_fields(row, distance_unit="mi")
+        assert result["pace"].endswith("/mi")
+        assert "km" not in result["pace"]
+
+    def test_distance_unit_stored_in_result(self) -> None:
+        """The distance_unit used for pace should be stored in the result dict."""
+        row = self._make_row()
+        result_km = wt._extract_row_data(row, 0, "en", distance_unit="km")
+        result_mi = wt._extract_row_data(row, 0, "en", distance_unit="mi")
+        assert result_km["distance_unit"] == "km"
+        assert result_mi["distance_unit"] == "mi"
+
+    def test_route_stored_for_lazy_splits_when_no_route(self) -> None:
+        """When no route is present the 'route' key should be None."""
+        row = self._make_row()
+        result = wt._extract_row_data(row, 0, "en")
+        assert result["route"] is None
+        assert "splits" not in result
+
+    def test_walking_fields_included_for_walking_workouts(self) -> None:
+        """Walking-specific keys should be present in the row dict for Walking workouts."""
+        original_workouts: Any = state.workouts
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Walking",
+                    "startDate": pd.Timestamp("2025-09-16"),
+                    "duration": 1800.0,
+                    "averageWalkingSpeed": 5.0,
+                    "averageWalkingCadence": 110.0,
+                    "sumStepCount": 6500.0,
+                }
+            ]
+        )
+        try:
+            state.workouts = workouts_mock
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["pace"] == "12:00 /km"
+        assert row["cadence"] == "110 spm"
+        assert row["step_count"] == "6500"
+        assert "route" in row
+
+    def test_walking_fields_absent_for_non_walking_workouts(self) -> None:
+        """Non-Walking workouts should not have walking-specific keys."""
+        original_workouts: Any = state.workouts
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Cycling",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 3600.0,
+                }
+            ]
+        )
+        try:
+            state.workouts = workouts_mock
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+        assert len(rows) == 1
+        row = rows[0]
+        assert "step_length" not in row
+        assert "step_count" not in row
+
+
+class TestExtractWeatherFields:
+    """Unit tests for temperature and humidity extraction in _extract_row_data()."""
+
+    def _make_row(self, **kwargs: Any) -> dict[str, Any]:
+        """Build a minimal workout row with weather data."""
+        base: dict[str, Any] = {
+            "activityType": "Walking",
+            "startDate": pd.Timestamp("2025-01-01"),
+            "duration": 1000.0,
+            "WeatherTemperature": 22.222,  # stored in °C (≈72 °F before parser conversion)
+            "WeatherHumidity": 80.0,  # 80 % (already divided by 100 by parser)
+        }
+        base.update(kwargs)
+        return base
+
+    def test_temperature_displayed_in_celsius_for_metric(self) -> None:
+        """Temperature should show °C when unit system is metric."""
+        row = self._make_row()
+        result = wt._extract_row_data(row, 0, "en", temperature_unit="°C")
+        assert result["temperature"] == "22.2 °C"
+
+    def test_temperature_displayed_in_fahrenheit_for_imperial(self) -> None:
+        """Temperature should be converted back to °F for imperial unit system."""
+        row = self._make_row(WeatherTemperature=0.0)  # 0 °C = 32 °F
+        result = wt._extract_row_data(row, 0, "en", temperature_unit="°F")
+        assert result["temperature"] == "32.0 °F"
+
+    def test_temperature_conversion_accuracy(self) -> None:
+        """22.222 °C should convert to approximately 72.0 °F."""
+        row = self._make_row(WeatherTemperature=22.222)
+        result = wt._extract_row_data(row, 0, "en", temperature_unit="°F")
+        # 22.222 * 9/5 + 32 = 71.9996 ≈ 72.0 °F
+        assert result["temperature"] == "72.0 °F"
+
+    def test_missing_temperature_produces_dash(self) -> None:
+        """Missing WeatherTemperature should produce '–'."""
+        row = self._make_row()
+        del row["WeatherTemperature"]
+        result = wt._extract_row_data(row, 0, "en", temperature_unit="°C")
+        assert result["temperature"] == "–"
+
+    def test_humidity_displayed_as_integer_percentage(self) -> None:
+        """Humidity should show as an integer percentage string."""
+        row = self._make_row(WeatherHumidity=80.0)
+        result = wt._extract_row_data(row, 0, "en")
+        assert result["humidity"] == "80 %"
+
+    def test_humidity_rounds_to_nearest_integer(self) -> None:
+        """Fractional humidity should be rounded to nearest integer."""
+        row = self._make_row(WeatherHumidity=65.6)
+        result = wt._extract_row_data(row, 0, "en")
+        assert result["humidity"] == "66 %"
+
+    def test_missing_humidity_produces_dash(self) -> None:
+        """Missing WeatherHumidity should produce '–'."""
+        row = self._make_row()
+        del row["WeatherHumidity"]
+        result = wt._extract_row_data(row, 0, "en")
+        assert result["humidity"] == "–"
+
+    def test_weather_fields_in_build_workout_rows(self) -> None:
+        """Weather fields should be present in rows built by _build_workout_rows()."""
+        original_workouts: Any = state.workouts
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Walking",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 1000.0,
+                    "WeatherTemperature": 22.222,
+                    "WeatherHumidity": 80.0,
+                }
+            ]
+        )
+        try:
+            state.workouts = workouts_mock
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+        assert len(rows) == 1
+        assert rows[0]["temperature"] == "22.2 °C"
+        assert rows[0]["humidity"] == "80 %"
+
+    def test_weather_fields_missing_when_absent_from_workout(self) -> None:
+        """Workouts without weather metadata should show '–' for temperature and humidity."""
+        original_workouts: Any = state.workouts
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 3600.0,
+                }
+            ]
+        )
+        try:
+            state.workouts = workouts_mock
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+        assert len(rows) == 1
+        assert rows[0]["temperature"] == "–"
+        assert rows[0]["humidity"] == "–"

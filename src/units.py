@@ -13,3 +13,8 @@ METERS_TO_FEET: float = 1 / 0.3048
 
 #: Multiply kilograms by this value to obtain pounds.
 KG_TO_LBS: float = 2.20462
+
+
+def celsius_to_fahrenheit(celsius: float) -> float:
+    """Convert a temperature value from Celsius to Fahrenheit."""
+    return celsius * 9 / 5 + 32

@@ -73,6 +73,14 @@ def get_weight_unit() -> str:
     return "lbs" if get_unit_system() == "imperial" else "kg"
 
 
+def get_temperature_unit() -> str:
+    """Return the active temperature unit derived from the current unit system.
+
+    Returns ``"°F"`` for imperial, ``"°C"`` for metric.
+    """
+    return "°F" if get_unit_system() == "imperial" else "°C"
+
+
 class AppState:
     """Application state."""
 

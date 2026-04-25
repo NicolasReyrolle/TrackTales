@@ -75,6 +75,9 @@ If two rules at the same level conflict, choose the simpler option and state the
 - Keep functions under 50 lines where practical. If a function exceeds this, consider refactoring into smaller functions.
 - Each module must contain less than 1000 lines of code. If a module exceeds this, consider splitting it into smaller modules.
 
+### After coding
+- Run `ruff format src tests`
+
 ### Validation scope (default)
 - Validate changed files and directly affected tests first.
 - Run wider suites (`tests/`, full lint, full type-check) only when:

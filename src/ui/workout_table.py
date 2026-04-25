@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from nicegui import ui
 
-from app_state import get_distance_unit, get_elevation_unit, state
+from app_state import get_distance_unit, get_elevation_unit, get_temperature_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
 from ui.css import (
@@ -18,7 +18,7 @@ from ui.css import (
 )
 from ui.helpers import format_date_label, format_duration_label
 from ui.workout_detail_modal import create_workout_detail_modal
-from units import METERS_TO_FEET, METERS_TO_MILES
+from units import METERS_TO_FEET, METERS_TO_MILES, celsius_to_fahrenheit
 
 _logger = logging.getLogger(__name__)
 
@@ -101,6 +101,7 @@ def _build_workout_rows() -> list[dict[str, Any]]:
 
     language_code = get_language()
     elevation_unit = get_elevation_unit()
+    temperature_unit = get_temperature_unit()
     rows: list[dict[str, Any]] = []
 
     # Pre-parse VO2Max dates once so _nearest_vo2_max avoids repeating the
@@ -112,7 +113,7 @@ def _build_workout_rows() -> list[dict[str, Any]]:
 
     for idx, (_, row) in enumerate(df.iterrows()):
         row_data = _extract_row_data(
-            row, idx, language_code, distance_unit, elevation_unit, vo2_dates
+            row, idx, language_code, distance_unit, elevation_unit, vo2_dates, temperature_unit
         )
         rows.append(row_data)
 
@@ -126,6 +127,7 @@ def _extract_row_data(
     distance_unit: str = "km",
     elevation_unit: str = "m",
     vo2_dates: pd.Series | None = None,
+    temperature_unit: str = "°C",
 ) -> dict[str, Any]:
     """Extract and format a single workout row.
 
@@ -137,6 +139,7 @@ def _extract_row_data(
         elevation_unit: The display unit for elevation values (``"m"`` or ``"ft"``).
         vo2_dates: Pre-parsed tz-naive VO2Max start dates; when provided avoids
             re-parsing inside :func:`_nearest_vo2_max` for each row.
+        temperature_unit: The display unit for temperature (``"°C"`` or ``"°F"``).
 
     Returns:
         A dictionary with sort and display values for all columns.
@@ -169,6 +172,17 @@ def _extract_row_data(
         lambda v: f"{int(round(v))} W",
     )
 
+    _, temp_display = _build_field_pair(
+        row.get("WeatherTemperature"),
+        lambda v: (
+            f"{celsius_to_fahrenheit(v):.1f} °F" if temperature_unit == "°F" else f"{v:.1f} °C"
+        ),
+    )
+    _, humidity_display = _build_field_pair(
+        row.get("WeatherHumidity"),
+        lambda v: f"{int(round(v))} %",
+    )
+
     result: dict[str, Any] = {
         "id": f"{date_sort}_{idx}",
         "date_sort": date_sort,
@@ -187,12 +201,20 @@ def _extract_row_data(
         "elevation": elev_display,
         "avg_power_sort": power_sort,
         "avg_power": power_display,
+        "temperature": temp_display,
+        "humidity": humidity_display,
+        # Route and distance_unit stored for all activity types so the Splits
+        # tab can be enabled for any workout that has a GPS route (e.g. Cycling).
+        "route": row.get("route"),
+        "distance_unit": distance_unit,
     }
 
     if raw_activity == "Running":
         start_date_raw = row.get("startDate")
         workout_date = start_date_raw if isinstance(start_date_raw, pd.Timestamp) else None
         result.update(_extract_running_fields(row, workout_date, distance_unit, vo2_dates))
+    elif raw_activity == "Walking":
+        result.update(_extract_walking_fields(row, distance_unit))
 
     return result
 
@@ -300,22 +322,15 @@ def _extract_running_fields(
     Fields that are absent or ``NaN`` fall back to the missing-data sentinel
     ``"–"`` so the modal can hide them automatically.
 
-    GPS splits are **not** computed here; instead, the raw
-    :class:`~logic.workout_manager.workout_route.WorkoutRoute` object is stored
-    under the ``"route"`` key so the modal can compute splits lazily on first
-    open (see :func:`~ui.workout_detail_modal.create_workout_detail_modal`).
-
     Args:
         row: A pandas Series representing a running workout.
         workout_date: The workout start date used for VO2 max look-up.
-        distance_unit: ``"km"`` or ``"mi"`` (affects split display label).
+        distance_unit: ``"km"`` or ``"mi"`` (affects pace display label).
         vo2_dates: Pre-parsed, tz-naive VO2Max start dates; passed through to
             :func:`_nearest_vo2_max` to avoid repeating the parse per workout.
 
     Returns:
-        A dict with running-specific display and sort values.  The ``"route"``
-        key holds the :class:`~logic.workout_manager.workout_route.WorkoutRoute`
-        object (or ``None``) for lazy split computation in the modal.
+        A dict with running-specific display and sort values.
     """
     # --- Pace (derived from averageRunningSpeed) ---
     speed_raw = _safe_float(row.get("averageRunningSpeed"))
@@ -363,9 +378,56 @@ def _extract_running_fields(
         "ground_contact_time": gct_display,
         "step_count": step_count_display,
         "vo2_max": _nearest_vo2_max(workout_date, vo2_dates),
-        # Route stored here; splits computed lazily by the modal on first open.
-        "route": row.get("route"),
-        "distance_unit": distance_unit,
+    }
+
+
+def _extract_walking_fields(
+    row: Any,
+    distance_unit: str = "km",
+) -> dict[str, Any]:
+    """Extract walking-specific display fields from a workout DataFrame row.
+
+    Fields are populated only when the corresponding statistics are present.
+    Fields that are absent or ``NaN`` fall back to the missing-data sentinel
+    ``"–"`` so the modal can hide them automatically.
+
+    Args:
+        row: A pandas Series representing a walking workout.
+        distance_unit: ``"km"`` or ``"mi"`` (affects pace display).
+
+    Returns:
+        A dict with walking-specific display and sort values.
+    """
+    # --- Pace (derived from averageWalkingSpeed) ---
+    speed_raw = _safe_float(row.get("averageWalkingSpeed"))
+    pace_display = _format_pace(speed_raw, distance_unit) if speed_raw is not None else "–"
+    pace_sort = (60.0 / speed_raw) if speed_raw is not None and speed_raw > 0 else _MISSING_SORT
+
+    # --- Cadence ---
+    cadence_sort, cadence_display = _build_field_pair(
+        row.get("averageWalkingCadence"),
+        lambda v: f"{int(round(v))} spm",
+    )
+
+    # --- Step length ---
+    _, step_length_display = _build_field_pair(
+        row.get("averageWalkingStepLength"),
+        lambda v: f"{v:.2f} m",
+    )
+
+    # --- Step count ---
+    _, step_count_display = _build_field_pair(
+        row.get("sumStepCount"),
+        lambda v: f"{int(round(v))}",
+    )
+
+    return {
+        "pace_sort": pace_sort,
+        "pace": pace_display,
+        "cadence_sort": cadence_sort,
+        "cadence": cadence_display,
+        "step_length": step_length_display,
+        "step_count": step_count_display,
     }
 
 

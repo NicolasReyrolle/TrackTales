@@ -174,6 +174,12 @@ msgstr "W'"
 msgid "Avg Power"
 msgstr "Puiss. moy."
 
+msgid "Temperature"
+msgstr "Température"
+
+msgid "Humidity"
+msgstr "Humidité"
+
 msgid "Measured from segment samples"
 msgstr "Mesuré à partir des échantillons du segment"
 

@@ -162,6 +162,7 @@ def _all_patches(
     label_side_effect: Any = None,
     column_side_effect: Any = None,
     table_side_effect: Any = None,
+    tab_side_effect: Any = None,
     tabs_stub: _DummyElement | None = None,
 ) -> list[Any]:
     """Return a list of context-manager patches for all NiceGUI elements used in the modal.
@@ -169,6 +170,8 @@ def _all_patches(
     Callers may override individual element factories via keyword arguments.
     Pass *tabs_stub* to receive the ``ui.tabs`` instance back for simulating
     tab-change events via :meth:`_DummyElement.fire_value_change`.
+    Pass *tab_side_effect* to capture individual ``ui.tab`` instances (created in
+    order: overview, activity, splits).
     """
     stub = _DummyElement()
     effective_tabs = tabs_stub if tabs_stub is not None else stub
@@ -177,7 +180,10 @@ def _all_patches(
         patch("ui.workout_detail_modal.ui.card", return_value=stub),
         patch("ui.workout_detail_modal.ui.row", return_value=stub),
         patch("ui.workout_detail_modal.ui.tabs", return_value=effective_tabs),
-        patch("ui.workout_detail_modal.ui.tab", return_value=stub),
+        patch(
+            "ui.workout_detail_modal.ui.tab",
+            side_effect=tab_side_effect or (lambda *a, **kw: _DummyElement()),
+        ),
         patch("ui.workout_detail_modal.ui.tab_panels", return_value=stub),
         patch("ui.workout_detail_modal.ui.tab_panel", return_value=stub),
         patch(
@@ -205,12 +211,36 @@ class TestFieldDisplay:
     def test_all_expected_keys_present(self) -> None:
         """_FIELD_DISPLAY should cover all generic row fields shown in the table."""
         field_keys = {key for key, _ in wdm._FIELD_DISPLAY}
-        for expected in ["date", "activity_type", "duration", "distance", "calories"]:
+        for expected in [
+            "date",
+            "activity_type",
+            "duration",
+            "distance",
+            "calories",
+            "temperature",
+            "humidity",
+        ]:
             assert expected in field_keys
 
     def test_labels_are_non_empty_strings(self) -> None:
         """Every label in _FIELD_DISPLAY should be a callable returning a non-empty string."""
         for _key, label_fn in wdm._FIELD_DISPLAY:
+            assert callable(label_fn)
+            assert label_fn() and isinstance(label_fn(), str)
+
+
+class TestWalkingFieldDisplay:
+    """Tests for the _WALKING_FIELD_DISPLAY constant."""
+
+    def test_all_expected_keys_present(self) -> None:
+        """_WALKING_FIELD_DISPLAY should include pace, cadence, step_length, and step_count."""
+        field_keys = {key for key, _ in wdm._WALKING_FIELD_DISPLAY}
+        for expected in ["pace", "cadence", "step_length", "step_count"]:
+            assert expected in field_keys
+
+    def test_labels_are_non_empty_strings(self) -> None:
+        """Every label in _WALKING_FIELD_DISPLAY should return a non-empty string."""
+        for _key, label_fn in wdm._WALKING_FIELD_DISPLAY:
             assert callable(label_fn)
             assert label_fn() and isinstance(label_fn(), str)
 
@@ -437,7 +467,6 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        # column_stubs[0] = running_container (the only ui.column() in the modal)
         running_container = column_stubs[0]
         assert not running_container._visible
 
@@ -498,6 +527,308 @@ class TestActivityTabSection:
         fn(0)
         running_container = column_stubs[0]
         assert running_container._visible  # must be shown despite translated label
+
+    def test_walking_container_hidden_for_non_walking_activity(self) -> None:
+        """Walking container should be hidden when raw_activity_type is not 'Walking'."""
+        rows = [_make_row(idx=0, activity_type="Cycling", raw_activity_type="Cycling")]
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with ExitStack() as stack:
+            for p in _all_patches(column_side_effect=make_column):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        walking_container = column_stubs[1]
+        assert not walking_container._visible
+
+    def test_walking_container_visible_for_walking_activity(self) -> None:
+        """Walking container should be visible when raw_activity_type is 'Walking'."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Walking", raw_activity_type="Walking"),
+                "pace": "12:00 /km",
+                "cadence": "110 spm",
+                "step_length": "0.72 m",
+                "step_count": "6500",
+                "splits": [],
+            },
+        ]
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with ExitStack() as stack:
+            for p in _all_patches(column_side_effect=make_column):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        running_container = column_stubs[0]
+        walking_container = column_stubs[1]
+        assert not running_container._visible
+        assert walking_container._visible
+
+    def test_walking_container_uses_raw_activity_type(self) -> None:
+        """Walking container must use raw_activity_type, not the translated display label.
+
+        Simulates a locale where activity_type is translated but raw_activity_type
+        remains 'Walking'.  The walking container must still be shown.
+        """
+        rows = [
+            {
+                **_make_row(
+                    idx=0,
+                    activity_type="Marche",  # translated display label
+                    raw_activity_type="Walking",  # raw Apple Health type (always English)
+                ),
+                "pace": "12:00 /km",
+                "cadence": "110 spm",
+                "step_length": "0.72 m",
+                "step_count": "6500",
+                "splits": [],
+            },
+        ]
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with ExitStack() as stack:
+            for p in _all_patches(column_side_effect=make_column):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        walking_container = column_stubs[1]
+        assert walking_container._visible  # must be shown despite translated label
+
+
+class TestTabEnableState:
+    """Tests for Activity and Splits tab enable/disable state."""
+
+    def _make_tab_stubs(self) -> tuple[list[_DummyElement], Any]:
+        """Return (tab_stubs list, tab_side_effect factory)."""
+        tab_stubs: list[_DummyElement] = []
+
+        def make_tab(*_a: Any, **_kw: Any) -> _DummyElement:
+            tab = _DummyElement()
+            tab_stubs.append(tab)
+            return tab
+
+        return tab_stubs, make_tab
+
+    def test_activity_tab_disabled_for_unsupported_activity(self) -> None:
+        """Activity tab should be disabled when no type-specific data is available."""
+        rows = [_make_row(idx=0, activity_type="Cycling", raw_activity_type="Cycling")]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert not tab_stubs[1]._enabled
+
+    def test_activity_tab_enabled_for_running(self) -> None:
+        """Activity tab should be enabled for Running workouts."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
+                "pace": "6:00 /km",
+                "splits": [],
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert tab_stubs[1]._enabled
+
+    def test_activity_tab_enabled_for_walking(self) -> None:
+        """Activity tab should be enabled for Walking workouts."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Walking", raw_activity_type="Walking"),
+                "pace": "12:00 /km",
+                "cadence": "110 spm",
+                "step_length": "0.72 m",
+                "step_count": "6500",
+                "splits": [],
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert tab_stubs[1]._enabled
+
+    def test_activity_tab_disabled_for_walking_with_no_data(self) -> None:
+        """Activity tab should be disabled for a Walking workout with all fields missing."""
+        rows = [_make_row(idx=0, activity_type="Walking", raw_activity_type="Walking")]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert not tab_stubs[1]._enabled
+
+    def test_splits_tab_disabled_when_no_route(self) -> None:
+        """Splits tab should be disabled when the workout has no GPS route."""
+        rows = [_make_row(idx=0, activity_type="Running", raw_activity_type="Running")]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert not tab_stubs[2]._enabled
+
+    def test_splits_tab_enabled_when_route_present(self) -> None:
+        """Splits tab should be enabled when the workout has a non-empty GPS route."""
+        from datetime import timedelta
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = __import__("pandas").Timestamp("2024-01-01 10:00:00").to_pydatetime()
+        points = [
+            RoutePoint(
+                time=base_time + timedelta(seconds=i),
+                latitude=0.0,
+                longitude=0.0,
+                altitude=100.0,
+                speed=3.0,
+            )
+            for i in range(100)
+        ]
+        route = WorkoutRoute(points=points)
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
+                "route": route,
+                "splits": [],
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert tab_stubs[2]._enabled
+
+
+class TestRowHasRoute:
+    """Tests for the _row_has_route helper."""
+
+    def test_returns_false_when_no_route_key(self) -> None:
+        """Row without a 'route' key should return False."""
+        assert not wdm._row_has_route({})
+
+    def test_returns_false_when_route_is_none(self) -> None:
+        """Row with route=None should return False."""
+        assert not wdm._row_has_route({"route": None})
+
+    def test_returns_false_for_empty_route(self) -> None:
+        """Row with an empty WorkoutRoute should return False."""
+        from logic.workout_manager.workout_route import WorkoutRoute
+
+        assert not wdm._row_has_route({"route": WorkoutRoute(points=[])})
+
+    def test_returns_true_for_non_empty_route(self) -> None:
+        """Row with a non-empty WorkoutRoute should return True."""
+        from datetime import timedelta
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = __import__("pandas").Timestamp("2024-01-01").to_pydatetime()
+        points = [
+            RoutePoint(
+                time=base_time + timedelta(seconds=i),
+                latitude=0.0,
+                longitude=0.0,
+                altitude=0.0,
+                speed=1.0,
+            )
+            for i in range(5)
+        ]
+        assert wdm._row_has_route({"route": WorkoutRoute(points=points)})
+
+
+class TestRowHasActivityData:
+    """Tests for the _row_has_activity_data helper."""
+
+    def test_returns_false_for_unknown_activity_type(self) -> None:
+        """Unsupported activity type has no activity-specific field keys → False."""
+        assert not wdm._row_has_activity_data({"raw_activity_type": "Cycling"})
+
+    def test_returns_false_when_no_raw_activity_type(self) -> None:
+        """Row without raw_activity_type key → False."""
+        assert not wdm._row_has_activity_data({})
+
+    def test_returns_false_for_walking_with_all_missing_fields(self) -> None:
+        """Walking row where every field is '–' (absent from export) → False."""
+        assert not wdm._row_has_activity_data(
+            {
+                "raw_activity_type": "Walking",
+                "pace": "–",
+                "cadence": "–",
+                "step_length": "–",
+                "step_count": "–",
+            }
+        )
+
+    def test_returns_true_for_walking_with_any_data_field(self) -> None:
+        """Walking row with at least one real field value → True."""
+        assert wdm._row_has_activity_data(
+            {
+                "raw_activity_type": "Walking",
+                "pace": "12:30 /km",
+                "cadence": "–",
+                "step_length": "–",
+                "step_count": "–",
+            }
+        )
+
+    def test_returns_false_for_running_with_all_missing_fields(self) -> None:
+        """Running row where every field is '–' → False."""
+        assert not wdm._row_has_activity_data({"raw_activity_type": "Running"})
+
+    def test_returns_true_for_running_with_pace(self) -> None:
+        """Running row with a pace value → True."""
+        assert wdm._row_has_activity_data({"raw_activity_type": "Running", "pace": "5:30 /km"})
+
+    def test_ignores_empty_string_values(self) -> None:
+        """Empty string values are treated the same as '–' → False."""
+        assert not wdm._row_has_activity_data(
+            {"raw_activity_type": "Walking", "pace": "", "cadence": ""}
+        )
 
 
 class TestSplitsTabSection:

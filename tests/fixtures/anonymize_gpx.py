@@ -159,7 +159,7 @@ def anonymize_gpx(file_path: str) -> None:
 
 
 def _transform_tree_with_rotation(
-    tree: _stdlib_ET.ElementTree[_stdlib_ET.Element[str]],
+    tree: _stdlib_ET.ElementTree,
     rotate: RotateFn,
     forced_first_point: LatLon | None = None,
 ) -> LatLon | None:
@@ -170,6 +170,8 @@ def _transform_tree_with_rotation(
     to that value (used to lock continuity across split files).
     """
     root = tree.getroot()
+    if root is None:
+        return None
     namespaces = {"gpx": GPX_NAMESPACE}
 
     transformed_last: LatLon | None = None

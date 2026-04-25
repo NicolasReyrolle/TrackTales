@@ -156,9 +156,16 @@ TABLE_FULL_CLASSES = "w-full"
 # Workout detail modal
 # ---------------------------------------------------------------------------
 
-#: Modal card: fixed width (≈ 30 rem / 480 px), vertically scrollable for tall content.
-#: Uses an arbitrary value because ``w-120`` (30 rem) is not in Tailwind's default scale.
-MODAL_CARD_CLASSES = "w-[30rem] max-h-[80vh] overflow-y-auto"
+#: Modal card: fixed width (≈ 30 rem / 480 px).  Does not set an explicit height
+#: because the tab panels area uses a fixed height (see MODAL_TAB_PANELS_CLASSES),
+#: keeping the overall modal size stable when switching tabs.
+MODAL_CARD_CLASSES = "w-[30rem]"
+
+#: Tab panels container inside the modal: fixed height so the modal does not
+#: resize when switching between Overview, Activity, and Splits tabs.
+#: Overflow-y scrolling is enabled so long content (e.g. many splits) can still
+#: be reached within the fixed area.
+MODAL_TAB_PANELS_CLASSES = "w-full h-[30rem] overflow-y-auto"
 
 #: Modal header row: title on the left, close button on the right.
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"

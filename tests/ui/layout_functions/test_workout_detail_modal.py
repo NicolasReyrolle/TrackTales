@@ -211,8 +211,15 @@ class TestFieldDisplay:
     def test_all_expected_keys_present(self) -> None:
         """_FIELD_DISPLAY should cover all generic row fields shown in the table."""
         field_keys = {key for key, _ in wdm._FIELD_DISPLAY}
-        for expected in ["date", "activity_type", "duration", "distance", "calories",
-                         "temperature", "humidity"]:
+        for expected in [
+            "date",
+            "activity_type",
+            "duration",
+            "distance",
+            "calories",
+            "temperature",
+            "humidity",
+        ]:
             assert expected in field_keys
 
     def test_labels_are_non_empty_strings(self) -> None:
@@ -815,9 +822,7 @@ class TestRowHasActivityData:
 
     def test_returns_true_for_running_with_pace(self) -> None:
         """Running row with a pace value → True."""
-        assert wdm._row_has_activity_data(
-            {"raw_activity_type": "Running", "pace": "5:30 /km"}
-        )
+        assert wdm._row_has_activity_data({"raw_activity_type": "Running", "pace": "5:30 /km"})
 
     def test_ignores_empty_string_values(self) -> None:
         """Empty string values are treated the same as '–' → False."""

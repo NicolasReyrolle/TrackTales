@@ -1,0 +1,24 @@
+ <Workout workoutActivityType="HKWorkoutActivityTypeHiking" duration="13.56027394930522" durationUnit="min" sourceName="Apple Watch de Nicolas" sourceVersion="26.2" device="&lt;&lt;HKDevice: 0x8c507f180&gt;, name:Apple Watch, manufacturer:Apple Inc., model:Watch, hardware:Watch7,2, software:26.2, creation date:2025-12-13 12:48:57 +0000&gt;" creationDate="2025-12-28 14:45:59 +0100" startDate="2025-12-28 14:32:23 +0100" endDate="2025-12-28 14:45:57 +0100">
+  <MetadataEntry key="HKIndoorWorkout" value="0"/>
+  <MetadataEntry key="HKElevationAscended" value="11937 cm"/>
+  <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+  <MetadataEntry key="HKWeatherHumidity" value="7200 %"/>
+  <MetadataEntry key="HKWeatherTemperature" value="38.8818 degF"/>
+  <MetadataEntry key="HKAverageMETs" value="8.28197 kcal/hr·kg"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-12-28 14:32:23 +0100" endDate="2025-12-28 14:45:57 +0100" sum="0.732961" unit="km"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-12-28 14:32:23 +0100" endDate="2025-12-28 14:45:57 +0100" sum="24.0083" unit="kcal"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-12-28 14:32:23 +0100" endDate="2025-12-28 14:45:57 +0100" average="123.17" minimum="105" maximum="136" unit="count/min"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-12-28 14:32:23 +0100" endDate="2025-12-28 14:45:57 +0100" sum="130.17" unit="kcal"/>
+  <WorkoutRoute sourceName="Apple Watch de Nicolas" sourceVersion="26.2" creationDate="2025-12-28 14:45:59 +0100" startDate="2025-12-28 14:32:24 +0100" endDate="2025-12-28 14:45:57 +0100">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <MetadataEntry key="HKMetadataKeySyncIdentifier" value="A3990D7E-E360-48BA-9754-16B529659EBE"/>
+   <FileReference path="/workout-routes/route_2025-12-28_2.45pm.gpx"/>
+  </WorkoutRoute>
+  <MetadataEntry key="HKIndoorWorkout" value="0"/>
+  <MetadataEntry key="HKElevationAscended" value="11937 cm"/>
+  <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+  <MetadataEntry key="HKWeatherHumidity" value="7200 %"/>
+  <MetadataEntry key="HKWeatherTemperature" value="38.8818 degF"/>
+  <MetadataEntry key="HKAverageMETs" value="8.28197 kcal/hr·kg"/>
+ </Workout>
+ 

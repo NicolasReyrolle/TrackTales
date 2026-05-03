@@ -215,6 +215,8 @@ def _extract_row_data(
         result.update(_extract_running_fields(row, workout_date, distance_unit, vo2_dates))
     elif raw_activity == "Walking":
         result.update(_extract_walking_fields(row, distance_unit))
+    elif raw_activity == "Hiking":
+        result.update(_extract_hiking_fields(row, distance_unit))
 
     return result
 
@@ -429,6 +431,27 @@ def _extract_walking_fields(
         "step_length": step_length_display,
         "step_count": step_count_display,
     }
+
+
+def _extract_hiking_fields(
+    row: Any,
+    distance_unit: str = "km",
+) -> dict[str, Any]:
+    """Extract hiking-specific display fields from a workout DataFrame row.
+
+    Hiking workouts use the same HealthKit locomotion statistics as walking
+    (``averageWalkingSpeed``, ``averageWalkingCadence``, ``averageWalkingStepLength``,
+    ``sumStepCount``), so this function delegates to :func:`_extract_walking_fields`
+    to avoid code duplication.
+
+    Args:
+        row: A pandas Series representing a hiking workout.
+        distance_unit: ``"km"`` or ``"mi"`` (affects pace display).
+
+    Returns:
+        A dict with hiking-specific display and sort values.
+    """
+    return _extract_walking_fields(row, distance_unit)
 
 
 def _find_row_index(row_id: str, rows: list[dict[str, Any]]) -> int | None:

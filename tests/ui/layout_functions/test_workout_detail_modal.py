@@ -363,6 +363,22 @@ class TestCreateWorkoutDetailModal:
         assert nav_counter._text == "1 / 2"  # Still on row 0
 
 
+class TestHikingFieldDisplay:
+    """Tests for the _HIKING_FIELD_DISPLAY constant."""
+
+    def test_all_expected_keys_present(self) -> None:
+        """_HIKING_FIELD_DISPLAY should cover elevation, pace, cadence, step_length, step_count."""
+        field_keys = {key for key, _ in wdm._HIKING_FIELD_DISPLAY}
+        for expected in ["elevation", "pace", "cadence", "step_length", "step_count"]:
+            assert expected in field_keys
+
+    def test_labels_are_non_empty_strings(self) -> None:
+        """Every label in _HIKING_FIELD_DISPLAY should return a non-empty string."""
+        for _key, label_fn in wdm._HIKING_FIELD_DISPLAY:
+            assert callable(label_fn)
+            assert label_fn() and isinstance(label_fn(), str)
+
+
 class TestRunningFieldDisplay:
     """Tests for _RUNNING_FIELD_DISPLAY constant and running section in the modal."""
 
@@ -613,6 +629,89 @@ class TestActivityTabSection:
         walking_container = column_stubs[1]
         assert walking_container._visible  # must be shown despite translated label
 
+    def test_hiking_container_hidden_for_non_hiking_activity(self) -> None:
+        """Hiking container should be hidden when raw_activity_type is not 'Hiking'."""
+        rows = [_make_row(idx=0, activity_type="Cycling", raw_activity_type="Cycling")]
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with ExitStack() as stack:
+            for p in _all_patches(column_side_effect=make_column):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        hiking_container = column_stubs[2]
+        assert not hiking_container._visible
+
+    def test_hiking_container_visible_for_hiking_activity(self) -> None:
+        """Hiking container should be visible when raw_activity_type is 'Hiking'."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Hiking", raw_activity_type="Hiking"),
+                "pace": "15:00 /km",
+                "cadence": "95 spm",
+                "step_length": "0.65 m",
+                "step_count": "8000",
+                "elevation": "250 m",
+                "splits": [],
+            },
+        ]
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with ExitStack() as stack:
+            for p in _all_patches(column_side_effect=make_column):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        running_container = column_stubs[0]
+        walking_container = column_stubs[1]
+        hiking_container = column_stubs[2]
+        assert not running_container._visible
+        assert not walking_container._visible
+        assert hiking_container._visible
+
+    def test_hiking_container_uses_raw_activity_type(self) -> None:
+        """Hiking container must use raw_activity_type, not the translated display label."""
+        rows = [
+            {
+                **_make_row(
+                    idx=0,
+                    activity_type="Randonnée",  # translated display label
+                    raw_activity_type="Hiking",  # raw Apple Health type (always English)
+                ),
+                "pace": "15:00 /km",
+                "step_count": "8000",
+                "elevation": "250 m",
+                "splits": [],
+            },
+        ]
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with ExitStack() as stack:
+            for p in _all_patches(column_side_effect=make_column):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        hiking_container = column_stubs[2]
+        assert hiking_container._visible  # must be shown despite translated label
+
 
 class TestTabEnableState:
     """Tests for Activity and Splits tab enable/disable state."""
@@ -685,6 +784,50 @@ class TestTabEnableState:
     def test_activity_tab_disabled_for_walking_with_no_data(self) -> None:
         """Activity tab should be disabled for a Walking workout with all fields missing."""
         rows = [_make_row(idx=0, activity_type="Walking", raw_activity_type="Walking")]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert not tab_stubs[1]._enabled
+
+    def test_activity_tab_enabled_for_hiking(self) -> None:
+        """Activity tab should be enabled for Hiking workouts with data."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Hiking", raw_activity_type="Hiking"),
+                "elevation": "250 m",
+                "pace": "15:00 /km",
+                "step_count": "8000",
+                "splits": [],
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert tab_stubs[1]._enabled
+
+    def test_activity_tab_disabled_for_hiking_with_no_data(self) -> None:
+        """Activity tab should be disabled for a Hiking workout with all fields missing."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Hiking", raw_activity_type="Hiking"),
+                # Override all hiking-specific fields to the missing sentinel
+                "elevation": "–",
+                "pace": "–",
+                "cadence": "–",
+                "step_length": "–",
+                "step_count": "–",
+            }
+        ]
         tab_stubs, make_tab = self._make_tab_stubs()
 
         with ExitStack() as stack:
@@ -828,6 +971,45 @@ class TestRowHasActivityData:
         """Empty string values are treated the same as '–' → False."""
         assert not wdm._row_has_activity_data(
             {"raw_activity_type": "Walking", "pace": "", "cadence": ""}
+        )
+
+    def test_returns_false_for_hiking_with_all_missing_fields(self) -> None:
+        """Hiking row where every field is '–' (absent from export) → False."""
+        assert not wdm._row_has_activity_data(
+            {
+                "raw_activity_type": "Hiking",
+                "elevation": "–",
+                "pace": "–",
+                "cadence": "–",
+                "step_length": "–",
+                "step_count": "–",
+            }
+        )
+
+    def test_returns_true_for_hiking_with_elevation_data(self) -> None:
+        """Hiking row with an elevation gain value → True."""
+        assert wdm._row_has_activity_data(
+            {
+                "raw_activity_type": "Hiking",
+                "elevation": "250 m",
+                "pace": "–",
+                "cadence": "–",
+                "step_length": "–",
+                "step_count": "–",
+            }
+        )
+
+    def test_returns_true_for_hiking_with_step_data(self) -> None:
+        """Hiking row with a step count value → True."""
+        assert wdm._row_has_activity_data(
+            {
+                "raw_activity_type": "Hiking",
+                "elevation": "–",
+                "pace": "–",
+                "cadence": "–",
+                "step_length": "–",
+                "step_count": "8000",
+            }
         )
 
 

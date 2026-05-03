@@ -280,6 +280,36 @@ class TestComplexRealWorldWorkout:
         assert not workout["IndoorWorkout"]  # Should be False, not processed twice
 
 
+class TestHikingWorkoutParsing:
+    """Test parsing of a hiking workout fixture."""
+
+    def test_hiking_workout_elevation_parsed_correctly(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """ElevationAscended in the hiking fixture should be converted from cm to m."""
+        xml_content = build_health_export_xml([load_export_fragment("workout_hiking.xml")])
+        zip_path = create_health_zip(xml_content=xml_content)
+
+        with ExportParser() as parser:
+            health_data = parser.parse(str(zip_path))
+
+        assert len(health_data.workouts) == 1
+        workout = health_data.workouts.iloc[0]
+
+        assert workout["activityType"] == "Hiking"
+        # "11937 cm" -> 119.37 m
+        assert workout["ElevationAscended"] == pytest.approx(119.37, abs=0.01)
+        # WeatherTemperature: "38.8818 degF" -> ~3.82 °C
+        assert workout["WeatherTemperature"] == pytest.approx(3.82, abs=0.01)
+        # WeatherHumidity: "7200 %" -> 72.0
+        assert workout["WeatherHumidity"] == pytest.approx(72.0, abs=0.01)
+        assert not workout["IndoorWorkout"]
+        assert workout["TimeZone"] == "Europe/Paris"
+
+
 class TestLoadRoute:
     """Test the _load_route method."""
 

@@ -1241,6 +1241,111 @@ class TestExtractWalkingFields:
         assert "step_count" not in row
 
 
+class TestExtractHikingFields:
+    """Unit tests for _extract_hiking_fields()."""
+
+    def _make_row(self, **kwargs: Any) -> dict[str, Any]:
+        """Build a minimal row dict with hiking statistics."""
+        base: dict[str, Any] = {
+            "activityType": "Hiking",
+            "averageWalkingSpeed": 4.0,  # 4 km/h → 15:00 /km
+            "averageWalkingCadence": 95.0,
+            "averageWalkingStepLength": 0.65,
+            "sumStepCount": 8000.0,
+        }
+        base.update(kwargs)
+        return base
+
+    def test_pace_derived_from_walking_speed(self) -> None:
+        """Pace should be derived from averageWalkingSpeed (same metric as walking)."""
+        row = self._make_row(averageWalkingSpeed=4.0)
+        result = wt._extract_hiking_fields(row)
+        assert result["pace"] == "15:00 /km"
+
+    def test_cadence_formatted(self) -> None:
+        """Cadence should show 'spm' unit."""
+        row = self._make_row(averageWalkingCadence=95.0)
+        result = wt._extract_hiking_fields(row)
+        assert result["cadence"] == "95 spm"
+
+    def test_step_length_formatted(self) -> None:
+        """Step length should show 'm' unit to 2 decimal places."""
+        row = self._make_row(averageWalkingStepLength=0.65)
+        result = wt._extract_hiking_fields(row)
+        assert result["step_length"] == "0.65 m"
+
+    def test_step_count_formatted(self) -> None:
+        """Step count should be an integer string."""
+        row = self._make_row(sumStepCount=8000.0)
+        result = wt._extract_hiking_fields(row)
+        assert result["step_count"] == "8000"
+
+    def test_missing_speed_produces_dash(self) -> None:
+        """Missing averageWalkingSpeed should produce '–' for pace."""
+        row = self._make_row()
+        del row["averageWalkingSpeed"]
+        result = wt._extract_hiking_fields(row)
+        assert result["pace"] == "–"
+
+    def test_pace_formatted_in_imperial_mode(self) -> None:
+        """Pace should be formatted as '/mi' when distance_unit is 'mi'."""
+        row = self._make_row(averageWalkingSpeed=4.0)
+        result = wt._extract_hiking_fields(row, distance_unit="mi")
+        assert result["pace"].endswith("/mi")
+        assert "km" not in result["pace"]
+
+    def test_hiking_fields_included_for_hiking_workouts(self) -> None:
+        """Hiking-specific keys should be present in the row dict for Hiking workouts."""
+        original_workouts: Any = state.workouts
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Hiking",
+                    "startDate": pd.Timestamp("2025-09-16"),
+                    "duration": 7200.0,
+                    "averageWalkingSpeed": 4.0,
+                    "averageWalkingCadence": 95.0,
+                    "sumStepCount": 8000.0,
+                }
+            ]
+        )
+        try:
+            state.workouts = workouts_mock
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["pace"] == "15:00 /km"
+        assert row["cadence"] == "95 spm"
+        assert row["step_count"] == "8000"
+        assert "route" in row
+
+    def test_hiking_fields_absent_for_non_hiking_workouts(self) -> None:
+        """Non-Hiking workouts should not have hiking-specific keys."""
+        original_workouts: Any = state.workouts
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Cycling",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 3600.0,
+                }
+            ]
+        )
+        try:
+            state.workouts = workouts_mock
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+        assert len(rows) == 1
+        row = rows[0]
+        assert "step_count" not in row
+        assert "pace" not in row
+
+
 class TestExtractWeatherFields:
     """Unit tests for temperature and humidity extraction in _extract_row_data()."""
 

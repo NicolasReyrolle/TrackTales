@@ -6,6 +6,7 @@ from typing import Any, TypeAlias, cast
 from nicegui import ui
 
 from i18n import t
+from logic.workout_manager.swimming import SwimInterval, build_swim_intervals, format_swim_duration
 from logic.workout_manager.workout_route import WorkoutRoute
 from ui.css import (
     BUTTON_DENSE_PROPS,
@@ -19,6 +20,7 @@ from ui.css import (
     MODAL_NAV_COUNTER_CLASSES,
     MODAL_NAV_ROW_CLASSES,
     MODAL_SPLITS_TABLE_CLASSES,
+    MODAL_SWIM_TABLE_CLASSES,
     MODAL_TAB_PANELS_CLASSES,
     TABLE_DENSE_FLAT_PROPS,
     TABS_FULL_CLASSES,
@@ -102,6 +104,52 @@ _HIKING_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
     ("step_length", lambda: t("Avg Step Length")),
     ("step_count", _label_step_count),
 ]
+
+#: Swimming-specific summary fields shown above the lap table in the Activity tab.
+_SWIMMING_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
+    ("swimming_location", lambda: t("Location")),
+    ("swimming_lap_length", lambda: t("Lap Length")),
+    ("swimming_stroke_count", lambda: t("Total Strokes")),
+]
+
+
+def _build_swim_interval_rows(intervals: list[SwimInterval]) -> list[dict[str, Any]]:
+    """Build flat table rows from swim intervals for the NiceGUI table.
+
+    Each lap becomes one row.  When a lap is the last in its interval and a
+    pause follows, the ``pause`` field contains the formatted pause duration;
+    otherwise it is an empty string.  A ``is_last_in_group`` boolean is also
+    included so the table body slot can visually separate groups.
+
+    Args:
+        intervals: Ordered list of :class:`~logic.workout_manager.swimming.SwimInterval`
+            objects produced by :func:`~logic.workout_manager.swimming.build_swim_intervals`.
+
+    Returns:
+        List of row dicts ready for assignment to a ``ui.table``.
+    """
+    rows: list[dict[str, Any]] = []
+    for interval in intervals:
+        n = len(interval.laps)
+        for i, lap in enumerate(interval.laps):
+            is_last = i == n - 1
+            pause_str = ""
+            if is_last and interval.pause_s is not None and interval.pause_s > 0:
+                pause_str = format_swim_duration(interval.pause_s)
+            dist_str = f"{int(lap.distance_m)} m" if lap.distance_m > 0 else "–"
+            swolf_str = f"{lap.swolf:.1f}" if lap.swolf is not None else "–"
+            rows.append(
+                {
+                    "lap": lap.lap_number,
+                    "dist": dist_str,
+                    "dur": format_swim_duration(lap.duration_s),
+                    "stroke": lap.stroke_style,
+                    "swolf": swolf_str,
+                    "pause": pause_str,
+                    "is_last_in_group": is_last,
+                }
+            )
+    return rows
 
 
 def _format_split_pace(pace_min_per_km: float) -> str:
@@ -261,6 +309,8 @@ _ACTIVITY_FIELD_KEYS: dict[str, list[str]] = {
     "Running": [k for k, _ in _RUNNING_FIELD_DISPLAY],
     "Walking": [k for k, _ in _WALKING_FIELD_DISPLAY],
     "Hiking": [k for k, _ in _HIKING_FIELD_DISPLAY],
+    # Swimming: enable the tab whenever there are parsed lap events.
+    "Swimming": ["swimming_events"],
 }
 
 
@@ -272,6 +322,9 @@ def _row_has_activity_data(row: dict[str, Any]) -> bool:
     corresponding statistics are absent from the export (e.g. a Walking workout
     recorded without cadence or step data).
 
+    For Swimming, the tab is enabled when the ``swimming_events`` list is
+    non-empty (i.e. at least one lap was parsed).
+
     Args:
         row: A workout row dict as returned by ``_build_workout_rows()``.
 
@@ -280,6 +333,9 @@ def _row_has_activity_data(row: dict[str, Any]) -> bool:
         contains a value other than the missing sentinel ``"–"``.
     """
     raw_type = row.get("raw_activity_type")
+    if raw_type == "Swimming":
+        events = row.get("swimming_events")
+        return isinstance(events, list) and len(events) > 0
     keys = _ACTIVITY_FIELD_KEYS.get(raw_type, [])  # type: ignore[arg-type]
     return any(str(row.get(k, "–")) not in ("–", "") for k in keys)
 
@@ -356,6 +412,62 @@ def create_workout_detail_modal(
                     hiking_container = ui.column().classes(TABS_FULL_CLASSES)
                     with hiking_container:
                         hiking_field_rows = _build_field_rows(_HIKING_FIELD_DISPLAY)
+                    # Swimming-specific metrics; shown only when activity is Swimming
+                    swimming_container = ui.column().classes(TABS_FULL_CLASSES)
+                    with swimming_container:
+                        swimming_field_rows = _build_field_rows(_SWIMMING_FIELD_DISPLAY)
+                        no_swim_laps_label = ui.label(t("No lap data available.")).classes(
+                            LABEL_MUTED_CLASSES
+                        )
+                        swim_columns = [
+                            {
+                                "name": "lap",
+                                "label": t("Lap"),
+                                "field": "lap",
+                                "align": "right",
+                                "sortable": False,
+                            },
+                            {
+                                "name": "dist",
+                                "label": t("Dist"),
+                                "field": "dist",
+                                "align": "right",
+                                "sortable": False,
+                            },
+                            {
+                                "name": "dur",
+                                "label": t("Time"),
+                                "field": "dur",
+                                "align": "right",
+                                "sortable": False,
+                            },
+                            {
+                                "name": "stroke",
+                                "label": t("Stroke"),
+                                "field": "stroke",
+                                "align": "left",
+                                "sortable": False,
+                            },
+                            {
+                                "name": "swolf",
+                                "label": "SWOLF",
+                                "field": "swolf",
+                                "align": "right",
+                                "sortable": False,
+                            },
+                            {
+                                "name": "pause",
+                                "label": t("Rest"),
+                                "field": "pause",
+                                "align": "right",
+                                "sortable": False,
+                            },
+                        ]
+                        swim_table = (
+                            ui.table(columns=swim_columns, rows=[], row_key="lap")
+                            .classes(MODAL_SWIM_TABLE_CLASSES)
+                            .props(TABLE_DENSE_FLAT_PROPS)
+                        )
 
                 # Splits tab: per-km GPS splits table
                 with ui.tab_panel("splits"):
@@ -416,11 +528,13 @@ def create_workout_detail_modal(
         is_running = raw_type == "Running"
         is_walking = raw_type == "Walking"
         is_hiking = raw_type == "Hiking"
+        is_swimming = raw_type == "Swimming"
         has_data = _row_has_activity_data(row)
         no_activity_label.set_visibility(not has_data)
         running_container.set_visibility(is_running)
         walking_container.set_visibility(is_walking)
         hiking_container.set_visibility(is_hiking)
+        swimming_container.set_visibility(is_swimming)
         activity_tab.set_enabled(has_data)
         if is_running:
             _update_fields(running_field_rows, row)
@@ -428,6 +542,28 @@ def create_workout_detail_modal(
             _update_fields(walking_field_rows, row)
         elif is_hiking:
             _update_fields(hiking_field_rows, row)
+        elif is_swimming:
+            _update_fields(swimming_field_rows, row)
+            _refresh_swim_laps(row)
+
+    def _refresh_swim_laps(row: dict[str, Any]) -> None:
+        """Update the swimming lap interval table from parsed event data.
+
+        Builds :class:`~logic.workout_manager.swimming.SwimInterval` objects from
+        ``row["swimming_events"]`` and ``row["lap_length_m"]``, then formats them
+        into flat display rows for the ``swim_table``.  The table is hidden when
+        no laps are available.
+        """
+        events = row.get("swimming_events") or []
+        lap_length = float(row.get("lap_length_m") or 0.0)
+        intervals = build_swim_intervals(events, lap_length)
+        table_rows = _build_swim_interval_rows(intervals)
+        has_laps = bool(table_rows)
+        no_swim_laps_label.set_visibility(not has_laps)
+        swim_table.set_visibility(has_laps)
+        if has_laps:
+            swim_table.rows = table_rows
+            swim_table.update()
 
     def _refresh_splits_tab(row: dict[str, Any]) -> None:
         """Update splits tab with GPS-based per-km or per-mi splits.

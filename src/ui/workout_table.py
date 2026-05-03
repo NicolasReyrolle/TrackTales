@@ -217,6 +217,8 @@ def _extract_row_data(
         result.update(_extract_walking_fields(row, distance_unit))
     elif raw_activity == "Hiking":
         result.update(_extract_hiking_fields(row, distance_unit))
+    elif raw_activity == "Swimming":
+        result.update(_extract_swimming_fields(row))
 
     return result
 
@@ -452,6 +454,56 @@ def _extract_hiking_fields(
         A dict with hiking-specific display and sort values.
     """
     return _extract_walking_fields(row, distance_unit)
+
+
+def _extract_swimming_fields(row: Any) -> dict[str, Any]:
+    """Extract swimming-specific fields from a workout DataFrame row.
+
+    Passes the raw ``swimming_events`` list and lap-length metadata through
+    to the row dict so the workout detail modal can build the interval table.
+
+    Args:
+        row: A pandas Series representing a swimming workout.
+
+    Returns:
+        A dict with swimming-specific fields for the modal.
+    """
+    events = row.get("swimming_events")
+    # swimming_events is a list stored as an object in the DataFrame column;
+    # guard against NaN (float) or other non-list values.
+    swimming_events: list[Any] = events if isinstance(events, list) else []
+
+    # LapLength is stored as a float (metres) after ExportParser._parse_value.
+    lap_length_raw = _safe_float(row.get("LapLength"))
+    lap_length_m = lap_length_raw if lap_length_raw is not None and lap_length_raw > 0 else 0.0
+
+    # Location type (1=Open Water, 2=Pool) is stored as an int after parse_metadata_value.
+    location_raw = row.get("SwimmingLocationType")
+    location_display: str
+    if location_raw is not None:
+        from logic.workout_detail_schema import SWIMMING_LOCATION_TYPES
+
+        try:
+            location_display = SWIMMING_LOCATION_TYPES.get(int(location_raw), str(location_raw))
+        except (ValueError, TypeError):
+            location_display = str(location_raw)
+    else:
+        location_display = "–"
+
+    _, stroke_count_display = _build_field_pair(
+        row.get("sumSwimmingStrokeCount"),
+        lambda v: f"{int(round(v))}",
+    )
+
+    lap_length_display = f"{int(lap_length_m)} m" if lap_length_m > 0 else "–"
+
+    return {
+        "swimming_events": swimming_events,
+        "lap_length_m": lap_length_m,
+        "swimming_location": location_display,
+        "swimming_stroke_count": stroke_count_display,
+        "swimming_lap_length": lap_length_display,
+    }
 
 
 def _find_row_index(row_id: str, rows: list[dict[str, Any]]) -> int | None:

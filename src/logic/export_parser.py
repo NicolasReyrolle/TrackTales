@@ -343,6 +343,8 @@ class ExportParser:
                 self._process_workout_activity_children(
                     child, record, zipfile, active_end=active_end
                 )
+            elif child.tag == "WorkoutEvent" and record.get("activityType") == "Swimming":
+                self._collect_workout_event(child, record)
 
     def _process_workout_activity_children(
         self, elem: Element, record: WorkoutRecord, zipfile: ZipFile, *, active_end: datetime | None
@@ -360,6 +362,64 @@ class ExportParser:
                 self._process_metadata_entry(child, record)  # already skips duplicates
             elif child.tag == "WorkoutRoute":
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
+
+    def _collect_workout_event(self, child: Element, record: WorkoutRecord) -> None:
+        """Collect a WorkoutEvent element into the record's ``swimming_events`` list.
+
+        Captures ``HKWorkoutEventTypeLap`` and ``HKWorkoutEventTypeSegment`` events
+        with their duration, start date, and any per-event metadata (stroke style,
+        SWOLF score).  The data is appended to ``record["swimming_events"]``.
+
+        Other event types (e.g. ``HKWorkoutEventTypeMotionPaused``) are ignored
+        because they are already handled by :meth:`_compute_active_end`.
+
+        Args:
+            child:  The ``WorkoutEvent`` XML element.
+            record: The workout record being built; modified in-place.
+        """
+        raw_type = child.get("type", "")
+        if raw_type not in (
+            "HKWorkoutEventTypeLap",
+            "HKWorkoutEventTypeSegment",
+        ):
+            return
+
+        event_type = raw_type.replace("HKWorkoutEventType", "")
+        date_str = child.get("date")
+        duration_str = child.get("duration")
+        duration_unit = child.get("durationUnit", "")
+
+        if not date_str or not duration_str:
+            return
+
+        duration_s = self.duration_to_seconds(float(duration_str), duration_unit)
+        event: dict[str, Any] = {
+            "type": event_type,
+            "start_date": date_str,
+            "duration_s": duration_s,
+        }
+
+        # Parse child metadata (stroke style, SWOLF).
+        for meta in child:
+            if meta.tag != "MetadataEntry":
+                continue
+            key = meta.get("key", "").replace("HK", "")
+            raw_val = meta.get("value", "")
+            if key == "SWOLFScore":
+                try:
+                    event["swolf"] = float(raw_val)
+                except ValueError:
+                    pass
+            elif key == "SwimmingStrokeStyle":
+                num = self.to_number(raw_val)
+                if num is not None:
+                    event["stroke_style"] = int(num)
+
+        existing = record.get("swimming_events")
+        if isinstance(existing, list):
+            existing.append(event)
+        else:
+            record["swimming_events"] = [event]  # type: ignore[literal-required]
 
     @staticmethod
     def str_distance_to_meters(value: str, unit: str | None) -> int:

@@ -1040,7 +1040,7 @@ class TestSplitsTabSection:
 
         fn(0)
         tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
-        splits_table = table_stubs[0]
+        splits_table = table_stubs[1]
         assert not splits_table._visible
 
     def test_splits_table_visible_and_populated_when_splits_present(self) -> None:
@@ -1071,7 +1071,7 @@ class TestSplitsTabSection:
 
         fn(0)
         tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
-        splits_table = table_stubs[0]
+        splits_table = table_stubs[1]
         assert splits_table._visible
         assert len(splits_table.rows) == 2
         assert splits_table.rows[0]["split"] == 1
@@ -1095,7 +1095,7 @@ class TestSplitsTabSection:
 
         fn(0)
         tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
-        splits_table = table_stubs[0]
+        splits_table = table_stubs[1]
         assert not splits_table._visible
 
     def test_pace_converted_to_min_per_mi_for_imperial_splits(self) -> None:
@@ -1125,7 +1125,7 @@ class TestSplitsTabSection:
 
         fn(0)
         tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
-        splits_table = table_stubs[0]
+        splits_table = table_stubs[1]
         assert splits_table._visible
         assert len(splits_table.rows) == 1
         # 6 min/km / (1000 * METERS_TO_MILES) ≈ 9.656 min/mi → "9:39"
@@ -1176,7 +1176,7 @@ class TestSplitsTabSection:
 
         fn(0)  # Open at row 0 (Overview tab active)
         tabs_stub.fire_value_change("splits")  # User switches to Splits tab
-        splits_table = table_stubs[0]
+        splits_table = table_stubs[1]
         assert splits_table._visible  # row 0 has splits
 
         # Navigate to row 1 while the Splits tab remains active
@@ -1305,7 +1305,7 @@ class TestComputeSplitsLazy:
         assert "splits" not in rows[0]
 
         tabs_stub.fire_value_change("splits")  # User switches to the Splits tab
-        splits_table = table_stubs[0]
+        splits_table = table_stubs[1]
         # Lazy computation should have produced ≥ 3 splits and shown the table.
         assert splits_table._visible
         assert len(splits_table.rows) >= 3

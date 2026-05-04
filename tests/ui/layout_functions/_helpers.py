@@ -98,15 +98,22 @@ class DummyTabs(DummyContext):
 
 
 class DummyTable(DummyComponent):
-    """Table stub that records slot additions and event handlers."""
+    """Table stub that records slot additions, props calls, and event handlers."""
 
     def __init__(self) -> None:
         self.slots: list[tuple[str, str]] = []
         self._event_handlers: dict[str, Any] = {}
+        self.props_calls: list[str] = []
 
     def add_slot(self, slot_name: str, slot_template: str) -> None:
         """Record slot content added by table rendering."""
         self.slots.append((slot_name, slot_template))
+
+    def props(self, *args: Any, **_kwargs: Any) -> DummyTable:
+        """Record props strings applied to the table."""
+        for arg in args:
+            self.props_calls.append(str(arg))
+        return self
 
     def on(self, event: str, handler: Any, **_kwargs: Any) -> DummyTable:
         """Record event handlers registered on the table."""

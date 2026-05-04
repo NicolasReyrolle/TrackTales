@@ -548,6 +548,15 @@ def render_workout_table() -> None:
         pagination={"sortBy": "date_sort", "descending": True, "rowsPerPage": 15},
     ).classes(TABLE_FULL_CLASSES)
 
+    # Translate Quasar's built-in pagination labels so they respect the active language.
+    # rows-per-page-label overrides the "Records per page:" string label directly.
+    # :pagination-label is a JavaScript function prop (evaluated by NiceGUI's `:` prefix
+    # mechanism) that replaces the default "1-10 of 10" row-range indicator; the "of"
+    # word is embedded at render time from the gettext catalog.
+    table.props(f'rows-per-page-label="{t("Records per page:")}"')
+    of_label = t("of")
+    table.props(f':pagination-label=\'(a, b, c) => a + "-" + b + " {of_label} " + c\'')
+
     # Render formatted display values via body-cell slots while keeping raw
     # numeric field values for sorting.
     for col_name, display_field in [

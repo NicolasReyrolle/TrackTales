@@ -130,6 +130,13 @@ msgstr ""
 msgid "Load a file to see workout details."
 msgstr ""
 
+# Workout table pagination
+msgid "Records per page:"
+msgstr ""
+
+msgid "of"
+msgstr ""
+
 msgid "Activity"
 msgstr ""
 
@@ -704,6 +711,9 @@ msgid "Avg Cadence"
 msgstr ""
 
 msgid "Avg Stride Length"
+msgstr ""
+
+msgid "Avg Step Length"
 msgstr ""
 
 msgid "Avg Vertical Oscillation"

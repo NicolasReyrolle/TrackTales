@@ -27,6 +27,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from logic.workout_detail_schema import SWIMMING_STROKE_STYLES
+
 
 @dataclass
 class SwimLap:
@@ -59,21 +61,6 @@ class SwimInterval:
 
     laps: list[SwimLap] = field(default_factory=list)
     pause_s: float | None = None
-
-
-# Stroke style code → human-readable label (mirrors SWIMMING_STROKE_STYLES in schema).
-_STROKE_LABELS: dict[int, str] = {
-    0: "Unknown",
-    1: "Mixed",
-    2: "Freestyle",
-    3: "Backstroke",
-    4: "Breaststroke",
-    5: "Butterfly",
-    6: "Kickboard",
-}
-
-#: Sentinel label used when an interval contains two or more distinct stroke styles.
-_MIXED_STROKE_LABEL: str = "Mixed"
 
 
 def _parse_event_date(raw: Any) -> datetime | None:
@@ -176,7 +163,9 @@ def _build_swim_lap(
     """Build a :class:`SwimLap` from a raw lap event dict."""
     raw_stroke = evt.get("stroke_style")
     stroke_label = (
-        _STROKE_LABELS.get(int(raw_stroke), "Unknown") if raw_stroke is not None else "Unknown"
+        SWIMMING_STROKE_STYLES.get(int(raw_stroke), "Unknown")
+        if raw_stroke is not None
+        else "Unknown"
     )
     swolf_raw = evt.get("swolf")
     return SwimLap(
@@ -262,7 +251,7 @@ def _merge_interval_stroke(laps: list[SwimLap]) -> str:
     """
     strokes = {lap.stroke_style for lap in laps if lap.stroke_style != "Unknown"}
     if len(strokes) > 1:
-        return _MIXED_STROKE_LABEL
+        return SWIMMING_STROKE_STYLES[1]  # "Mixed"
     return next(iter(strokes)) if strokes else "Unknown"
 
 

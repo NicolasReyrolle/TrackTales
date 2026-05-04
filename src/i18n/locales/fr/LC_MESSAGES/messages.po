@@ -734,9 +734,6 @@ msgid "VO₂ Max"
 msgstr "VO₂ Max"
 
 # Workout detail modal – tab labels and empty-state messages
-msgid "Splits"
-msgstr "Segments"
-
 msgid "Intervals"
 msgstr "Longueurs"
 
@@ -785,3 +782,25 @@ msgstr "Mixte"
 
 msgid "Unknown"
 msgstr "Inconnu"
+
+msgid "Freestyle"
+msgstr "Nage libre"
+
+msgid "Backstroke"
+msgstr "Dos crawlé"
+
+msgid "Breaststroke"
+msgstr "Brasse"
+
+msgid "Butterfly"
+msgstr "Papillon"
+
+msgid "Kickboard"
+msgstr "Planche"
+
+# Workout detail modal – swimming location type labels
+msgid "Pool"
+msgstr "Piscine"
+
+msgid "Open Water"
+msgstr "Eau libre"

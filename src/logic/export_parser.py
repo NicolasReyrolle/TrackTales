@@ -363,6 +363,37 @@ class ExportParser:
             elif child.tag == "WorkoutRoute":
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
 
+    @staticmethod
+    def _parse_swim_event_metadata(child: Element) -> dict[str, Any]:
+        """Parse MetadataEntry children of a WorkoutEvent into a metadata dict.
+
+        Extracts ``SWOLFScore`` (as float) and ``SwimmingStrokeStyle`` (as int)
+        from ``MetadataEntry`` sub-elements.  All other tags are ignored.
+
+        Args:
+            child: The ``WorkoutEvent`` XML element whose children to parse.
+
+        Returns:
+            Dict with zero or more of ``"swolf"`` (float) and
+            ``"stroke_style"`` (int) keys.
+        """
+        extra: dict[str, Any] = {}
+        for meta in child:
+            if meta.tag != "MetadataEntry":
+                continue
+            key = meta.get("key", "").replace("HK", "")
+            raw_val = meta.get("value", "")
+            if key == "SWOLFScore":
+                try:
+                    extra["swolf"] = float(raw_val)
+                except ValueError:
+                    pass
+            elif key == "SwimmingStrokeStyle":
+                num = ExportParser.to_number(raw_val)
+                if num is not None:
+                    extra["stroke_style"] = int(num)
+        return extra
+
     def _collect_workout_event(self, child: Element, record: WorkoutRecord) -> None:
         """Collect a WorkoutEvent element into the record's ``swimming_events`` list.
 
@@ -397,23 +428,8 @@ class ExportParser:
             "type": event_type,
             "start_date": date_str,
             "duration_s": duration_s,
+            **self._parse_swim_event_metadata(child),
         }
-
-        # Parse child metadata (stroke style, SWOLF).
-        for meta in child:
-            if meta.tag != "MetadataEntry":
-                continue
-            key = meta.get("key", "").replace("HK", "")
-            raw_val = meta.get("value", "")
-            if key == "SWOLFScore":
-                try:
-                    event["swolf"] = float(raw_val)
-                except ValueError:
-                    pass
-            elif key == "SwimmingStrokeStyle":
-                num = self.to_number(raw_val)
-                if num is not None:
-                    event["stroke_style"] = int(num)
 
         existing = record.get("swimming_events")
         if isinstance(existing, list):

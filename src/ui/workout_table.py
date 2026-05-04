@@ -477,14 +477,15 @@ def _extract_swimming_fields(row: Any) -> dict[str, Any]:
     lap_length_raw = _safe_float(row.get("LapLength"))
     lap_length_m = lap_length_raw if lap_length_raw is not None and lap_length_raw > 0 else 0.0
 
-    # Location type (1=Open Water, 2=Pool) is stored as an int after parse_metadata_value.
+    # Location type (1=Pool, 2=Open Water) is stored as an int after parse_metadata_value.
     location_raw = row.get("SwimmingLocationType")
     location_display: str
     if location_raw is not None:
         from logic.workout_detail_schema import SWIMMING_LOCATION_TYPES
 
         try:
-            location_display = SWIMMING_LOCATION_TYPES.get(int(location_raw), str(location_raw))
+            label = SWIMMING_LOCATION_TYPES.get(int(location_raw), str(location_raw))
+            location_display = t(label)
         except (ValueError, TypeError):
             location_display = str(location_raw)
     else:

@@ -350,9 +350,9 @@ class TestEnumDisplayValues:
     """Validate the display-value lookup tables."""
 
     def test_swimming_location_types_contains_pool_and_open_water(self) -> None:
-        """SWIMMING_LOCATION_TYPES must map 1 → open water and 2 → pool."""
-        assert SWIMMING_LOCATION_TYPES[1] == "Open Water"
-        assert SWIMMING_LOCATION_TYPES[2] == "Pool"
+        """SWIMMING_LOCATION_TYPES must map 1 → pool and 2 → open water."""
+        assert SWIMMING_LOCATION_TYPES[1] == "Pool"
+        assert SWIMMING_LOCATION_TYPES[2] == "Open Water"
 
     def test_swimming_stroke_styles_contains_known_strokes(self) -> None:
         """SWIMMING_STROKE_STYLES must include standard competitive strokes."""

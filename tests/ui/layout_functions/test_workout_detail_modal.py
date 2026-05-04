@@ -171,7 +171,7 @@ def _all_patches(
     Pass *tabs_stub* to receive the ``ui.tabs`` instance back for simulating
     tab-change events via :meth:`_DummyElement.fire_value_change`.
     Pass *tab_side_effect* to capture individual ``ui.tab`` instances (created in
-    order: overview [0], activity [1], intervals [2], splits [3]).
+    order: overview [0], activity [1], intervals [2]).
     """
     stub = _DummyElement()
     effective_tabs = tabs_stub if tabs_stub is not None else stub
@@ -839,7 +839,7 @@ class TestTabEnableState:
         assert not tab_stubs[1]._enabled
 
     def test_splits_tab_disabled_when_no_route(self) -> None:
-        """Splits tab should be disabled when the workout has no GPS route."""
+        """Intervals tab should be disabled when the workout has no GPS route and no swim laps."""
         rows = [_make_row(idx=0, activity_type="Running", raw_activity_type="Running")]
         tab_stubs, make_tab = self._make_tab_stubs()
 
@@ -849,10 +849,10 @@ class TestTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        assert not tab_stubs[3]._enabled
+        assert not tab_stubs[2]._enabled
 
     def test_splits_tab_enabled_when_route_present(self) -> None:
-        """Splits tab should be enabled when the workout has a non-empty GPS route."""
+        """Intervals tab should be enabled when the workout has a non-empty GPS route."""
         from datetime import timedelta
 
         from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
@@ -884,7 +884,7 @@ class TestTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        assert tab_stubs[3]._enabled
+        assert tab_stubs[2]._enabled
 
 
 class TestRowHasRoute:
@@ -1039,7 +1039,7 @@ class TestSplitsTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
+        tabs_stub.fire_value_change("intervals")  # Simulate user clicking the Intervals tab
         splits_table = table_stubs[1]
         assert not splits_table._visible
 
@@ -1070,7 +1070,7 @@ class TestSplitsTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
+        tabs_stub.fire_value_change("intervals")  # Simulate user clicking the Intervals tab
         splits_table = table_stubs[1]
         assert splits_table._visible
         assert len(splits_table.rows) == 2
@@ -1094,7 +1094,7 @@ class TestSplitsTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
+        tabs_stub.fire_value_change("intervals")  # Simulate user clicking the Intervals tab
         splits_table = table_stubs[1]
         assert not splits_table._visible
 
@@ -1124,7 +1124,7 @@ class TestSplitsTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
+        tabs_stub.fire_value_change("intervals")  # Simulate user clicking the Intervals tab
         splits_table = table_stubs[1]
         assert splits_table._visible
         assert len(splits_table.rows) == 1
@@ -1134,9 +1134,9 @@ class TestSplitsTabSection:
         assert minutes == 9
 
     def test_navigate_while_on_splits_tab_refreshes_splits(self) -> None:
-        """Navigating to a different workout while the Splits tab is active should refresh splits.
+        """Navigating while the Intervals tab is active should refresh splits.
 
-        Covers the ``if detail_tabs.value == "splits":`` branch inside ``_refresh()``.
+        Covers the ``if detail_tabs.value == "intervals":`` branch inside ``_refresh()``.
         """
         splits_row0 = [{"split": 1, "pace_min_per_km": 5.0, "elevation_change_m": 0.0}]
         rows = [
@@ -1175,7 +1175,7 @@ class TestSplitsTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)  # Open at row 0 (Overview tab active)
-        tabs_stub.fire_value_change("splits")  # User switches to Splits tab
+        tabs_stub.fire_value_change("intervals")  # User switches to Intervals tab
         splits_table = table_stubs[1]
         assert splits_table._visible  # row 0 has splits
 
@@ -1304,7 +1304,7 @@ class TestComputeSplitsLazy:
         # Splits must NOT be computed yet (Overview tab is active, not Splits).
         assert "splits" not in rows[0]
 
-        tabs_stub.fire_value_change("splits")  # User switches to the Splits tab
+        tabs_stub.fire_value_change("intervals")  # User switches to the Intervals tab
         splits_table = table_stubs[1]
         # Lazy computation should have produced ≥ 3 splits and shown the table.
         assert splits_table._visible
@@ -1374,7 +1374,7 @@ class TestIntervalsTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        # Tab order: overview[0], activity[1], intervals[2], splits[3]
+        # Tab order: overview[0], activity[1], intervals[2]
         assert not tab_stubs[2]._enabled
 
     def test_intervals_tab_disabled_for_swimming_with_no_events(self) -> None:

@@ -29,6 +29,10 @@ from typing import Any
 
 from logic.workout_detail_schema import SWIMMING_STROKE_STYLES
 
+#: Stroke label used when an interval contains two or more distinct known strokes.
+#: Derived from the schema mapping so both stay in sync with a single definition.
+_MIXED_STROKE_LABEL: str = SWIMMING_STROKE_STYLES[1]
+
 
 @dataclass
 class SwimLap:
@@ -251,7 +255,7 @@ def _merge_interval_stroke(laps: list[SwimLap]) -> str:
     """
     strokes = {lap.stroke_style for lap in laps if lap.stroke_style != "Unknown"}
     if len(strokes) > 1:
-        return SWIMMING_STROKE_STYLES[1]  # "Mixed"
+        return _MIXED_STROKE_LABEL
     return next(iter(strokes)) if strokes else "Unknown"
 
 

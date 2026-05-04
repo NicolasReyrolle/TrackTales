@@ -330,7 +330,11 @@ class TestActivityTabSection:
         assert walking_container._visible
 
     def test_walking_container_uses_raw_activity_type(self) -> None:
-        """Walking container must use raw_activity_type, not the translated display label."""
+        """Walking container must use raw_activity_type, not the translated display label.
+
+        Simulates a locale where activity_type is translated but raw_activity_type
+        remains 'Walking'.  The walking container must still be shown.
+        """
         rows = [
             {
                 **_make_row(

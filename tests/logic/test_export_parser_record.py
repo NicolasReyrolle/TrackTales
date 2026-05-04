@@ -1,6 +1,9 @@
 """Test parsing of complex real-world records from Apple Health export."""
 
+from __future__ import annotations
+
 from collections.abc import Callable
+from xml.etree.ElementTree import Element
 
 import pandas as pd
 import pytest
@@ -394,3 +397,86 @@ class TestExportParserInternalBranches:
         sample = heart_rate_df.iloc[0]
         assert sample["CustomKey"] == pytest.approx(100.0, abs=1e-9)  # type: ignore[arg-type]
         assert sample["CustomKeyUnit"] == "m"
+
+
+# ---------------------------------------------------------------------------
+# _parse_swim_event_metadata
+# ---------------------------------------------------------------------------
+
+
+class TestParseSwimEventMetadata:
+    """Unit tests for ExportParser._parse_swim_event_metadata()."""
+
+    @staticmethod
+    def _make_event_element(metadata: dict[str, str]) -> Element:
+        """Build a fake WorkoutEvent XML element with the given metadata entries."""
+        from xml.etree.ElementTree import Element, SubElement
+
+        elem = Element(
+            "WorkoutEvent",
+            attrib={
+                "type": "HKWorkoutEventTypeLap",
+                "date": "2025-01-01 10:00:00 +0000",
+                "duration": "1.0",
+                "durationUnit": "min",
+            },
+        )
+        for key, value in metadata.items():
+            SubElement(elem, "MetadataEntry", attrib={"key": key, "value": value})
+        return elem
+
+    def test_returns_empty_dict_when_no_metadata(self) -> None:
+        """No MetadataEntry children → empty dict."""
+        elem = self._make_event_element({})
+        result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
+        assert result == {}
+
+    def test_extracts_swolf_as_float(self) -> None:
+        """HKSWOLFScore → ``"swolf"`` key as float."""
+        elem = self._make_event_element({"HKSWOLFScore": "96.78"})
+        result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
+        assert result["swolf"] == pytest.approx(96.78)  # type: ignore[arg-type]
+
+    def test_extracts_stroke_style_as_int(self) -> None:
+        """HKSwimmingStrokeStyle → ``"stroke_style"`` key as int."""
+        elem = self._make_event_element({"HKSwimmingStrokeStyle": "4"})
+        result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
+        assert result["stroke_style"] == 4
+        assert isinstance(result["stroke_style"], int)
+
+    def test_extracts_both_swolf_and_stroke_style(self) -> None:
+        """When both keys are present, both should be returned."""
+        elem = self._make_event_element({"HKSWOLFScore": "113.5", "HKSwimmingStrokeStyle": "2"})
+        result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
+        assert result["swolf"] == pytest.approx(113.5)  # type: ignore[arg-type]
+        assert result["stroke_style"] == 2
+
+    def test_ignores_non_metadata_entry_tags(self) -> None:
+        """Child elements with tags other than MetadataEntry should be silently skipped."""
+        from xml.etree.ElementTree import Element, SubElement
+
+        elem = Element("WorkoutEvent")
+        SubElement(elem, "OtherTag", attrib={"key": "HKSWOLFScore", "value": "99.0"})
+        result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
+        assert result == {}
+
+    def test_invalid_swolf_value_is_skipped(self) -> None:
+        """A non-numeric HKSWOLFScore should not raise and should be excluded."""
+        elem = self._make_event_element({"HKSWOLFScore": "not-a-number"})
+        result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
+        assert "swolf" not in result
+
+    def test_stroke_style_zero_maps_to_int_zero(self) -> None:
+        """HKSwimmingStrokeStyle value '0' should be stored as int 0 (Unknown)."""
+        elem = self._make_event_element({"HKSwimmingStrokeStyle": "0"})
+        result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
+        assert result["stroke_style"] == 0
+        assert isinstance(result["stroke_style"], int)
+
+    def test_unknown_metadata_keys_are_ignored(self) -> None:
+        """Metadata keys other than SWOLF and StrokeStyle should not appear in result."""
+        elem = self._make_event_element({"HKOtherKey": "123", "HKSWOLFScore": "50.0"})
+        result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
+        assert "HKOtherKey" not in result
+        assert "OtherKey" not in result
+        assert result["swolf"] == pytest.approx(50.0)  # type: ignore[arg-type]

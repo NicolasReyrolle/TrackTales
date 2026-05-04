@@ -112,10 +112,10 @@ class FieldDefinition:
 
 #: Maps the integer codes stored in ``SwimmingLocationType`` to human-readable labels.
 #: Source: ``HKWorkoutSwimmingLocationType`` enum in Apple HealthKit.
-#: 1 = open water (outdoors), 2 = pool (indoors).
+#: 1 = pool (indoors), 2 = open water (outdoors).
 SWIMMING_LOCATION_TYPES: dict[int, str] = {
-    1: "Open Water",
-    2: "Pool",
+    1: "Pool",
+    2: "Open Water",
 }
 
 #: Maps the integer codes stored in ``SwimmingStrokeStyle`` (per-lap metadata) to labels.

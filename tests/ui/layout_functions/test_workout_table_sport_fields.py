@@ -6,6 +6,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pandas as pd
+import pytest
 
 from app_state import state
 from ui import workout_table as wt
@@ -533,3 +534,93 @@ class TestExtractWeatherFields:
         assert len(rows) == 1
         assert rows[0]["temperature"] == "–"
         assert rows[0]["humidity"] == "–"
+
+
+# ---------------------------------------------------------------------------
+# Swimming-specific field extraction
+# ---------------------------------------------------------------------------
+
+
+class TestExtractSwimmingFields:
+    """Unit tests for _extract_swimming_fields() in workout_table."""
+
+    def _make_row(self, **kwargs: Any) -> dict[str, Any]:
+        """Build a minimal swimming row dict."""
+        base: dict[str, Any] = {
+            "activityType": "Swimming",
+            "SwimmingLocationType": 1,  # Pool
+            "LapLength": 25.0,
+            "sumSwimmingStrokeCount": 200.0,
+            "swimming_events": [],
+        }
+        base.update(kwargs)
+        return base
+
+    def test_pool_location_returns_translated_label(self) -> None:
+        """SwimmingLocationType=1 (Pool) should produce the translated Pool label."""
+        row = self._make_row(SwimmingLocationType=1)
+        result = wt._extract_swimming_fields(pd.Series(row))
+        # In English (default) t("Pool") == "Pool"
+        assert result["swimming_location"] == "Pool"
+
+    def test_open_water_location_returns_translated_label(self) -> None:
+        """SwimmingLocationType=2 (Open Water) should produce the translated label."""
+        row = self._make_row(SwimmingLocationType=2)
+        result = wt._extract_swimming_fields(pd.Series(row))
+        assert result["swimming_location"] == "Open Water"
+
+    def test_missing_location_type_produces_dash(self) -> None:
+        """Absent SwimmingLocationType → '–'."""
+        row = self._make_row()
+        del row["SwimmingLocationType"]
+        result = wt._extract_swimming_fields(pd.Series(row))
+        assert result["swimming_location"] == "–"
+
+    def test_unknown_location_type_returns_raw_value(self) -> None:
+        """An unrecognised integer code should fall back to the raw string value."""
+        row = self._make_row(SwimmingLocationType=99)
+        result = wt._extract_swimming_fields(pd.Series(row))
+        # SWIMMING_LOCATION_TYPES.get(99, "99") → "99", then t("99") == "99"
+        assert result["swimming_location"] == "99"
+
+    def test_lap_length_formatted_in_metres(self) -> None:
+        """LapLength (in metres) should be formatted as '<N> m'."""
+        row = self._make_row(LapLength=50.0)
+        result = wt._extract_swimming_fields(pd.Series(row))
+        assert result["swimming_lap_length"] == "50 m"
+        assert result["lap_length_m"] == pytest.approx(50.0)  # type: ignore[arg-type]
+
+    def test_missing_lap_length_produces_dash(self) -> None:
+        """Absent or zero LapLength → '–'."""
+        row = self._make_row()
+        del row["LapLength"]
+        result = wt._extract_swimming_fields(pd.Series(row))
+        assert result["swimming_lap_length"] == "–"
+        assert result["lap_length_m"] == pytest.approx(0.0)  # type: ignore[arg-type]
+
+    def test_stroke_count_formatted_as_integer(self) -> None:
+        """sumSwimmingStrokeCount should be formatted as a rounded integer string."""
+        row = self._make_row(sumSwimmingStrokeCount=199.7)
+        result = wt._extract_swimming_fields(pd.Series(row))
+        assert result["swimming_stroke_count"] == "200"
+
+    def test_missing_stroke_count_produces_dash(self) -> None:
+        """Absent sumSwimmingStrokeCount → '–'."""
+        row = self._make_row()
+        del row["sumSwimmingStrokeCount"]
+        result = wt._extract_swimming_fields(pd.Series(row))
+        assert result["swimming_stroke_count"] == "–"
+
+    def test_swimming_events_passed_through_as_list(self) -> None:
+        """swimming_events list should be preserved verbatim in the result."""
+        events = [{"type": "Lap", "duration_s": 60.0}]
+        row = self._make_row(swimming_events=events)
+        result = wt._extract_swimming_fields(pd.Series(row))
+        assert result["swimming_events"] == events
+
+    def test_nan_swimming_events_treated_as_empty_list(self) -> None:
+        """NaN in swimming_events (pandas default for missing objects) → empty list."""
+        row = self._make_row(swimming_events=float("nan"))
+        result = wt._extract_swimming_fields(pd.Series(row))
+        assert result["swimming_events"] == []
+        assert isinstance(result["swimming_events"], list)

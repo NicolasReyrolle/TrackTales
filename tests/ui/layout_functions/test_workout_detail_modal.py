@@ -1,208 +1,13 @@
-"""Tests for ui.workout_detail_modal module."""
+"""Tests for ui.workout_detail_modal module — core modal, field displays, row helpers."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from contextlib import ExitStack
 from typing import Any
-from unittest.mock import patch
 
 from ui import workout_detail_modal as wdm
 
-
-def _make_row(
-    *,
-    activity_type: str = "Running",
-    raw_activity_type: str | None = None,
-    date: str = "Sep 16, 2025",
-    duration: str = "1h 00min",
-    distance: str = "10.0 km",
-    calories: str = "650 kcal",
-    avg_hr: str = "130 bpm",
-    elevation: str = "65 m",
-    avg_power: str = "210 W",
-    date_sort: float = 1742000000.0,
-    idx: int = 0,
-) -> dict[str, Any]:
-    """Build a minimal workout row dict matching _build_workout_rows() output.
-
-    ``raw_activity_type`` defaults to ``activity_type`` when not specified.  Set
-    them to different values to simulate a language switch (e.g.
-    ``activity_type="Course à pied", raw_activity_type="Running"``).
-    """
-    return {
-        "id": f"{date_sort}_{idx}",
-        "date_sort": date_sort,
-        "date": date,
-        "raw_activity_type": raw_activity_type if raw_activity_type is not None else activity_type,
-        "activity_type": activity_type,
-        "duration_sort": 3600.0,
-        "duration": duration,
-        "distance_sort": 10000.0,
-        "distance": distance,
-        "calories_sort": 650.0,
-        "calories": calories,
-        "avg_hr_sort": 130.0,
-        "avg_hr": avg_hr,
-        "elevation_sort": 65.0,
-        "elevation": elevation,
-        "avg_power_sort": 210.0,
-        "avg_power": avg_power,
-    }
-
-
-class _DummyEvent:
-    """Tab-change event stub that mimics the NiceGUI ``ValueChangeEventArguments`` object.
-
-    Carries a *value* attribute so that ``on_value_change`` handlers registered
-    on the tabs stub can be triggered in tests without a live NiceGUI session.
-    """
-
-    def __init__(self, value: str) -> None:
-        self.value = value
-
-
-class _DummyElement:
-    """Generic stub for NiceGUI UI elements; supports context-manager and chaining."""
-
-    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
-        self._visible = True
-        self._enabled = True
-        self._text = ""
-        self._props_added: list[str] = []
-        self._props_removed: list[str] = []
-        self.rows: list[Any] = []
-        #: Current value (used by the tabs stub to track the active tab).
-        self.value: str = "overview"
-        #: Registered on_value_change handlers (used for tab-change simulation).
-        self._value_change_handlers: list[Any] = []
-
-    def classes(self, *_a: Any, **_kw: Any) -> _DummyElement:
-        return self
-
-    def props(self, *args: Any, remove: str = "", **_kw: Any) -> _DummyElement:
-        if args:
-            self._props_added.append(str(args[0]))
-        if remove:
-            self._props_removed.append(remove)
-        return self
-
-    def set_text(self, text: str) -> None:
-        self._text = text
-
-    def set_visibility(self, visible: bool) -> None:
-        self._visible = visible
-
-    def set_enabled(self, enabled: bool) -> None:
-        self._enabled = enabled
-
-    def on(self, *_a: Any, **_kw: Any) -> _DummyElement:
-        return self
-
-    def on_value_change(self, handler: Any) -> _DummyElement:
-        """Capture a value-change handler, mimicking NiceGUI's tabs widget API.
-
-        Stored handlers are invoked when :meth:`fire_value_change` is called,
-        allowing tests to simulate tab-switch events without a live NiceGUI session.
-        """
-        self._value_change_handlers.append(handler)
-        return self
-
-    def fire_value_change(self, value: str) -> None:
-        """Simulate a NiceGUI tab-change event (e.g., clicking the Splits tab in tests).
-
-        Updates *self.value* and dispatches a :class:`_DummyEvent` to every
-        handler registered via :meth:`on_value_change`.
-        """
-        self.value = value
-        event = _DummyEvent(value)
-        for handler in self._value_change_handlers:
-            handler(event)
-
-    def update(self) -> None:
-        """Stub for the NiceGUI ``update()`` method (e.g. used by ui.table)."""
-
-    def clear(self) -> None:
-        """Test stub for the NiceGUI container ``clear()`` method.
-
-        The real NiceGUI implementation removes all child elements from the
-        container.  This stub does nothing to avoid runtime errors in unit tests
-        where no actual NiceGUI context is active.
-        """
-
-    def open(self) -> None:
-        """Stub for dialog.open()."""
-
-    def close(self) -> None:
-        """Stub for dialog.close()."""
-
-    def __enter__(self) -> _DummyElement:
-        return self
-
-    def __exit__(self, *_: Any) -> None:
-        """Exit the context manager; does nothing in the stub."""
-
-
-class _ButtonStub(_DummyElement):
-    """Button stub that captures the *on_click* callback for test introspection."""
-
-    def __init__(self, *_args: Any, **kwargs: Any) -> None:
-        super().__init__(*_args, **kwargs)
-        self._on_click: Callable[[], Any] | None = kwargs.get("on_click")
-
-    def click(self) -> None:
-        """Simulate a user click by invoking the captured *on_click* callback."""
-        if self._on_click is not None:
-            self._on_click()
-
-
-def _all_patches(
-    *,
-    button_side_effect: Any = None,
-    label_side_effect: Any = None,
-    column_side_effect: Any = None,
-    table_side_effect: Any = None,
-    tab_side_effect: Any = None,
-    tabs_stub: _DummyElement | None = None,
-) -> list[Any]:
-    """Return a list of context-manager patches for all NiceGUI elements used in the modal.
-
-    Callers may override individual element factories via keyword arguments.
-    Pass *tabs_stub* to receive the ``ui.tabs`` instance back for simulating
-    tab-change events via :meth:`_DummyElement.fire_value_change`.
-    Pass *tab_side_effect* to capture individual ``ui.tab`` instances (created in
-    order: overview, activity, splits).
-    """
-    stub = _DummyElement()
-    effective_tabs = tabs_stub if tabs_stub is not None else stub
-    return [
-        patch("ui.workout_detail_modal.ui.dialog", return_value=stub),
-        patch("ui.workout_detail_modal.ui.card", return_value=stub),
-        patch("ui.workout_detail_modal.ui.row", return_value=stub),
-        patch("ui.workout_detail_modal.ui.tabs", return_value=effective_tabs),
-        patch(
-            "ui.workout_detail_modal.ui.tab",
-            side_effect=tab_side_effect or (lambda *a, **kw: _DummyElement()),
-        ),
-        patch("ui.workout_detail_modal.ui.tab_panels", return_value=stub),
-        patch("ui.workout_detail_modal.ui.tab_panel", return_value=stub),
-        patch(
-            "ui.workout_detail_modal.ui.label",
-            side_effect=label_side_effect or (lambda *a, **kw: _DummyElement()),
-        ),
-        patch(
-            "ui.workout_detail_modal.ui.button",
-            side_effect=button_side_effect or (lambda *a, **kw: _ButtonStub(*a, **kw)),
-        ),
-        patch(
-            "ui.workout_detail_modal.ui.column",
-            side_effect=column_side_effect or (lambda *a, **kw: _DummyElement()),
-        ),
-        patch(
-            "ui.workout_detail_modal.ui.table",
-            side_effect=table_side_effect or (lambda *a, **kw: _DummyElement()),
-        ),
-    ]
+from ._modal_stubs import _all_patches, _ButtonStub, _DummyElement, _make_row
 
 
 class TestFieldDisplay:
@@ -241,6 +46,38 @@ class TestWalkingFieldDisplay:
     def test_labels_are_non_empty_strings(self) -> None:
         """Every label in _WALKING_FIELD_DISPLAY should return a non-empty string."""
         for _key, label_fn in wdm._WALKING_FIELD_DISPLAY:
+            assert callable(label_fn)
+            assert label_fn() and isinstance(label_fn(), str)
+
+
+class TestHikingFieldDisplay:
+    """Tests for the _HIKING_FIELD_DISPLAY constant."""
+
+    def test_all_expected_keys_present(self) -> None:
+        """_HIKING_FIELD_DISPLAY should cover elevation, pace, cadence, step_length, step_count."""
+        field_keys = {key for key, _ in wdm._HIKING_FIELD_DISPLAY}
+        for expected in ["elevation", "pace", "cadence", "step_length", "step_count"]:
+            assert expected in field_keys
+
+    def test_labels_are_non_empty_strings(self) -> None:
+        """Every label in _HIKING_FIELD_DISPLAY should return a non-empty string."""
+        for _key, label_fn in wdm._HIKING_FIELD_DISPLAY:
+            assert callable(label_fn)
+            assert label_fn() and isinstance(label_fn(), str)
+
+
+class TestRunningFieldDisplay:
+    """Tests for _RUNNING_FIELD_DISPLAY constant and running section in the modal."""
+
+    def test_all_expected_running_keys_present(self) -> None:
+        """_RUNNING_FIELD_DISPLAY should include pace, cadence, stride length, and VO2 max."""
+        keys = {key for key, _ in wdm._RUNNING_FIELD_DISPLAY}
+        for expected in ["pace", "cadence", "stride_length", "vo2_max"]:
+            assert expected in keys
+
+    def test_running_labels_are_non_empty_strings(self) -> None:
+        """Every label in _RUNNING_FIELD_DISPLAY should be callable and non-empty."""
+        for _key, label_fn in wdm._RUNNING_FIELD_DISPLAY:
             assert callable(label_fn)
             assert label_fn() and isinstance(label_fn(), str)
 
@@ -361,107 +198,6 @@ class TestCreateWorkoutDetailModal:
         fn(0)  # Start at row 0 → counter shows "1 / 2"
         prev_btn.click()  # Attempt to navigate before the first row
         assert nav_counter._text == "1 / 2"  # Still on row 0
-
-
-class TestHikingFieldDisplay:
-    """Tests for the _HIKING_FIELD_DISPLAY constant."""
-
-    def test_all_expected_keys_present(self) -> None:
-        """_HIKING_FIELD_DISPLAY should cover elevation, pace, cadence, step_length, step_count."""
-        field_keys = {key for key, _ in wdm._HIKING_FIELD_DISPLAY}
-        for expected in ["elevation", "pace", "cadence", "step_length", "step_count"]:
-            assert expected in field_keys
-
-    def test_labels_are_non_empty_strings(self) -> None:
-        """Every label in _HIKING_FIELD_DISPLAY should return a non-empty string."""
-        for _key, label_fn in wdm._HIKING_FIELD_DISPLAY:
-            assert callable(label_fn)
-            assert label_fn() and isinstance(label_fn(), str)
-
-
-class TestRunningFieldDisplay:
-    """Tests for _RUNNING_FIELD_DISPLAY constant and running section in the modal."""
-
-    def test_all_expected_running_keys_present(self) -> None:
-        """_RUNNING_FIELD_DISPLAY should include pace, cadence, stride length, and VO2 max."""
-        keys = {key for key, _ in wdm._RUNNING_FIELD_DISPLAY}
-        for expected in ["pace", "cadence", "stride_length", "vo2_max"]:
-            assert expected in keys
-
-    def test_running_labels_are_non_empty_strings(self) -> None:
-        """Every label in _RUNNING_FIELD_DISPLAY should be callable and non-empty."""
-        for _key, label_fn in wdm._RUNNING_FIELD_DISPLAY:
-            assert callable(label_fn)
-            assert label_fn() and isinstance(label_fn(), str)
-
-
-class TestFormatSplitPace:
-    """Unit tests for _format_split_pace()."""
-
-    def test_integer_minutes(self) -> None:
-        """An exact integer minute pace should format as 'mm:00'."""
-        assert wdm._format_split_pace(5.0) == "5:00"
-
-    def test_fractional_pace_rounded(self) -> None:
-        """Fractional seconds should be rounded correctly."""
-        # 4.5 min/km → 4 min 30 sec
-        assert wdm._format_split_pace(4.5) == "4:30"
-
-    def test_seconds_rollover(self) -> None:
-        """When rounded seconds == 60, minutes should increment and seconds reset."""
-        # pace where fractional part rounds to 60 → 4.999... ≈ 5:00
-        result = wdm._format_split_pace(4.9999)
-        # should show 5:00 (rollover) rather than 4:60
-        assert "60" not in result
-
-
-class TestFormatElevationChange:
-    """Unit tests for _format_elevation_change()."""
-
-    def test_positive_elevation_shows_plus(self) -> None:
-        """Positive elevation change should show a '+' prefix."""
-        assert wdm._format_elevation_change(5.3) == "+5 m"
-
-    def test_negative_elevation_shows_minus(self) -> None:
-        """Negative elevation change should show a '-' prefix."""
-        assert wdm._format_elevation_change(-2.7) == "-3 m"
-
-    def test_zero_elevation_shows_plus_zero(self) -> None:
-        """Zero elevation change should show '+0 m'."""
-        assert wdm._format_elevation_change(0.0) == "+0 m"
-
-
-class TestFormatSplitRows:
-    """Unit tests for _format_split_rows()."""
-
-    def test_km_pace_not_scaled(self) -> None:
-        """In km mode the pace value should be used as-is."""
-        splits = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 10.0}]
-        rows = wdm._format_split_rows(splits, "km")
-        assert rows[0]["split"] == 1
-        assert rows[0]["pace_str"] == "6:00"
-        assert rows[0]["elev_str"] == "+10 m"
-
-    def test_mi_pace_is_scaled(self) -> None:
-        """In mi mode the pace should be converted to min/mi (slower than min/km)."""
-        splits = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 0.0}]
-        rows_km = wdm._format_split_rows(splits, "km")
-        rows_mi = wdm._format_split_rows(splits, "mi")
-        # min/mi pace should be larger than min/km for the same speed
-        km_minutes = int(rows_km[0]["pace_str"].split(":")[0])
-        mi_minutes = int(rows_mi[0]["pace_str"].split(":")[0])
-        assert mi_minutes > km_minutes
-
-    def test_multiple_splits_returned(self) -> None:
-        """All splits in the input should be present in the output."""
-        splits = [
-            {"split": 1, "pace_min_per_km": 5.0, "elevation_change_m": 2.0},
-            {"split": 2, "pace_min_per_km": 5.5, "elevation_change_m": -1.0},
-        ]
-        rows = wdm._format_split_rows(splits, "km")
-        assert len(rows) == 2
-        assert rows[1]["split"] == 2
-        assert rows[1]["elev_str"] == "-1 m"
 
 
 class TestActivityTabSection:
@@ -839,7 +575,7 @@ class TestTabEnableState:
         assert not tab_stubs[1]._enabled
 
     def test_splits_tab_disabled_when_no_route(self) -> None:
-        """Splits tab should be disabled when the workout has no GPS route."""
+        """Intervals tab should be disabled when the workout has no GPS route and no swim laps."""
         rows = [_make_row(idx=0, activity_type="Running", raw_activity_type="Running")]
         tab_stubs, make_tab = self._make_tab_stubs()
 
@@ -852,7 +588,7 @@ class TestTabEnableState:
         assert not tab_stubs[2]._enabled
 
     def test_splits_tab_enabled_when_route_present(self) -> None:
-        """Splits tab should be enabled when the workout has a non-empty GPS route."""
+        """Intervals tab should be enabled when the workout has a non-empty GPS route."""
         from datetime import timedelta
 
         from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
@@ -1013,302 +749,31 @@ class TestRowHasActivityData:
         )
 
 
-class TestSplitsTabSection:
-    """Tests for the Splits tab rendering in the modal."""
+class TestDistanceFormatTwoDecimals:
+    """Tests that distance is formatted with 2 decimal places."""
 
-    def test_splits_table_hidden_when_no_splits(self) -> None:
-        """Splits table should be hidden when splits list is empty."""
-        rows = [
-            {
-                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
-                "pace": "6:00 /km",
-                "splits": [],
-            },
-        ]
-        table_stubs: list[_DummyElement] = []
-        tabs_stub = _DummyElement()
+    def test_metric_distance_has_two_decimals(self) -> None:
+        """Metric distances should show 2 decimal places."""
+        from ui import workout_table as wt
 
-        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
-            tbl = _DummyElement()
-            table_stubs.append(tbl)
-            return tbl
+        row = {"distance": 10000.0}  # 10 km
+        _, display = wt._extract_distance_field(row, distance_unit="km")
+        assert display == "10.00 km"
 
-        with ExitStack() as stack:
-            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
-                stack.enter_context(p)
-            fn = wdm.create_workout_detail_modal(rows)
+    def test_metric_distance_non_round_has_two_decimals(self) -> None:
+        """Non-round metric distances should show 2 decimal places."""
+        from ui import workout_table as wt
 
-        fn(0)
-        tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
-        splits_table = table_stubs[0]
-        assert not splits_table._visible
+        row = {"distance": 5678.0}  # 5.678 km
+        _, display = wt._extract_distance_field(row, distance_unit="km")
+        assert display == "5.68 km"
 
-    def test_splits_table_visible_and_populated_when_splits_present(self) -> None:
-        """Splits table should be visible and contain one row per split."""
-        splits_data = [
-            {"split": 1, "pace_min_per_km": 5.5, "elevation_change_m": 3.0},
-            {"split": 2, "pace_min_per_km": 5.75, "elevation_change_m": -1.0},
-        ]
-        rows = [
-            {
-                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
-                "pace": "5:39 /km",
-                "splits": splits_data,
-            },
-        ]
-        table_stubs: list[_DummyElement] = []
-        tabs_stub = _DummyElement()
+    def test_imperial_distance_has_two_decimals(self) -> None:
+        """Imperial distances should show 2 decimal places."""
+        from ui import workout_table as wt
+        from units import METERS_TO_MILES
 
-        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
-            tbl = _DummyElement()
-            table_stubs.append(tbl)
-            return tbl
-
-        with ExitStack() as stack:
-            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
-                stack.enter_context(p)
-            fn = wdm.create_workout_detail_modal(rows)
-
-        fn(0)
-        tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
-        splits_table = table_stubs[0]
-        assert splits_table._visible
-        assert len(splits_table.rows) == 2
-        assert splits_table.rows[0]["split"] == 1
-        assert splits_table.rows[1]["split"] == 2
-
-    def test_splits_table_hidden_for_non_running_activity(self) -> None:
-        """Splits table should be hidden when the workout has no splits (non-running)."""
-        rows = [_make_row(idx=0, activity_type="Cycling", raw_activity_type="Cycling")]
-        table_stubs: list[_DummyElement] = []
-        tabs_stub = _DummyElement()
-
-        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
-            tbl = _DummyElement()
-            table_stubs.append(tbl)
-            return tbl
-
-        with ExitStack() as stack:
-            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
-                stack.enter_context(p)
-            fn = wdm.create_workout_detail_modal(rows)
-
-        fn(0)
-        tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
-        splits_table = table_stubs[0]
-        assert not splits_table._visible
-
-    def test_pace_converted_to_min_per_mi_for_imperial_splits(self) -> None:
-        """Pace values should be scaled from min/km to min/mi when distance_unit is 'mi'."""
-        # 6:00/km → ~9:39/mi via 6.0 / (1000 * METERS_TO_MILES).
-        splits_data = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 0.0}]
-        rows = [
-            {
-                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
-                "pace": "6:00 /km",
-                "splits": splits_data,
-                "distance_unit": "mi",
-            },
-        ]
-        table_stubs: list[_DummyElement] = []
-        tabs_stub = _DummyElement()
-
-        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
-            tbl = _DummyElement()
-            table_stubs.append(tbl)
-            return tbl
-
-        with ExitStack() as stack:
-            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
-                stack.enter_context(p)
-            fn = wdm.create_workout_detail_modal(rows)
-
-        fn(0)
-        tabs_stub.fire_value_change("splits")  # Simulate user clicking the Splits tab
-        splits_table = table_stubs[0]
-        assert splits_table._visible
-        assert len(splits_table.rows) == 1
-        # 6 min/km / (1000 * METERS_TO_MILES) ≈ 9.656 min/mi → "9:39"
-        pace_str = splits_table.rows[0]["pace_str"]
-        minutes = int(pace_str.split(":")[0])
-        assert minutes == 9
-
-    def test_navigate_while_on_splits_tab_refreshes_splits(self) -> None:
-        """Navigating to a different workout while the Splits tab is active should refresh splits.
-
-        Covers the ``if detail_tabs.value == "splits":`` branch inside ``_refresh()``.
-        """
-        splits_row0 = [{"split": 1, "pace_min_per_km": 5.0, "elevation_change_m": 0.0}]
-        rows = [
-            {
-                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
-                "pace": "5:00 /km",
-                "splits": splits_row0,
-            },
-            {
-                **_make_row(idx=1, activity_type="Running", raw_activity_type="Running"),
-                "pace": "5:00 /km",
-                "splits": [],  # second workout has no splits
-            },
-        ]
-        table_stubs: list[_DummyElement] = []
-        created_buttons: list[_ButtonStub] = []
-        tabs_stub = _DummyElement()
-
-        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
-            tbl = _DummyElement()
-            table_stubs.append(tbl)
-            return tbl
-
-        def make_button(*args: Any, **kwargs: Any) -> _ButtonStub:
-            btn = _ButtonStub(*args, **kwargs)
-            created_buttons.append(btn)
-            return btn
-
-        with ExitStack() as stack:
-            for p in _all_patches(
-                table_side_effect=make_table,
-                button_side_effect=make_button,
-                tabs_stub=tabs_stub,
-            ):
-                stack.enter_context(p)
-            fn = wdm.create_workout_detail_modal(rows)
-
-        fn(0)  # Open at row 0 (Overview tab active)
-        tabs_stub.fire_value_change("splits")  # User switches to Splits tab
-        splits_table = table_stubs[0]
-        assert splits_table._visible  # row 0 has splits
-
-        # Navigate to row 1 while the Splits tab remains active
-        next_btn = created_buttons[2]  # Button order: [0] close, [1] prev, [2] next
-        next_btn.click()
-        # Row 1 has empty splits — table should now be hidden
-        assert not splits_table._visible
-
-
-class TestComputeSplitsLazy:
-    """Unit tests for _compute_splits_lazy()."""
-
-    def _make_route(self, n_points: int = 1001, speed_m_s: float = 3.0) -> Any:
-        """Build a WorkoutRoute with *n_points* evenly-spaced speed-only points."""
-        from datetime import timedelta
-
-        import pandas as pd
-
-        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
-
-        base_time = pd.Timestamp("2024-01-01 10:00:00").to_pydatetime().replace(tzinfo=None)
-        points = [
-            RoutePoint(
-                time=base_time + timedelta(seconds=i),
-                latitude=0.0,
-                longitude=0.0,
-                altitude=0.0,
-                speed=speed_m_s,
-            )
-            for i in range(n_points)
-        ]
-        return WorkoutRoute(points=points)
-
-    def test_returns_empty_list_and_caches_when_no_route(self) -> None:
-        """Should return [] and cache the result in the row dict when route is absent."""
-        row: dict[str, Any] = {"distance_unit": "km", "distance_sort": 3000.0}
-        result = wdm._compute_splits_lazy(row)
-        assert result == []
-        assert row["splits"] == []
-
-    def test_computes_splits_from_route(self) -> None:
-        """Should compute ≥ 3 km splits for a ~3 km route and cache them."""
-        route = self._make_route(n_points=1001, speed_m_s=3.0)
-        row: dict[str, Any] = {"route": route, "distance_unit": "km", "distance_sort": 3000.0}
-        result = wdm._compute_splits_lazy(row)
-        assert len(result) >= 3
-        assert row["splits"] is result  # cached in row dict
-
-    def test_caches_result_on_second_call(self) -> None:
-        """A second call should return the same list object without recomputing."""
-        route = self._make_route(n_points=1001, speed_m_s=3.0)
-        row: dict[str, Any] = {"route": route, "distance_unit": "km", "distance_sort": 3000.0}
-        first = wdm._compute_splits_lazy(row)
-        # Call again — the idempotency guard inside _compute_splits_lazy should
-        # return the already-cached list without recomputing.
-        second = wdm._compute_splits_lazy(row)
-        assert second is first
-
-    def test_uses_mile_split_distance_for_imperial(self) -> None:
-        """In imperial mode the split interval should be ~1609 m, yielding fewer splits."""
-        route = self._make_route(n_points=1001, speed_m_s=3.0)
-        row_km: dict[str, Any] = {
-            "route": route,
-            "distance_unit": "km",
-            "distance_sort": 3000.0,
-        }
-        row_mi: dict[str, Any] = {
-            "route": route,
-            "distance_unit": "mi",
-            "distance_sort": 3000.0,
-        }
-        splits_km = wdm._compute_splits_lazy(row_km)
-        splits_mi = wdm._compute_splits_lazy(row_mi)
-        # ~3000 m / 1000 m → ≥ 3 km splits; ~3000 m / 1609 m → 1 mi split
-        assert len(splits_km) > len(splits_mi)
-
-    def test_splits_computed_lazily_in_modal(self) -> None:
-        """Splits should not be computed on modal open; only when the Splits tab is shown.
-
-        Verifies that ``row['splits']`` is absent after ``open_at()`` and is
-        populated only after the user switches to the Splits tab.
-        """
-        from datetime import timedelta
-
-        import pandas as pd
-
-        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
-
-        base_time = pd.Timestamp("2024-01-01 10:00:00").to_pydatetime().replace(tzinfo=None)
-        points = [
-            RoutePoint(
-                time=base_time + timedelta(seconds=i),
-                latitude=0.0,
-                longitude=0.0,
-                altitude=0.0,
-                speed=3.0,
-            )
-            for i in range(1001)
-        ]
-        route = WorkoutRoute(points=points)
-
-        rows = [
-            {
-                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
-                "pace": "5:33 /km",
-                "distance_unit": "km",
-                # No 'splits' key — must not be computed until Splits tab is opened.
-                "route": route,
-            },
-        ]
-        table_stubs: list[_DummyElement] = []
-        tabs_stub = _DummyElement()
-
-        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
-            tbl = _DummyElement()
-            table_stubs.append(tbl)
-            return tbl
-
-        with ExitStack() as stack:
-            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
-                stack.enter_context(p)
-            fn = wdm.create_workout_detail_modal(rows)
-
-        fn(0)  # Open modal on the Overview tab
-        # Splits must NOT be computed yet (Overview tab is active, not Splits).
-        assert "splits" not in rows[0]
-
-        tabs_stub.fire_value_change("splits")  # User switches to the Splits tab
-        splits_table = table_stubs[0]
-        # Lazy computation should have produced ≥ 3 splits and shown the table.
-        assert splits_table._visible
-        assert len(splits_table.rows) >= 3
-        # Result must be cached in the row dict for subsequent navigations.
-        assert "splits" in rows[0]
-        assert len(rows[0]["splits"]) >= 3
+        row = {"distance": 1609.344}  # exactly 1 mile
+        _, display = wt._extract_distance_field(row, distance_unit="mi")
+        expected = f"{1609.344 * METERS_TO_MILES:.2f} mi"
+        assert display == expected

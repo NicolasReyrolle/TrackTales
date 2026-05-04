@@ -25,6 +25,26 @@ _logger = logging.getLogger(__name__)
 # Sentinel used for missing optional numeric values so they sort to the bottom.
 _MISSING_SORT = -1.0
 
+# Only these fields are needed by the visible q-table columns and row-action event.
+_TABLE_ROW_FIELDS: tuple[str, ...] = (
+    "id",
+    "date_sort",
+    "date",
+    "activity_type",
+    "duration_sort",
+    "duration",
+    "distance_sort",
+    "distance",
+    "calories_sort",
+    "calories",
+    "avg_hr_sort",
+    "avg_hr",
+    "elevation_sort",
+    "elevation",
+    "avg_power_sort",
+    "avg_power",
+)
+
 
 def _safe_float(value: Any) -> float | None:
     """Return a float for numeric *value*, or None if it is missing/NaN."""
@@ -217,6 +237,8 @@ def _extract_row_data(
         result.update(_extract_walking_fields(row, distance_unit))
     elif raw_activity == "Hiking":
         result.update(_extract_hiking_fields(row, distance_unit))
+    elif raw_activity == "Swimming":
+        result.update(_extract_swimming_fields(row))
 
     return result
 
@@ -237,9 +259,9 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
         return _MISSING_SORT, "–"
     if distance_raw > 0:
         if distance_unit == "mi":
-            distance_display = f"{distance_raw * METERS_TO_MILES:.1f} mi"
+            distance_display = f"{distance_raw * METERS_TO_MILES:.2f} mi"
         else:
-            distance_display = f"{distance_raw / 1000:.1f} km"
+            distance_display = f"{distance_raw / 1000:.2f} km"
     else:
         distance_display = "–"
     return distance_raw, distance_display
@@ -454,12 +476,73 @@ def _extract_hiking_fields(
     return _extract_walking_fields(row, distance_unit)
 
 
+def _extract_swimming_fields(row: Any) -> dict[str, Any]:
+    """Extract swimming-specific fields from a workout DataFrame row.
+
+    Passes the raw ``swimming_events`` list and lap-length metadata through
+    to the row dict so the workout detail modal can build the interval table.
+
+    Args:
+        row: A pandas Series representing a swimming workout.
+
+    Returns:
+        A dict with swimming-specific fields for the modal.
+    """
+    events = row.get("swimming_events")
+    # swimming_events is a list stored as an object in the DataFrame column;
+    # guard against NaN (float) or other non-list values.
+    swimming_events: list[Any] = events if isinstance(events, list) else []
+
+    # LapLength is stored as a float (metres) after ExportParser._parse_value.
+    lap_length_raw = _safe_float(row.get("LapLength"))
+    lap_length_m = lap_length_raw if lap_length_raw is not None and lap_length_raw > 0 else 0.0
+
+    # Location type (1=Pool, 2=Open Water) is stored as an int after parse_metadata_value.
+    location_raw = row.get("SwimmingLocationType")
+    location_display: str
+    if location_raw is not None:
+        from logic.workout_detail_schema import SWIMMING_LOCATION_TYPES
+
+        try:
+            label = SWIMMING_LOCATION_TYPES.get(int(location_raw), str(location_raw))
+            location_display = t(label)
+        except (ValueError, TypeError):
+            location_display = str(location_raw)
+    else:
+        location_display = "–"
+
+    _, stroke_count_display = _build_field_pair(
+        row.get("sumSwimmingStrokeCount"),
+        lambda v: f"{int(round(v))}",
+    )
+
+    lap_length_display = f"{int(lap_length_m)} m" if lap_length_m > 0 else "–"
+
+    return {
+        "swimming_events": swimming_events,
+        "lap_length_m": lap_length_m,
+        "swimming_location": location_display,
+        "swimming_stroke_count": stroke_count_display,
+        "swimming_lap_length": lap_length_display,
+    }
+
+
 def _find_row_index(row_id: str, rows: list[dict[str, Any]]) -> int | None:
     """Return the index of the row with matching *row_id*, or ``None`` if missing."""
     for i, row in enumerate(rows):
         if row.get("id") == row_id:
             return i
     return None
+
+
+def _build_table_rows(full_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return lightweight rows for q-table transport.
+
+    This strips modal-only payloads (e.g. route traces, swimming intervals) from
+    the table JSON sent to the browser while preserving all data needed for visible
+    columns and action events.
+    """
+    return [{field: row.get(field) for field in _TABLE_ROW_FIELDS} for row in full_rows]
 
 
 @ui.refreshable
@@ -469,8 +552,9 @@ def render_workout_table() -> None:
         ui.label(t("Load a file to see workout details.")).classes(LABEL_EMPTY_STATE_CLASSES)
         return
 
-    rows = _build_workout_rows()
-    _logger.debug("Rendering workout table with %d rows", len(rows))
+    full_rows = _build_workout_rows()
+    _logger.debug("Rendering workout table with %d rows", len(full_rows))
+    table_rows = _build_table_rows(full_rows)
 
     columns = [
         {
@@ -539,11 +623,16 @@ def render_workout_table() -> None:
     ]
 
     # Create the detail modal once; the returned callable opens it at a given index.
-    open_detail = create_workout_detail_modal(rows)
+    open_detail = create_workout_detail_modal(full_rows)
+    row_index_by_id: dict[str, int] = {
+        str(row_id): idx
+        for idx, row_id in enumerate(row.get("id") for row in full_rows)
+        if row_id is not None
+    }
 
     table = ui.table(
         columns=columns,
-        rows=rows,
+        rows=table_rows,
         row_key="id",
         pagination={"sortBy": "date_sort", "descending": True, "rowsPerPage": 15},
     ).classes(TABLE_FULL_CLASSES)
@@ -589,7 +678,7 @@ def render_workout_table() -> None:
 
     def _handle_open_detail(e: Any) -> None:
         row_id = str(e.args)
-        row_index = _find_row_index(row_id, rows)
+        row_index = row_index_by_id.get(row_id)
         if row_index is not None:
             open_detail(row_index)
 

@@ -128,7 +128,7 @@ class TestBuildWorkoutRows:
 
         assert len(rows) == 1
         row = rows[0]
-        assert row["distance"] == "10.0 km"
+        assert row["distance"] == "10.00 km"
         assert row["distance_sort"] == pytest.approx(10000.0)
         assert row["calories"] == "650 kcal"
         assert row["calories_sort"] == pytest.approx(650.0)
@@ -517,7 +517,7 @@ class TestBuildWorkoutRowsImperial:
             state.workouts = original_workouts
 
         assert len(rows) == 1
-        expected_mi = f"{1609.344 * METERS_TO_MILES:.1f} mi"
+        expected_mi = f"{1609.344 * METERS_TO_MILES:.2f} mi"
         assert rows[0]["distance"] == expected_mi
 
     def test_all_rows_filtered_out_returns_empty(self) -> None:

@@ -6,6 +6,11 @@ from typing import Any, TypeAlias, cast
 from nicegui import ui
 
 from i18n import t
+from logic.workout_manager.swimming import (
+    SwimInterval,
+    build_swim_interval_display_rows,
+    build_swim_intervals,
+)
 from logic.workout_manager.workout_route import WorkoutRoute
 from ui.css import (
     BUTTON_DENSE_PROPS,
@@ -19,6 +24,7 @@ from ui.css import (
     MODAL_NAV_COUNTER_CLASSES,
     MODAL_NAV_ROW_CLASSES,
     MODAL_SPLITS_TABLE_CLASSES,
+    MODAL_SWIM_TABLE_CLASSES,
     MODAL_TAB_PANELS_CLASSES,
     TABLE_DENSE_FLAT_PROPS,
     TABS_FULL_CLASSES,
@@ -102,6 +108,34 @@ _HIKING_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
     ("step_length", lambda: t("Avg Step Length")),
     ("step_count", _label_step_count),
 ]
+
+#: Swimming-specific summary fields shown in the Activity tab when the workout is Swimming.
+_SWIMMING_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
+    ("swimming_location", lambda: t("Location")),
+    ("swimming_lap_length", lambda: t("Lap Length")),
+    ("swimming_stroke_count", lambda: t("Total Strokes")),
+]
+
+
+def _build_swim_display_rows(intervals: list[SwimInterval]) -> list[dict[str, Any]]:
+    """Build display-ready rows for the swim interval table.
+
+    Delegates to :func:`~logic.workout_manager.swimming.build_swim_interval_display_rows`
+    which merges all laps within each interval into a single summary row.
+    All stroke labels are translated here since
+    :mod:`logic.workout_manager.swimming` is i18n-agnostic.
+
+    Args:
+        intervals: Ordered list of :class:`~logic.workout_manager.swimming.SwimInterval`
+            objects produced by :func:`~logic.workout_manager.swimming.build_swim_intervals`.
+
+    Returns:
+        List of row dicts ready for assignment to a ``ui.table``.
+    """
+    return [
+        {**row, "stroke": t(row["stroke"])} if row.get("stroke") else row
+        for row in build_swim_interval_display_rows(intervals)
+    ]
 
 
 def _format_split_pace(pace_min_per_km: float) -> str:
@@ -261,6 +295,8 @@ _ACTIVITY_FIELD_KEYS: dict[str, list[str]] = {
     "Running": [k for k, _ in _RUNNING_FIELD_DISPLAY],
     "Walking": [k for k, _ in _WALKING_FIELD_DISPLAY],
     "Hiking": [k for k, _ in _HIKING_FIELD_DISPLAY],
+    # Swimming: enable Activity tab when any summary field is present.
+    "Swimming": [k for k, _ in _SWIMMING_FIELD_DISPLAY],
 }
 
 
@@ -272,6 +308,9 @@ def _row_has_activity_data(row: dict[str, Any]) -> bool:
     corresponding statistics are absent from the export (e.g. a Walking workout
     recorded without cadence or step data).
 
+    For Swimming, the tab is enabled when at least one summary field
+    (location, lap length, or stroke count) is present.
+
     Args:
         row: A workout row dict as returned by ``_build_workout_rows()``.
 
@@ -282,6 +321,107 @@ def _row_has_activity_data(row: dict[str, Any]) -> bool:
     raw_type = row.get("raw_activity_type")
     keys = _ACTIVITY_FIELD_KEYS.get(raw_type, [])  # type: ignore[arg-type]
     return any(str(row.get(k, "–")) not in ("–", "") for k in keys)
+
+
+def _row_has_swim_laps(row: dict[str, Any]) -> bool:
+    """Return True when the row contains at least one Lap swimming event.
+
+    Used to decide whether to enable the Intervals tab in the workout detail
+    modal.  A list that contains only Segment events does not produce any
+    interval rows (``build_swim_intervals`` requires at least one Lap event),
+    so the Intervals tab must remain disabled in that case.
+
+    Args:
+        row: A workout row dict as returned by ``_build_workout_rows()``.
+
+    Returns:
+        True when ``swimming_events`` contains at least one event whose
+        ``type`` is ``"Lap"``.
+    """
+    events = row.get("swimming_events")
+    if not isinstance(events, list):
+        return False
+    return any(e.get("type") == "Lap" for e in events)
+
+
+def _do_refresh_activity_tab(
+    no_activity_label: Any,
+    activity_tab: Any,
+    containers: dict[str, tuple[Any, Any]],
+    row: dict[str, Any],
+) -> None:
+    """Update the Activity tab elements for the given workout row.
+
+    Shows the appropriate type-specific container and updates its fields.
+    All other containers are hidden.  The tab itself is disabled when no
+    activity-specific data is available.
+
+    Args:
+        no_activity_label: Label shown when the activity type is unsupported.
+        activity_tab:       The ``ui.tab`` element for the Activity tab.
+        containers:         Dict mapping raw activity type name → (container, field_rows).
+        row:                Workout row dict as returned by ``_build_workout_rows()``.
+    """
+    raw_type = row.get("raw_activity_type")
+    has_data = _row_has_activity_data(row)
+    no_activity_label.set_visibility(not has_data)
+    activity_tab.set_enabled(has_data)
+    for activity, (container, _) in containers.items():
+        container.set_visibility(raw_type == activity)
+    if raw_type in containers:
+        _update_fields(containers[raw_type][1], row)
+
+
+def _do_refresh_intervals_tab(
+    no_swim_laps_label: Any,
+    swim_table: Any,
+    no_splits_label: Any,
+    splits_table: Any,
+    splits_columns: list[dict[str, Any]],
+    row: dict[str, Any],
+) -> None:
+    """Update the Intervals tab elements for the given workout row.
+
+    For Swimming workouts, populates the swim-interval table from
+    ``row["swimming_events"]``.  For all other workout types, computes
+    GPS splits lazily via :func:`_compute_splits_lazy` and populates the
+    splits table.  Sections are shown or hidden based on activity type and
+    data availability.
+
+    Args:
+        no_swim_laps_label: Label shown when swimming has no lap data.
+        swim_table:         The ``ui.table`` for swim intervals.
+        no_splits_label:    Label shown when no GPS route is available.
+        splits_table:       The ``ui.table`` for GPS splits.
+        splits_columns:     Column definition list for the splits table (mutated
+                            to update the distance-unit header).
+        row:                Workout row dict as returned by ``_build_workout_rows()``.
+    """
+    is_swimming = row.get("raw_activity_type") == "Swimming"
+
+    # --- Swimming section ---
+    events = row.get("swimming_events") or []
+    lap_length = float(row.get("lap_length_m") or 0.0)
+    intervals = build_swim_intervals(events, lap_length)
+    swim_rows = _build_swim_display_rows(intervals)
+    has_swim = bool(swim_rows) and is_swimming
+    no_swim_laps_label.set_visibility(is_swimming and not has_swim)
+    swim_table.set_visibility(has_swim)
+    if has_swim:
+        swim_table.rows = swim_rows
+        swim_table.update()
+
+    # --- GPS splits section ---
+    splits = _compute_splits_lazy(row)
+    has_splits = bool(splits) and not is_swimming
+    no_splits_label.set_visibility(not is_swimming and not has_splits)
+    splits_table.set_visibility(has_splits)
+    if has_splits:
+        du = row.get("distance_unit", "km")
+        # Update column header to reflect the active distance unit (km / mi).
+        splits_columns[0]["label"] = du
+        splits_table.rows = _format_split_rows(splits, du)
+        splits_table.update()
 
 
 def create_workout_detail_modal(
@@ -303,9 +443,13 @@ def create_workout_detail_modal(
       stride length, vertical oscillation, ground contact time, step count, and
       VO₂ max.  Walking workouts show pace, cadence, step length, and step count.
       Hiking workouts show elevation gain, pace, cadence, step length, and step count.
+      Swimming workouts show location, lap length, and total stroke count.
       Other activity types show a placeholder message; the tab is disabled.
-    * **Splits** – per-km GPS-based splits in a compact table.  The tab is
-      disabled when no GPS route is available.
+    * **Intervals** – per-workout interval data.  For Swimming workouts each row
+      represents one active set with distance, time, stroke style, average SWOLF,
+      and rest duration.  For workouts with a GPS route the table shows per-km (or
+      per-mi) splits with pace and elevation change.  The tab is disabled when
+      neither lap events nor a GPS route are available.
 
     Args:
         rows: List of workout row dicts as returned by ``_build_workout_rows()``.
@@ -330,7 +474,7 @@ def create_workout_detail_modal(
             with ui.tabs().classes(TABS_FULL_CLASSES) as detail_tabs:
                 ui.tab("overview", t("Overview"))
                 activity_tab = ui.tab("activity", t("Activity"))
-                splits_tab = ui.tab("splits", t("Splits"))
+                intervals_tab = ui.tab("intervals", t("Intervals"))
 
             # ---- Tab panels ----
             with ui.tab_panels(detail_tabs, value="overview").classes(MODAL_TAB_PANELS_CLASSES):
@@ -356,9 +500,68 @@ def create_workout_detail_modal(
                     hiking_container = ui.column().classes(TABS_FULL_CLASSES)
                     with hiking_container:
                         hiking_field_rows = _build_field_rows(_HIKING_FIELD_DISPLAY)
+                    # Swimming summary metrics; shown only when activity is Swimming
+                    swimming_container = ui.column().classes(TABS_FULL_CLASSES)
+                    with swimming_container:
+                        swimming_field_rows = _build_field_rows(_SWIMMING_FIELD_DISPLAY)
 
-                # Splits tab: per-km GPS splits table
-                with ui.tab_panel("splits"):
+                # Intervals tab: swim lap table (Swimming) or GPS splits (other workouts with GPS)
+                with ui.tab_panel("intervals"):
+                    # Swimming section: per-interval lap table
+                    no_swim_laps_label = ui.label(t("No lap data available.")).classes(
+                        LABEL_MUTED_CLASSES
+                    )
+                    swim_columns = [
+                        {
+                            "name": "num",
+                            "label": "#",
+                            "field": "num",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "dist",
+                            "label": t("Dist"),
+                            "field": "dist",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "dur",
+                            "label": t("Time"),
+                            "field": "dur",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "stroke",
+                            "label": t("Stroke"),
+                            "field": "stroke",
+                            "align": "left",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "swolf",
+                            "label": "SWOLF",
+                            "field": "swolf",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "pause",
+                            "label": t("Rest"),
+                            "field": "pause",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                    ]
+                    swim_table = (
+                        ui.table(columns=swim_columns, rows=[], row_key="num")
+                        .classes(MODAL_SWIM_TABLE_CLASSES)
+                        .props(TABLE_DENSE_FLAT_PROPS)
+                    )
+
+                    # GPS splits section: per-km or per-mi splits for workouts with a route
                     no_splits_label = ui.label(t("No GPS route available.")).classes(
                         LABEL_MUTED_CLASSES
                     )
@@ -410,42 +613,23 @@ def create_workout_detail_modal(
         prev_btn.set_enabled(idx != 0)
         next_btn.set_enabled(idx != n - 1)
 
+    # Build the containers map once; reused by _refresh_activity_tab on every refresh.
+    _containers: dict[str, tuple[Any, Any]] = {
+        "Running": (running_container, running_field_rows),
+        "Walking": (walking_container, walking_field_rows),
+        "Hiking": (hiking_container, hiking_field_rows),
+        "Swimming": (swimming_container, swimming_field_rows),
+    }
+
     def _refresh_activity_tab(row: dict[str, Any]) -> None:
-        """Update activity tab: show type-specific metrics and set tab enabled state."""
-        raw_type = row.get("raw_activity_type")
-        is_running = raw_type == "Running"
-        is_walking = raw_type == "Walking"
-        is_hiking = raw_type == "Hiking"
-        has_data = _row_has_activity_data(row)
-        no_activity_label.set_visibility(not has_data)
-        running_container.set_visibility(is_running)
-        walking_container.set_visibility(is_walking)
-        hiking_container.set_visibility(is_hiking)
-        activity_tab.set_enabled(has_data)
-        if is_running:
-            _update_fields(running_field_rows, row)
-        elif is_walking:
-            _update_fields(walking_field_rows, row)
-        elif is_hiking:
-            _update_fields(hiking_field_rows, row)
+        """Delegate to module-level helper; updates Activity tab visibility and fields."""
+        _do_refresh_activity_tab(no_activity_label, activity_tab, _containers, row)
 
-    def _refresh_splits_tab(row: dict[str, Any]) -> None:
-        """Update splits tab with GPS-based per-km or per-mi splits.
-
-        Splits are computed lazily on first open (via :func:`_compute_splits_lazy`)
-        and then cached in ``row["splits"]`` for instant display on subsequent
-        navigations to the same workout.
-        """
-        splits = _compute_splits_lazy(row)
-        has_splits = bool(splits)
-        no_splits_label.set_visibility(not has_splits)
-        splits_table.set_visibility(has_splits)
-        if has_splits:
-            du = row.get("distance_unit", "km")
-            # Update column header to reflect the active distance unit (km / mi).
-            splits_columns[0]["label"] = du
-            splits_table.rows = _format_split_rows(splits, du)
-            splits_table.update()
+    def _refresh_intervals_tab(row: dict[str, Any]) -> None:
+        """Delegate to module-level helper; updates Intervals tab tables and labels."""
+        _do_refresh_intervals_tab(
+            no_swim_laps_label, swim_table, no_splits_label, splits_table, splits_columns, row
+        )
 
     def _refresh() -> None:
         """Update all modal elements to reflect the current workout."""
@@ -456,11 +640,11 @@ def create_workout_detail_modal(
         _refresh_header(idx, n, row)
         _update_fields(field_rows, row)
         _refresh_activity_tab(row)
-        splits_tab.set_enabled(_row_has_route(row))
-        # Only refresh the Splits tab when it is currently active; switching to
-        # the Splits tab triggers _on_tab_change which handles the initial load.
-        if detail_tabs.value == "splits":
-            _refresh_splits_tab(row)
+        intervals_tab.set_enabled(_row_has_swim_laps(row) or _row_has_route(row))
+        # Only refresh the Intervals tab when it is currently active; switching to
+        # it triggers _on_tab_change which handles the initial load.
+        if detail_tabs.value == "intervals":
+            _refresh_intervals_tab(row)
 
     def _navigate(delta: int) -> None:
         """Move to the next or previous workout by *delta* steps."""
@@ -470,16 +654,15 @@ def create_workout_detail_modal(
             _refresh()
 
     def _on_tab_change(e: Any) -> None:
-        """Refresh the Splits tab the first time the user switches to it.
+        """Refresh the Intervals tab when the user switches to it.
 
-        For rows whose splits have not yet been computed, this triggers
-        :func:`_compute_splits_lazy` (via :func:`_refresh_splits_tab`) which
-        caches the result in ``row["splits"]`` so subsequent visits are instant.
-        The handler is only active when ``e.value == "splits"``; other tab
-        changes are ignored.
+        Swim intervals are loaded on first open and GPS splits are computed
+        lazily (via :func:`_compute_splits_lazy`) and cached in
+        ``row["splits"]`` for instant display on subsequent navigations.
+        Other tab changes are ignored.
         """
-        if e.value == "splits":
-            _refresh_splits_tab(rows[modal_state["index"]])
+        if e.value == "intervals":
+            _refresh_intervals_tab(rows[modal_state["index"]])
 
     detail_tabs.on_value_change(_on_tab_change)
 

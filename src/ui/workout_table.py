@@ -25,6 +25,26 @@ _logger = logging.getLogger(__name__)
 # Sentinel used for missing optional numeric values so they sort to the bottom.
 _MISSING_SORT = -1.0
 
+# Only these fields are needed by the visible q-table columns and row-action event.
+_TABLE_ROW_FIELDS: tuple[str, ...] = (
+    "id",
+    "date_sort",
+    "date",
+    "activity_type",
+    "duration_sort",
+    "duration",
+    "distance_sort",
+    "distance",
+    "calories_sort",
+    "calories",
+    "avg_hr_sort",
+    "avg_hr",
+    "elevation_sort",
+    "elevation",
+    "avg_power_sort",
+    "avg_power",
+)
+
 
 def _safe_float(value: Any) -> float | None:
     """Return a float for numeric *value*, or None if it is missing/NaN."""
@@ -515,6 +535,16 @@ def _find_row_index(row_id: str, rows: list[dict[str, Any]]) -> int | None:
     return None
 
 
+def _build_table_rows(full_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return lightweight rows for q-table transport.
+
+    This strips modal-only payloads (e.g. route traces, swimming intervals) from
+    the table JSON sent to the browser while preserving all data needed for visible
+    columns and action events.
+    """
+    return [{field: row.get(field) for field in _TABLE_ROW_FIELDS} for row in full_rows]
+
+
 @ui.refreshable
 def render_workout_table() -> None:
     """Render the workout details table with sortable numeric columns and pagination."""
@@ -522,8 +552,9 @@ def render_workout_table() -> None:
         ui.label(t("Load a file to see workout details.")).classes(LABEL_EMPTY_STATE_CLASSES)
         return
 
-    rows = _build_workout_rows()
-    _logger.debug("Rendering workout table with %d rows", len(rows))
+    full_rows = _build_workout_rows()
+    _logger.debug("Rendering workout table with %d rows", len(full_rows))
+    table_rows = _build_table_rows(full_rows)
 
     columns = [
         {
@@ -592,11 +623,16 @@ def render_workout_table() -> None:
     ]
 
     # Create the detail modal once; the returned callable opens it at a given index.
-    open_detail = create_workout_detail_modal(rows)
+    open_detail = create_workout_detail_modal(full_rows)
+    row_index_by_id: dict[str, int] = {
+        str(row_id): idx
+        for idx, row_id in enumerate(row.get("id") for row in full_rows)
+        if row_id is not None
+    }
 
     table = ui.table(
         columns=columns,
-        rows=rows,
+        rows=table_rows,
         row_key="id",
         pagination={"sortBy": "date_sort", "descending": True, "rowsPerPage": 15},
     ).classes(TABLE_FULL_CLASSES)
@@ -642,7 +678,7 @@ def render_workout_table() -> None:
 
     def _handle_open_detail(e: Any) -> None:
         row_id = str(e.args)
-        row_index = _find_row_index(row_id, rows)
+        row_index = row_index_by_id.get(row_id)
         if row_index is not None:
             open_detail(row_index)
 

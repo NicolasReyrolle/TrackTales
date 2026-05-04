@@ -292,6 +292,51 @@ class TestRenderWorkoutTable:
             state.file_loaded = original_file_loaded
             state.workouts = original_workouts
 
+    def test_table_rows_exclude_modal_payload_fields(self) -> None:
+        """Table transport rows should exclude heavy modal-only fields like route payloads."""
+        original_file_loaded = state.file_loaded
+        original_workouts: Any = state.workouts
+
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-09-16"),
+                    "duration": 3660.0,
+                    "route": object(),
+                }
+            ]
+        )
+
+        table_stub = DummyTable()
+        captured_modal_rows: list[dict[str, Any]] = []
+
+        def _capture_modal_rows(rows: list[dict[str, Any]]) -> Any:
+            captured_modal_rows.extend(rows)
+            return lambda _idx: None
+
+        try:
+            state.file_loaded = True
+            state.workouts = workouts_mock
+
+            with (
+                patch("ui.workout_table.ui.table", return_value=table_stub) as table_mock,
+                patch(
+                    "ui.workout_table.create_workout_detail_modal", side_effect=_capture_modal_rows
+                ),
+            ):
+                wt.render_workout_table.func()
+
+            rendered_rows = table_mock.call_args.kwargs["rows"]
+            assert len(rendered_rows) == 1
+            assert "route" not in rendered_rows[0]
+            assert captured_modal_rows
+            assert "route" in captured_modal_rows[0]
+        finally:
+            state.file_loaded = original_file_loaded
+            state.workouts = original_workouts
+
 
 class TestSafeFloat:
     """Unit tests for _safe_float() helper."""

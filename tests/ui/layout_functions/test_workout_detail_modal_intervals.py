@@ -401,8 +401,17 @@ class TestRowHasSwimLaps:
         assert not wdm._row_has_swim_laps({"swimming_events": []})
 
     def test_returns_true_for_non_empty_list(self) -> None:
-        """Row with at least one event → True."""
+        """Row with at least one Lap event → True."""
         assert wdm._row_has_swim_laps({"swimming_events": [{"type": "Lap"}]})
+
+    def test_returns_false_for_segment_only_list(self) -> None:
+        """Segment-only list produces no intervals → False (tab must stay disabled)."""
+        assert not wdm._row_has_swim_laps({"swimming_events": [{"type": "Segment"}]})
+
+    def test_returns_true_when_lap_mixed_with_segment(self) -> None:
+        """At least one Lap event alongside Segment events → True."""
+        events = [{"type": "Segment"}, {"type": "Lap"}, {"type": "Segment"}]
+        assert wdm._row_has_swim_laps({"swimming_events": events})
 
 
 # ---------------------------------------------------------------------------

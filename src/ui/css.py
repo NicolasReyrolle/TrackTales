@@ -185,11 +185,8 @@ MODAL_NAV_ROW_CLASSES = "w-full justify-between items-center q-mt-sm"
 #: Navigation counter label ("1 / 42") in the modal footer – same style as LABEL_MUTED_CLASSES.
 MODAL_NAV_COUNTER_CLASSES = LABEL_MUTED_CLASSES
 
-#: Compact ``ui.table`` used for the GPS splits in the modal Splits tab.
+#: Compact ``ui.table`` used for the GPS splits in the modal Intervals tab.
 MODAL_SPLITS_TABLE_CLASSES = "w-full"
 
-#: Compact ``ui.table`` used for the swimming interval laps in the modal Activity tab.
+#: Compact ``ui.table`` used for the swimming interval laps in the modal Intervals tab.
 MODAL_SWIM_TABLE_CLASSES = "w-full"
-
-#: Muted text for pause rows between swimming intervals in the lap table.
-MODAL_SWIM_PAUSE_CLASSES = "text-xs text-gray-400 italic"

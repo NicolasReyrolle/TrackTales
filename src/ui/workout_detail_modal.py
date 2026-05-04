@@ -324,19 +324,24 @@ def _row_has_activity_data(row: dict[str, Any]) -> bool:
 
 
 def _row_has_swim_laps(row: dict[str, Any]) -> bool:
-    """Return True when the row contains at least one parsed swimming event.
+    """Return True when the row contains at least one Lap swimming event.
 
     Used to decide whether to enable the Intervals tab in the workout detail
-    modal.
+    modal.  A list that contains only Segment events does not produce any
+    interval rows (``build_swim_intervals`` requires at least one Lap event),
+    so the Intervals tab must remain disabled in that case.
 
     Args:
         row: A workout row dict as returned by ``_build_workout_rows()``.
 
     Returns:
-        True when ``swimming_events`` is a non-empty list.
+        True when ``swimming_events`` contains at least one event whose
+        ``type`` is ``"Lap"``.
     """
     events = row.get("swimming_events")
-    return isinstance(events, list) and len(events) > 0
+    if not isinstance(events, list):
+        return False
+    return any(e.get("type") == "Lap" for e in events)
 
 
 def _do_refresh_activity_tab(

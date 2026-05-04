@@ -171,7 +171,7 @@ def _all_patches(
     Pass *tabs_stub* to receive the ``ui.tabs`` instance back for simulating
     tab-change events via :meth:`_DummyElement.fire_value_change`.
     Pass *tab_side_effect* to capture individual ``ui.tab`` instances (created in
-    order: overview, activity, splits).
+    order: overview [0], activity [1], intervals [2], splits [3]).
     """
     stub = _DummyElement()
     effective_tabs = tabs_stub if tabs_stub is not None else stub
@@ -849,7 +849,7 @@ class TestTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        assert not tab_stubs[2]._enabled
+        assert not tab_stubs[3]._enabled
 
     def test_splits_tab_enabled_when_route_present(self) -> None:
         """Splits tab should be enabled when the workout has a non-empty GPS route."""
@@ -884,7 +884,7 @@ class TestTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        assert tab_stubs[2]._enabled
+        assert tab_stubs[3]._enabled
 
 
 class TestRowHasRoute:
@@ -1312,3 +1312,363 @@ class TestComputeSplitsLazy:
         # Result must be cached in the row dict for subsequent navigations.
         assert "splits" in rows[0]
         assert len(rows[0]["splits"]) >= 3
+
+
+# ---------------------------------------------------------------------------
+# _row_has_swim_laps
+# ---------------------------------------------------------------------------
+
+
+class TestRowHasSwimLaps:
+    """Tests for the _row_has_swim_laps helper."""
+
+    def test_returns_false_when_no_key(self) -> None:
+        """Row without swimming_events key → False."""
+        assert not wdm._row_has_swim_laps({})
+
+    def test_returns_false_for_none(self) -> None:
+        """Row with swimming_events=None → False."""
+        assert not wdm._row_has_swim_laps({"swimming_events": None})
+
+    def test_returns_false_for_empty_list(self) -> None:
+        """Row with empty swimming_events list → False."""
+        assert not wdm._row_has_swim_laps({"swimming_events": []})
+
+    def test_returns_true_for_non_empty_list(self) -> None:
+        """Row with at least one event → True."""
+        assert wdm._row_has_swim_laps({"swimming_events": [{"type": "Lap"}]})
+
+
+# ---------------------------------------------------------------------------
+# Intervals tab: enable/disable state
+# ---------------------------------------------------------------------------
+
+
+class TestIntervalsTabEnableState:
+    """Tests for the Intervals tab enabled/disabled state (swimming only)."""
+
+    def _make_tab_stubs(self) -> tuple[list[_DummyElement], Any]:
+        tab_stubs: list[_DummyElement] = []
+
+        def make_tab(*_a: Any, **_kw: Any) -> _DummyElement:
+            t = _DummyElement()
+            tab_stubs.append(t)
+            return t
+
+        return tab_stubs, make_tab
+
+    def test_intervals_tab_disabled_for_running(self) -> None:
+        """Intervals tab should be disabled for Running workouts."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
+                "pace": "5:00 /km",
+                "splits": [],
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        # Tab order: overview[0], activity[1], intervals[2], splits[3]
+        assert not tab_stubs[2]._enabled
+
+    def test_intervals_tab_disabled_for_swimming_with_no_events(self) -> None:
+        """Intervals tab should be disabled when swimming_events is empty."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Swimming", raw_activity_type="Swimming"),
+                "swimming_events": [],
+                "swimming_location": "Pool",
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert not tab_stubs[2]._enabled
+
+    def test_intervals_tab_enabled_for_swimming_with_events(self) -> None:
+        """Intervals tab should be enabled when swimming_events contains data."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Swimming", raw_activity_type="Swimming"),
+                "swimming_events": [
+                    {"type": "Lap", "start_date": "2025-01-01 10:00:00 +0000", "duration_s": 65.0}
+                ],
+                "swimming_location": "Pool",
+                "lap_length_m": 50.0,
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert tab_stubs[2]._enabled
+
+
+# ---------------------------------------------------------------------------
+# Intervals tab: table population
+# ---------------------------------------------------------------------------
+
+
+class TestIntervalsTabSection:
+    """Tests for the Intervals tab rendering in the modal."""
+
+    def _make_swim_row(self, with_laps: bool = True) -> dict[str, Any]:
+        """Build a Swimming workout row with optional lap events."""
+        row = {
+            **_make_row(idx=0, activity_type="Swimming", raw_activity_type="Swimming"),
+            "swimming_location": "Pool",
+            "swimming_lap_length": "50 m",
+            "swimming_stroke_count": "200",
+            "lap_length_m": 50.0,
+        }
+        if with_laps:
+            row["swimming_events"] = [
+                {
+                    "type": "Segment",
+                    "start_date": "2025-01-01 10:00:00 +0000",
+                    "duration_s": 130.0,
+                },
+                {
+                    "type": "Lap",
+                    "start_date": "2025-01-01 10:00:00 +0000",
+                    "duration_s": 65.0,
+                    "stroke_style": 4,
+                    "swolf": 96.8,
+                },
+                {
+                    "type": "Lap",
+                    "start_date": "2025-01-01 10:01:05 +0000",
+                    "duration_s": 65.0,
+                    "stroke_style": 4,
+                    "swolf": 114.8,
+                },
+            ]
+        else:
+            row["swimming_events"] = []
+        return row
+
+    def test_swim_table_hidden_when_no_laps(self) -> None:
+        """Swim table should be hidden when there are no lap events."""
+        rows = [self._make_swim_row(with_laps=False)]
+        table_stubs: list[_DummyElement] = []
+        tabs_stub = _DummyElement()
+
+        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
+            tbl = _DummyElement()
+            table_stubs.append(tbl)
+            return tbl
+
+        with ExitStack() as stack:
+            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        tabs_stub.fire_value_change("intervals")
+        # table_stubs[0] is the swim table; table_stubs[1] is splits
+        swim_table = table_stubs[0]
+        assert not swim_table._visible
+
+    def test_swim_table_visible_and_populated_with_merged_rows(self) -> None:
+        """Swim table should show one merged row per segment, not one per lap."""
+        rows = [self._make_swim_row(with_laps=True)]
+        table_stubs: list[_DummyElement] = []
+        tabs_stub = _DummyElement()
+
+        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
+            tbl = _DummyElement()
+            table_stubs.append(tbl)
+            return tbl
+
+        with ExitStack() as stack:
+            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        tabs_stub.fire_value_change("intervals")
+        swim_table = table_stubs[0]
+        assert swim_table._visible
+        # 2 laps in 1 segment → 1 merged row (not 2)
+        assert len(swim_table.rows) == 1
+        assert swim_table.rows[0]["dist"] == "100 m"
+        assert swim_table.rows[0]["num"] == 1
+
+    def test_navigate_while_on_intervals_tab_refreshes(self) -> None:
+        """Navigating while Intervals tab is active should refresh the swim table."""
+        row0 = self._make_swim_row(with_laps=True)
+        row1 = {**self._make_swim_row(with_laps=False), "date_sort": 1742000001.0}
+        rows = [row0, row1]
+        table_stubs: list[_DummyElement] = []
+        created_buttons: list[_ButtonStub] = []
+        tabs_stub = _DummyElement()
+
+        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
+            tbl = _DummyElement()
+            table_stubs.append(tbl)
+            return tbl
+
+        def make_button(*args: Any, **kwargs: Any) -> _ButtonStub:
+            btn = _ButtonStub(*args, **kwargs)
+            created_buttons.append(btn)
+            return btn
+
+        with ExitStack() as stack:
+            for p in _all_patches(
+                table_side_effect=make_table,
+                button_side_effect=make_button,
+                tabs_stub=tabs_stub,
+            ):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        tabs_stub.fire_value_change("intervals")
+        swim_table = table_stubs[0]
+        assert swim_table._visible
+
+        # Navigate forward (row1 has no laps) while intervals tab is active
+        next_btn = created_buttons[2]
+        next_btn.click()
+        assert not swim_table._visible
+
+
+# ---------------------------------------------------------------------------
+# Swimming Activity tab enabled by summary fields (not by events alone)
+# ---------------------------------------------------------------------------
+
+
+class TestSwimmingActivityTabEnableState:
+    """Tests for Activity tab enable state for swimming workouts."""
+
+    def _make_tab_stubs(self) -> tuple[list[_DummyElement], Any]:
+        tab_stubs: list[_DummyElement] = []
+
+        def make_tab(*_a: Any, **_kw: Any) -> _DummyElement:
+            t = _DummyElement()
+            tab_stubs.append(t)
+            return t
+
+        return tab_stubs, make_tab
+
+    def test_activity_tab_enabled_for_swimming_with_summary_fields(self) -> None:
+        """Activity tab enabled when swimming summary fields are present."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Swimming", raw_activity_type="Swimming"),
+                "swimming_location": "Pool",
+                "swimming_events": [],
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert tab_stubs[1]._enabled
+
+    def test_activity_tab_disabled_for_swimming_with_no_summary_fields(self) -> None:
+        """Activity tab disabled when all swimming summary fields are missing."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Swimming", raw_activity_type="Swimming"),
+                "swimming_location": "–",
+                "swimming_lap_length": "–",
+                "swimming_stroke_count": "–",
+                "swimming_events": [{"type": "Lap"}],  # events exist but summary absent
+            }
+        ]
+        tab_stubs, make_tab = self._make_tab_stubs()
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert not tab_stubs[1]._enabled
+
+
+# ---------------------------------------------------------------------------
+# _row_has_activity_data – swimming
+# ---------------------------------------------------------------------------
+
+
+class TestRowHasActivityDataSwimming:
+    """Tests for _row_has_activity_data with Swimming activity type."""
+
+    def test_returns_true_when_location_present(self) -> None:
+        """Swimming row with a location value → True."""
+        assert wdm._row_has_activity_data(
+            {"raw_activity_type": "Swimming", "swimming_location": "Pool"}
+        )
+
+    def test_returns_true_when_lap_length_present(self) -> None:
+        """Swimming row with a lap length value → True."""
+        assert wdm._row_has_activity_data(
+            {"raw_activity_type": "Swimming", "swimming_lap_length": "50 m"}
+        )
+
+    def test_returns_false_when_all_summary_fields_missing(self) -> None:
+        """Swimming row with all summary fields '–' → False."""
+        assert not wdm._row_has_activity_data(
+            {
+                "raw_activity_type": "Swimming",
+                "swimming_location": "–",
+                "swimming_lap_length": "–",
+                "swimming_stroke_count": "–",
+            }
+        )
+
+
+# ---------------------------------------------------------------------------
+# Distance formatting: 2 decimal places
+# ---------------------------------------------------------------------------
+
+
+class TestDistanceFormatTwoDecimals:
+    """Tests that distance is formatted with 2 decimal places."""
+
+    def test_metric_distance_has_two_decimals(self) -> None:
+        """Metric distances should show 2 decimal places."""
+        from ui import workout_table as wt
+
+        row = {"distance": 10000.0}  # 10 km
+        _, display = wt._extract_distance_field(row, distance_unit="km")
+        assert display == "10.00 km"
+
+    def test_metric_distance_non_round_has_two_decimals(self) -> None:
+        """Non-round metric distances should show 2 decimal places."""
+        from ui import workout_table as wt
+
+        row = {"distance": 5678.0}  # 5.678 km
+        _, display = wt._extract_distance_field(row, distance_unit="km")
+        assert display == "5.68 km"
+
+    def test_imperial_distance_has_two_decimals(self) -> None:
+        """Imperial distances should show 2 decimal places."""
+        from ui import workout_table as wt
+        from units import METERS_TO_MILES
+
+        row = {"distance": 1609.344}  # exactly 1 mile
+        _, display = wt._extract_distance_field(row, distance_unit="mi")
+        expected = f"{1609.344 * METERS_TO_MILES:.2f} mi"
+        assert display == expected

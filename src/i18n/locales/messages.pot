@@ -722,10 +722,16 @@ msgstr ""
 msgid "Splits"
 msgstr ""
 
+msgid "Intervals"
+msgstr ""
+
 msgid "No activity-specific data available."
 msgstr ""
 
 msgid "No GPS route available."
+msgstr ""
+
+msgid "No lap data available."
 msgstr ""
 
 # Workout detail modal – splits table column headers
@@ -733,4 +739,27 @@ msgid "Pace"
 msgstr ""
 
 msgid "Elev"
+msgstr ""
+
+# Workout detail modal – swimming summary fields (Activity tab)
+msgid "Location"
+msgstr ""
+
+msgid "Lap Length"
+msgstr ""
+
+msgid "Total Strokes"
+msgstr ""
+
+# Workout detail modal – swim interval table column headers (Intervals tab)
+msgid "Dist"
+msgstr ""
+
+msgid "Time"
+msgstr ""
+
+msgid "Stroke"
+msgstr ""
+
+msgid "Rest"
 msgstr ""

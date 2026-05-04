@@ -130,7 +130,7 @@ class TestBuildWorkoutRows:
 
         assert len(rows) == 1
         row = rows[0]
-        assert row["distance"] == "10.0 km"
+        assert row["distance"] == "10.00 km"
         assert row["distance_sort"] == pytest.approx(10000.0)
         assert row["calories"] == "650 kcal"
         assert row["calories_sort"] == pytest.approx(650.0)
@@ -703,12 +703,12 @@ class TestExtractDistanceField:
         assert display == "–"
 
     def test_imperial_distance_uses_miles(self) -> None:
-        """distance_unit='mi' should format in miles."""
+        """distance_unit='mi' should format in miles with 2 decimal places."""
         from units import METERS_TO_MILES
 
         row = {"distance": 1609.344}  # 1 mile
         _, display = wt._extract_distance_field(row, distance_unit="mi")
-        expected = f"{1609.344 * METERS_TO_MILES:.1f} mi"
+        expected = f"{1609.344 * METERS_TO_MILES:.2f} mi"
         assert display == expected
 
 
@@ -776,7 +776,7 @@ class TestBuildWorkoutRowsImperial:
             state.workouts = original_workouts
 
         assert len(rows) == 1
-        expected_mi = f"{1609.344 * METERS_TO_MILES:.1f} mi"
+        expected_mi = f"{1609.344 * METERS_TO_MILES:.2f} mi"
         assert rows[0]["distance"] == expected_mi
 
     def test_all_rows_filtered_out_returns_empty(self) -> None:

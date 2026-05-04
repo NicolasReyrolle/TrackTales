@@ -725,7 +725,10 @@ msgstr "VO₂ Max"
 
 # Workout detail modal – tab labels and empty-state messages
 msgid "Splits"
-msgstr "Intervalles"
+msgstr "Segments"
+
+msgid "Intervals"
+msgstr "Longueurs"
 
 msgid "No activity-specific data available."
 msgstr "Aucune donnée spécifique à cette activité."
@@ -733,9 +736,35 @@ msgstr "Aucune donnée spécifique à cette activité."
 msgid "No GPS route available."
 msgstr "Aucun tracé GPS disponible."
 
+msgid "No lap data available."
+msgstr "Aucune donnée de longueur disponible."
+
 # Workout detail modal – splits table column headers
 msgid "Pace"
 msgstr "Allure"
 
 msgid "Elev"
 msgstr "Dénivelé"
+
+# Workout detail modal – swimming summary fields (Activity tab)
+msgid "Location"
+msgstr "Lieu"
+
+msgid "Lap Length"
+msgstr "Longueur de bassin"
+
+msgid "Total Strokes"
+msgstr "Nombre de coups"
+
+# Workout detail modal – swim interval table column headers (Intervals tab)
+msgid "Dist"
+msgstr "Dist"
+
+msgid "Time"
+msgstr "Temps"
+
+msgid "Stroke"
+msgstr "Nage"
+
+msgid "Rest"
+msgstr "Repos"

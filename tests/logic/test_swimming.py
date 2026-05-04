@@ -8,6 +8,9 @@ import pytest
 
 from logic.export_parser import ExportParser
 from logic.workout_manager.swimming import (
+    SwimInterval,
+    SwimLap,
+    build_swim_interval_display_rows,
     build_swim_intervals,
     format_swim_duration,
 )
@@ -355,3 +358,258 @@ class TestExportParserSwimmingEvents:
         # Either not present or empty
         events = workout.get("swimming_events")
         assert events is None or events == []
+
+
+# ---------------------------------------------------------------------------
+# BuildSwimIntervalDisplayRows – merged per-interval rows
+# ---------------------------------------------------------------------------
+
+
+def _make_swim_lap(
+    lap_number: int,
+    distance_m: float = 50.0,
+    duration_s: float = 65.0,
+    stroke_style: str = "Breaststroke",
+    swolf: float | None = 100.0,
+) -> SwimLap:
+    """Build a SwimLap for unit-testing the display-row builder."""
+    return SwimLap(
+        lap_number=lap_number,
+        distance_m=distance_m,
+        duration_s=duration_s,
+        stroke_style=stroke_style,
+        swolf=swolf,
+    )
+
+
+class TestBuildSwimIntervalDisplayRowsEmpty:
+    """Edge cases for build_swim_interval_display_rows with no/empty data."""
+
+    def test_empty_list_returns_empty(self) -> None:
+        assert build_swim_interval_display_rows([]) == []
+
+    def test_interval_with_no_laps_is_skipped(self) -> None:
+        """An interval with an empty laps list should produce no row."""
+        result = build_swim_interval_display_rows([SwimInterval(laps=[], pause_s=None)])
+        assert result == []
+
+
+class TestBuildSwimIntervalDisplayRowsMerging:
+    """Test that laps within one interval are merged into a single display row."""
+
+    def test_single_lap_single_interval(self) -> None:
+        """One interval, one lap → one row."""
+        interval = SwimInterval(
+            laps=[_make_swim_lap(1, distance_m=50.0, duration_s=65.0)],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert len(rows) == 1
+        assert rows[0]["num"] == 1
+        assert rows[0]["dist"] == "50 m"
+        assert rows[0]["dur"] == "1:05"
+        assert rows[0]["pause"] == ""
+
+    def test_two_laps_merged_into_one_row(self) -> None:
+        """Two laps in one interval → single row with summed distance and duration."""
+        interval = SwimInterval(
+            laps=[
+                _make_swim_lap(1, distance_m=50.0, duration_s=65.0),
+                _make_swim_lap(2, distance_m=50.0, duration_s=78.0),
+            ],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert len(rows) == 1
+        assert rows[0]["dist"] == "100 m"
+        assert rows[0]["dur"] == "2:23"  # 143 s = 2:23
+
+    def test_two_intervals_produce_two_rows(self) -> None:
+        """Two separate intervals → two rows."""
+        intervals = [
+            SwimInterval(laps=[_make_swim_lap(1)], pause_s=90.0),
+            SwimInterval(laps=[_make_swim_lap(2)], pause_s=None),
+        ]
+        rows = build_swim_interval_display_rows(intervals)
+        assert len(rows) == 2
+
+    def test_interval_numbers_are_sequential(self) -> None:
+        """Interval numbers should be 1-based sequential integers."""
+        intervals = [
+            SwimInterval(laps=[_make_swim_lap(1)], pause_s=30.0),
+            SwimInterval(laps=[_make_swim_lap(2)], pause_s=45.0),
+            SwimInterval(laps=[_make_swim_lap(3)], pause_s=None),
+        ]
+        rows = build_swim_interval_display_rows(intervals)
+        assert [r["num"] for r in rows] == [1, 2, 3]
+
+
+class TestBuildSwimIntervalDisplayRowsStroke:
+    """Test stroke style merging in display rows."""
+
+    def test_single_stroke_preserved(self) -> None:
+        """All laps with the same stroke → that stroke label is shown."""
+        interval = SwimInterval(
+            laps=[
+                _make_swim_lap(1, stroke_style="Freestyle"),
+                _make_swim_lap(2, stroke_style="Freestyle"),
+            ],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert rows[0]["stroke"] == "Freestyle"
+
+    def test_mixed_strokes_produce_mixed_label(self) -> None:
+        """Laps with different stroke styles → 'Mixed'."""
+        interval = SwimInterval(
+            laps=[
+                _make_swim_lap(1, stroke_style="Freestyle"),
+                _make_swim_lap(2, stroke_style="Breaststroke"),
+            ],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert rows[0]["stroke"] == "Mixed"
+
+    def test_all_unknown_strokes_returns_unknown(self) -> None:
+        """Laps all marked Unknown → 'Unknown'."""
+        interval = SwimInterval(
+            laps=[_make_swim_lap(1, stroke_style="Unknown")],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert rows[0]["stroke"] == "Unknown"
+
+    def test_one_known_one_unknown_uses_known(self) -> None:
+        """One lap Unknown, other Freestyle → 'Freestyle' (Unknown is excluded)."""
+        interval = SwimInterval(
+            laps=[
+                _make_swim_lap(1, stroke_style="Unknown"),
+                _make_swim_lap(2, stroke_style="Freestyle"),
+            ],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert rows[0]["stroke"] == "Freestyle"
+
+
+class TestBuildSwimIntervalDisplayRowsSwolf:
+    """Test SWOLF averaging in display rows."""
+
+    def test_swolf_averaged_across_laps(self) -> None:
+        """SWOLF should be the mean of non-None lap SWOLFs."""
+        interval = SwimInterval(
+            laps=[
+                _make_swim_lap(1, swolf=96.0),
+                _make_swim_lap(2, swolf=104.0),
+            ],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert rows[0]["swolf"] == "100.0"
+
+    def test_swolf_none_laps_excluded_from_average(self) -> None:
+        """Laps with None SWOLF should not contribute to the average."""
+        interval = SwimInterval(
+            laps=[
+                _make_swim_lap(1, swolf=None),
+                _make_swim_lap(2, swolf=100.0),
+            ],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert rows[0]["swolf"] == "100.0"
+
+    def test_all_swolf_none_produces_dash(self) -> None:
+        """When all laps have no SWOLF, the display value should be '–'."""
+        interval = SwimInterval(
+            laps=[_make_swim_lap(1, swolf=None)],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert rows[0]["swolf"] == "–"
+
+    def test_swolf_format_one_decimal(self) -> None:
+        """SWOLF should be formatted to one decimal place."""
+        interval = SwimInterval(
+            laps=[_make_swim_lap(1, swolf=97.777)],
+            pause_s=None,
+        )
+        rows = build_swim_interval_display_rows([interval])
+        assert rows[0]["swolf"] == "97.8"
+
+
+class TestBuildSwimIntervalDisplayRowsPause:
+    """Test rest/pause formatting in display rows."""
+
+    def test_pause_formatted_correctly(self) -> None:
+        """Pause duration should be formatted as m:ss."""
+        intervals = [
+            SwimInterval(laps=[_make_swim_lap(1)], pause_s=90.0),
+            SwimInterval(laps=[_make_swim_lap(2)], pause_s=None),
+        ]
+        rows = build_swim_interval_display_rows(intervals)
+        assert rows[0]["pause"] == "1:30"
+        assert rows[1]["pause"] == ""
+
+    def test_zero_pause_is_empty_string(self) -> None:
+        """A pause of 0 s should produce an empty string (not '0:00')."""
+        intervals = [
+            SwimInterval(laps=[_make_swim_lap(1)], pause_s=0.0),
+            SwimInterval(laps=[_make_swim_lap(2)], pause_s=None),
+        ]
+        rows = build_swim_interval_display_rows(intervals)
+        assert rows[0]["pause"] == ""
+
+
+class TestBuildSwimIntervalDisplayRowsFixture:
+    """Integration: build_swim_interval_display_rows from real fixture data."""
+
+    def test_fixture_produces_nine_rows(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """The swimming fixture has 9 segments → 9 display rows (one per set)."""
+        xml = build_health_export_xml([load_export_fragment("workout_swimming.xml")])
+        zip_path = create_health_zip(xml_content=xml)
+
+        with ExportParser() as parser:
+            health_data = parser.parse(zip_path)
+
+        workout = health_data.workouts.iloc[0]
+        events = workout["swimming_events"]
+        lap_length = float(workout["LapLength"])
+        intervals = build_swim_intervals(events, lap_length)
+        rows = build_swim_interval_display_rows(intervals)
+
+        # 9 segments → 9 display rows, not 15 (individual laps)
+        assert len(rows) == 9
+
+    def test_first_set_merges_two_laps(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """Laps 1 and 2 belong to the same segment → merged into one 100 m row."""
+        xml = build_health_export_xml([load_export_fragment("workout_swimming.xml")])
+        zip_path = create_health_zip(xml_content=xml)
+
+        with ExportParser() as parser:
+            health_data = parser.parse(zip_path)
+
+        workout = health_data.workouts.iloc[0]
+        events = workout["swimming_events"]
+        lap_length = float(workout["LapLength"])
+        intervals = build_swim_intervals(events, lap_length)
+        rows = build_swim_interval_display_rows(intervals)
+
+        first_row = rows[0]
+        # Segment 1 has 2 laps of 50 m each → 100 m total
+        assert first_row["dist"] == "100 m"
+        # SWOLF should be a numeric string (not "–")
+        assert first_row["swolf"] != "–"
+        # Last interval has no pause
+        assert rows[-1]["pause"] == ""

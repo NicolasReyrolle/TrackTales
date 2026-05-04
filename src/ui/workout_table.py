@@ -239,9 +239,9 @@ def _extract_distance_field(row: Any, distance_unit: str = "km") -> tuple[float 
         return _MISSING_SORT, "–"
     if distance_raw > 0:
         if distance_unit == "mi":
-            distance_display = f"{distance_raw * METERS_TO_MILES:.1f} mi"
+            distance_display = f"{distance_raw * METERS_TO_MILES:.2f} mi"
         else:
-            distance_display = f"{distance_raw / 1000:.1f} km"
+            distance_display = f"{distance_raw / 1000:.2f} km"
     else:
         distance_display = "–"
     return distance_raw, distance_display

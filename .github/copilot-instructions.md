@@ -73,7 +73,7 @@ If two rules at the same level conflict, choose the simpler option and state the
   expression/line.
 - Keep cognitive complexity low; break down complex functions into smaller helpers. Maximum complexity of 15 per function.
 - Keep functions under 50 lines where practical. If a function exceeds this, consider refactoring into smaller functions.
-- Each module must contain less than 1000 lines of code. If a module exceeds this, consider splitting it into smaller modules.
+- Each module must contain less than 1000 lines of code. This limit applies to both source and test files. If a module exceeds this, consider splitting it into smaller, focused modules (e.g. by feature area or tab).
 
 ### After coding
 - Run `ruff format src tests`

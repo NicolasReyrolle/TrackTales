@@ -309,7 +309,7 @@ class TestExportParserSwimmingEvents:
         # All laps except the last (which has no SWOLF in the fixture) should have it
         assert len(swolf_values) >= 14
         # Verify the first lap's SWOLF is approximately correct
-        first_lap = next(e for e in lap_events)
+        first_lap = next(iter(lap_events))
         assert first_lap["swolf"] == pytest.approx(96.77981960773468, abs=0.001)
 
     def test_build_swim_intervals_from_fixture(

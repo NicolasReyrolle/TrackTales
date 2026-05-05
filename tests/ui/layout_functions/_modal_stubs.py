@@ -69,6 +69,9 @@ class _DummyElement:
         self._props_added: list[str] = []
         self._props_removed: list[str] = []
         self.rows: list[Any] = []
+        #: Captures the ``columns`` kwarg when used as a ``ui.table`` stub.
+        #: Stored by reference so in-place mutations to the list are visible here.
+        self.columns: list[Any] = _kwargs.get("columns", [])
         #: Current value (used by the tabs stub to track the active tab).
         self.value: str = "overview"
         #: Registered on_value_change handlers (used for tab-change simulation).

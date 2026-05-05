@@ -624,3 +624,146 @@ class TestExtractSwimmingFields:
         result = wt._extract_swimming_fields(pd.Series(row))
         assert result["swimming_events"] == []
         assert isinstance(result["swimming_events"], list)
+
+
+# ---------------------------------------------------------------------------
+# Cycling-specific field extraction
+# ---------------------------------------------------------------------------
+
+
+class TestExtractCyclingFields:
+    """Unit tests for _extract_cycling_fields() in workout_table."""
+
+    def _make_row(self, **kwargs: Any) -> dict[str, Any]:
+        """Build a minimal cycling row dict with cycling statistics."""
+        base: dict[str, Any] = {
+            "activityType": "Cycling",
+            "averageCyclingSpeed": 25.0,  # km/h
+            "averageCyclingCadence": 85.0,
+            "averageCyclingPower": 200.0,
+            "averageCyclingFunctionalThresholdPower": 250.0,
+        }
+        base.update(kwargs)
+        return base
+
+    def test_speed_formatted_in_km_h(self) -> None:
+        """Speed should be formatted in km/h for metric unit system."""
+        row = self._make_row(averageCyclingSpeed=25.0)
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_speed"] == "25.0 km/h"
+
+    def test_speed_formatted_in_mph(self) -> None:
+        """Speed should be converted to mph for imperial unit system."""
+        row = self._make_row(averageCyclingSpeed=25.0)
+        result = wt._extract_cycling_fields(row, distance_unit="mi")
+        assert "mph" in result["cycling_speed"]
+        assert "km/h" not in result["cycling_speed"]
+
+    def test_missing_speed_produces_dash(self) -> None:
+        """Missing averageCyclingSpeed should produce '–'."""
+        row = self._make_row()
+        del row["averageCyclingSpeed"]
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_speed"] == "–"
+
+    def test_zero_speed_produces_dash(self) -> None:
+        """Zero averageCyclingSpeed should produce '–' (treated as absent)."""
+        row = self._make_row(averageCyclingSpeed=0.0)
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_speed"] == "–"
+
+    def test_negative_speed_produces_dash(self) -> None:
+        """Negative averageCyclingSpeed should produce '–' (invalid value)."""
+        row = self._make_row(averageCyclingSpeed=-5.0)
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_speed"] == "–"
+
+    def test_cadence_formatted_in_rpm(self) -> None:
+        """Cadence should show 'rpm' unit."""
+        row = self._make_row(averageCyclingCadence=85.0)
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_cadence"] == "85 rpm"
+
+    def test_missing_cadence_produces_dash(self) -> None:
+        """Missing averageCyclingCadence should produce '–'."""
+        row = self._make_row()
+        del row["averageCyclingCadence"]
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_cadence"] == "–"
+
+    def test_power_formatted_in_watts(self) -> None:
+        """Power should show 'W' unit."""
+        row = self._make_row(averageCyclingPower=200.0)
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_power"] == "200 W"
+
+    def test_missing_power_produces_dash(self) -> None:
+        """Missing averageCyclingPower should produce '–'."""
+        row = self._make_row()
+        del row["averageCyclingPower"]
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_power"] == "–"
+
+    def test_ftp_formatted_in_watts(self) -> None:
+        """Functional threshold power should show 'W' unit."""
+        row = self._make_row(averageCyclingFunctionalThresholdPower=250.0)
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_ftp"] == "250 W"
+
+    def test_missing_ftp_produces_dash(self) -> None:
+        """Missing averageCyclingFunctionalThresholdPower should produce '–'."""
+        row = self._make_row()
+        del row["averageCyclingFunctionalThresholdPower"]
+        result = wt._extract_cycling_fields(row)
+        assert result["cycling_ftp"] == "–"
+
+    def test_cycling_fields_included_for_cycling_workouts(self) -> None:
+        """Cycling-specific keys should be present in the row dict for Cycling workouts."""
+        original_workouts: Any = state.workouts
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Cycling",
+                    "startDate": pd.Timestamp("2025-07-14"),
+                    "duration": 4354.0,
+                    "averageCyclingSpeed": 25.0,
+                    "averageCyclingCadence": 85.0,
+                    "averageCyclingPower": 200.0,
+                }
+            ]
+        )
+        try:
+            state.workouts = workouts_mock
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["cycling_speed"] == "25.0 km/h"
+        assert row["cycling_cadence"] == "85 rpm"
+        assert row["cycling_power"] == "200 W"
+        assert "route" in row
+
+    def test_cycling_fields_absent_for_non_cycling_workouts(self) -> None:
+        """Non-Cycling workouts should not have cycling-specific keys."""
+        original_workouts: Any = state.workouts
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-01"),
+                    "duration": 3600.0,
+                }
+            ]
+        )
+        try:
+            state.workouts = workouts_mock
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+        assert len(rows) == 1
+        row = rows[0]
+        assert "cycling_speed" not in row
+        assert "cycling_cadence" not in row

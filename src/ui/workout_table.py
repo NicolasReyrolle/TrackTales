@@ -239,6 +239,8 @@ def _extract_row_data(
         result.update(_extract_hiking_fields(row, distance_unit))
     elif raw_activity == "Swimming":
         result.update(_extract_swimming_fields(row))
+    elif raw_activity == "Cycling":
+        result.update(_extract_cycling_fields(row, distance_unit))
 
     return result
 
@@ -524,6 +526,60 @@ def _extract_swimming_fields(row: Any) -> dict[str, Any]:
         "swimming_location": location_display,
         "swimming_stroke_count": stroke_count_display,
         "swimming_lap_length": lap_length_display,
+    }
+
+
+def _extract_cycling_fields(
+    row: Any,
+    distance_unit: str = "km",
+) -> dict[str, Any]:
+    """Extract cycling-specific display fields from a workout DataFrame row.
+
+    Fields are populated only when the corresponding statistics are present.
+    Fields that are absent or ``NaN`` fall back to the missing-data sentinel
+    ``"–"`` so the modal can hide them automatically.
+
+    Args:
+        row: A pandas Series representing a cycling workout.
+        distance_unit: ``"km"`` or ``"mi"`` (affects speed display unit).
+
+    Returns:
+        A dict with cycling-specific display values.
+    """
+    # --- Speed ---
+    speed_raw = _safe_float(row.get("averageCyclingSpeed"))
+    if speed_raw is not None and speed_raw > 0:
+        if distance_unit == "mi":
+            # km/h → mph: multiply by 1000 (m/km) then by METERS_TO_MILES (mile/m)
+            cycling_speed_display = f"{speed_raw * 1000.0 * METERS_TO_MILES:.1f} mph"
+        else:
+            cycling_speed_display = f"{speed_raw:.1f} km/h"
+    else:
+        cycling_speed_display = "–"
+
+    # --- Cadence ---
+    _, cycling_cadence_display = _build_field_pair(
+        row.get("averageCyclingCadence"),
+        lambda v: f"{int(round(v))} rpm",
+    )
+
+    # --- Power ---
+    _, cycling_power_display = _build_field_pair(
+        row.get("averageCyclingPower"),
+        lambda v: f"{int(round(v))} W",
+    )
+
+    # --- Functional Threshold Power ---
+    _, cycling_ftp_display = _build_field_pair(
+        row.get("averageCyclingFunctionalThresholdPower"),
+        lambda v: f"{int(round(v))} W",
+    )
+
+    return {
+        "cycling_speed": cycling_speed_display,
+        "cycling_cadence": cycling_cadence_display,
+        "cycling_power": cycling_power_display,
+        "cycling_ftp": cycling_ftp_display,
     }
 
 

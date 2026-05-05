@@ -728,6 +728,13 @@ msgstr ""
 msgid "VO₂ Max"
 msgstr ""
 
+# Workout detail modal – cycling-specific fields
+msgid "Avg Speed"
+msgstr ""
+
+msgid "Functional Threshold Power"
+msgstr ""
+
 # Workout detail modal – tab labels and empty-state messages
 msgid "Intervals"
 msgstr ""
@@ -743,6 +750,9 @@ msgstr ""
 
 # Workout detail modal – splits table column headers
 msgid "Pace"
+msgstr ""
+
+msgid "Speed"
 msgstr ""
 
 msgid "Elev"

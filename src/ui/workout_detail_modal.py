@@ -29,7 +29,7 @@ from ui.css import (
     TABLE_DENSE_FLAT_PROPS,
     TABS_FULL_CLASSES,
 )
-from units import METERS_TO_MILES
+from units import METERS_TO_FEET, METERS_TO_MILES
 
 #: Callable returning a translated label string; alias for readability.
 _LabelFn: TypeAlias = Callable[[], str]
@@ -116,6 +116,15 @@ _SWIMMING_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
     ("swimming_stroke_count", lambda: t("Total Strokes")),
 ]
 
+#: Cycling-specific fields shown in the Activity tab when the workout is Cycling.
+#: Speed, cadence, power, and functional threshold power are shown when available.
+_CYCLING_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
+    ("cycling_speed", lambda: t("Avg Speed")),
+    ("cycling_cadence", _label_avg_cadence),
+    ("cycling_power", lambda: t("Avg Power")),
+    ("cycling_ftp", lambda: t("Functional Threshold Power")),
+]
+
 
 def _build_swim_display_rows(intervals: list[SwimInterval]) -> list[dict[str, Any]]:
     """Build display-ready rows for the swim interval table.
@@ -138,33 +147,57 @@ def _build_swim_display_rows(intervals: list[SwimInterval]) -> list[dict[str, An
     ]
 
 
-def _format_split_pace(pace_min_per_km: float) -> str:
-    """Format a pace value (min/km) as a ``mm:ss`` string.
+def _format_split_pace(pace_min_per_km: float, distance_unit: str) -> str:
+    """Format a pace value (min/km) as a ``mm:ss /unit`` string.
 
     Args:
         pace_min_per_km: Pace in minutes per kilometre.
+        distance_unit: ``"km"`` or ``"mi"``.  Controls both the scaling and
+            the unit label appended to the string.
 
     Returns:
-        Formatted string such as ``"4:32"``.
+        Formatted string such as ``"4:32 min/km"`` or ``"7:17 min/mi"``.
     """
-    minutes = int(pace_min_per_km)
-    seconds = int(round((pace_min_per_km - minutes) * 60))
+    pace_scale = 1.0 / (1000.0 * METERS_TO_MILES) if distance_unit == "mi" else 1.0
+    scaled = pace_min_per_km * pace_scale
+    minutes = int(scaled)
+    seconds = int(round((scaled - minutes) * 60))
     if seconds == 60:
         minutes += 1
         seconds = 0
-    return f"{minutes}:{seconds:02d}"
+    return f"{minutes}:{seconds:02d} min/{distance_unit}"
 
 
-def _format_elevation_change(elevation_change_m: float) -> str:
-    """Format an elevation change in metres as a compact signed string.
+def _format_split_speed(pace_min_per_km: float, distance_unit: str) -> str:
+    """Format a speed value derived from a pace (min/km).
+
+    Args:
+        pace_min_per_km: Pace in minutes per kilometre (must be > 0).
+        distance_unit: ``"km"`` to return km/h, ``"mi"`` to return mph.
+
+    Returns:
+        Formatted string such as ``"10.0 km/h"`` or ``"6.2 mph"``.
+    """
+    speed_km_h = 60.0 / pace_min_per_km
+    if distance_unit == "mi":
+        return f"{speed_km_h * 1000.0 * METERS_TO_MILES:.1f} mph"
+    return f"{speed_km_h:.1f} km/h"
+
+
+def _format_elevation_change(elevation_change_m: float, distance_unit: str = "km") -> str:
+    """Format an elevation change as a compact signed string.
 
     Args:
         elevation_change_m: Net elevation change in metres.
+        distance_unit: ``"km"`` to display metres, ``"mi"`` to display feet.
 
     Returns:
-        Formatted string such as ``"+5 m"`` or ``"-2 m"``.
+        Formatted string such as ``"+5 m"``, ``"-2 m"``  or ``"+16 ft"``.
     """
     sign = "+" if elevation_change_m >= 0 else ""
+    if distance_unit == "mi":
+        feet = elevation_change_m * METERS_TO_FEET
+        return f"{sign}{int(round(feet))} ft"
     return f"{sign}{int(round(elevation_change_m))} m"
 
 
@@ -178,18 +211,18 @@ def _format_split_rows(
         splits: List of split dicts from
             :meth:`~logic.workout_manager.workout_route.WorkoutRoute.compute_splits`.
         distance_unit: Active distance unit, ``"km"`` or ``"mi"``.  Controls
-            the pace-scale factor applied before formatting.
+            the pace scaling, speed unit, and elevation unit.
 
     Returns:
-        List of row dicts with ``"split"``, ``"pace_str"``, and ``"elev_str"``
-        keys ready for direct assignment to ``ui.table.rows``.
+        List of row dicts with ``"split"``, ``"pace_str"``, ``"speed_str"``,
+        and ``"elev_str"`` keys ready for direct assignment to ``ui.table.rows``.
     """
-    pace_scale = 1.0 / (1000.0 * METERS_TO_MILES) if distance_unit == "mi" else 1.0
     return [
         {
             "split": int(s["split"]),
-            "pace_str": _format_split_pace(float(s["pace_min_per_km"]) * pace_scale),
-            "elev_str": _format_elevation_change(float(s["elevation_change_m"])),
+            "pace_str": _format_split_pace(float(s["pace_min_per_km"]), distance_unit),
+            "speed_str": _format_split_speed(float(s["pace_min_per_km"]), distance_unit),
+            "elev_str": _format_elevation_change(float(s["elevation_change_m"]), distance_unit),
         }
         for s in splits
     ]
@@ -297,6 +330,7 @@ _ACTIVITY_FIELD_KEYS: dict[str, list[str]] = {
     "Hiking": [k for k, _ in _HIKING_FIELD_DISPLAY],
     # Swimming: enable Activity tab when any summary field is present.
     "Swimming": [k for k, _ in _SWIMMING_FIELD_DISPLAY],
+    "Cycling": [k for k, _ in _CYCLING_FIELD_DISPLAY],
 }
 
 
@@ -444,6 +478,7 @@ def create_workout_detail_modal(
       VO₂ max.  Walking workouts show pace, cadence, step length, and step count.
       Hiking workouts show elevation gain, pace, cadence, step length, and step count.
       Swimming workouts show location, lap length, and total stroke count.
+      Cycling workouts show speed, cadence, power, and functional threshold power.
       Other activity types show a placeholder message; the tab is disabled.
     * **Intervals** – per-workout interval data.  For Swimming workouts each row
       represents one active set with distance, time, stroke style, average SWOLF,
@@ -504,6 +539,10 @@ def create_workout_detail_modal(
                     swimming_container = ui.column().classes(TABS_FULL_CLASSES)
                     with swimming_container:
                         swimming_field_rows = _build_field_rows(_SWIMMING_FIELD_DISPLAY)
+                    # Cycling-specific metrics; shown only when activity is Cycling
+                    cycling_container = ui.column().classes(TABS_FULL_CLASSES)
+                    with cycling_container:
+                        cycling_field_rows = _build_field_rows(_CYCLING_FIELD_DISPLAY)
 
                 # Intervals tab: swim lap table (Swimming) or GPS splits (other workouts with GPS)
                 with ui.tab_panel("intervals"):
@@ -565,10 +604,13 @@ def create_workout_detail_modal(
                     no_splits_label = ui.label(t("No GPS route available.")).classes(
                         LABEL_MUTED_CLASSES
                     )
+                    # Initialise the split-number column header from the first row's unit so
+                    # the correct label ("km" or "mi") is visible before the first tab-click.
+                    _initial_du = rows[0].get("distance_unit", "km") if rows else "km"
                     splits_columns = [
                         {
                             "name": "split",
-                            "label": "km",
+                            "label": _initial_du,
                             "field": "split",
                             "align": "right",
                             "sortable": False,
@@ -577,6 +619,13 @@ def create_workout_detail_modal(
                             "name": "pace",
                             "label": t("Pace"),
                             "field": "pace_str",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "speed",
+                            "label": t("Speed"),
+                            "field": "speed_str",
                             "align": "right",
                             "sortable": False,
                         },
@@ -619,6 +668,7 @@ def create_workout_detail_modal(
         "Walking": (walking_container, walking_field_rows),
         "Hiking": (hiking_container, hiking_field_rows),
         "Swimming": (swimming_container, swimming_field_rows),
+        "Cycling": (cycling_container, cycling_field_rows),
     }
 
     def _refresh_activity_tab(row: dict[str, Any]) -> None:

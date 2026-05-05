@@ -733,6 +733,13 @@ msgstr "Nombre de pas"
 msgid "VO₂ Max"
 msgstr "VO₂ Max"
 
+# Workout detail modal – cycling-specific fields
+msgid "Avg Speed"
+msgstr "Vitesse moyenne"
+
+msgid "Functional Threshold Power"
+msgstr "Puissance seuil fonctionnel"
+
 # Workout detail modal – tab labels and empty-state messages
 msgid "Intervals"
 msgstr "Intervalles"
@@ -749,6 +756,9 @@ msgstr "Aucune donnée de distance disponible."
 # Workout detail modal – splits table column headers
 msgid "Pace"
 msgstr "Allure"
+
+msgid "Speed"
+msgstr "Vitesse"
 
 msgid "Elev"
 msgstr "Dénivelé"

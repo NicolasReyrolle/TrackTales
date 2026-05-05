@@ -777,3 +777,112 @@ class TestDistanceFormatTwoDecimals:
         _, display = wt._extract_distance_field(row, distance_unit="mi")
         expected = f"{1609.344 * METERS_TO_MILES:.2f} mi"
         assert display == expected
+
+
+class TestCyclingFieldDisplay:
+    """Tests for the _CYCLING_FIELD_DISPLAY constant and cycling section in the modal."""
+
+    def test_all_expected_cycling_keys_present(self) -> None:
+        """_CYCLING_FIELD_DISPLAY should include speed, cadence, power, and FTP."""
+        keys = {key for key, _ in wdm._CYCLING_FIELD_DISPLAY}
+        for expected in ["cycling_speed", "cycling_cadence", "cycling_power", "cycling_ftp"]:
+            assert expected in keys
+
+    def test_cycling_labels_are_non_empty_strings(self) -> None:
+        """Every label in _CYCLING_FIELD_DISPLAY should be callable and non-empty."""
+        for _key, label_fn in wdm._CYCLING_FIELD_DISPLAY:
+            assert callable(label_fn)
+            assert label_fn() and isinstance(label_fn(), str)
+
+
+class TestCyclingActivityTabSection:
+    """Tests for the cycling Activity tab container in the modal."""
+
+    def test_cycling_container_visible_for_cycling_activity(self) -> None:
+        """Cycling container should be visible when raw_activity_type is 'Cycling'."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Cycling", raw_activity_type="Cycling"),
+                "cycling_speed": "25.0 km/h",
+                "cycling_cadence": "85 rpm",
+                "cycling_power": "200 W",
+                "splits": [],
+            }
+        ]
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with ExitStack() as stack:
+            for p in _all_patches(column_side_effect=make_column):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        # Container order: running[0], walking[1], hiking[2], swimming[3], cycling[4]
+        cycling_container = column_stubs[4]
+        assert cycling_container._visible
+
+    def test_cycling_container_hidden_for_non_cycling_activity(self) -> None:
+        """Cycling container should be hidden when raw_activity_type is not 'Cycling'."""
+        rows = [_make_row(idx=0, activity_type="Running", raw_activity_type="Running")]
+        column_stubs: list[_DummyElement] = []
+
+        def make_column(*_a: Any, **_kw: Any) -> _DummyElement:
+            col = _DummyElement()
+            column_stubs.append(col)
+            return col
+
+        with ExitStack() as stack:
+            for p in _all_patches(column_side_effect=make_column):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        cycling_container = column_stubs[4]
+        assert not cycling_container._visible
+
+    def test_activity_tab_enabled_for_cycling_with_data(self) -> None:
+        """Activity tab should be enabled for Cycling workouts that have speed/cadence/power."""
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Cycling", raw_activity_type="Cycling"),
+                "cycling_speed": "25.0 km/h",
+                "splits": [],
+            }
+        ]
+        tab_stubs: list[_DummyElement] = []
+
+        def make_tab(*_a: Any, **_kw: Any) -> _DummyElement:
+            tab = _DummyElement()
+            tab_stubs.append(tab)
+            return tab
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert tab_stubs[1]._enabled
+
+    def test_activity_tab_disabled_for_cycling_with_no_data(self) -> None:
+        """Activity tab should be disabled for Cycling with no cycling-specific fields."""
+        rows = [_make_row(idx=0, activity_type="Cycling", raw_activity_type="Cycling")]
+        tab_stubs: list[_DummyElement] = []
+
+        def make_tab(*_a: Any, **_kw: Any) -> _DummyElement:
+            tab = _DummyElement()
+            tab_stubs.append(tab)
+            return tab
+
+        with ExitStack() as stack:
+            for p in _all_patches(tab_side_effect=make_tab):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        assert not tab_stubs[1]._enabled

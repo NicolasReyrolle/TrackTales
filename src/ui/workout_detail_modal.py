@@ -604,10 +604,13 @@ def create_workout_detail_modal(
                     no_splits_label = ui.label(t("No GPS route available.")).classes(
                         LABEL_MUTED_CLASSES
                     )
+                    # Initialise the split-number column header from the first row's unit so
+                    # the correct label ("km" or "mi") is visible before the first tab-click.
+                    _initial_du = rows[0].get("distance_unit", "km") if rows else "km"
                     splits_columns = [
                         {
                             "name": "split",
-                            "label": "km",
+                            "label": _initial_du,
                             "field": "split",
                             "align": "right",
                             "sortable": False,

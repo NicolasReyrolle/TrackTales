@@ -328,6 +328,75 @@ class TestSplitsTabSection:
         assert not splits_table._visible
 
 
+class TestSplitsColumnHeader:
+    """Tests for the splits table column-header unit label."""
+
+    def _create_modal_with_du(self, distance_unit: str) -> list[Any]:
+        """Create modal with one run row using *distance_unit*, return captured tables."""
+        splits_data = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 0.0}]
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
+                "splits": splits_data,
+                "distance_unit": distance_unit,
+            },
+        ]
+        table_stubs: list[Any] = []
+
+        def make_table(*_a: Any, **_kw: Any) -> Any:
+            tbl = _DummyElement(*_a, **_kw)
+            table_stubs.append(tbl)
+            return tbl
+
+        with ExitStack() as stack:
+            for p in _all_patches(table_side_effect=make_table):
+                stack.enter_context(p)
+            wdm.create_workout_detail_modal(rows)
+
+        return table_stubs
+
+    def test_initial_header_is_km_when_metric(self) -> None:
+        """The split-number column label should start as 'km' for metric rows."""
+        table_stubs = self._create_modal_with_du("km")
+        splits_table = table_stubs[1]
+        assert splits_table.columns[0]["label"] == "km"
+
+    def test_initial_header_is_mi_when_imperial(self) -> None:
+        """The split-number column label should start as 'mi' for imperial rows."""
+        table_stubs = self._create_modal_with_du("mi")
+        splits_table = table_stubs[1]
+        assert splits_table.columns[0]["label"] == "mi"
+
+    def test_header_updated_to_mi_when_intervals_tab_opened(self) -> None:
+        """Column label should update to 'mi' when Intervals tab is opened in imperial mode."""
+        splits_data = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 0.0}]
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
+                "splits": splits_data,
+                "distance_unit": "mi",
+            },
+        ]
+        table_stubs: list[Any] = []
+        tabs_stub = _DummyElement()
+
+        def make_table(*_a: Any, **_kw: Any) -> Any:
+            tbl = _DummyElement(*_a, **_kw)
+            table_stubs.append(tbl)
+            return tbl
+
+        with ExitStack() as stack:
+            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        tabs_stub.fire_value_change("intervals")
+        splits_table = table_stubs[1]
+        # After _do_refresh_intervals_tab runs, the column label must be "mi".
+        assert splits_table.columns[0]["label"] == "mi"
+
+
 class TestComputeSplitsLazy:
     """Unit tests for _compute_splits_lazy()."""
 

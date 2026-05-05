@@ -69,6 +69,29 @@ class TestFieldDefinition:
         )
         assert fd.description == ""
 
+    def test_default_display_row_key_is_none(self) -> None:
+        """display_row_key defaults to None when not specified."""
+        fd = FieldDefinition(
+            field_name="x",
+            display_name="X",
+            unit=None,
+            field_type=FieldType.STRING,
+            presence=FieldPresence.OPTIONAL,
+        )
+        assert fd.display_row_key is None
+
+    def test_display_row_key_can_be_set(self) -> None:
+        """display_row_key can be set to any non-empty string."""
+        fd = FieldDefinition(
+            field_name="averageRunningSpeed",
+            display_name="Avg Speed",
+            unit="km/h",
+            field_type=FieldType.NUMBER,
+            presence=FieldPresence.OPTIONAL,
+            display_row_key="pace",
+        )
+        assert fd.display_row_key == "pace"
+
     def test_unit_can_be_none(self) -> None:
         """Unit may be None for unitless or categorical fields."""
         fd = FieldDefinition(
@@ -157,6 +180,18 @@ class TestGenericFields:
     def test_contains_elevation_ascended(self) -> None:
         """ElevationAscended (workout table 'Elevation' column) must be present."""
         assert _find_field(GENERIC_FIELDS, "ElevationAscended") is not None
+
+    def test_contains_vo2_max(self) -> None:
+        """VO2Max must be in GENERIC_FIELDS with display_row_key 'vo2_max'.
+
+        Apple Watch reports VO2 max for all workout types, so it belongs in the
+        generic set rather than any per-type list.
+        """
+        field = _find_field(GENERIC_FIELDS, "VO2Max")
+        assert field is not None, "VO2Max not found in GENERIC_FIELDS"
+        assert field.presence == FieldPresence.OPTIONAL
+        assert field.field_type == FieldType.NUMBER
+        assert field.display_row_key == "vo2_max"
 
     def test_avg_power_covered_by_running_schema(self) -> None:
         """averageRunningPower (workout table 'Avg Power' column) must be in the Running schema.
@@ -289,6 +324,17 @@ class TestPerTypeFields:
         """Hiking fields must include step count."""
         assert _find_field(PER_TYPE_FIELDS["Hiking"], "sumStepCount") is not None
 
+    def test_hiking_has_locomotion_fields(self) -> None:
+        """Hiking fields must include walking-speed-derived locomotion fields.
+
+        HealthKit uses the same WalkingSpeed, WalkingCadence, and WalkingStepLength
+        statistics for hiking workouts.  These are needed so the Activity tab
+        enablement check correctly reflects available data.
+        """
+        assert _find_field(PER_TYPE_FIELDS["Hiking"], "averageWalkingSpeed") is not None
+        assert _find_field(PER_TYPE_FIELDS["Hiking"], "averageWalkingCadence") is not None
+        assert _find_field(PER_TYPE_FIELDS["Hiking"], "averageWalkingStepLength") is not None
+
     def test_walking_has_step_count(self) -> None:
         """Walking fields must include step count."""
         assert _find_field(PER_TYPE_FIELDS["Walking"], "sumStepCount") is not None
@@ -296,6 +342,52 @@ class TestPerTypeFields:
     def test_walking_has_cadence(self) -> None:
         """Walking fields must include walking cadence."""
         assert _find_field(PER_TYPE_FIELDS["Walking"], "averageWalkingCadence") is not None
+
+    # --- display_row_key wiring -------------------------------------------------
+
+    def test_running_activity_tab_fields_have_display_row_key(self) -> None:
+        """Activity-tab running fields must have a non-None display_row_key.
+
+        averageRunningPower is shown in the Overview tab as 'avg_power' and is
+        therefore the only Running field that may have display_row_key=None.
+        """
+        for field in PER_TYPE_FIELDS["Running"]:
+            if field.field_name == "averageRunningPower":
+                assert field.display_row_key is None, (
+                    "averageRunningPower should NOT have display_row_key (shown in Overview)"
+                )
+            else:
+                assert field.display_row_key is not None, (
+                    f"Running field '{field.field_name}' is missing display_row_key"
+                )
+
+    def test_cycling_fields_have_display_row_key(self) -> None:
+        """All Cycling per-type fields must have a non-None display_row_key."""
+        for field in PER_TYPE_FIELDS["Cycling"]:
+            assert field.display_row_key is not None, (
+                f"Cycling field '{field.field_name}' is missing display_row_key"
+            )
+
+    def test_swimming_fields_have_display_row_key(self) -> None:
+        """All Swimming per-type fields must have a non-None display_row_key."""
+        for field in PER_TYPE_FIELDS["Swimming"]:
+            assert field.display_row_key is not None, (
+                f"Swimming field '{field.field_name}' is missing display_row_key"
+            )
+
+    def test_hiking_fields_have_display_row_key(self) -> None:
+        """All Hiking per-type fields must have a non-None display_row_key."""
+        for field in PER_TYPE_FIELDS["Hiking"]:
+            assert field.display_row_key is not None, (
+                f"Hiking field '{field.field_name}' is missing display_row_key"
+            )
+
+    def test_walking_fields_have_display_row_key(self) -> None:
+        """All Walking per-type fields must have a non-None display_row_key."""
+        for field in PER_TYPE_FIELDS["Walking"]:
+            assert field.display_row_key is not None, (
+                f"Walking field '{field.field_name}' is missing display_row_key"
+            )
 
 
 # ---------------------------------------------------------------------------

@@ -229,10 +229,17 @@ def _extract_row_data(
         "distance_unit": distance_unit,
     }
 
+    # VO2 max is a generic field shown for all activity types (Apple Watch reports
+    # VO2 max estimates for every workout type, not only running).  Compute it once
+    # here using the pre-parsed vo2_dates for efficiency.
+    start_date_raw = row.get("startDate")
+    workout_date: pd.Timestamp | None = (
+        start_date_raw if isinstance(start_date_raw, pd.Timestamp) else None
+    )
+    result["vo2_max"] = _nearest_vo2_max(workout_date, vo2_dates)
+
     if raw_activity == "Running":
-        start_date_raw = row.get("startDate")
-        workout_date = start_date_raw if isinstance(start_date_raw, pd.Timestamp) else None
-        result.update(_extract_running_fields(row, workout_date, distance_unit, vo2_dates))
+        result.update(_extract_running_fields(row, distance_unit))
     elif raw_activity == "Walking":
         result.update(_extract_walking_fields(row, distance_unit))
     elif raw_activity == "Hiking":
@@ -338,9 +345,7 @@ def _nearest_vo2_max(
 
 def _extract_running_fields(
     row: Any,
-    workout_date: pd.Timestamp | None,
     distance_unit: str = "km",
-    vo2_dates: pd.Series | None = None,
 ) -> dict[str, Any]:
     """Extract running-specific display fields from a workout DataFrame row.
 
@@ -348,12 +353,12 @@ def _extract_running_fields(
     Fields that are absent or ``NaN`` fall back to the missing-data sentinel
     ``"–"`` so the modal can hide them automatically.
 
+    Note: VO2 max is **not** computed here; it is a generic field populated for
+    all activity types by :func:`_extract_row_data`.
+
     Args:
         row: A pandas Series representing a running workout.
-        workout_date: The workout start date used for VO2 max look-up.
         distance_unit: ``"km"`` or ``"mi"`` (affects pace display label).
-        vo2_dates: Pre-parsed, tz-naive VO2Max start dates; passed through to
-            :func:`_nearest_vo2_max` to avoid repeating the parse per workout.
 
     Returns:
         A dict with running-specific display and sort values.
@@ -403,7 +408,6 @@ def _extract_running_fields(
         "vertical_oscillation": vo_display,
         "ground_contact_time": gct_display,
         "step_count": step_count_display,
-        "vo2_max": _nearest_vo2_max(workout_date, vo2_dates),
     }
 
 

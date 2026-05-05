@@ -32,50 +32,50 @@ class TestExtractRunningFields:
     def test_pace_derived_from_speed(self) -> None:
         """Pace should be derived from averageRunningSpeed."""
         row = self._make_row(averageRunningSpeed=10.0)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_running_fields(row)
         assert result["pace"] == "6:00 /km"
 
     def test_cadence_formatted(self) -> None:
         """Cadence should show 'spm' unit."""
         row = self._make_row(averageRunningCadence=178.0)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_running_fields(row)
         assert result["cadence"] == "178 spm"
 
     def test_stride_length_formatted(self) -> None:
         """Stride length should show 'm' unit to 2 decimal places."""
         row = self._make_row(averageRunningStrideLength=0.91)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_running_fields(row)
         assert result["stride_length"] == "0.91 m"
 
     def test_vertical_oscillation_formatted(self) -> None:
         """Vertical oscillation should show 'cm' unit."""
         row = self._make_row(averageRunningVerticalOscillation=8.8)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_running_fields(row)
         assert result["vertical_oscillation"] == "8.8 cm"
 
     def test_ground_contact_time_formatted(self) -> None:
         """Ground contact time should show 'ms' unit."""
         row = self._make_row(averageRunningGroundContactTime=304.0)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_running_fields(row)
         assert result["ground_contact_time"] == "304 ms"
 
     def test_step_count_formatted(self) -> None:
         """Step count should be an integer string."""
         row = self._make_row(sumStepCount=9787.0)
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_running_fields(row)
         assert result["step_count"] == "9787"
 
     def test_missing_speed_produces_dash(self) -> None:
         """Missing averageRunningSpeed should produce '–' for pace."""
         row = self._make_row()
         del row["averageRunningSpeed"]
-        result = wt._extract_running_fields(row, None)
+        result = wt._extract_running_fields(row)
         assert result["pace"] == "–"
 
     def test_pace_formatted_in_imperial_mode(self) -> None:
         """Pace should be formatted as '/mi' when distance_unit is 'mi'."""
         row = self._make_row(averageRunningSpeed=10.0)
-        result = wt._extract_running_fields(row, None, distance_unit="mi")
+        result = wt._extract_running_fields(row, distance_unit="mi")
         assert result["pace"].endswith("/mi")
         assert "km" not in result["pace"]
 

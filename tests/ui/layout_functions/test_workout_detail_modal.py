@@ -22,6 +22,7 @@ class TestFieldDisplay:
             "duration",
             "distance",
             "calories",
+            "vo2_max",
             "temperature",
             "humidity",
         ]:
@@ -70,10 +71,19 @@ class TestRunningFieldDisplay:
     """Tests for _RUNNING_FIELD_DISPLAY constant and running section in the modal."""
 
     def test_all_expected_running_keys_present(self) -> None:
-        """_RUNNING_FIELD_DISPLAY should include pace, cadence, stride length, and VO2 max."""
+        """_RUNNING_FIELD_DISPLAY should include pace, cadence, stride length, and step count.
+
+        VO2 max was moved to the generic Overview display (_FIELD_DISPLAY) since Apple Watch
+        reports it for all workout types, not only running.
+        """
         keys = {key for key, _ in wdm._RUNNING_FIELD_DISPLAY}
-        for expected in ["pace", "cadence", "stride_length", "vo2_max"]:
+        for expected in ["pace", "cadence", "stride_length", "step_count"]:
             assert expected in keys
+
+    def test_vo2_max_not_in_running_field_display(self) -> None:
+        """vo2_max should NOT appear in _RUNNING_FIELD_DISPLAY (it is generic)."""
+        keys = {key for key, _ in wdm._RUNNING_FIELD_DISPLAY}
+        assert "vo2_max" not in keys
 
     def test_running_labels_are_non_empty_strings(self) -> None:
         """Every label in _RUNNING_FIELD_DISPLAY should be callable and non-empty."""
@@ -663,8 +673,8 @@ class TestRowHasRoute:
 class TestRowHasActivityData:
     """Tests for the _row_has_activity_data helper."""
 
-    def test_returns_false_for_unknown_activity_type(self) -> None:
-        """Unsupported activity type has no activity-specific field keys → False."""
+    def test_returns_false_for_cycling_with_no_data_fields(self) -> None:
+        """Cycling row with no cycling-specific field values → False."""
         assert not wdm._row_has_activity_data({"raw_activity_type": "Cycling"})
 
     def test_returns_false_when_no_raw_activity_type(self) -> None:
@@ -722,9 +732,15 @@ class TestRowHasActivityData:
             }
         )
 
-    def test_returns_true_for_hiking_with_elevation_data(self) -> None:
-        """Hiking row with an elevation gain value → True."""
-        assert wdm._row_has_activity_data(
+    def test_returns_false_for_hiking_with_only_elevation(self) -> None:
+        """Hiking row with only elevation data and all locomotion fields missing → False.
+
+        Elevation is a generic field shown in the Overview tab and is NOT included
+        in the schema-derived Activity tab enablement keys for Hiking.  The Activity
+        tab is enabled only when locomotion statistics (pace, cadence, step length,
+        or step count) are present.
+        """
+        assert not wdm._row_has_activity_data(
             {
                 "raw_activity_type": "Hiking",
                 "elevation": "250 m",
@@ -747,6 +763,31 @@ class TestRowHasActivityData:
                 "step_count": "8000",
             }
         )
+
+    def test_returns_false_for_truly_unknown_activity(self) -> None:
+        """A truly unknown activity type not in PER_TYPE_FIELDS → False."""
+        assert not wdm._row_has_activity_data({"raw_activity_type": "Yoga"})
+
+    def test_activity_field_keys_derived_from_schema(self) -> None:
+        """_ACTIVITY_FIELD_KEYS must contain exactly the schema-registered activity types."""
+        from logic.workout_detail_schema import PER_TYPE_FIELDS
+
+        assert set(wdm._ACTIVITY_FIELD_KEYS.keys()) == set(PER_TYPE_FIELDS.keys())
+
+    def test_activity_field_keys_use_schema_display_row_keys(self) -> None:
+        """Every key in _ACTIVITY_FIELD_KEYS must appear as display_row_key in the schema."""
+        from logic.workout_detail_schema import PER_TYPE_FIELDS
+
+        for activity, keys in wdm._ACTIVITY_FIELD_KEYS.items():
+            schema_keys = {
+                f.display_row_key
+                for f in PER_TYPE_FIELDS[activity]
+                if f.display_row_key is not None
+            }
+            assert set(keys) == schema_keys, (
+                f"'{activity}': _ACTIVITY_FIELD_KEYS {set(keys)} "
+                f"≠ schema display_row_keys {schema_keys}"
+            )
 
 
 class TestDistanceFormatTwoDecimals:

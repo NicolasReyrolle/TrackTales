@@ -39,14 +39,27 @@ For activity types that need display-value mappings for integer-coded metadata (
 swimming location type or stroke style), add a corresponding entry to
 :data:`ENUM_DISPLAY_VALUES`.
 
-**Note on VO2 Max:**
+**VO2 Max:**
 
 VO2 max is recorded as a separate ``HKQuantityTypeIdentifierVO2Max`` *Record* in the
 Apple Health export, not as a ``WorkoutStatistics`` child of a ``Workout`` element.
-It is therefore not directly available as a column in ``ParsedHealthData.workouts``.
-A future enhancement could join the nearest-in-time VO2 max record to each workout;
-until then it is documented here for completeness but is not included as a
-:class:`FieldDefinition` in :data:`PER_TYPE_FIELDS`.
+It is therefore not a DataFrame column from the workout parser; instead it is joined
+from the nearest-in-time VO2 max record at display time by
+:func:`~ui.workout_table._nearest_vo2_max`, which writes the formatted result into the
+row dict under the key ``"vo2_max"``.  Because Apple Watch reports VO2 max estimates
+for all workout types (not just running), it is listed in :data:`GENERIC_FIELDS` with
+``display_row_key="vo2_max"``.
+
+**Schema↔UI connection (``display_row_key``):**
+
+Each :class:`FieldDefinition` carries an optional ``display_row_key`` attribute that
+names the key used in the modal row dict (as produced by
+:func:`~ui.workout_table._build_workout_rows`).  The modal derives
+``_ACTIVITY_FIELD_KEYS`` directly from :data:`PER_TYPE_FIELDS` using this attribute,
+so the schema is the **single source of truth** for which activity types are supported
+and which row-dict keys drive the Activity tab enablement check.  Fields without a
+``display_row_key`` (e.g. those shown in the Overview tab rather than the Activity tab)
+are excluded from the enablement check automatically.
 """
 
 from __future__ import annotations
@@ -104,6 +117,11 @@ class FieldDefinition:
     field_type: FieldType
     presence: FieldPresence
     description: str = ""
+    display_row_key: str | None = None
+    """Key in the modal row dict (from ``_build_workout_rows()``) that corresponds to
+    this field.  Used by :mod:`ui.workout_detail_modal` to derive ``_ACTIVITY_FIELD_KEYS``
+    for the Activity tab enablement check.  ``None`` for fields that are shown in the
+    Overview tab rather than the Activity tab, or for fields not yet wired to the UI."""
 
 
 # ---------------------------------------------------------------------------
@@ -328,6 +346,22 @@ GENERIC_FIELDS: list[FieldDefinition] = [
             "the UI regardless of the raw unit string in the export."
         ),
     ),
+    # ---- Fitness estimates ----
+    FieldDefinition(
+        field_name="VO2Max",
+        display_name="VO₂ Max",
+        unit="mL/min·kg",
+        field_type=FieldType.NUMBER,
+        presence=FieldPresence.OPTIONAL,
+        description=(
+            "Nearest-in-time HKQuantityTypeIdentifierVO2Max Record matched to the "
+            "workout start date.  Not a WorkoutStatistics child of the Workout element; "
+            "joined from the separate VO2Max record stream at display time by "
+            "ui.workout_table._nearest_vo2_max().  Apple Watch reports VO2 max estimates "
+            "for all workout types, so this field belongs in the generic set."
+        ),
+        display_row_key="vo2_max",
+    ),
 ]
 
 
@@ -338,6 +372,7 @@ GENERIC_FIELDS: list[FieldDefinition] = [
 _DN_AVG_SPEED = "Avg Speed"
 _DN_AVG_CADENCE = "Avg Cadence"
 _DN_AVG_POWER = "Avg Power"
+_UNIT_STEPS_PER_MIN = "steps/min"
 
 # ---------------------------------------------------------------------------
 # Shared field definitions reused across multiple activity types
@@ -351,6 +386,7 @@ _STEP_COUNT_FIELD: FieldDefinition = FieldDefinition(
     field_type=FieldType.NUMBER,
     presence=FieldPresence.OPTIONAL,
     description="Sum of HKQuantityTypeIdentifierStepCount WorkoutStatistics.",
+    display_row_key="step_count",
 )
 
 
@@ -359,11 +395,6 @@ _STEP_COUNT_FIELD: FieldDefinition = FieldDefinition(
 # ---------------------------------------------------------------------------
 
 #: Type-specific fields for running workouts.
-#:
-#: VO2 max is tracked as a separate HKQuantityTypeIdentifierVO2Max *Record* element
-#: (not a WorkoutStatistics child) and is therefore not listed here.  A future
-#: enhancement could join the nearest-in-time VO2 max record when displaying running
-#: workout details.
 _RUNNING_FIELDS: list[FieldDefinition] = [
     FieldDefinition(
         field_name="averageRunningSpeed",
@@ -375,17 +406,19 @@ _RUNNING_FIELDS: list[FieldDefinition] = [
             "Average of HKQuantityTypeIdentifierRunningSpeed WorkoutStatistics. "
             "Can be used to compute average pace (min/km) as 60 / speed_km_h."
         ),
+        display_row_key="pace",
     ),
     FieldDefinition(
         field_name="averageRunningCadence",
         display_name=_DN_AVG_CADENCE,
-        unit="steps/min",
+        unit=_UNIT_STEPS_PER_MIN,
         field_type=FieldType.NUMBER,
         presence=FieldPresence.OPTIONAL,
         description=(
             "Average of HKQuantityTypeIdentifierRunningCadence WorkoutStatistics. "
             "Reported as total steps per minute (both feet)."
         ),
+        display_row_key="cadence",
     ),
     FieldDefinition(
         field_name="averageRunningStrideLength",
@@ -397,6 +430,7 @@ _RUNNING_FIELDS: list[FieldDefinition] = [
             "Average of HKQuantityTypeIdentifierRunningStrideLength WorkoutStatistics. "
             "One stride = two steps (left + right)."
         ),
+        display_row_key="stride_length",
     ),
     FieldDefinition(
         field_name="averageRunningPower",
@@ -408,6 +442,8 @@ _RUNNING_FIELDS: list[FieldDefinition] = [
             "Average of HKQuantityTypeIdentifierRunningPower WorkoutStatistics. "
             "Requires Apple Watch Series 8+ or Ultra."
         ),
+        # averageRunningPower is surfaced in the Overview tab as the generic
+        # 'avg_power' field, not inside the Running Activity container.
     ),
     FieldDefinition(
         field_name="averageRunningVerticalOscillation",
@@ -419,6 +455,7 @@ _RUNNING_FIELDS: list[FieldDefinition] = [
             "Average of HKQuantityTypeIdentifierRunningVerticalOscillation WorkoutStatistics. "
             "Vertical movement of the centre of mass per stride in centimetres."
         ),
+        display_row_key="vertical_oscillation",
     ),
     FieldDefinition(
         field_name="averageRunningGroundContactTime",
@@ -430,6 +467,7 @@ _RUNNING_FIELDS: list[FieldDefinition] = [
             "Average of HKQuantityTypeIdentifierRunningGroundContactTime WorkoutStatistics. "
             "Time each foot spends on the ground per stride in milliseconds."
         ),
+        display_row_key="ground_contact_time",
     ),
     _STEP_COUNT_FIELD,
 ]
@@ -447,6 +485,7 @@ _CYCLING_FIELDS: list[FieldDefinition] = [
             "Requires Apple Watch Series 4+ with a paired cycling sensor or "
             "Apple Watch Ultra 2+ with native cycling detection."
         ),
+        display_row_key="cycling_speed",
     ),
     FieldDefinition(
         field_name="averageCyclingCadence",
@@ -458,6 +497,7 @@ _CYCLING_FIELDS: list[FieldDefinition] = [
             "Average of HKQuantityTypeIdentifierCyclingCadence WorkoutStatistics. "
             "Pedalling revolutions per minute."
         ),
+        display_row_key="cycling_cadence",
     ),
     FieldDefinition(
         field_name="averageCyclingPower",
@@ -469,6 +509,7 @@ _CYCLING_FIELDS: list[FieldDefinition] = [
             "Average of HKQuantityTypeIdentifierCyclingPower WorkoutStatistics. "
             "Requires a Bluetooth power meter paired with Apple Watch."
         ),
+        display_row_key="cycling_power",
     ),
     FieldDefinition(
         field_name="averageCyclingFunctionalThresholdPower",
@@ -481,6 +522,7 @@ _CYCLING_FIELDS: list[FieldDefinition] = [
             "WorkoutStatistics.  The highest average power a rider can sustain for "
             "approximately one hour; used to derive training zones."
         ),
+        display_row_key="cycling_ftp",
     ),
 ]
 
@@ -496,6 +538,7 @@ _SWIMMING_FIELDS: list[FieldDefinition] = [
             "Sum of HKQuantityTypeIdentifierSwimmingStrokeCount WorkoutStatistics. "
             "Total strokes counted over the full session."
         ),
+        display_row_key="swimming_stroke_count",
     ),
     FieldDefinition(
         field_name="LapLength",
@@ -507,6 +550,7 @@ _SWIMMING_FIELDS: list[FieldDefinition] = [
             "Pool lane length from HKLapLength MetadataEntry. "
             "Typically 25 m or 50 m for pool swimming; absent for open-water sessions."
         ),
+        display_row_key="swimming_lap_length",
     ),
     FieldDefinition(
         field_name="SwimmingLocationType",
@@ -519,15 +563,53 @@ _SWIMMING_FIELDS: list[FieldDefinition] = [
             "the session was in open water (1) or a pool (2).  Use SWIMMING_LOCATION_TYPES "
             "to convert to a human-readable label."
         ),
+        display_row_key="swimming_location",
     ),
 ]
 
 #: Type-specific fields for hiking workouts.
 #:
 #: Elevation gain (``ElevationAscended``) is already present in :data:`GENERIC_FIELDS`
-#: because it applies to all outdoor activities.  The fields below complement the generic
-#: set with hiking-specific metrics.
+#: because it applies to all outdoor activities.  The locomotion fields below are the
+#: same HealthKit statistics as :data:`_WALKING_FIELDS`; HealthKit uses identical
+#: quantity types for both hiking and walking workouts.
 _HIKING_FIELDS: list[FieldDefinition] = [
+    FieldDefinition(
+        field_name="averageWalkingSpeed",
+        display_name=_DN_AVG_SPEED,
+        unit="km/h",
+        field_type=FieldType.NUMBER,
+        presence=FieldPresence.OPTIONAL,
+        description=(
+            "Average of HKQuantityTypeIdentifierWalkingSpeed WorkoutStatistics. "
+            "HealthKit uses the same locomotion statistics for both hiking and walking."
+        ),
+        display_row_key="pace",
+    ),
+    FieldDefinition(
+        field_name="averageWalkingCadence",
+        display_name=_DN_AVG_CADENCE,
+        unit=_UNIT_STEPS_PER_MIN,
+        field_type=FieldType.NUMBER,
+        presence=FieldPresence.OPTIONAL,
+        description=(
+            "Average of HKQuantityTypeIdentifierWalkingCadence WorkoutStatistics. "
+            "HealthKit uses the same locomotion statistics for both hiking and walking."
+        ),
+        display_row_key="cadence",
+    ),
+    FieldDefinition(
+        field_name="averageWalkingStepLength",
+        display_name="Avg Step Length",
+        unit="m",
+        field_type=FieldType.NUMBER,
+        presence=FieldPresence.OPTIONAL,
+        description=(
+            "Average of HKQuantityTypeIdentifierWalkingStepLength WorkoutStatistics. "
+            "HealthKit uses the same locomotion statistics for both hiking and walking."
+        ),
+        display_row_key="step_length",
+    ),
     _STEP_COUNT_FIELD,
 ]
 
@@ -537,13 +619,14 @@ _WALKING_FIELDS: list[FieldDefinition] = [
     FieldDefinition(
         field_name="averageWalkingCadence",
         display_name=_DN_AVG_CADENCE,
-        unit="steps/min",
+        unit=_UNIT_STEPS_PER_MIN,
         field_type=FieldType.NUMBER,
         presence=FieldPresence.OPTIONAL,
         description=(
             "Average of HKQuantityTypeIdentifierWalkingCadence WorkoutStatistics. "
             "Recorded when walking speed and step count data are available."
         ),
+        display_row_key="cadence",
     ),
     FieldDefinition(
         field_name="averageWalkingStepLength",
@@ -552,6 +635,7 @@ _WALKING_FIELDS: list[FieldDefinition] = [
         field_type=FieldType.NUMBER,
         presence=FieldPresence.OPTIONAL,
         description="Average of HKQuantityTypeIdentifierWalkingStepLength WorkoutStatistics.",
+        display_row_key="step_length",
     ),
     FieldDefinition(
         field_name="averageWalkingSpeed",
@@ -560,6 +644,7 @@ _WALKING_FIELDS: list[FieldDefinition] = [
         field_type=FieldType.NUMBER,
         presence=FieldPresence.OPTIONAL,
         description="Average of HKQuantityTypeIdentifierWalkingSpeed WorkoutStatistics.",
+        display_row_key="pace",
     ),
 ]
 

@@ -6,6 +6,7 @@ from typing import Any, TypeAlias, cast
 from nicegui import ui
 
 from i18n import t
+from logic.workout_detail_schema import PER_TYPE_FIELDS
 from logic.workout_manager.swimming import (
     SwimInterval,
     build_swim_interval_display_rows,
@@ -69,6 +70,7 @@ _FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
     ("distance", lambda: t("Distance")),
     ("calories", lambda: t("Calories")),
     ("avg_hr", lambda: t("Avg HR")),
+    ("vo2_max", lambda: t("VO₂ Max")),
     ("elevation", lambda: t("Elevation Gain")),
     ("avg_power", lambda: t("Avg Power")),
     ("temperature", lambda: t("Temperature")),
@@ -84,7 +86,6 @@ _RUNNING_FIELD_DISPLAY: list[tuple[str, _LabelFn]] = [
     ("vertical_oscillation", lambda: t("Avg Vertical Oscillation")),
     ("ground_contact_time", lambda: t("Avg Ground Contact Time")),
     ("step_count", _label_step_count),
-    ("vo2_max", lambda: t("VO₂ Max")),
 ]
 
 #: Walking-specific fields shown in the Activity tab when the workout is Walking.
@@ -321,16 +322,15 @@ def _row_has_route(row: dict[str, Any]) -> bool:
     return isinstance(route, WorkoutRoute) and not route.is_empty
 
 
-#: Maps each supported raw activity type to the field keys shown in the Activity tab.
-#: Used by :func:`_row_has_activity_data` to determine whether at least one field
-#: has a non-missing value.
+#: Maps each supported raw activity type to the Activity-tab field keys used by
+#: :func:`_row_has_activity_data`.  Derived from
+#: :data:`~logic.workout_detail_schema.PER_TYPE_FIELDS` using the ``display_row_key``
+#: attribute on each :class:`~logic.workout_detail_schema.FieldDefinition`.
+#: Fields whose ``display_row_key`` is ``None`` (e.g. those shown in the Overview tab,
+#: such as ``averageRunningPower`` → ``avg_power``) are excluded automatically.
 _ACTIVITY_FIELD_KEYS: dict[str, list[str]] = {
-    "Running": [k for k, _ in _RUNNING_FIELD_DISPLAY],
-    "Walking": [k for k, _ in _WALKING_FIELD_DISPLAY],
-    "Hiking": [k for k, _ in _HIKING_FIELD_DISPLAY],
-    # Swimming: enable Activity tab when any summary field is present.
-    "Swimming": [k for k, _ in _SWIMMING_FIELD_DISPLAY],
-    "Cycling": [k for k, _ in _CYCLING_FIELD_DISPLAY],
+    activity: [f.display_row_key for f in fields if f.display_row_key is not None]
+    for activity, fields in PER_TYPE_FIELDS.items()
 }
 
 
@@ -472,11 +472,12 @@ def create_workout_detail_modal(
 
     The modal is organised into three tabs:
 
-    * **Overview** – generic workout attributes (date, distance, calories, etc.).
+    * **Overview** – generic workout attributes (date, distance, calories, heart rate,
+      VO₂ max, elevation, etc.) shared by all workout types.
     * **Activity** – type-specific metrics.  Running workouts show pace, cadence,
-      stride length, vertical oscillation, ground contact time, step count, and
-      VO₂ max.  Walking workouts show pace, cadence, step length, and step count.
-      Hiking workouts show elevation gain, pace, cadence, step length, and step count.
+      stride length, vertical oscillation, ground contact time, and step count.
+      Walking workouts show pace, cadence, step length, and step count.
+      Hiking workouts show pace, cadence, step length, and step count.
       Swimming workouts show location, lap length, and total stroke count.
       Cycling workouts show speed, cadence, power, and functional threshold power.
       Other activity types show a placeholder message; the tab is disabled.

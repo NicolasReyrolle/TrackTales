@@ -231,6 +231,46 @@ class TestBuildWorkoutRows:
         # vo2_max should have been populated via the pre-computed dates path.
         assert rows[0]["vo2_max"] == "48.5 mL/min·kg"
 
+    def test_vo2_max_populated_for_non_running_activity(self) -> None:
+        """vo2_max must be present in the row dict for non-Running activity types.
+
+        Apple Watch reports VO2 max estimates for all workout types, so it is
+        shown in the generic Overview tab regardless of the workout type.
+        """
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+
+        original_workouts: Any = state.workouts
+        original_records = state.records_by_type
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Cycling",
+                    "startDate": pd.Timestamp("2025-03-10"),
+                    "duration": 3600.0,
+                },
+                {
+                    "activityType": "Swimming",
+                    "startDate": pd.Timestamp("2025-03-11"),
+                    "duration": 1800.0,
+                },
+            ]
+        )
+        vo2_df = pd.DataFrame([{"startDate": "2025-03-10", "value": 52.0}])
+        try:
+            state.workouts = workouts_mock
+            state.records_by_type = RecordsByType(data={"VO2Max": vo2_df})
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+            state.records_by_type = original_records
+        assert len(rows) == 2
+        # Every row should have a vo2_max entry regardless of activity type.
+        for row in rows:
+            assert "vo2_max" in row
+            assert row["vo2_max"] != ""
+
     """Tests for _find_row_index()."""
 
     def test_returns_correct_index_for_matching_id(self) -> None:

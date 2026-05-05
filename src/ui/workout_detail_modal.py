@@ -29,7 +29,7 @@ from ui.css import (
     TABLE_DENSE_FLAT_PROPS,
     TABS_FULL_CLASSES,
 )
-from units import METERS_TO_MILES
+from units import METERS_TO_FEET, METERS_TO_MILES
 
 #: Callable returning a translated label string; alias for readability.
 _LabelFn: TypeAlias = Callable[[], str]
@@ -147,21 +147,25 @@ def _build_swim_display_rows(intervals: list[SwimInterval]) -> list[dict[str, An
     ]
 
 
-def _format_split_pace(pace_min_per_km: float) -> str:
-    """Format a pace value (min/km) as a ``mm:ss`` string.
+def _format_split_pace(pace_min_per_km: float, distance_unit: str) -> str:
+    """Format a pace value (min/km) as a ``mm:ss /unit`` string.
 
     Args:
         pace_min_per_km: Pace in minutes per kilometre.
+        distance_unit: ``"km"`` or ``"mi"``.  Controls both the scaling and
+            the unit label appended to the string.
 
     Returns:
-        Formatted string such as ``"4:32"``.
+        Formatted string such as ``"4:32 /km"`` or ``"7:17 /mi"``.
     """
-    minutes = int(pace_min_per_km)
-    seconds = int(round((pace_min_per_km - minutes) * 60))
+    pace_scale = 1.0 / (1000.0 * METERS_TO_MILES) if distance_unit == "mi" else 1.0
+    scaled = pace_min_per_km * pace_scale
+    minutes = int(scaled)
+    seconds = int(round((scaled - minutes) * 60))
     if seconds == 60:
         minutes += 1
         seconds = 0
-    return f"{minutes}:{seconds:02d}"
+    return f"{minutes}:{seconds:02d} /{distance_unit}"
 
 
 def _format_split_speed(pace_min_per_km: float, distance_unit: str) -> str:
@@ -180,16 +184,20 @@ def _format_split_speed(pace_min_per_km: float, distance_unit: str) -> str:
     return f"{speed_km_h:.1f} km/h"
 
 
-def _format_elevation_change(elevation_change_m: float) -> str:
-    """Format an elevation change in metres as a compact signed string.
+def _format_elevation_change(elevation_change_m: float, distance_unit: str = "km") -> str:
+    """Format an elevation change as a compact signed string.
 
     Args:
         elevation_change_m: Net elevation change in metres.
+        distance_unit: ``"km"`` to display metres, ``"mi"`` to display feet.
 
     Returns:
-        Formatted string such as ``"+5 m"`` or ``"-2 m"``.
+        Formatted string such as ``"+5 m"``, ``"-2 m"``  or ``"+16 ft"``.
     """
     sign = "+" if elevation_change_m >= 0 else ""
+    if distance_unit == "mi":
+        feet = elevation_change_m * METERS_TO_FEET
+        return f"{sign}{int(round(feet))} ft"
     return f"{sign}{int(round(elevation_change_m))} m"
 
 
@@ -203,19 +211,18 @@ def _format_split_rows(
         splits: List of split dicts from
             :meth:`~logic.workout_manager.workout_route.WorkoutRoute.compute_splits`.
         distance_unit: Active distance unit, ``"km"`` or ``"mi"``.  Controls
-            the pace-scale factor applied before formatting and the speed unit.
+            the pace scaling, speed unit, and elevation unit.
 
     Returns:
         List of row dicts with ``"split"``, ``"pace_str"``, ``"speed_str"``,
         and ``"elev_str"`` keys ready for direct assignment to ``ui.table.rows``.
     """
-    pace_scale = 1.0 / (1000.0 * METERS_TO_MILES) if distance_unit == "mi" else 1.0
     return [
         {
             "split": int(s["split"]),
-            "pace_str": _format_split_pace(float(s["pace_min_per_km"]) * pace_scale),
+            "pace_str": _format_split_pace(float(s["pace_min_per_km"]), distance_unit),
             "speed_str": _format_split_speed(float(s["pace_min_per_km"]), distance_unit),
-            "elev_str": _format_elevation_change(float(s["elevation_change_m"])),
+            "elev_str": _format_elevation_change(float(s["elevation_change_m"]), distance_unit),
         }
         for s in splits
     ]

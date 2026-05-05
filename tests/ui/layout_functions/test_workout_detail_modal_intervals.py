@@ -13,21 +13,32 @@ from ._modal_stubs import _all_patches, _ButtonStub, _DummyElement, _make_row
 class TestFormatSplitPace:
     """Unit tests for _format_split_pace()."""
 
-    def test_integer_minutes(self) -> None:
-        """An exact integer minute pace should format as 'mm:00'."""
-        assert wdm._format_split_pace(5.0) == "5:00"
+    def test_integer_minutes_km(self) -> None:
+        """An exact integer minute pace should format as 'mm:00 /km'."""
+        assert wdm._format_split_pace(5.0, "km") == "5:00 /km"
 
-    def test_fractional_pace_rounded(self) -> None:
+    def test_fractional_pace_rounded_km(self) -> None:
         """Fractional seconds should be rounded correctly."""
         # 4.5 min/km → 4 min 30 sec
-        assert wdm._format_split_pace(4.5) == "4:30"
+        assert wdm._format_split_pace(4.5, "km") == "4:30 /km"
 
     def test_seconds_rollover(self) -> None:
         """When rounded seconds == 60, minutes should increment and seconds reset."""
         # pace where fractional part rounds to 60 → 4.999... ≈ 5:00
-        result = wdm._format_split_pace(4.9999)
+        result = wdm._format_split_pace(4.9999, "km")
         # should show 5:00 (rollover) rather than 4:60
         assert "60" not in result
+
+    def test_mi_unit_label(self) -> None:
+        """In imperial mode the unit label should be '/mi'."""
+        result = wdm._format_split_pace(6.0, "mi")
+        assert result.endswith("/mi")
+
+    def test_mi_pace_greater_than_km(self) -> None:
+        """min/mi pace value should be larger than min/km for the same speed."""
+        minutes_km = int(wdm._format_split_pace(6.0, "km").split(":")[0])
+        minutes_mi = int(wdm._format_split_pace(6.0, "mi").split(":")[0])
+        assert minutes_mi > minutes_km
 
 
 class TestFormatSplitSpeed:
@@ -71,16 +82,29 @@ class TestFormatElevationChange:
         """Zero elevation change should show '+0 m'."""
         assert wdm._format_elevation_change(0.0) == "+0 m"
 
+    def test_imperial_shows_feet(self) -> None:
+        """In imperial mode the result should use feet."""
+        result = wdm._format_elevation_change(10.0, "mi")
+        assert result.endswith("ft")
+        assert "m" not in result.rstrip("ft")
+
+    def test_imperial_feet_larger_than_metres(self) -> None:
+        """Feet value should be greater than the metre value for the same elevation."""
+        m_val = int(wdm._format_elevation_change(100.0, "km").strip("+ m").replace(" m", ""))
+        ft_str = wdm._format_elevation_change(100.0, "mi")
+        ft_val = int(ft_str.strip("+").replace(" ft", ""))
+        assert ft_val > m_val
+
 
 class TestFormatSplitRows:
     """Unit tests for _format_split_rows()."""
 
-    def test_km_pace_not_scaled(self) -> None:
-        """In km mode the pace value should be used as-is."""
+    def test_km_pace_includes_unit_label(self) -> None:
+        """In km mode the pace string should include '/km'."""
         splits = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 10.0}]
         rows = wdm._format_split_rows(splits, "km")
         assert rows[0]["split"] == 1
-        assert rows[0]["pace_str"] == "6:00"
+        assert rows[0]["pace_str"] == "6:00 /km"
         assert rows[0]["elev_str"] == "+10 m"
 
     def test_km_speed_included(self) -> None:
@@ -90,11 +114,14 @@ class TestFormatSplitRows:
         assert "speed_str" in rows[0]
         assert rows[0]["speed_str"] == "10.0 km/h"
 
-    def test_mi_pace_is_scaled(self) -> None:
-        """In mi mode the pace should be converted to min/mi (slower than min/km)."""
+    def test_mi_pace_includes_unit_label_and_is_scaled(self) -> None:
+        """In mi mode the pace should be converted to min/mi and labelled '/mi'."""
         splits = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 0.0}]
         rows_km = wdm._format_split_rows(splits, "km")
         rows_mi = wdm._format_split_rows(splits, "mi")
+        # unit labels
+        assert rows_km[0]["pace_str"].endswith("/km")
+        assert rows_mi[0]["pace_str"].endswith("/mi")
         # min/mi pace should be larger than min/km for the same speed
         km_minutes = int(rows_km[0]["pace_str"].split(":")[0])
         mi_minutes = int(rows_mi[0]["pace_str"].split(":")[0])
@@ -106,6 +133,13 @@ class TestFormatSplitRows:
         rows = wdm._format_split_rows(splits, "mi")
         assert "speed_str" in rows[0]
         assert rows[0]["speed_str"].endswith("mph")
+
+    def test_mi_elevation_in_feet(self) -> None:
+        """In mi mode, elevation should be shown in feet."""
+        splits = [{"split": 1, "pace_min_per_km": 6.0, "elevation_change_m": 10.0}]
+        rows = wdm._format_split_rows(splits, "mi")
+        assert rows[0]["elev_str"].endswith("ft")
+        assert "m" not in rows[0]["elev_str"]
 
     def test_multiple_splits_returned(self) -> None:
         """All splits in the input should be present in the output."""

@@ -99,6 +99,52 @@ The workout manager implementation is split into a dedicated package:
 
 Keep importing from `logic.workout_manager` in app/tests unless there is a specific reason to target internal modules.
 
+## Workout Detail Modal Architecture
+
+The workout detail modal is organised into two layers.
+
+### Schema layer — `src/logic/workout_detail_schema.py`
+
+Defines the data contract using pure Python (no NiceGUI dependency):
+
+- `FieldDefinition` — frozen dataclass that describes a single attribute (field name, display name, unit, type, presence, description).
+- `GENERIC_FIELDS` — ordered list of `FieldDefinition` instances shown for every workout type (activity, dates, duration, distance, calories, heart rate, elevation, environment).
+- `PER_TYPE_FIELDS` — dict mapping an activity-type string (e.g. `"Running"`) to a list of additional `FieldDefinition` instances specific to that type.
+- `get_fields_for_activity(activity_type)` — returns `GENERIC_FIELDS + PER_TYPE_FIELDS.get(activity_type, [])`.
+
+**Adding a new activity type** requires only a new list of `FieldDefinition` instances and one entry in `PER_TYPE_FIELDS`:
+
+```python
+_MY_SPORT_FIELDS: list[FieldDefinition] = [
+    FieldDefinition(field_name="averageMyMetric", display_name="My Metric",
+                    unit="unit", field_type=FieldType.NUMBER,
+                    presence=FieldPresence.OPTIONAL,
+                    description="Source: HKQuantityTypeIdentifier… WorkoutStatistics."),
+]
+
+PER_TYPE_FIELDS["MySport"] = _MY_SPORT_FIELDS
+```
+
+No UI changes are required for the schema layer — the modal reads from this registry at runtime.
+
+### UI layer — `src/ui/workout_detail_modal.py`
+
+Builds the NiceGUI dialog from the field display specs:
+
+- `_FIELD_DISPLAY` — display spec for the Overview tab (generic attributes).
+- `_RUNNING_FIELD_DISPLAY`, `_WALKING_FIELD_DISPLAY`, `_HIKING_FIELD_DISPLAY`, `_SWIMMING_FIELD_DISPLAY`, `_CYCLING_FIELD_DISPLAY` — display specs for the Activity tab, one per supported type.
+- `_ACTIVITY_FIELD_KEYS` — maps each supported raw activity type to the field keys used by `_row_has_activity_data()` to decide whether to enable the Activity tab.
+- `create_workout_detail_modal(rows)` — creates the dialog once in the current NiceGUI context and returns an `open_at(index)` callable.
+
+**Adding Activity-tab support for a new type** (after updating the schema layer):
+
+1. Add a `_MY_SPORT_FIELD_DISPLAY` list of `(field_key, label_fn)` tuples.
+2. Add a `ui.column()` container for the new type inside the Activity tab panel in `create_workout_detail_modal`.
+3. Register the container in `_containers` (the dict passed to `_do_refresh_activity_tab`).
+4. Add the field keys to `_ACTIVITY_FIELD_KEYS`.
+
+The workout table wires the modal via `create_workout_detail_modal(rows)` in `render_workout_table()` and emits an `open_detail` custom event from the Vue slot when the user clicks the info button.
+
 ## Translations
 
 Translation workflows are documented in [src/i18n/locales/README.md](src/i18n/locales/README.md).

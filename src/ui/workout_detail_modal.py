@@ -323,8 +323,9 @@ def _row_has_route(row: dict[str, Any]) -> bool:
 
 
 #: Maps each supported raw activity type to the Activity-tab field keys used by
-#: :func:`_row_has_activity_data`.  Derived from :data:`~logic.workout_detail_schema.PER_TYPE_FIELDS`
-#: using the ``display_row_key`` attribute on each :class:`~logic.workout_detail_schema.FieldDefinition`.
+#: :func:`_row_has_activity_data`.  Derived from
+#: :data:`~logic.workout_detail_schema.PER_TYPE_FIELDS` using the ``display_row_key``
+#: attribute on each :class:`~logic.workout_detail_schema.FieldDefinition`.
 #: Fields whose ``display_row_key`` is ``None`` (e.g. those shown in the Overview tab,
 #: such as ``averageRunningPower`` → ``avg_power``) are excluded automatically.
 _ACTIVITY_FIELD_KEYS: dict[str, list[str]] = {

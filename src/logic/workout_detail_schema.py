@@ -372,6 +372,7 @@ GENERIC_FIELDS: list[FieldDefinition] = [
 _DN_AVG_SPEED = "Avg Speed"
 _DN_AVG_CADENCE = "Avg Cadence"
 _DN_AVG_POWER = "Avg Power"
+_UNIT_STEPS_PER_MIN = "steps/min"
 
 # ---------------------------------------------------------------------------
 # Shared field definitions reused across multiple activity types
@@ -410,7 +411,7 @@ _RUNNING_FIELDS: list[FieldDefinition] = [
     FieldDefinition(
         field_name="averageRunningCadence",
         display_name=_DN_AVG_CADENCE,
-        unit="steps/min",
+        unit=_UNIT_STEPS_PER_MIN,
         field_type=FieldType.NUMBER,
         presence=FieldPresence.OPTIONAL,
         description=(
@@ -588,7 +589,7 @@ _HIKING_FIELDS: list[FieldDefinition] = [
     FieldDefinition(
         field_name="averageWalkingCadence",
         display_name=_DN_AVG_CADENCE,
-        unit="steps/min",
+        unit=_UNIT_STEPS_PER_MIN,
         field_type=FieldType.NUMBER,
         presence=FieldPresence.OPTIONAL,
         description=(
@@ -618,7 +619,7 @@ _WALKING_FIELDS: list[FieldDefinition] = [
     FieldDefinition(
         field_name="averageWalkingCadence",
         display_name=_DN_AVG_CADENCE,
-        unit="steps/min",
+        unit=_UNIT_STEPS_PER_MIN,
         field_type=FieldType.NUMBER,
         presence=FieldPresence.OPTIONAL,
         description=(

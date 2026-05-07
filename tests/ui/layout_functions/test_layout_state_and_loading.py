@@ -719,13 +719,14 @@ def test_render_body_record_card_click_opens_detail_modal() -> None:
             stack.enter_context(patch("ui.layout.render_workout_table"))
             stack.enter_context(patch("ui.layout.render_distance_range_selector"))
             stack.enter_context(patch("ui.layout.render_duration_range_selector"))
-            stack.enter_context(
+            build_rows_mock = stack.enter_context(
                 patch("ui.layout._build_workout_rows", return_value=[{"workout_index": 42}])
             )
             create_modal_mock = stack.enter_context(patch("ui.layout.create_workout_detail_modal"))
             open_detail_mock = MagicMock()
             create_modal_mock.return_value = open_detail_mock
             layout.render_body()
+            build_rows_mock.assert_called_once_with(skip_range_filters=True)
 
         longest_run_call = next(
             (call for call in stat_card_calls if call[0][2] == "longest_run"),

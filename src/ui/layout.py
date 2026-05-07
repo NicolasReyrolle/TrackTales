@@ -811,7 +811,7 @@ def render_body() -> None:
         with ui.tab_panel("summary"):
             dist_unit = get_distance_unit()
             elev_unit = get_elevation_unit()
-            full_rows = _build_workout_rows()
+            full_rows = _build_workout_rows(skip_range_filters=True)
             open_detail = create_workout_detail_modal(full_rows)
             row_index_by_workout_index: dict[object, int] = {}
             for idx, workout_index in enumerate(row.get("workout_index") for row in full_rows):

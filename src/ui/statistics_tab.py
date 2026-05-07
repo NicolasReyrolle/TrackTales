@@ -13,6 +13,7 @@ from ui.charts import render_box_plot_graph, render_heat_map_graph
 from ui.css import ROW_CENTERED_CLASSES
 
 _DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+_MAX_ACTIVITIES_IN_BOXPLOT = 6
 
 
 def _filter_workouts_for_statistics() -> pd.DataFrame:
@@ -81,8 +82,12 @@ def _build_pace_boxplot_data(
         strict=True,
     ):
         pace_by_activity[activity].append(round(pace, 2))
-    # Keep the chart readable by limiting to the six most represented activities.
-    return dict(sorted(pace_by_activity.items(), key=lambda item: (-len(item[1]), item[0]))[:6])
+    # Keep the chart readable by limiting to the most represented activities.
+    return dict(
+        sorted(pace_by_activity.items(), key=lambda item: (-len(item[1]), item[0]))[
+            :_MAX_ACTIVITIES_IN_BOXPLOT
+        ]
+    )
 
 
 @ui.refreshable

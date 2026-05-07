@@ -447,8 +447,8 @@ def render_box_plot_graph(label: str, values_by_category: Mapping[str, Sequence[
             if n % 2 == 1
             else (sorted_values[mid - 1] + sorted_values[mid]) / 2.0
         )
-        # Use nearest-rank style quartiles on the sorted sample for deterministic
-        # rendering without introducing extra dependencies.
+        # Use an index-based quartile approximation on the sorted sample for
+        # deterministic rendering without introducing extra dependencies.
         q1 = sorted_values[int((n - 1) * 0.25)]
         q3 = sorted_values[int((n - 1) * 0.75)]
         series_data.append([sorted_values[0], q1, median, q3, sorted_values[-1]])

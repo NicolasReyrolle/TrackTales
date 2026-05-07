@@ -58,13 +58,14 @@ def _build_scatter_points(
         .apply(lambda value: state.workouts.convert_distance(distance_unit, value))
     )
     filtered["pace"] = filtered["duration"].astype(float).div(60.0) / filtered["distance_converted"]
-    filtered["elevation_converted"] = (
-        filtered["ElevationAscended"]
-        .astype(float)
-        .apply(lambda value: state.workouts.convert_distance(elevation_unit, value))
-        if "ElevationAscended" in filtered.columns
-        else 0.0
-    )
+    if "ElevationAscended" in filtered.columns:
+        filtered["elevation_converted"] = (
+            filtered["ElevationAscended"]
+            .astype(float)
+            .apply(lambda value: state.workouts.convert_distance(elevation_unit, value))
+        )
+    else:
+        filtered["elevation_converted"] = pd.Series(0.0, index=filtered.index)
 
     distance_vs_pace = [
         (round(distance, 2), round(pace, 2))

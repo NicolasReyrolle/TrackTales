@@ -78,6 +78,7 @@ class TestRenderHealthDataTab:
         """Loaded tab should render graphs from cached series without recomputation."""
         original_loading = state.health_data_loading
         original_loaded = state.health_data_loaded
+        original_cp_loading = state.health_data_cp_loading
         original_graphs = state.health_data_graphs
 
         try:
@@ -105,6 +106,7 @@ class TestRenderHealthDataTab:
         finally:
             state.health_data_loading = original_loading
             state.health_data_loaded = original_loaded
+            state.health_data_cp_loading = original_cp_loading
             state.health_data_graphs = original_graphs
 
 

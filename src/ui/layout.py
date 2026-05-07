@@ -811,20 +811,28 @@ def render_body() -> None:
         with ui.tab_panel("summary"):
             dist_unit = get_distance_unit()
             elev_unit = get_elevation_unit()
-            full_rows = _build_workout_rows(skip_range_filters=True)
-            open_detail = create_workout_detail_modal(full_rows)
-            row_index_by_workout_index: dict[object, int] = {}
-            for idx, workout_index in enumerate(row.get("workout_index") for row in full_rows):
-                if workout_index is not None and workout_index not in row_index_by_workout_index:
-                    row_index_by_workout_index[workout_index] = idx
 
             def _open_record_metric(metric_key: str) -> None:
                 workout_index = state.metrics_workout_index.get(metric_key)
                 if workout_index is None:
                     return
+                full_rows = _build_workout_rows(
+                    activity_type="All",
+                    skip_range_filters=True,
+                )
+                row_index_by_workout_index: dict[object, int] = {}
+                for idx, row_workout_index in enumerate(
+                    row.get("workout_index") for row in full_rows
+                ):
+                    if (
+                        row_workout_index is not None
+                        and row_workout_index not in row_index_by_workout_index
+                    ):
+                        row_index_by_workout_index[row_workout_index] = idx
                 row_index = row_index_by_workout_index.get(workout_index)
                 if row_index is None:
                     return
+                open_detail = create_workout_detail_modal(full_rows)
                 open_detail(row_index)
 
             with ui.row().classes(ROW_CENTERED_CLASSES):

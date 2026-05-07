@@ -726,17 +726,20 @@ def test_render_body_record_card_click_opens_detail_modal() -> None:
             open_detail_mock = MagicMock()
             create_modal_mock.return_value = open_detail_mock
             layout.render_body()
-            build_rows_mock.assert_called_once_with(skip_range_filters=True)
 
-        longest_run_call = next(
-            (call for call in stat_card_calls if call[0][2] == "longest_run"),
-            None,
-        )
-        assert longest_run_call is not None
-        on_click = longest_run_call[1].get("on_click")
-        assert callable(on_click)
-        on_click()
-        open_detail_mock.assert_called_once_with(0)
+            longest_run_call = next(
+                (call for call in stat_card_calls if call[0][2] == "longest_run"),
+                None,
+            )
+            assert longest_run_call is not None
+            on_click = longest_run_call[1].get("on_click")
+            assert callable(on_click)
+            on_click()
+            build_rows_mock.assert_called_once_with(
+                activity_type="All",
+                skip_range_filters=True,
+            )
+            open_detail_mock.assert_called_once_with(0)
     finally:
         state.metrics_workout_index = original_record_indexes
 

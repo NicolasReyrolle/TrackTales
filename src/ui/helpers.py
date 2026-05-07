@@ -223,7 +223,9 @@ def format_duration_label(duration_s: float | None) -> str:
 def format_hours_minutes_from_seconds(duration_s: float) -> str:
     """Format seconds as a compact hours/minutes string for overview stat cards."""
     total_minutes = int(round(duration_s / SECONDS_PER_MINUTE))
-    hours, minutes = divmod(total_minutes, int(MINUTES_PER_HOUR))
+    hours_float, minutes_float = divmod(total_minutes, MINUTES_PER_HOUR)
+    hours = int(hours_float)
+    minutes = int(minutes_float)
     return f"{hours} h {minutes:02d} min" if hours > 0 else f"{minutes} min"
 
 

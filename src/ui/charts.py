@@ -18,6 +18,7 @@ from ui.css import (
     ROW_CENTERED_CLASSES,
     STAT_CARD_CLASSES,
     STAT_CARD_CLICKABLE_CLASSES,
+    STAT_CARD_CLICKABLE_PROPS,
     STAT_CARD_LABEL_CLASSES,
     STAT_CARD_UNIT_CLASSES,
     STAT_CARD_VALUE_CLASSES,
@@ -94,7 +95,10 @@ def stat_card(
             on_click()
 
         card.classes(STAT_CARD_CLICKABLE_CLASSES)
+        card.props(STAT_CARD_CLICKABLE_PROPS)
         card.on("click", _handle_click)
+        card.on("keydown.enter", _handle_click)
+        card.on("keydown.space", _handle_click)
     with card:
         ui.label(label).classes(STAT_CARD_LABEL_CLASSES)
         with ui.row().classes(STAT_CARD_VALUE_ROW_CLASSES):

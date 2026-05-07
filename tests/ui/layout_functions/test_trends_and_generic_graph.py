@@ -328,9 +328,14 @@ class TestChartsModuleComponents:
         class _CardProbe(DummyRow):
             def __init__(self) -> None:
                 self.events: dict[str, Any] = {}
+                self.props_calls: list[str] = []
 
             def on(self, event: str, handler: Any) -> _CardProbe:
                 self.events[event] = handler
+                return self
+
+            def props(self, *args: Any, **_kwargs: Any) -> _CardProbe:
+                self.props_calls.extend(str(arg) for arg in args)
                 return self
 
         card_probe = _CardProbe()
@@ -348,7 +353,10 @@ class TestChartsModuleComponents:
                 on_click=callback,
             )
 
+        assert "tabindex=0 role=button" in card_probe.props_calls
         assert "click" in card_probe.events
+        assert "keydown.enter" in card_probe.events
+        assert "keydown.space" in card_probe.events
         card_probe.events["click"](object())
         callback.assert_called_once()
 

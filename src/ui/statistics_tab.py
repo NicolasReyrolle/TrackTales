@@ -78,9 +78,10 @@ def _build_pace_boxplot_data(
     for activity, pace in zip(
         filtered["activityType"].astype(str),
         filtered["pace"].astype(float),
-        strict=False,
+        strict=True,
     ):
         pace_by_activity[activity].append(round(pace, 2))
+    # Keep the chart readable by limiting to the six most represented activities.
     return dict(sorted(pace_by_activity.items(), key=lambda item: (-len(item[1]), item[0]))[:6])
 
 

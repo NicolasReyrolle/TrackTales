@@ -792,6 +792,7 @@ def test_render_body_tab_change_to_running_schedules_async_load() -> None:
         assert on_change is not None
         on_change(SimpleNamespace(value=SimpleNamespace(name="running")))
 
+    # Running tab now schedules both best-segments and CP/W' loaders.
     assert create_task_mock.call_count == 2
 
 

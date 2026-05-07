@@ -238,6 +238,7 @@ def test_refresh_data_triggers_running_load_when_tab_selected() -> None:
 
         assert state.best_segments_rows == []
         assert state.best_segments_loaded is False
+        # Running tab reload now queues both best-segments and health-data tasks.
         assert create_task_mock.call_count == 2
         assert workouts_mock.get_workout_record_details.call_count == 8
     finally:

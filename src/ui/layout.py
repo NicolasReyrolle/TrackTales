@@ -101,6 +101,11 @@ def schedule_health_data_load(force: bool = False) -> None:
         state.health_data_task.add_done_callback(_clear_completed_task)
 
 
+def _migrate_legacy_tab_name(tab_name: str) -> str:
+    """Map persisted legacy tab identifiers to the current tab names."""
+    return "running" if tab_name == "best_segments" else tab_name
+
+
 def _to_json_safe(d: dict[Any, Any]) -> dict[str, float | int | None]:
     """Replace pd.NA/NaN with None for JSON-safe chart data."""
     result: dict[str, float | int | None] = {}
@@ -795,11 +800,12 @@ def render_body() -> None:
 
     def _on_tab_change(event: Any) -> None:
         value = getattr(event, "value", None)
-        tab_name = str(getattr(value, "name", value)) if value is not None else ""
+        tab_name = (
+            _migrate_legacy_tab_name(str(getattr(value, "name", value)))
+            if value is not None
+            else ""
+        )
         state.selected_main_tab = tab_name
-        if tab_name == "best_segments":
-            tab_name = "running"
-            state.selected_main_tab = tab_name
         if tab_name == "running":
             schedule_best_segments_load()
             schedule_health_data_load()
@@ -814,10 +820,8 @@ def render_body() -> None:
         ui.tab("running", t("Running")).bind_enabled_from(state, "file_loaded")
         ui.tab("workouts", t("Workouts")).bind_enabled_from(state, "file_loaded")
         ui.tab("health_data", t("Health Data")).bind_enabled_from(state, "file_loaded")
-    selected_tab = state.selected_main_tab or "summary"
-    if selected_tab == "best_segments":
-        selected_tab = "running"
-        state.selected_main_tab = selected_tab
+    selected_tab = _migrate_legacy_tab_name(state.selected_main_tab or "summary")
+    state.selected_main_tab = selected_tab
 
     # Restore the previously selected tab (defaults to "summary" on first render).
     tabs.value = selected_tab

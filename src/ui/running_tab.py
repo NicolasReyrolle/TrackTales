@@ -71,7 +71,7 @@ def _build_scatter_points(
         for distance, pace in zip(
             filtered["distance_converted"].astype(float),
             filtered["pace"].astype(float),
-            strict=False,
+            strict=True,
         )
     ]
     elevation_vs_pace = [
@@ -79,7 +79,7 @@ def _build_scatter_points(
         for elevation, pace in zip(
             filtered["elevation_converted"].astype(float),
             filtered["pace"].astype(float),
-            strict=False,
+            strict=True,
         )
     ]
     return distance_vs_pace, elevation_vs_pace

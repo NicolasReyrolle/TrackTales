@@ -49,8 +49,6 @@ def test_render_running_tab_builds_scatter_data_from_workouts() -> None:
     original_workouts: Any = state.workouts
     original_graphs = state.health_data_graphs
     original_cp_loading = state.health_data_cp_loading
-    original_start_date = state.start_date
-    original_end_date = state.end_date
     original_date_text = state.date_range_text
 
     try:
@@ -78,9 +76,6 @@ def test_render_running_tab_builds_scatter_data_from_workouts() -> None:
         state.health_data_graphs = original_graphs
         state.health_data_cp_loading = original_cp_loading
         state.date_range_text = original_date_text
-        # ensure derived properties stay unchanged by test setup/teardown sequence
-        _ = original_start_date
-        _ = original_end_date
 
 
 def test_render_statistics_tab_builds_heatmap_and_boxplot_from_workouts() -> None:

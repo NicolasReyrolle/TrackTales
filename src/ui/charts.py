@@ -346,7 +346,8 @@ def render_scatter_graph(
             "trigger": "item",
             "renderMode": "richText",
             "formatter": (
-                f"{x_axis_label}: {{c0}}{value_suffix_x}<br/>{y_axis_label}: {{c1}}{value_suffix_y}"
+                f"{x_axis_label}: {{@[0]}}{value_suffix_x}"
+                f"<br/>{y_axis_label}: {{@[1]}}{value_suffix_y}"
             ),
         },
         "xAxis": {"type": "value", "name": x_axis_label, "scale": True},
@@ -383,7 +384,7 @@ def render_heat_map_graph(
     values: Sequence[tuple[int, int, int]],
 ) -> None:
     """Render an ECharts heat map from indexed (x, y, value) triplets."""
-    max_value = max((value for *_coords, value in values), default=0)
+    max_value = max((value for *_coords, value in values), default=1)
 
     base_config: dict[str, object] = {
         "backgroundColor": "transparent",
@@ -446,8 +447,10 @@ def render_box_plot_graph(label: str, values_by_category: Mapping[str, Sequence[
             if n % 2 == 1
             else (sorted_values[mid - 1] + sorted_values[mid]) / 2.0
         )
-        q1 = sorted_values[max(0, int((n - 1) * 0.25))]
-        q3 = sorted_values[max(0, int((n - 1) * 0.75))]
+        # Use nearest-rank style quartiles on the sorted sample for deterministic
+        # rendering without introducing extra dependencies.
+        q1 = sorted_values[int((n - 1) * 0.25)]
+        q3 = sorted_values[int((n - 1) * 0.75)]
         series_data.append([sorted_values[0], q1, median, q3, sorted_values[-1]])
 
     base_config: dict[str, object] = {

@@ -110,7 +110,7 @@ def _format_segment_entry(
     confidence_key = _resolve_confidence_key(power_w, power_confidence)
     confidence_cfg = _CONFIDENCE_META[confidence_key]
     workout_ts: float | None = (
-        float(start_date.timestamp()) if hasattr(start_date, "timestamp") else None
+        float(start_date.timestamp()) if isinstance(start_date, pd.Timestamp) else None
     )
     return {
         "distance": format_distance_label(
@@ -379,8 +379,8 @@ def render_best_segments_tab() -> None:
             """,
         )
 
-        def _handle_open_segment_detail(e: Any) -> None:
-            ts = float(e.args)
+        def _handle_open_segment_detail(event: Any) -> None:
+            ts = float(event.args)
             row_index = row_index_by_startdate.get(ts)
             if row_index is not None:
                 open_detail(row_index)

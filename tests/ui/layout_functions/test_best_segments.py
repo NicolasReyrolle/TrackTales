@@ -585,8 +585,6 @@ class TestBestSegmentsTabRendering:
                 patch("ui.best_segments.ui.card", return_value=DummyContext()),
                 patch("ui.best_segments.ui.label", return_value=DummyComponent()),
                 patch("ui.best_segments.ui.table", return_value=table_stub),
-                patch("ui.best_segments._build_workout_rows", return_value=[]),
-                patch("ui.best_segments.create_workout_detail_modal", return_value=lambda _: None),
             ):
                 layout.render_best_segments_tab.func()
 
@@ -623,8 +621,10 @@ class TestBestSegmentsTabRendering:
                 ),
             ):
                 layout.render_best_segments_tab.func()
+                # Fire the event inside the patch context: the handler performs
+                # lazy initialisation on first call, so the patches must be active.
+                table_stub.fire("open_segment_detail", ts)
 
-            table_stub.fire("open_segment_detail", ts)
             assert opened_indices == [0]
         finally:
             state.best_segments_rows = original_rows

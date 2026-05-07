@@ -268,17 +268,12 @@ def render_best_segments_tab() -> None:
             ui.label(t("Open this tab to load best segments.")).classes(LABEL_EMPTY_STATE_CLASSES)
             return
 
-        # Build running workout rows for the detail modal (no distance/duration range filters).
-        full_rows = _build_workout_rows(activity_type="Running", skip_range_filters=True)
-        open_detail = create_workout_detail_modal(full_rows)
-        row_index_by_startdate: dict[float, int] = {
-            row["date_sort"]: idx
-            for idx, row in enumerate(full_rows)
-            if isinstance(row.get("date_sort"), float)
-        }
-
         _logger.debug("Table rendered with %d rows", len(state.best_segments_rows))
         details_tooltip = t("Details")
+        # Lazy cache: populated on the first open_segment_detail event so that
+        # _build_workout_rows and create_workout_detail_modal are not executed on
+        # every tab refresh (they iterate all workouts, which is expensive).
+        _lazy: dict[str, Any] = {}
         table = ui.table(
             columns=columns,
             rows=state.best_segments_rows,
@@ -380,9 +375,17 @@ def render_best_segments_tab() -> None:
         )
 
         def _handle_open_segment_detail(event: Any) -> None:
+            if "open_detail" not in _lazy:
+                full_rows = _build_workout_rows(activity_type="Running", skip_range_filters=True)
+                _lazy["open_detail"] = create_workout_detail_modal(full_rows)
+                _lazy["row_index"] = {
+                    row["date_sort"]: idx
+                    for idx, row in enumerate(full_rows)
+                    if isinstance(row.get("date_sort"), float)
+                }
             ts = float(event.args)
-            row_index = row_index_by_startdate.get(ts)
+            row_index = _lazy["row_index"].get(ts)
             if row_index is not None:
-                open_detail(row_index)
+                _lazy["open_detail"](row_index)
 
         table.on("open_segment_detail", _handle_open_segment_detail)

@@ -69,6 +69,7 @@ from units import KG_TO_LBS
 
 # Get logger for this module
 _logger = logging.getLogger(__name__)
+SECONDS_PER_MINUTE = 60.0
 
 
 def schedule_best_segments_load(force: bool = False) -> None:
@@ -308,7 +309,7 @@ def _set_longest_metric_from_details(
 
     if display_as_hours_minutes:
         metrics[metric_key] = value_float
-        total_minutes = int(round(value_float / 60.0))
+        total_minutes = int(round(value_float / SECONDS_PER_MINUTE))
         hours, minutes = divmod(total_minutes, 60)
         metrics_display[metric_key] = (
             f"{hours} h {minutes:02d} min" if hours > 0 else f"{minutes} min"

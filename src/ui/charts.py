@@ -89,8 +89,12 @@ def stat_card(
     """
     card = ui.card().classes(STAT_CARD_CLASSES)
     if on_click is not None:
+
+        def _handle_click(_event: object) -> None:
+            on_click()
+
         card.classes(STAT_CARD_CLICKABLE_CLASSES)
-        card.on("click", lambda _event: on_click())
+        card.on("click", _handle_click)
     with card:
         ui.label(label).classes(STAT_CARD_LABEL_CLASSES)
         with ui.row().classes(STAT_CARD_VALUE_ROW_CLASSES):

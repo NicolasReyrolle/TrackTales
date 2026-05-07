@@ -52,7 +52,9 @@ from ui.helpers import (
     format_date_label,
     format_duration_label,
     format_float,
+    format_hours_minutes_from_seconds,
     format_integer,
+    parse_float,
     qdate_locale_json,
     translate_parser_progress_message,
 )
@@ -69,7 +71,6 @@ from units import KG_TO_LBS
 
 # Get logger for this module
 _logger = logging.getLogger(__name__)
-SECONDS_PER_MINUTE = 60.0
 
 
 def schedule_best_segments_load(force: bool = False) -> None:
@@ -293,27 +294,16 @@ def _set_longest_metric_from_details(
         metrics_tooltip[metric_key] = t("No data")
         return
 
-    value_raw = details.get(details_value_key)
-    value_float = 0.0
-    if value_raw is not None:
-        try:
-            value_float = float(value_raw)
-        except (TypeError, ValueError):
-            value_float = 0.0
-
     if value_divisor == 0:
         raise ValueError(f"value_divisor must not be zero for metric '{metric_key}'")
 
+    value_float = parse_float(details.get(details_value_key)) or 0.0
     value_for_display = value_float / value_divisor
     metrics_workout_index[metric_key] = details.get("workout_index")
 
     if display_as_hours_minutes:
         metrics[metric_key] = value_float
-        total_minutes = int(round(value_float / SECONDS_PER_MINUTE))
-        hours, minutes = divmod(total_minutes, 60)
-        metrics_display[metric_key] = (
-            f"{hours} h {minutes:02d} min" if hours > 0 else f"{minutes} min"
-        )
+        metrics_display[metric_key] = format_hours_minutes_from_seconds(value_float)
     elif round_to_int:
         rounded_value = int(round(value_for_display))
         metrics[metric_key] = rounded_value
@@ -323,20 +313,9 @@ def _set_longest_metric_from_details(
         metrics_display[metric_key] = format_float(value_for_display, decimal_places=decimal_places)
 
     date_value = details.get("date")
-    duration_value = details.get("duration")
-
-    date_str: str | None = None
-    if date_value is not None:
-        date_str = format_date_label(date_value, language_code)
-
-    duration_str: str | None = None
-    if duration_value is not None:
-        try:
-            duration_float = float(duration_value)
-        except (TypeError, ValueError):
-            duration_float = None
-        else:
-            duration_str = format_duration_label(duration_float)
+    date_str = format_date_label(date_value, language_code) if date_value is not None else None
+    duration_float = parse_float(details.get("duration"))
+    duration_str = format_duration_label(duration_float) if duration_float is not None else None
 
     if date_str:
         metrics_tooltip[metric_key] = date_str

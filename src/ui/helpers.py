@@ -3,7 +3,7 @@
 import json
 import re
 from collections.abc import Sequence
-from typing import Protocol
+from typing import Any, Protocol
 
 import pandas as pd
 from babel.core import default_locale
@@ -11,6 +11,9 @@ from babel.numbers import format_decimal
 
 from i18n import translate
 from units import METERS_TO_MILES
+
+SECONDS_PER_MINUTE = 60
+MINUTES_PER_HOUR = 60
 
 
 class _SupportsStrftime(Protocol):
@@ -215,6 +218,23 @@ def format_duration_label(duration_s: float | None) -> str:
     if total_seconds < 3600:
         return f"{minutes} min {seconds:02d} s"
     return f"{hours} h {minutes:02d} min {seconds:02d} s"
+
+
+def format_hours_minutes_from_seconds(duration_s: float | None) -> str:
+    """Format seconds as a compact hours/minutes string for overview stat cards."""
+    total_minutes = int(round(duration_s / SECONDS_PER_MINUTE)) if duration_s is not None else 0
+    hours, minutes = divmod(total_minutes, MINUTES_PER_HOUR)
+    return f"{hours} h {minutes:02d} min" if hours > 0 else f"{minutes} min"
+
+
+def parse_float(value: Any) -> float | None:
+    """Parse a float value, returning ``None`` when conversion fails."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def format_date_label(start_date: _SupportsStrftime, language_code: str) -> str:

@@ -207,3 +207,16 @@ class TestBestSegmentLabelFormatters:
         """Locale-like language codes should still use French date formatting."""
         value = datetime(2025, 9, 16)
         assert helpers.format_date_label(value, language_code="fr_FR") == "16/09/2025"
+
+    def test_format_hours_minutes_from_seconds(self) -> None:
+        """Overview duration formatter should output compact hours/minutes labels."""
+        assert helpers.format_hours_minutes_from_seconds(3599.0) == "1 h 00 min"
+        assert helpers.format_hours_minutes_from_seconds(3600.0) == "1 h 00 min"
+        assert helpers.format_hours_minutes_from_seconds(7260.0) == "2 h 01 min"
+
+    def test_parse_float(self) -> None:
+        """parse_float should parse valid numbers and return None for invalid values."""
+        assert helpers.parse_float("12.5") == pytest.approx(12.5)
+        assert helpers.parse_float(4) == pytest.approx(4.0)
+        assert helpers.parse_float(None) is None
+        assert helpers.parse_float("abc") is None

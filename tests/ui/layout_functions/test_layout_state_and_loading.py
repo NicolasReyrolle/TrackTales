@@ -260,6 +260,18 @@ def test_set_longest_metric_from_details_branches() -> None:
         state.metrics_tooltip = original_tooltip
 
 
+def test_set_longest_metric_from_details_rejects_zero_divisor() -> None:
+    """Personal-record helper should raise for invalid zero value_divisor."""
+    with pytest.raises(ValueError, match="value_divisor must not be zero"):
+        layout._set_longest_metric_from_details(  # type: ignore[attr-defined]
+            "longest_run",
+            {"value": 10.0},
+            "en",
+            details_value_key="value",
+            value_divisor=0.0,
+        )
+
+
 def test_refresh_longest_workout_metrics_uses_expected_activity_groups() -> None:
     """Longest metrics refresh should query expected activity groups and map results."""
     original_workouts = state.workouts

@@ -563,7 +563,7 @@ class WorkoutManagerAggregationsMixin:
         raw_value: float = float(row[metric_column])
         converted_value = raw_value
         if unit is not None:
-            converted_value = raw_value / self._get_length_unit_divisor(unit)
+            converted_value = self._convert_record_metric_value(metric_column, raw_value, unit)
 
         raw_duration_val = row["duration"] if "duration" in filtered.columns else None
         raw_duration: float | None = (
@@ -633,3 +633,19 @@ class WorkoutManagerAggregationsMixin:
     def get_workouts(self) -> pd.DataFrame:
         """Return the DataFrame of workouts."""
         return self.workouts
+
+    def _convert_record_metric_value(
+        self, metric_column: str, raw_value: float, unit: str
+    ) -> float:
+        """Convert a record metric value into the requested unit."""
+        if metric_column in {"distance", "ElevationAscended"}:
+            return raw_value / self._get_length_unit_divisor(unit)
+        if metric_column == "duration":
+            if unit == "h":
+                return raw_value / 3600.0
+            if unit == "min":
+                return raw_value / 60.0
+            if unit == "s":
+                return raw_value
+            raise ValueError(f"Unsupported duration unit: {unit}")
+        raise ValueError(f"Unit conversion is not supported for metric: {metric_column}")

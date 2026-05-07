@@ -926,3 +926,18 @@ class TestGetWorkoutRecordDetails:
             metric_column="duration",
         )
         assert result is None
+
+    def test_get_workout_record_details_duration_unit_hours(self) -> None:
+        """Should convert duration value when a duration unit is requested."""
+        workouts = wm.WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running"],
+                    "duration": [5400.0],
+                    "startDate": pd.to_datetime(["2024-01-01"]),
+                }
+            )
+        )
+        result = workouts.get_workout_record_details(metric_column="duration", unit="h")
+        assert result is not None
+        assert result["value"] == pytest.approx(1.5)  # type: ignore[misc]

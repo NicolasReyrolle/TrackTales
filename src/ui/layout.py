@@ -293,7 +293,10 @@ def _set_longest_metric_from_details(
         except (TypeError, ValueError):
             value_float = 0.0
 
-    value_for_display = value_float / value_divisor if value_divisor else 0.0
+    if value_divisor == 0:
+        raise ValueError(f"value_divisor must not be zero for metric '{metric_key}'")
+
+    value_for_display = value_float / value_divisor
     metrics[metric_key] = value_for_display
     metrics_display[metric_key] = format_float(value_for_display)
 

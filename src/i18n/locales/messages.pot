@@ -74,6 +74,12 @@ msgstr ""
 msgid "Trends"
 msgstr ""
 
+msgid "Statistics"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
 msgid "Workouts"
 msgstr ""
 
@@ -213,6 +219,24 @@ msgid "Critical Power (CP) over time"
 msgstr ""
 
 msgid "W' over time"
+msgstr ""
+
+msgid "Distance vs Pace"
+msgstr ""
+
+msgid "Pace"
+msgstr ""
+
+msgid "Elevation vs Pace"
+msgstr ""
+
+msgid "Activity heat map (day/time)"
+msgstr ""
+
+msgid "Pace distribution by activity"
+msgstr ""
+
+msgid "All Activities"
 msgstr ""
 
 msgid "Half-marathon"

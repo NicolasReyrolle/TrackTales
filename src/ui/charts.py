@@ -1,7 +1,7 @@
 """Shared UI chart and card components for Apple Health Analyzer."""
 
 import copy
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 
 from nicegui import ui
 
@@ -32,7 +32,10 @@ __all__ = [
     "LABEL_UPPERCASE_CLASSES",
     "ROW_CENTERED_CLASSES",
     "render_generic_graph",
+    "render_box_plot_graph",
+    "render_heat_map_graph",
     "render_pie_rose_graph",
+    "render_scatter_graph",
     "stat_card",
 ]
 
@@ -321,3 +324,151 @@ def render_generic_graph(
             ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
         ui.echart(card_config)
+
+
+def render_scatter_graph(
+    label: str,
+    points: Sequence[tuple[float, float]],
+    x_axis_label: str,
+    y_axis_label: str,
+    x_unit: str = "",
+    y_unit: str = "",
+) -> None:
+    """Render a scatter graph from (x, y) points."""
+    value_suffix_x = f" {x_unit}" if x_unit else ""
+    value_suffix_y = f" {y_unit}" if y_unit else ""
+    title_text = label
+
+    base_config: dict[str, object] = {
+        "backgroundColor": "transparent",
+        "darkMode": state.dark_mode_enabled,
+        "tooltip": {
+            "trigger": "item",
+            "renderMode": "richText",
+            "formatter": (
+                f"{x_axis_label}: {{c0}}{value_suffix_x}<br/>{y_axis_label}: {{c1}}{value_suffix_y}"
+            ),
+        },
+        "xAxis": {"type": "value", "name": x_axis_label, "scale": True},
+        "yAxis": {"type": "value", "name": y_axis_label, "scale": True},
+        "series": [{"type": "scatter", "data": [[x, y] for x, y in points], "symbolSize": 9}],
+    }
+
+    card_config = copy.deepcopy(base_config)
+    card_config["dataZoom"] = [{"type": "inside"}]
+    card_config["toolbox"] = _toolbox_config()
+
+    fullscreen_config = copy.deepcopy(base_config)
+    fullscreen_config["dataZoom"] = [{"type": "inside"}, {"type": "slider"}]
+    fullscreen_config["toolbox"] = _toolbox_config(restore=True)
+
+    with ui.dialog().props("maximized") as dialog:
+        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+            ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
+
+    with ui.card().classes(CHART_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
+        ui.echart(card_config)
+
+
+def render_heat_map_graph(
+    label: str,
+    x_labels: Sequence[str],
+    y_labels: Sequence[str],
+    values: Sequence[tuple[int, int, int]],
+) -> None:
+    """Render an ECharts heat map from indexed (x, y, value) triplets."""
+    max_value = max((value for *_coords, value in values), default=0)
+
+    base_config: dict[str, object] = {
+        "backgroundColor": "transparent",
+        "darkMode": state.dark_mode_enabled,
+        "tooltip": {
+            "position": "top",
+            "renderMode": "richText",
+            "formatter": "{b0}: {c0}",
+        },
+        "grid": {"left": "3%", "right": "4%", "bottom": "10%", "containLabel": True},
+        "xAxis": {"type": "category", "data": list(x_labels), "splitArea": {"show": True}},
+        "yAxis": {"type": "category", "data": list(y_labels), "splitArea": {"show": True}},
+        "visualMap": {
+            "min": 0,
+            "max": max_value,
+            "calculable": True,
+            "orient": "horizontal",
+            "left": "center",
+            "bottom": "1%",
+        },
+        "series": [
+            {
+                "name": label,
+                "type": "heatmap",
+                "data": [[x, y, v] for x, y, v in values],
+                "label": {"show": False},
+                "emphasis": {"itemStyle": {"shadowBlur": 10, "shadowColor": "rgba(0,0,0,0.5)"}},
+            }
+        ],
+    }
+
+    with ui.dialog().props("maximized") as dialog:
+        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+            ui.echart(base_config).classes(ECHART_FULLSCREEN_CLASSES)
+
+    with ui.card().classes(CHART_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
+        ui.echart(base_config)
+
+
+def render_box_plot_graph(label: str, values_by_category: Mapping[str, Sequence[float]]) -> None:
+    """Render a box plot graph where each key is one category."""
+    categories = list(values_by_category.keys())
+    series_data: list[list[float]] = []
+
+    for values in values_by_category.values():
+        sorted_values = sorted(float(value) for value in values)
+        if not sorted_values:
+            series_data.append([0.0, 0.0, 0.0, 0.0, 0.0])
+            continue
+        n = len(sorted_values)
+        mid = n // 2
+        median = (
+            sorted_values[mid]
+            if n % 2 == 1
+            else (sorted_values[mid - 1] + sorted_values[mid]) / 2.0
+        )
+        q1 = sorted_values[max(0, int((n - 1) * 0.25))]
+        q3 = sorted_values[max(0, int((n - 1) * 0.75))]
+        series_data.append([sorted_values[0], q1, median, q3, sorted_values[-1]])
+
+    base_config: dict[str, object] = {
+        "backgroundColor": "transparent",
+        "darkMode": state.dark_mode_enabled,
+        "tooltip": {"trigger": "item", "axisPointer": {"type": "shadow"}},
+        "xAxis": {"type": "category", "data": categories},
+        "yAxis": {"type": "value", "scale": True},
+        "series": [{"type": "boxplot", "data": series_data}],
+        "toolbox": _toolbox_config(),
+    }
+
+    with ui.dialog().props("maximized") as dialog:
+        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+            ui.echart(base_config).classes(ECHART_FULLSCREEN_CLASSES)
+
+    with ui.card().classes(CHART_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
+        ui.echart(base_config)

@@ -190,18 +190,20 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
         with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
             with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
                 with patch("ui.layout.render_health_data_tab"):
-                    with patch("ui.layout._reset_health_data_state"):
-                        with patch("ui.layout.schedule_health_data_load"):
-                            layout.render_period_selector()
+                    with patch("ui.layout.render_running_tab") as render_running_tab_mock:
+                        with patch("ui.layout._reset_health_data_state"):
+                            with patch("ui.layout.schedule_health_data_load"):
+                                layout.render_period_selector()
 
-                            assert radio_mock.call_count == 1
-                            radio_instance = radio_instances[0]
-                            assert radio_instance.on_change is not None
+                                assert radio_mock.call_count == 1
+                                radio_instance = radio_instances[0]
+                                assert radio_instance.on_change is not None
 
-                            # Invoke inside patch scope so mocks are still active
-                            radio_instance.on_change()
+                                # Invoke inside patch scope so mocks are still active
+                                radio_instance.on_change()
 
     render_graphs_mock.refresh.assert_called_once()
+    render_running_tab_mock.refresh.assert_called_once()
 
 
 def test_render_trends_tab_only_renders_graphs() -> None:

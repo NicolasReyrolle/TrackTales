@@ -44,23 +44,3 @@ def render_health_data_tab() -> None:
             "ml/kg/min",
             graph_type="line",
         )
-
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        if state.health_data_cp_loading:
-            ui.spinner(size="lg")
-            ui.label(t("Loading Critical Power data..."))
-        else:
-            render_generic_graph(
-                t("Critical Power (CP) over time"),
-                state.health_data_graphs.get("critical_power", {}),
-                "W",
-                graph_type="line",
-                show_trend=False,
-            )
-            render_generic_graph(
-                t("W' over time"),
-                state.health_data_graphs.get("w_prime", {}),
-                "kJ",
-                graph_type="line",
-                show_trend=False,
-            )

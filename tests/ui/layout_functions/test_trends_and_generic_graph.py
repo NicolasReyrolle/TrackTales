@@ -448,3 +448,69 @@ class TestChartsModuleComponents:
         # dataZoom is not added to pie charts (it has no effect on them)
         assert "dataZoom" not in fullscreen_config
         assert "dataZoom" not in echart_calls[1]
+
+    def test_render_scatter_graph_builds_scatter_series(self) -> None:
+        """render_scatter_graph should emit an ECharts scatter series."""
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_scatter_graph(
+                "Distance vs Pace",
+                [(5.0, 4.5), (10.0, 5.1)],
+                "Distance",
+                "Pace",
+                "km",
+                "min/km",
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        assert chart_options["backgroundColor"] == "transparent"
+        assert chart_options["series"][0]["type"] == "scatter"
+        assert chart_options["series"][0]["data"] == [[5.0, 4.5], [10.0, 5.1]]
+
+    def test_render_heat_map_graph_builds_heatmap_series(self) -> None:
+        """render_heat_map_graph should build indexed heatmap coordinates."""
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_heat_map_graph(
+                "Activity heat map (day/time)",
+                ["0", "1"],
+                ["Mon", "Tue"],
+                [(0, 0, 2), (1, 1, 4)],
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        assert chart_options["backgroundColor"] == "transparent"
+        assert chart_options["series"][0]["type"] == "heatmap"
+        assert chart_options["series"][0]["data"] == [[0, 0, 2], [1, 1, 4]]
+
+    def test_render_box_plot_graph_builds_boxplot_series(self) -> None:
+        """render_box_plot_graph should emit one boxplot row per category."""
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_box_plot_graph(
+                "Pace distribution by activity",
+                {"Running": [4.0, 4.5, 5.0], "Walking": [9.0, 10.0, 11.0]},
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        assert chart_options["backgroundColor"] == "transparent"
+        assert chart_options["series"][0]["type"] == "boxplot"
+        assert chart_options["xAxis"]["data"] == ["Running", "Walking"]

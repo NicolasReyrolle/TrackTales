@@ -79,6 +79,12 @@ msgstr "Vue d'ensemble"
 msgid "Trends"
 msgstr "Tendances"
 
+msgid "Statistics"
+msgstr "Statistiques"
+
+msgid "Running"
+msgstr "Course à pied"
+
 msgid "Workouts"
 msgstr "Séances"
 
@@ -219,6 +225,24 @@ msgstr "Puissance Critique (PC) au fil du temps"
 
 msgid "W' over time"
 msgstr "W' au fil du temps"
+
+msgid "Distance vs Pace"
+msgstr "Distance vs allure"
+
+msgid "Pace"
+msgstr "Allure"
+
+msgid "Elevation vs Pace"
+msgstr "Dénivelé vs allure"
+
+msgid "Activity heat map (day/time)"
+msgstr "Carte de chaleur des activités (jour/heure)"
+
+msgid "Pace distribution by activity"
+msgstr "Distribution de l'allure par activité"
+
+msgid "All Activities"
+msgstr "Toutes les activités"
 
 msgid "Half-marathon"
 msgstr "Semi-marathon"

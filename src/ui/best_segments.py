@@ -21,6 +21,8 @@ from ui.css import (
     TABLE_FULL_CLASSES,
 )
 from ui.helpers import format_date_label, format_distance_label, format_duration_label
+from ui.workout_detail_modal import create_workout_detail_modal
+from ui.workout_table import _build_workout_rows
 from units import METERS_TO_FEET, METERS_TO_MILES
 
 _logger = logging.getLogger(__name__)
@@ -100,13 +102,16 @@ def _format_segment_entry(
     language_code: str,
     distance_unit: str,
     elevation_unit: str,
-) -> dict[str, str]:
+) -> dict[str, str | float | None]:
     """Format a single segment record into a display dictionary."""
     avg_power_str = (
         f"{float(power_w):.0f} W" if power_w is not None and not pd.isna(power_w) else "–"
     )
     confidence_key = _resolve_confidence_key(power_w, power_confidence)
     confidence_cfg = _CONFIDENCE_META[confidence_key]
+    workout_ts: float | None = (
+        float(start_date.timestamp()) if hasattr(start_date, "timestamp") else None
+    )
     return {
         "distance": format_distance_label(
             distance_m,
@@ -122,6 +127,7 @@ def _format_segment_entry(
         "avg_power_confidence_icon": str(confidence_cfg["icon"]),
         "avg_power_confidence_tooltip": t(confidence_cfg["tooltip_key"]),
         "start_date": format_date_label(start_date, language_code),
+        "workout_ts": workout_ts,
     }
 
 
@@ -249,6 +255,7 @@ def render_best_segments_tab() -> None:
             },
             {"name": "avg_power", "label": t("Avg Power"), "field": "avg_power"},
             {"name": "start_date", "label": t("Date"), "field": "start_date"},
+            {"name": "actions", "label": "", "field": "workout_ts"},
         ]
 
         if state.best_segments_loading:
@@ -261,7 +268,17 @@ def render_best_segments_tab() -> None:
             ui.label(t("Open this tab to load best segments.")).classes(LABEL_EMPTY_STATE_CLASSES)
             return
 
+        # Build running workout rows for the detail modal (no distance/duration range filters).
+        full_rows = _build_workout_rows(activity_type="Running", skip_range_filters=True)
+        open_detail = create_workout_detail_modal(full_rows)
+        row_index_by_startdate: dict[float, int] = {
+            row["date_sort"]: idx
+            for idx, row in enumerate(full_rows)
+            if isinstance(row.get("date_sort"), float)
+        }
+
         _logger.debug("Table rendered with %d rows", len(state.best_segments_rows))
+        details_tooltip = t("Details")
         table = ui.table(
             columns=columns,
             rows=state.best_segments_rows,
@@ -302,6 +319,18 @@ def render_best_segments_tab() -> None:
                             <q-tooltip>{{ props.row.avg_power_confidence_tooltip }}</q-tooltip>
                         </q-icon>
                     </template>
+                    <template v-else-if="col.name === 'actions'">
+                        <q-btn
+                            v-if="props.row.workout_ts != null"
+"""
+            + f'            flat round dense icon="info" aria-label="{details_tooltip}"'
+            + r"""
+                            @click="$parent.$emit('open_segment_detail', props.row.workout_ts)">
+"""
+            + f"            <q-tooltip>{details_tooltip}</q-tooltip>"
+            + r"""
+                        </q-btn>
+                    </template>
                     <template v-else>
                         {{ col.value }}
                     </template>
@@ -329,6 +358,18 @@ def render_best_segments_tab() -> None:
                                     </q-icon>
                                     &nbsp;&nbsp;
                                     {{ child.start_date }}
+"""
+            + r"""
+                                    <q-btn
+                                        v-if="child.workout_ts != null"
+"""
+            + f' flat round dense size="sm" icon="info" aria-label="{details_tooltip}"'
+            + r"""
+@click="$parent.$emit('open_segment_detail', child.workout_ts)">
+"""
+            + f"<q-tooltip>{details_tooltip}</q-tooltip>"
+            + r"""
+                                    </q-btn>
                                 </span>
                             </q-item-section>
                         </q-item>
@@ -337,3 +378,11 @@ def render_best_segments_tab() -> None:
             </q-tr>
             """,
         )
+
+        def _handle_open_segment_detail(e: Any) -> None:
+            ts = float(e.args)
+            row_index = row_index_by_startdate.get(ts)
+            if row_index is not None:
+                open_detail(row_index)
+
+        table.on("open_segment_detail", _handle_open_segment_detail)

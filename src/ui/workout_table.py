@@ -80,38 +80,52 @@ def _build_field_pair(
     return safe_val, display
 
 
-def _build_workout_rows() -> list[dict[str, Any]]:
+def _build_workout_rows(
+    activity_type: str | None = None,
+    skip_range_filters: bool = False,
+) -> list[dict[str, Any]]:
     """Build table rows from the currently filtered workouts.
 
     Each row stores both a raw numeric value (used for column sorting) and a
     human-readable display string for every attribute.  Optional columns that
     are absent for a workout are filled with ``_MISSING_SORT`` / ``"–"``.
+
+    Args:
+        activity_type: When provided, overrides ``state.selected_activity_type``
+            for the activity-type filter.  Defaults to ``None`` (use state value).
+        skip_range_filters: When ``True``, the distance and duration range filters
+            from state are not applied.  Useful when building rows for a modal that
+            should show all workouts of a given type (e.g. best-segments detail).
     """
     df = state.workouts._filter_workouts(
-        state.selected_activity_type, state.start_date, state.end_date
+        activity_type if activity_type is not None else state.selected_activity_type,
+        state.start_date,
+        state.end_date,
     )
 
     if df.empty:
         return []
 
-    # Apply distance range filter: state.distance_range stores values in the user's
-    # preferred distance unit (km or mi); convert to metres for filtering.
-    dist_range = state.distance_range
     distance_unit = get_distance_unit()
-    dist_divisor = 1 / METERS_TO_MILES if distance_unit == "mi" else 1000.0
-    dist_min_m = dist_range.get("min", 0.0) * dist_divisor
-    dist_max_m = dist_range.get("max", 0.0) * dist_divisor
-    if "distance" in df.columns and dist_min_m < dist_max_m:
-        dist = df["distance"].fillna(0.0)
-        df = df[(dist >= dist_min_m) & (dist <= dist_max_m)]
 
-    # Apply duration range filter (convert minutes to seconds, the canonical storage unit).
-    dur_range = state.duration_range_min
-    dur_min_s = dur_range.get("min", 0.0) * 60.0
-    dur_max_s = dur_range.get("max", 0.0) * 60.0
-    if "duration" in df.columns and dur_min_s < dur_max_s:
-        dur = df["duration"].fillna(0.0)
-        df = df[(dur >= dur_min_s) & (dur <= dur_max_s)]
+    if not skip_range_filters:
+        # Apply distance range filter: state.distance_range stores values in the
+        # user's preferred distance unit (km or mi); convert to metres for filtering.
+        dist_range = state.distance_range
+        dist_divisor = 1 / METERS_TO_MILES if distance_unit == "mi" else 1000.0
+        dist_min_m = dist_range.get("min", 0.0) * dist_divisor
+        dist_max_m = dist_range.get("max", 0.0) * dist_divisor
+        if "distance" in df.columns and dist_min_m < dist_max_m:
+            dist = df["distance"].fillna(0.0)
+            df = df[(dist >= dist_min_m) & (dist <= dist_max_m)]
+
+        # Apply duration range filter (convert minutes to seconds, the canonical unit).
+        dur_range = state.duration_range_min
+        dur_min_s = dur_range.get("min", 0.0) * 60.0
+        dur_max_s = dur_range.get("max", 0.0) * 60.0
+        if "duration" in df.columns and dur_min_s < dur_max_s:
+            dur = df["duration"].fillna(0.0)
+            df = df[(dur >= dur_min_s) & (dur <= dur_max_s)]
 
     if df.empty:
         return []

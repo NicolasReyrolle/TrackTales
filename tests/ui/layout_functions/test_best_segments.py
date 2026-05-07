@@ -78,6 +78,7 @@ class TestBestSegmentsTabData:
                     "avg_power_confidence_icon": "help_outline",
                     "avg_power_confidence_tooltip": "No matching power data",
                     "start_date": "09/16/2025",
+                    "workout_ts": float(pd.Timestamp("2025-09-16").timestamp()),
                     "children": [],
                 }
             ]
@@ -563,6 +564,68 @@ class TestBestSegmentsTabRendering:
 
             # Only the best-segments table; CP card was removed
             table_mock.assert_called_once()
+        finally:
+            state.best_segments_rows = original_rows
+            state.best_segments_loading = original_loading
+            state.best_segments_loaded = original_loaded
+
+    def test_render_best_segments_tab_registers_open_segment_detail_handler(self) -> None:
+        """Loaded state should register an 'open_segment_detail' event handler on the table."""
+        original_rows = state.best_segments_rows
+        original_loading = state.best_segments_loading
+        original_loaded = state.best_segments_loaded
+        table_stub = DummyTable()
+
+        try:
+            state.best_segments_rows = []
+            state.best_segments_loading = False
+            state.best_segments_loaded = True
+
+            with (
+                patch("ui.best_segments.ui.card", return_value=DummyContext()),
+                patch("ui.best_segments.ui.label", return_value=DummyComponent()),
+                patch("ui.best_segments.ui.table", return_value=table_stub),
+                patch("ui.best_segments._build_workout_rows", return_value=[]),
+                patch("ui.best_segments.create_workout_detail_modal", return_value=lambda _: None),
+            ):
+                layout.render_best_segments_tab.func()
+
+            assert "open_segment_detail" in table_stub._event_handlers
+        finally:
+            state.best_segments_rows = original_rows
+            state.best_segments_loading = original_loading
+            state.best_segments_loaded = original_loaded
+
+    def test_render_best_segments_tab_event_handler_opens_detail(self) -> None:
+        """Firing 'open_segment_detail' with a known timestamp should open the workout modal."""
+        original_rows = state.best_segments_rows
+        original_loading = state.best_segments_loading
+        original_loaded = state.best_segments_loaded
+        table_stub = DummyTable()
+        opened_indices: list[int] = []
+
+        ts = float(pd.Timestamp("2025-09-16").timestamp())
+        workout_row = {"date_sort": ts, "id": "some_id"}
+
+        try:
+            state.best_segments_rows = []
+            state.best_segments_loading = False
+            state.best_segments_loaded = True
+
+            with (
+                patch("ui.best_segments.ui.card", return_value=DummyContext()),
+                patch("ui.best_segments.ui.label", return_value=DummyComponent()),
+                patch("ui.best_segments.ui.table", return_value=table_stub),
+                patch("ui.best_segments._build_workout_rows", return_value=[workout_row]),
+                patch(
+                    "ui.best_segments.create_workout_detail_modal",
+                    return_value=lambda idx: opened_indices.append(idx),
+                ),
+            ):
+                layout.render_best_segments_tab.func()
+
+            table_stub.fire("open_segment_detail", ts)
+            assert opened_indices == [0]
         finally:
             state.best_segments_rows = original_rows
             state.best_segments_loading = original_loading

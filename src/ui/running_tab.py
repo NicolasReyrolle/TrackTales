@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import pandas as pd
 from nicegui import ui
 
@@ -104,18 +106,25 @@ def _build_scatter_points(
     return distance_vs_pace, elevation_vs_pace
 
 
-def _open_workout_detail(workout_index: object) -> None:
+def _build_workout_detail_opener() -> Callable[[object], None]:
     full_rows = _build_workout_rows(activity_type="All", skip_range_filters=True)
     row_index_by_workout_index: dict[object, int] = {}
     for idx, row in enumerate(full_rows):
         row_workout_index = row.get("workout_index")
         if row_workout_index is not None and row_workout_index not in row_index_by_workout_index:
             row_index_by_workout_index[row_workout_index] = idx
-    row_index = row_index_by_workout_index.get(workout_index)
-    if row_index is None:
-        return
-    open_detail = create_workout_detail_modal(full_rows)
-    open_detail(row_index)
+    open_detail: Callable[[int], None] | None = None
+
+    def _open(workout_index: object) -> None:
+        nonlocal open_detail
+        row_index = row_index_by_workout_index.get(workout_index)
+        if row_index is None:
+            return
+        if open_detail is None:
+            open_detail = create_workout_detail_modal(full_rows)
+        open_detail(row_index)
+
+    return _open
 
 
 @ui.refreshable
@@ -130,6 +139,7 @@ def render_running_tab() -> None:
         distance_unit=distance_unit,
         elevation_unit=elevation_unit,
     )
+    open_workout_detail = _build_workout_detail_opener()
 
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_scatter_graph(
@@ -143,7 +153,7 @@ def render_running_tab() -> None:
             fullscreen_description=t(
                 "Each point is a running workout. Click a point to open workout details."
             ),
-            on_point_click=_open_workout_detail,
+            on_point_click=open_workout_detail,
         )
         render_scatter_graph(
             t("Elevation vs Pace"),
@@ -156,7 +166,7 @@ def render_running_tab() -> None:
             fullscreen_description=t(
                 "Each point is a running workout. Click a point to open workout details."
             ),
-            on_point_click=_open_workout_detail,
+            on_point_click=open_workout_detail,
         )
 
     with ui.row().classes(ROW_CENTERED_CLASSES):

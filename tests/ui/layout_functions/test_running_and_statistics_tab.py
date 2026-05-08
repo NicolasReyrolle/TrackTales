@@ -71,8 +71,8 @@ def test_render_running_tab_builds_scatter_data_from_workouts() -> None:
         assert len(distance_points) == 2
         assert distance_points[0][:2] == (5.0, 5.0)
         assert elevation_points[0][:2] == (120.0, 5.0)
-        assert distance_points[0][2]
-        assert distance_points[0][3] is not None
+        assert distance_points[0][2] == "01/06/2025"
+        assert distance_points[0][3] == 0
     finally:
         state.workouts = original_workouts
         state.health_data_graphs = original_graphs
@@ -138,7 +138,11 @@ def test_render_running_tab_shows_health_loading_before_cp_graphs() -> None:
 
         spinner_mock.assert_called_once()
         generic_mock.assert_not_called()
-        assert any("Loading health data" in str(call.args[0]) for call in label_mock.call_args_list)
+        assert any(
+            "Loading health data" in str(call.args[0])
+            for call in label_mock.call_args_list
+            if call.args
+        )
     finally:
         state.health_data_loading = original_loading
         state.health_data_loaded = original_loaded

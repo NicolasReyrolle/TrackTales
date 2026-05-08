@@ -416,6 +416,8 @@ def render_scatter_graph(
             if not isinstance(args, dict):
                 return
             data = args.get("data")
+            # Metadata points store workout_index at position 3 in
+            # [x, y, date_label, workout_index].
             if isinstance(data, list) and len(data) >= 4 and data[3] is not None:
                 on_point_click(data[3])
 
@@ -430,12 +432,12 @@ def render_heat_map_graph(
     values: Sequence[tuple[int, int, int]],
     x_axis_name: str = "",
     y_axis_name: str = "",
-    value_label: str = "",
+    value_label: str | None = None,
     fullscreen_description: str = "",
 ) -> None:
     """Render an ECharts heat map from indexed (x, y, value) triplets."""
     max_value = max((value for *_coords, value in values), default=1)
-    value_label_text = value_label or t("Workouts")
+    value_label_text = value_label if value_label is not None else t("Workouts")
     x_labels_values = list(x_labels)
     y_labels_values = list(y_labels)
     x_labels_js = json.dumps(x_labels_values)

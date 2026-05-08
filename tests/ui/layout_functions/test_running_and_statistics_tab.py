@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -165,17 +165,16 @@ def test_render_running_tab_shows_health_loading_before_cp_graphs() -> None:
         state.selected_main_tab = original_selected_tab
 
 
-def test_running_tab_defers_workout_detail_until_click() -> None:
-    """Workout rows/modal should be built only when clicking a scatter point."""
+def test_running_tab_scatter_points_are_not_clickable() -> None:
+    """Running scatter charts should not wire workout-detail click callbacks."""
     original_workouts: Any = state.workouts
     original_selected_tab = state.selected_main_tab
     original_date_text = state.date_range_text
 
-    captured_on_click: Any = None
+    captured_scatter_kwargs: list[dict[str, Any]] = []
 
     def _capture_scatter(*_args: Any, **kwargs: Any) -> None:
-        nonlocal captured_on_click
-        captured_on_click = kwargs["on_point_click"]
+        captured_scatter_kwargs.append(kwargs)
 
     try:
         state.workouts = _sample_workouts_manager()
@@ -187,22 +186,10 @@ def test_running_tab_defers_workout_detail_until_click() -> None:
             patch("ui.running_tab.render_scatter_graph", side_effect=_capture_scatter),
             patch("ui.running_tab.render_running_health_graphs"),
             patch("ui.running_tab.render_best_segments_tab"),
-            patch(
-                "ui.running_tab._build_workout_rows", return_value=[{"workout_index": 0}]
-            ) as build_rows_mock,
-            patch("ui.running_tab.create_workout_detail_modal") as create_modal_mock,
         ):
-            open_detail_mock = MagicMock()
-            create_modal_mock.return_value = open_detail_mock
             running_tab.render_running_tab.func()
-            build_rows_mock.assert_not_called()
-            assert callable(captured_on_click)
-            captured_on_click(0)
-            build_rows_mock.assert_called_once()
-            captured_on_click("0")
-            assert build_rows_mock.call_count == 1
-            create_modal_mock.assert_called_once()
-            assert open_detail_mock.call_count == 2
+            assert len(captured_scatter_kwargs) == 2
+            assert all("on_point_click" not in kwargs for kwargs in captured_scatter_kwargs)
     finally:
         state.workouts = original_workouts
         state.selected_main_tab = original_selected_tab

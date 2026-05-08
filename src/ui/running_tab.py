@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
 import pandas as pd
 from nicegui import ui
 
@@ -13,8 +11,6 @@ from ui.best_segments import render_best_segments_tab
 from ui.charts import render_generic_graph, render_scatter_graph
 from ui.css import ROW_CENTERED_CLASSES
 from ui.helpers import format_date_label
-from ui.workout_detail_modal import create_workout_detail_modal
-from ui.workout_table import _build_workout_rows
 
 
 def _filter_running_workouts() -> pd.DataFrame:
@@ -106,52 +102,6 @@ def _build_scatter_points(
     return distance_vs_pace, elevation_vs_pace
 
 
-def _build_workout_detail_opener() -> Callable[[object], None]:
-    full_rows: list[dict[str, object]] | None = None
-    row_index_by_workout_index: dict[object, int] | None = None
-    open_detail: Callable[[int], None] | None = None
-
-    def _normalize_workout_index(raw_index: object) -> object:
-        if isinstance(raw_index, str):
-            try:
-                numeric_value = float(raw_index)
-            except ValueError:
-                return raw_index
-            if numeric_value.is_integer():
-                return int(numeric_value)
-            return numeric_value
-        if isinstance(raw_index, float) and raw_index.is_integer():
-            return int(raw_index)
-        return raw_index
-
-    def _open(workout_index: object) -> None:
-        nonlocal full_rows, row_index_by_workout_index, open_detail
-        if row_index_by_workout_index is None:
-            full_rows = _build_workout_rows(activity_type="All", skip_range_filters=True)
-            row_index_by_workout_index = {}
-            for idx, row in enumerate(full_rows):
-                row_workout_index = row.get("workout_index")
-                if (
-                    row_workout_index is not None
-                    and row_workout_index not in row_index_by_workout_index
-                ):
-                    row_index_by_workout_index[row_workout_index] = idx
-                    normalized_row_index = _normalize_workout_index(row_workout_index)
-                    if normalized_row_index not in row_index_by_workout_index:
-                        row_index_by_workout_index[normalized_row_index] = idx
-        normalized_workout_index = _normalize_workout_index(workout_index)
-        row_index = row_index_by_workout_index.get(normalized_workout_index)
-        if row_index is None:
-            return
-        if open_detail is None:
-            if full_rows is None:
-                return
-            open_detail = create_workout_detail_modal(full_rows)
-        open_detail(row_index)
-
-    return _open
-
-
 @ui.refreshable
 def render_running_tab() -> None:
     """Render running-specific charts and best-segment insights."""
@@ -169,7 +119,6 @@ def render_running_tab() -> None:
         distance_unit=distance_unit,
         elevation_unit=elevation_unit,
     )
-    open_workout_detail = _build_workout_detail_opener()
 
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_scatter_graph(
@@ -180,10 +129,6 @@ def render_running_tab() -> None:
             distance_unit,
             pace_unit,
             date_label=t("Date"),
-            fullscreen_description=t(
-                "Each point is a running workout. Click a point to open workout details."
-            ),
-            on_point_click=open_workout_detail,
         )
         render_scatter_graph(
             t("Elevation vs Pace"),
@@ -193,10 +138,6 @@ def render_running_tab() -> None:
             elevation_unit,
             pace_unit,
             date_label=t("Date"),
-            fullscreen_description=t(
-                "Each point is a running workout. Click a point to open workout details."
-            ),
-            on_point_click=open_workout_detail,
         )
 
     render_running_health_graphs()

@@ -239,6 +239,27 @@ msgstr ""
 msgid "All Activities"
 msgstr ""
 
+msgid "More workouts"
+msgstr ""
+
+msgid "Fewer workouts"
+msgstr ""
+
+msgid "Hour of day"
+msgstr ""
+
+msgid "Day of week"
+msgstr ""
+
+msgid "Each point is a running workout. Click a point to open workout details."
+msgstr ""
+
+msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
+msgstr ""
+
+msgid "This box plot summarizes pace spread by activity type (min, quartiles, median, max)."
+msgstr ""
+
 msgid "Half-marathon"
 msgstr ""
 

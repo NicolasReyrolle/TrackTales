@@ -473,27 +473,81 @@ class TestChartsModuleComponents:
         assert chart_options["series"][0]["type"] == "scatter"
         assert chart_options["series"][0]["data"] == [[5.0, 4.5], [10.0, 5.1]]
 
-    def test_render_heat_map_graph_builds_heatmap_series(self) -> None:
-        """render_heat_map_graph should build indexed heatmap coordinates."""
+    def test_render_scatter_graph_supports_date_tooltip_and_click_handler(self) -> None:
+        """Metadata points should include date in tooltip and expose click callbacks."""
+
+        class _ChartProbe(DummyComponent):
+            def __init__(self) -> None:
+                self.events: dict[str, Any] = {}
+
+            def on(self, event: str, handler: Any, **_kwargs: Any) -> _ChartProbe:
+                self.events[event] = handler
+                return self
+
+        chart_probe = _ChartProbe()
+        click_callback = MagicMock()
+
         with (
             patch("ui.charts.ui.dialog", return_value=MagicMock()),
             patch("ui.charts.ui.card", return_value=DummyRow()),
             patch("ui.charts.ui.row", return_value=DummyRow()),
             patch("ui.charts.ui.label"),
             patch("ui.charts.ui.button", return_value=DummyComponent()),
-            patch("ui.charts.ui.echart") as echart_mock,
+            patch("ui.charts.ui.echart", return_value=chart_probe) as echart_mock,
+        ):
+            charts.render_scatter_graph(
+                "Distance vs Pace",
+                [(5.0, 4.5, "01/06/2025", 12)],
+                "Distance",
+                "Pace",
+                "km",
+                "min/km",
+                date_label="Date",
+                on_point_click=click_callback,
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        assert chart_options["series"][0]["data"] == [[5.0, 4.5, "01/06/2025", 12]]
+        assert "Date" in chart_options["tooltip"][":formatter"]
+        assert "click" in chart_probe.events
+        chart_probe.events["click"](MagicMock(args={"data": [5.0, 4.5, "01/06/2025", 12]}))
+        click_callback.assert_called_once_with(12)
+
+    def test_render_heat_map_graph_builds_heatmap_series(self) -> None:
+        """render_heat_map_graph should build indexed heatmap coordinates."""
+        echart_calls: list[dict[str, Any]] = []
+
+        def _capture_echart(config: dict[str, Any], *_args: Any, **_kwargs: Any) -> DummyComponent:
+            echart_calls.append(config)
+            return DummyComponent()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", side_effect=_capture_echart),
         ):
             charts.render_heat_map_graph(
                 "Activity heat map (day/time)",
                 ["0", "1"],
                 ["Mon", "Tue"],
                 [(0, 0, 2), (1, 1, 4)],
+                x_axis_name="Hour of day",
+                y_axis_name="Day of week",
+                value_label="Workouts",
             )
 
-        chart_options = echart_mock.call_args.args[0]
-        assert chart_options["backgroundColor"] == "transparent"
-        assert chart_options["series"][0]["type"] == "heatmap"
-        assert chart_options["series"][0]["data"] == [[0, 0, 2], [1, 1, 4]]
+        fullscreen_options = echart_calls[0]
+        card_options = echart_calls[1]
+        assert card_options["backgroundColor"] == "transparent"
+        assert card_options["series"][0]["type"] == "heatmap"
+        assert card_options["series"][0]["data"] == [[0, 0, 2], [1, 1, 4]]
+        assert "visualMap" not in card_options
+        assert "visualMap" in fullscreen_options
+        assert fullscreen_options["xAxis"]["name"] == "Hour of day"
+        assert fullscreen_options["yAxis"]["name"] == "Day of week"
 
     def test_render_box_plot_graph_builds_boxplot_series(self) -> None:
         """render_box_plot_graph should emit one boxplot row per category."""

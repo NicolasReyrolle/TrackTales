@@ -197,6 +197,7 @@ async def load_health_data(force: bool = False) -> None:
 
     state.health_data_loading = True
     render_health_data_tab.refresh()
+    render_running_tab.refresh()
 
     try:
         # Phase 1 — fast graphs: HR, body mass, VO2 max
@@ -206,6 +207,7 @@ async def load_health_data(force: bool = False) -> None:
         state.health_data_loading = False
         state.health_data_cp_loading = True
         render_health_data_tab.refresh()
+        render_running_tab.refresh()
 
         # Phase 2 — slow graphs: critical power and W'
         try:
@@ -216,11 +218,13 @@ async def load_health_data(force: bool = False) -> None:
         finally:
             state.health_data_cp_loading = False
             render_health_data_tab.refresh()
+            render_running_tab.refresh()
     except Exception:
         _logger.exception("Failed to load health data tab")
         state.health_data_loading = False
         state.health_data_cp_loading = False
         render_health_data_tab.refresh()
+        render_running_tab.refresh()
 
 
 def handle_json_export() -> None:

@@ -244,6 +244,27 @@ msgstr "Distribution de l'allure par activité"
 msgid "All Activities"
 msgstr "Toutes les activités"
 
+msgid "More workouts"
+msgstr "Plus d'entraînements"
+
+msgid "Fewer workouts"
+msgstr "Moins d'entraînements"
+
+msgid "Hour of day"
+msgstr "Heure de la journée"
+
+msgid "Day of week"
+msgstr "Jour de la semaine"
+
+msgid "Each point is a running workout. Click a point to open workout details."
+msgstr "Chaque point représente une séance de course. Cliquez sur un point pour ouvrir les détails de la séance."
+
+msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
+msgstr "Cette carte de chaleur montre quand les séances ont lieu. L'axe X représente l'heure de la journée, l'axe Y le jour de la semaine, et l'intensité de la couleur représente le nombre de séances."
+
+msgid "This box plot summarizes pace spread by activity type (min, quartiles, median, max)."
+msgstr "Ce diagramme en boîte résume la dispersion de l'allure par type d'activité (min, quartiles, médiane, max)."
+
 msgid "Half-marathon"
 msgstr "Semi-marathon"
 

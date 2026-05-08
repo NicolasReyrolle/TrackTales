@@ -1,6 +1,7 @@
 """Shared UI chart and card components for Apple Health Analyzer."""
 
 import copy
+import json
 from collections.abc import Callable, Mapping, Sequence
 
 from nicegui import ui
@@ -14,6 +15,7 @@ from ui.css import (
     CHART_FULLSCREEN_CARD_CLASSES,
     CHART_HEADER_ROW_CLASSES,
     ECHART_FULLSCREEN_CLASSES,
+    LABEL_MUTED_CLASSES,
     LABEL_UPPERCASE_CLASSES,
     ROW_CENTERED_CLASSES,
     STAT_CARD_CLASSES,
@@ -328,16 +330,48 @@ def render_generic_graph(
 
 def render_scatter_graph(
     label: str,
-    points: Sequence[tuple[float, float]],
+    points: Sequence[tuple[float, float] | tuple[float, float, str, object | None]],
     x_axis_label: str,
     y_axis_label: str,
     x_unit: str = "",
     y_unit: str = "",
+    date_label: str = "",
+    fullscreen_description: str = "",
+    on_point_click: Callable[[object], None] | None = None,
 ) -> None:
     """Render a scatter graph from (x, y) points."""
     value_suffix_x = f" {x_unit}" if x_unit else ""
     value_suffix_y = f" {y_unit}" if y_unit else ""
     title_text = label
+
+    chart_data: list[list[float | str | object | None]] = []
+    includes_metadata = False
+    for point in points:
+        if len(point) >= 4:
+            x, y, point_date, workout_index = point[:4]
+            chart_data.append([x, y, point_date, workout_index])
+            includes_metadata = True
+        elif len(point) >= 2:
+            x, y = point[0], point[1]
+            chart_data.append([x, y])
+
+    tooltip_formatter = (
+        (
+            "function(params) {"
+            f"var base = '{x_axis_label}: ' + params.value[0] + '{value_suffix_x}' + "
+            f"'<br/>{y_axis_label}: ' + params.value[1] + '{value_suffix_y}';"
+            "if (params.value.length > 2 && params.value[2]) {"
+            f"  return base + '<br/>{date_label}: ' + params.value[2];"
+            "}"
+            "return base;"
+            "}"
+        )
+        if includes_metadata
+        else (
+            f"{x_axis_label}: {{@[0]}}{value_suffix_x}"
+            f"<br/>{y_axis_label}: {{@[1]}}{value_suffix_y}"
+        )
+    )
 
     base_config: dict[str, object] = {
         "backgroundColor": "transparent",
@@ -345,14 +379,11 @@ def render_scatter_graph(
         "tooltip": {
             "trigger": "item",
             "renderMode": "richText",
-            "formatter": (
-                f"{x_axis_label}: {{@[0]}}{value_suffix_x}"
-                f"<br/>{y_axis_label}: {{@[1]}}{value_suffix_y}"
-            ),
+            ":formatter": tooltip_formatter,
         },
         "xAxis": {"type": "value", "name": x_axis_label, "scale": True},
         "yAxis": {"type": "value", "name": y_axis_label, "scale": True},
-        "series": [{"type": "scatter", "data": [[x, y] for x, y in points], "symbolSize": 9}],
+        "series": [{"type": "scatter", "data": chart_data, "symbolSize": 9}],
     }
 
     card_config = copy.deepcopy(base_config)
@@ -368,13 +399,28 @@ def render_scatter_graph(
             with ui.row().classes(CHART_HEADER_ROW_CLASSES):
                 ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
                 ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
-            ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
+            if fullscreen_description:
+                ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
+            fullscreen_chart = ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
             ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
-        ui.echart(card_config)
+        card_chart = ui.echart(card_config)
+
+    if on_point_click is not None:
+
+        def _handle_click(event: object) -> None:
+            args = getattr(event, "args", {})
+            if not isinstance(args, dict):
+                return
+            data = args.get("data")
+            if isinstance(data, list) and len(data) >= 4 and data[3] is not None:
+                on_point_click(data[3])
+
+        card_chart.on("click", _handle_click)
+        fullscreen_chart.on("click", _handle_click)
 
 
 def render_heat_map_graph(
@@ -382,9 +428,29 @@ def render_heat_map_graph(
     x_labels: Sequence[str],
     y_labels: Sequence[str],
     values: Sequence[tuple[int, int, int]],
+    x_axis_name: str = "",
+    y_axis_name: str = "",
+    value_label: str = "",
+    fullscreen_description: str = "",
 ) -> None:
     """Render an ECharts heat map from indexed (x, y, value) triplets."""
     max_value = max((value for *_coords, value in values), default=1)
+    value_label_text = value_label or t("Workouts")
+    x_labels_values = list(x_labels)
+    y_labels_values = list(y_labels)
+    x_labels_js = json.dumps(x_labels_values)
+    y_labels_js = json.dumps(y_labels_values)
+    value_label_js = json.dumps(value_label_text)
+    tooltip_formatter = (
+        "function(params) {"
+        f"var xLabels = {x_labels_js};"
+        f"var yLabels = {y_labels_js};"
+        f"var valueLabel = {value_label_js};"
+        "var point = params.value;"
+        "return yLabels[point[1]] + ' · ' + xLabels[point[0]] + '<br/>' + "
+        "point[2] + ' ' + valueLabel;"
+        "}"
+    )
 
     base_config: dict[str, object] = {
         "backgroundColor": "transparent",
@@ -392,18 +458,24 @@ def render_heat_map_graph(
         "tooltip": {
             "position": "top",
             "renderMode": "richText",
-            "formatter": "{b0}: {c0}",
+            ":formatter": tooltip_formatter,
         },
         "grid": {"left": "3%", "right": "4%", "bottom": "10%", "containLabel": True},
-        "xAxis": {"type": "category", "data": list(x_labels), "splitArea": {"show": True}},
-        "yAxis": {"type": "category", "data": list(y_labels), "splitArea": {"show": True}},
-        "visualMap": {
-            "min": 0,
-            "max": max_value,
-            "calculable": True,
-            "orient": "horizontal",
-            "left": "center",
-            "bottom": "1%",
+        "xAxis": {
+            "type": "category",
+            "name": x_axis_name,
+            "nameLocation": "middle",
+            "nameGap": 28,
+            "data": x_labels_values,
+            "splitArea": {"show": True},
+        },
+        "yAxis": {
+            "type": "category",
+            "name": y_axis_name,
+            "nameLocation": "middle",
+            "nameGap": 56,
+            "data": y_labels_values,
+            "splitArea": {"show": True},
         },
         "series": [
             {
@@ -415,22 +487,41 @@ def render_heat_map_graph(
             }
         ],
     }
+    card_config = copy.deepcopy(base_config)
+    fullscreen_config = copy.deepcopy(base_config)
+    fullscreen_config["visualMap"] = {
+        "min": 0,
+        "max": max_value,
+        "calculable": True,
+        "orient": "horizontal",
+        "left": "center",
+        "bottom": "1%",
+        "text": [t("More workouts"), t("Fewer workouts")],
+        "formatter": f"{{value}} {value_label_text}",
+    }
+    fullscreen_config["grid"] = {"left": "3%", "right": "4%", "bottom": "16%", "containLabel": True}
 
     with ui.dialog().props("maximized") as dialog:
         with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
             with ui.row().classes(CHART_HEADER_ROW_CLASSES):
                 ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
                 ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
-            ui.echart(base_config).classes(ECHART_FULLSCREEN_CLASSES)
+            if fullscreen_description:
+                ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
+            ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
             ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
-        ui.echart(base_config)
+        ui.echart(card_config)
 
 
-def render_box_plot_graph(label: str, values_by_category: Mapping[str, Sequence[float]]) -> None:
+def render_box_plot_graph(
+    label: str,
+    values_by_category: Mapping[str, Sequence[float]],
+    fullscreen_description: str = "",
+) -> None:
     """Render a box plot graph where each key is one category."""
     categories = list(values_by_category.keys())
     series_data: list[list[float]] = []
@@ -468,6 +559,8 @@ def render_box_plot_graph(label: str, values_by_category: Mapping[str, Sequence[
             with ui.row().classes(CHART_HEADER_ROW_CLASSES):
                 ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
                 ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+            if fullscreen_description:
+                ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
             ui.echart(base_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):

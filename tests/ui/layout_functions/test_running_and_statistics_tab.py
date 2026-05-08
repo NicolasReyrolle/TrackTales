@@ -69,8 +69,10 @@ def test_render_running_tab_builds_scatter_data_from_workouts() -> None:
         distance_points = scatter_mock.call_args_list[0].args[1]
         elevation_points = scatter_mock.call_args_list[1].args[1]
         assert len(distance_points) == 2
-        assert distance_points[0] == (5.0, 5.0)
-        assert elevation_points[0] == (120.0, 5.0)
+        assert distance_points[0][:2] == (5.0, 5.0)
+        assert elevation_points[0][:2] == (120.0, 5.0)
+        assert distance_points[0][2]
+        assert distance_points[0][3] is not None
     finally:
         state.workouts = original_workouts
         state.health_data_graphs = original_graphs
@@ -101,7 +103,45 @@ def test_render_statistics_tab_builds_heatmap_and_boxplot_from_workouts() -> Non
         assert heatmap_values
         assert "Running" in boxplot_values
         assert len(boxplot_values["Running"]) == 2
+        assert heatmap_mock.call_args.kwargs["x_axis_name"] == "Hour of day"
+        assert heatmap_mock.call_args.kwargs["y_axis_name"] == "Day of week"
     finally:
         state.workouts = original_workouts
         state.selected_activity_type = original_activity
+        state.date_range_text = original_date_text
+
+
+def test_render_running_tab_shows_health_loading_before_cp_graphs() -> None:
+    """Running tab should show loading state while health data is still loading."""
+    original_loading = state.health_data_loading
+    original_loaded = state.health_data_loaded
+    original_cp_loading = state.health_data_cp_loading
+    original_workouts: Any = state.workouts
+    original_date_text = state.date_range_text
+
+    try:
+        state.health_data_loading = True
+        state.health_data_loaded = False
+        state.health_data_cp_loading = False
+        state.workouts = _sample_workouts_manager()
+        state.date_range_text = ""
+
+        with (
+            patch("ui.running_tab.ui.row", return_value=DummyRow()),
+            patch("ui.running_tab.ui.spinner") as spinner_mock,
+            patch("ui.running_tab.ui.label") as label_mock,
+            patch("ui.running_tab.render_scatter_graph"),
+            patch("ui.running_tab.render_generic_graph") as generic_mock,
+            patch("ui.running_tab.render_best_segments_tab"),
+        ):
+            running_tab.render_running_tab.func()
+
+        spinner_mock.assert_called_once()
+        generic_mock.assert_not_called()
+        assert any("Loading health data" in str(call.args[0]) for call in label_mock.call_args_list)
+    finally:
+        state.health_data_loading = original_loading
+        state.health_data_loaded = original_loaded
+        state.health_data_cp_loading = original_cp_loading
+        state.workouts = original_workouts
         state.date_range_text = original_date_text

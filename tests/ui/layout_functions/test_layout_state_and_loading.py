@@ -127,27 +127,32 @@ async def test_load_health_data_success_and_exception_paths() -> None:
         state.health_data_graphs = {}
 
         with patch("ui.layout.render_health_data_tab.refresh") as refresh_mock:
-            with patch(
-                "ui.layout.asyncio.to_thread", new=AsyncMock(return_value={"heart_rate": {}})
-            ):
-                await layout.load_health_data(force=True)
+            with patch("ui.layout.render_running_tab.refresh") as running_refresh_mock:
+                with patch(
+                    "ui.layout.asyncio.to_thread", new=AsyncMock(return_value={"heart_rate": {}})
+                ):
+                    await layout.load_health_data(force=True)
 
         assert state.health_data_loaded is True
         assert state.health_data_loading is False
         assert refresh_mock.call_count == 3
+        assert running_refresh_mock.call_count == 3
 
         state.health_data_loaded = False
         with patch("ui.layout.render_health_data_tab.refresh") as refresh_mock:
-            with patch("ui.layout._logger.exception") as exception_mock:
-                with patch(
-                    "ui.layout.asyncio.to_thread", new=AsyncMock(side_effect=RuntimeError("boom"))
-                ):
-                    await layout.load_health_data(force=True)
+            with patch("ui.layout.render_running_tab.refresh") as running_refresh_mock:
+                with patch("ui.layout._logger.exception") as exception_mock:
+                    with patch(
+                        "ui.layout.asyncio.to_thread",
+                        new=AsyncMock(side_effect=RuntimeError("boom")),
+                    ):
+                        await layout.load_health_data(force=True)
 
         exception_mock.assert_called_once()
         assert state.health_data_loaded is False
         assert state.health_data_loading is False
         assert refresh_mock.call_count == 2
+        assert running_refresh_mock.call_count == 2
     finally:
         state.health_data_loading = original_loading
         state.health_data_loaded = original_loaded

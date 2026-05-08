@@ -3,7 +3,6 @@
 import copy
 import json
 from collections.abc import Callable, Mapping, Sequence
-from typing import cast
 
 from nicegui import ui
 
@@ -358,8 +357,13 @@ def render_scatter_graph(
 
     trend_data: list[list[float]] = []
     if len(chart_data) >= 2:
-        x_values = [float(cast(float | int | str, point[0])) for point in chart_data]
-        y_values = [float(cast(float | int | str, point[1])) for point in chart_data]
+        def _to_float(value: float | str | object | None) -> float:
+            if isinstance(value, (int, float, str)):
+                return float(value)
+            return 0.0
+
+        x_values = [_to_float(point[0]) for point in chart_data]
+        y_values = [_to_float(point[1]) for point in chart_data]
         x_mean = sum(x_values) / len(x_values)
         y_mean = sum(y_values) / len(y_values)
         denominator = sum((x_value - x_mean) ** 2 for x_value in x_values)

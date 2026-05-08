@@ -263,9 +263,6 @@ msgstr ""
 msgid "to"
 msgstr ""
 
-msgid "Each point is a running workout. Click a point to open workout details."
-msgstr ""
-
 msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
 msgstr ""
 

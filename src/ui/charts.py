@@ -429,12 +429,17 @@ def _build_scatter_tooltip_formatter(
 ) -> str:
     if not includes_metadata:
         return f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n{y_axis_label}: {{@[1]}}{value_suffix_y}"
+    x_label = json.dumps(f"{x_axis_label}: ")
+    y_label = json.dumps(f"\n{y_axis_label}: ")
+    x_suffix = json.dumps(value_suffix_x)
+    y_suffix = json.dumps(value_suffix_y)
+    date_prefix = json.dumps(f"\n{date_label}: ")
     return (
         "function(params) {"
-        f"var text = '{x_axis_label}: ' + params.value[0] + '{value_suffix_x}' + "
-        f"'\\n{y_axis_label}: ' + params.value[1] + '{value_suffix_y}';"
+        f"var text = {x_label} + params.value[0] + {x_suffix} + "
+        f"{y_label} + params.value[1] + {y_suffix};"
         "if (params.value.length > 2 && params.value[2]) {"
-        f"  return text + '\\n{date_label}: ' + params.value[2];"
+        f"  return text + {date_prefix} + params.value[2];"
         "}"
         "return text;"
         "}"

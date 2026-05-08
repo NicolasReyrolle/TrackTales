@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -564,6 +565,18 @@ class TestChartsModuleComponents:
             3,
             9,
         ]
+        formatter = charts._build_scatter_tooltip_formatter(
+            includes_metadata=True,
+            x_axis_label="L'allure",
+            y_axis_label="Pace\\speed",
+            value_suffix_x=" km\\h",
+            value_suffix_y=" min/km",
+            date_label="Date d'activité",
+        )
+        assert json.dumps("L'allure: ") in formatter
+        assert json.dumps("\nPace\\speed: ") in formatter
+        assert json.dumps(" km\\h") in formatter
+        assert json.dumps("\nDate d'activité: ") in formatter
 
     def test_build_chart_configs_creates_card_and_fullscreen_variants(self) -> None:
         """Shared chart-config builder should apply card and fullscreen zoom/toolbox settings."""

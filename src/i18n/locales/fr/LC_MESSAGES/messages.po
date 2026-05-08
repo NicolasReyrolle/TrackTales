@@ -268,9 +268,6 @@ msgstr "de"
 msgid "to"
 msgstr "à"
 
-msgid "Each point is a running workout. Click a point to open workout details."
-msgstr "Chaque point représente une séance de course. Cliquez sur un point pour ouvrir les détails de la séance."
-
 msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
 msgstr "Cette carte de chaleur montre quand les séances ont lieu. L'axe X représente l'heure de la journée, l'axe Y le jour de la semaine, et l'intensité de la couleur représente le nombre de séances."
 

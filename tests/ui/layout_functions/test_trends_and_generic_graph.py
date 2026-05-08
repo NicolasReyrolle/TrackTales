@@ -520,6 +520,31 @@ class TestChartsModuleComponents:
         click_callback.reset_mock()
         chart_probe.events["click"](MagicMock(args={"dataIndex": 0}))
         click_callback.assert_called_once_with(12)
+        click_callback.reset_mock()
+        chart_probe.events["click"](MagicMock(args={"dataIndex": "0"}))
+        click_callback.assert_called_once_with(12)
+
+    def test_render_scatter_graph_keeps_trendline_when_x_values_are_constant(self) -> None:
+        """Trendline should still render as a horizontal guide for constant X values."""
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_scatter_graph(
+                "Elevation vs Pace",
+                [(0.0, 5.0), (0.0, 4.8), (0.0, 5.2)],
+                "Elevation",
+                "Pace",
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        trend_data = chart_options["series"][1]["data"]
+        assert len(trend_data) == 2
+        assert trend_data[0][1] == trend_data[1][1]
 
     def test_render_heat_map_graph_builds_heatmap_series(self) -> None:
         """render_heat_map_graph should build indexed heatmap coordinates."""
@@ -561,6 +586,8 @@ class TestChartsModuleComponents:
         assert fullscreen_options["yAxis"]["name"] == "Day of week"
         assert card_options["yAxis"]["data"] == ["Mon", "Tue"]
         assert fullscreen_options["yAxis"]["data"] == ["Monday", "Tuesday"]
+        assert card_options["yAxis"]["inverse"] is True
+        assert card_options["yAxis"]["axisLabel"]["interval"] == 0
         assert "from" in fullscreen_options["tooltip"][":formatter"]
         assert "to" in fullscreen_options["tooltip"][":formatter"]
         assert "<br" not in fullscreen_options["tooltip"][":formatter"]

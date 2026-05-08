@@ -111,6 +111,19 @@ def _build_workout_detail_opener() -> Callable[[object], None]:
     row_index_by_workout_index: dict[object, int] | None = None
     open_detail: Callable[[int], None] | None = None
 
+    def _normalize_workout_index(raw_index: object) -> object:
+        if isinstance(raw_index, str):
+            try:
+                numeric_value = float(raw_index)
+            except ValueError:
+                return raw_index
+            if numeric_value.is_integer():
+                return int(numeric_value)
+            return numeric_value
+        if isinstance(raw_index, float) and raw_index.is_integer():
+            return int(raw_index)
+        return raw_index
+
     def _open(workout_index: object) -> None:
         nonlocal full_rows, row_index_by_workout_index, open_detail
         if row_index_by_workout_index is None:
@@ -123,7 +136,11 @@ def _build_workout_detail_opener() -> Callable[[object], None]:
                     and row_workout_index not in row_index_by_workout_index
                 ):
                     row_index_by_workout_index[row_workout_index] = idx
-        row_index = row_index_by_workout_index.get(workout_index)
+                    normalized_row_index = _normalize_workout_index(row_workout_index)
+                    if normalized_row_index not in row_index_by_workout_index:
+                        row_index_by_workout_index[normalized_row_index] = idx
+        normalized_workout_index = _normalize_workout_index(workout_index)
+        row_index = row_index_by_workout_index.get(normalized_workout_index)
         if row_index is None:
             return
         if open_detail is None:

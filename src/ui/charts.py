@@ -357,6 +357,7 @@ def render_scatter_graph(
 
     trend_data: list[list[float]] = []
     if len(chart_data) >= 2:
+
         def _to_float(value: float | str | object | None) -> float | None:
             if isinstance(value, (int, float, str)):
                 try:
@@ -386,6 +387,13 @@ def render_scatter_graph(
                     [x_min, slope * x_min + intercept],
                     [x_max, slope * x_max + intercept],
                 ]
+            else:
+                x_single = x_numeric[0]
+                x_padding = 0.1 if x_single == 0 else abs(x_single) * 0.05
+                trend_data = [
+                    [x_single - x_padding, y_mean],
+                    [x_single + x_padding, y_mean],
+                ]
 
     tooltip_formatter = (
         "function(params) {"
@@ -397,10 +405,7 @@ def render_scatter_graph(
         "return text;"
         "}"
         if includes_metadata
-        else (
-            f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n"
-            f"{y_axis_label}: {{@[1]}}{value_suffix_y}"
-        )
+        else (f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n{y_axis_label}: {{@[1]}}{value_suffix_y}")
     )
 
     base_config: dict[str, object] = {
@@ -422,6 +427,7 @@ def render_scatter_graph(
                 "lineStyle": {"type": "dashed", "width": 2},
                 "tooltip": {"show": False},
                 "silent": True,
+                "z": 3,
             },
         ],
     }
@@ -450,6 +456,7 @@ def render_scatter_graph(
         card_chart = ui.echart(card_config)
 
     if on_point_click is not None:
+
         def _extract_click_value(args: object) -> object:
             if not isinstance(args, dict):
                 return None
@@ -469,6 +476,8 @@ def render_scatter_graph(
                 on_point_click(value[3])
                 return
             data_index = args.get("dataIndex") if isinstance(args, dict) else None
+            if isinstance(data_index, str) and data_index.isdigit():
+                data_index = int(data_index)
             if isinstance(data_index, int) and 0 <= data_index < len(chart_data):
                 point = chart_data[data_index]
                 if len(point) >= 4 and point[3] is not None:
@@ -545,9 +554,11 @@ def render_heat_map_graph(
         },
         "yAxis": {
             "type": "category",
+            "inverse": True,
             "name": y_axis_name,
             "nameLocation": "middle",
             "nameGap": 56,
+            "axisLabel": {"interval": 0},
             "data": y_labels_values,
             "splitArea": {"show": True},
         },

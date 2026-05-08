@@ -195,6 +195,8 @@ def test_running_tab_defers_workout_detail_until_click() -> None:
             assert callable(captured_on_click)
             captured_on_click(0)
             build_rows_mock.assert_called_once()
+            captured_on_click("0")
+            assert build_rows_mock.call_count == 1
     finally:
         state.workouts = original_workouts
         state.selected_main_tab = original_selected_tab

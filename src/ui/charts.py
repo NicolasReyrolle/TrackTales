@@ -359,7 +359,10 @@ def render_scatter_graph(
     if len(chart_data) >= 2:
         def _to_float(value: float | str | object | None) -> float | None:
             if isinstance(value, (int, float, str)):
-                return float(value)
+                try:
+                    return float(value)
+                except ValueError:
+                    return None
             return None
 
         x_values = [_to_float(point[0]) for point in chart_data]
@@ -394,7 +397,10 @@ def render_scatter_graph(
         "return text;"
         "}"
         if includes_metadata
-        else (f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n{y_axis_label}: {{@[1]}}{value_suffix_y}")
+        else (
+            f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n"
+            f"{y_axis_label}: {{@[1]}}{value_suffix_y}"
+        )
     )
 
     base_config: dict[str, object] = {

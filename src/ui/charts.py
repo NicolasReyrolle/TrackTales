@@ -467,6 +467,13 @@ def render_scatter_graph(
                 return args[0]
             return {}
 
+        def _normalize_data_index(raw_data_index: object) -> int | None:
+            if isinstance(raw_data_index, str) and raw_data_index.isdigit():
+                raw_data_index = int(raw_data_index)
+            if isinstance(raw_data_index, float) and raw_data_index.is_integer():
+                raw_data_index = int(raw_data_index)
+            return raw_data_index if isinstance(raw_data_index, int) else None
+
         def _extract_click_value(args: object) -> object:
             if not isinstance(args, dict):
                 return None
@@ -485,13 +492,9 @@ def render_scatter_graph(
             if isinstance(value, list) and len(value) >= 4 and value[3] is not None:
                 on_point_click(value[3])
                 return
-            data_index = args.get("dataIndex") if isinstance(args, dict) else None
-            if data_index is None and isinstance(args, dict):
-                data_index = args.get("dataIndexInside")
-            if isinstance(data_index, str) and data_index.isdigit():
-                data_index = int(data_index)
-            if isinstance(data_index, float) and data_index.is_integer():
-                data_index = int(data_index)
+            data_index = _normalize_data_index(args.get("dataIndex"))
+            if data_index is None:
+                data_index = _normalize_data_index(args.get("dataIndexInside"))
             if isinstance(data_index, int) and 0 <= data_index < len(chart_data):
                 point = chart_data[data_index]
                 if len(point) >= 4 and point[3] is not None:

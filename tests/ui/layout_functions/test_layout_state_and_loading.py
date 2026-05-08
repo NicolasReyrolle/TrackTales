@@ -73,6 +73,28 @@ def test_schedule_health_data_load_sets_and_clears_task() -> None:
         state.health_data_task = original_task
 
 
+def test_schedule_selected_tab_refresh_sets_and_clears_task() -> None:
+    """Scheduling tab refresh should keep a task ref and clear it on completion."""
+    original_task = state.tab_refresh_task
+    fake_task = _FakeTask()
+
+    def _fake_create_task(coro: Any) -> _FakeTask:
+        coro.close()
+        return fake_task
+
+    try:
+        with patch("ui.layout.asyncio.create_task", side_effect=_fake_create_task):
+            layout.schedule_selected_tab_refresh("running")
+
+        assert state.tab_refresh_task is fake_task
+        assert len(fake_task.callbacks) == 1
+
+        fake_task.callbacks[0](fake_task)
+        assert state.tab_refresh_task is None
+    finally:
+        state.tab_refresh_task = original_task
+
+
 def test_build_health_data_graphs_handles_empty_cp_evolution() -> None:
     """Health graph builders should emit correct data; CP/W' empty when evolution frame is empty."""
     original_records = state.records_by_type

@@ -73,6 +73,15 @@ from units import KG_TO_LBS
 
 # Get logger for this module
 _logger = logging.getLogger(__name__)
+_MAIN_TABS = {
+    "summary",
+    "activities",
+    "trends",
+    "statistics",
+    "running",
+    "workouts",
+    "health_data",
+}
 
 
 def schedule_best_segments_load(force: bool = False) -> None:
@@ -101,9 +110,21 @@ def schedule_health_data_load(force: bool = False) -> None:
         state.health_data_task.add_done_callback(_clear_completed_task)
 
 
-def _migrate_legacy_tab_name(tab_name: str) -> str:
-    """Map persisted legacy tab identifiers to the current tab names."""
-    return "running" if tab_name == "best_segments" else tab_name
+def schedule_selected_tab_refresh(tab_name: str) -> None:
+    """Schedule selected-tab refresh and keep a reference to the refresh task."""
+
+    def _clear_completed_task(task: asyncio.Task[None]) -> None:
+        if state.tab_refresh_task is task:
+            state.tab_refresh_task = None
+
+    refresh_task: Any = getattr(state, "tab_refresh_task", None)
+    if isinstance(refresh_task, asyncio.Task) and not refresh_task.done():
+        refresh_task.cancel()
+
+    task: Any = asyncio.create_task(_refresh_selected_tab_content(tab_name))
+    state.tab_refresh_task = task if hasattr(task, "add_done_callback") else None
+    if state.tab_refresh_task is not None:
+        state.tab_refresh_task.add_done_callback(_clear_completed_task)
 
 
 def _to_json_safe(d: dict[Any, Any]) -> dict[str, float | int | None]:
@@ -825,18 +846,14 @@ def render_body() -> None:
 
     def _on_tab_change(event: Any) -> None:
         value = getattr(event, "value", None)
-        tab_name = (
-            _migrate_legacy_tab_name(str(getattr(value, "name", value)))
-            if value is not None
-            else ""
-        )
+        tab_name = str(getattr(value, "name", value)) if value is not None else ""
         state.selected_main_tab = tab_name
         if tab_name == "running":
-            asyncio.create_task(_refresh_selected_tab_content("running"))
+            schedule_selected_tab_refresh("running")
             schedule_best_segments_load()
             schedule_health_data_load()
         elif tab_name == "statistics":
-            asyncio.create_task(_refresh_selected_tab_content("statistics"))
+            schedule_selected_tab_refresh("statistics")
         elif tab_name == "health_data":
             schedule_health_data_load()
 
@@ -848,7 +865,7 @@ def render_body() -> None:
         ui.tab("running", t("Running")).bind_enabled_from(state, "file_loaded")
         ui.tab("workouts", t("Workouts")).bind_enabled_from(state, "file_loaded")
         ui.tab("health_data", t("Health Data")).bind_enabled_from(state, "file_loaded")
-    selected_tab = _migrate_legacy_tab_name(state.selected_main_tab or "summary")
+    selected_tab = state.selected_main_tab if state.selected_main_tab in _MAIN_TABS else "summary"
     state.selected_main_tab = selected_tab
 
     # Restore the previously selected tab (defaults to "summary" on first render).

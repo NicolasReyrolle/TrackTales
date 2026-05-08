@@ -43,6 +43,7 @@ __all__ = [
 
 _SAVE_AS_IMAGE = "Save as Image"
 _RESTORE = "Restore"
+_JS_FORMATTER_KEY = ":formatter"
 
 
 def _toolbox_config(*, restore: bool = False) -> dict[str, object]:
@@ -55,6 +56,20 @@ def _toolbox_config(*, restore: bool = False) -> dict[str, object]:
     if restore:
         feature["restore"] = {"title": t(_RESTORE)}
     return {"feature": feature}
+
+
+def _build_chart_configs(
+    base_config: dict[str, object],
+) -> tuple[dict[str, object], dict[str, object]]:
+    """Build card and fullscreen chart configs from a shared base config."""
+    card_config = copy.deepcopy(base_config)
+    card_config["dataZoom"] = [{"type": "inside"}]
+    card_config["toolbox"] = _toolbox_config()
+
+    fullscreen_config = copy.deepcopy(base_config)
+    fullscreen_config["dataZoom"] = [{"type": "inside"}, {"type": "slider"}]
+    fullscreen_config["toolbox"] = _toolbox_config(restore=True)
+    return card_config, fullscreen_config
 
 
 def _extract_chart_click_args(event: object) -> dict[str, object]:
@@ -268,7 +283,7 @@ def render_generic_graph(
         # ECharts excludes series with tooltip.show:false from the formatter params array,
         # so the bridge (series[0], hidden) is not counted and the actual data is params[0].
         # When the value is null (interpolated gap), show "n/a" with no unit suffix.
-        tooltip_formatter_key = ":formatter"
+        tooltip_formatter_key = _JS_FORMATTER_KEY
         tooltip_formatter: str = (
             "function(params) {"
             "var name = params[0].name;"
@@ -321,15 +336,7 @@ def render_generic_graph(
         "series": series,
     }
 
-    # Card chart: scroll/pinch zoom only (no slider, no restore button)
-    card_config = copy.deepcopy(base_config)
-    card_config["dataZoom"] = [{"type": "inside"}]
-    card_config["toolbox"] = _toolbox_config()
-
-    # Fullscreen chart: inside zoom + visible slider + restore button
-    fullscreen_config = copy.deepcopy(base_config)
-    fullscreen_config["dataZoom"] = [{"type": "inside"}, {"type": "slider"}]
-    fullscreen_config["toolbox"] = _toolbox_config(restore=True)
+    card_config, fullscreen_config = _build_chart_configs(base_config)
 
     with ui.dialog().props("maximized") as dialog:
         with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
@@ -343,6 +350,133 @@ def render_generic_graph(
             ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
         ui.echart(card_config)
+
+
+def _to_float(value: float | str | object | None) -> float | None:
+    if isinstance(value, (int, float, str)):
+        try:
+            return float(value)
+        except ValueError:
+            return None
+    return None
+
+
+def _build_scatter_chart_data(
+    points: Sequence[tuple[float, float] | tuple[float, float, str, object | None]],
+) -> tuple[list[list[float | str | object | None]], bool]:
+    chart_data: list[list[float | str | object | None]] = []
+    includes_metadata = False
+    for point in points:
+        if len(point) >= 4:
+            x, y, point_date, workout_index = point[:4]
+            chart_data.append([x, y, point_date, workout_index])
+            includes_metadata = True
+            continue
+        if len(point) >= 2:
+            chart_data.append([point[0], point[1]])
+    return chart_data, includes_metadata
+
+
+def _build_scatter_trend_data(
+    chart_data: Sequence[Sequence[float | str | object | None]],
+) -> list[list[float]]:
+    if len(chart_data) < 2:
+        return []
+
+    x_numeric: list[float] = []
+    y_numeric: list[float] = []
+    for point in chart_data:
+        x_value = _to_float(point[0])
+        y_value = _to_float(point[1])
+        if x_value is None or y_value is None:
+            return []
+        x_numeric.append(x_value)
+        y_numeric.append(y_value)
+
+    x_mean = sum(x_numeric) / len(x_numeric)
+    y_mean = sum(y_numeric) / len(y_numeric)
+    denominator = sum((x_value - x_mean) ** 2 for x_value in x_numeric)
+    if denominator > 0:
+        numerator = sum(
+            (x_value - x_mean) * (y_value - y_mean)
+            for x_value, y_value in zip(x_numeric, y_numeric, strict=True)
+        )
+        slope = numerator / denominator
+        intercept = y_mean - slope * x_mean
+        x_min = min(x_numeric)
+        x_max = max(x_numeric)
+        return [
+            [x_min, slope * x_min + intercept],
+            [x_max, slope * x_max + intercept],
+        ]
+
+    x_single = x_numeric[0]
+    x_padding = 0.1 if x_single == 0 else abs(x_single) * 0.05
+    return [
+        [x_single - x_padding, y_mean],
+        [x_single + x_padding, y_mean],
+    ]
+
+
+def _build_scatter_tooltip_formatter(
+    *,
+    includes_metadata: bool,
+    x_axis_label: str,
+    y_axis_label: str,
+    value_suffix_x: str,
+    value_suffix_y: str,
+    date_label: str,
+) -> str:
+    if not includes_metadata:
+        return f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n{y_axis_label}: {{@[1]}}{value_suffix_y}"
+    return (
+        "function(params) {"
+        f"var text = '{x_axis_label}: ' + params.value[0] + '{value_suffix_x}' + "
+        f"'\\n{y_axis_label}: ' + params.value[1] + '{value_suffix_y}';"
+        "if (params.value.length > 2 && params.value[2]) {"
+        f"  return text + '\\n{date_label}: ' + params.value[2];"
+        "}"
+        "return text;"
+        "}"
+    )
+
+
+def _extract_scatter_click_value(args: object) -> object:
+    if not isinstance(args, dict):
+        return None
+    data = args.get("data")
+    if isinstance(data, dict):
+        return data.get("value")
+    return data if data is not None else args.get("value")
+
+
+def _build_scatter_click_handler(
+    *,
+    on_point_click: Callable[[object], None],
+    chart_data: Sequence[Sequence[float | str | object | None]],
+) -> Callable[[object], None]:
+    def _handle_click(event: object) -> None:
+        args = _extract_chart_click_args(event)
+        value = _extract_scatter_click_value(args)
+        # Metadata points store workout_index at position 3 in
+        # [x, y, date_label, workout_index].
+        if isinstance(value, tuple):
+            value = list(value)
+        if isinstance(value, list) and len(value) >= 4 and value[3] is not None:
+            on_point_click(value[3])
+            return
+
+        data_index = _normalize_chart_data_index(args.get("dataIndex"))
+        if data_index is None:
+            data_index = _normalize_chart_data_index(args.get("dataIndexInside"))
+        if not isinstance(data_index, int) or not (0 <= data_index < len(chart_data)):
+            return
+
+        point = chart_data[data_index]
+        if len(point) >= 4 and point[3] is not None:
+            on_point_click(point[3])
+
+    return _handle_click
 
 
 def render_scatter_graph(
@@ -359,73 +493,15 @@ def render_scatter_graph(
     """Render a scatter graph from (x, y) points."""
     value_suffix_x = f" {x_unit}" if x_unit else ""
     value_suffix_y = f" {y_unit}" if y_unit else ""
-    title_text = label
-
-    chart_data: list[list[float | str | object | None]] = []
-    includes_metadata = False
-    for point in points:
-        if len(point) >= 4:
-            x, y, point_date, workout_index = point[:4]
-            chart_data.append([x, y, point_date, workout_index])
-            includes_metadata = True
-        elif len(point) >= 2:
-            x, y = point[0], point[1]
-            chart_data.append([x, y])
-
-    trend_data: list[list[float]] = []
-    if len(chart_data) >= 2:
-        def _to_float(value: float | str | object | None) -> float | None:
-            if isinstance(value, (int, float, str)):
-                try:
-                    return float(value)
-                except ValueError:
-                    return None
-            return None
-
-        x_values = [_to_float(point[0]) for point in chart_data]
-        y_values = [_to_float(point[1]) for point in chart_data]
-        if not any(value is None for value in x_values + y_values):
-            x_numeric = [value for value in x_values if value is not None]
-            y_numeric = [value for value in y_values if value is not None]
-            x_mean = sum(x_numeric) / len(x_numeric)
-            y_mean = sum(y_numeric) / len(y_numeric)
-            denominator = sum((x_value - x_mean) ** 2 for x_value in x_numeric)
-            if denominator > 0:
-                numerator = sum(
-                    (x_value - x_mean) * (y_value - y_mean)
-                    for x_value, y_value in zip(x_numeric, y_numeric, strict=True)
-                )
-                slope = numerator / denominator
-                intercept = y_mean - slope * x_mean
-                x_min = min(x_numeric)
-                x_max = max(x_numeric)
-                trend_data = [
-                    [x_min, slope * x_min + intercept],
-                    [x_max, slope * x_max + intercept],
-                ]
-            else:
-                x_single = x_numeric[0]
-                x_padding = 0.1 if x_single == 0 else abs(x_single) * 0.05
-                trend_data = [
-                    [x_single - x_padding, y_mean],
-                    [x_single + x_padding, y_mean],
-                ]
-
-    default_tooltip_formatter = (
-        f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n"
-        f"{y_axis_label}: {{@[1]}}{value_suffix_y}"
-    )
-    tooltip_formatter = (
-        "function(params) {"
-        f"var text = '{x_axis_label}: ' + params.value[0] + '{value_suffix_x}' + "
-        f"'\\n{y_axis_label}: ' + params.value[1] + '{value_suffix_y}';"
-        "if (params.value.length > 2 && params.value[2]) {"
-        f"  return text + '\\n{date_label}: ' + params.value[2];"
-        "}"
-        "return text;"
-        "}"
-        if includes_metadata
-        else default_tooltip_formatter
+    chart_data, includes_metadata = _build_scatter_chart_data(points)
+    trend_data = _build_scatter_trend_data(chart_data)
+    tooltip_formatter = _build_scatter_tooltip_formatter(
+        includes_metadata=includes_metadata,
+        x_axis_label=x_axis_label,
+        y_axis_label=y_axis_label,
+        value_suffix_x=value_suffix_x,
+        value_suffix_y=value_suffix_y,
+        date_label=date_label,
     )
 
     base_config: dict[str, object] = {
@@ -434,7 +510,7 @@ def render_scatter_graph(
         "tooltip": {
             "trigger": "item",
             "renderMode": "richText",
-            ":formatter": tooltip_formatter,
+            _JS_FORMATTER_KEY: tooltip_formatter,
         },
         "xAxis": {"type": "value", "name": x_axis_label, "scale": True},
         "yAxis": {"type": "value", "name": y_axis_label, "scale": True},
@@ -451,19 +527,12 @@ def render_scatter_graph(
             },
         ],
     }
-
-    card_config = copy.deepcopy(base_config)
-    card_config["dataZoom"] = [{"type": "inside"}]
-    card_config["toolbox"] = _toolbox_config()
-
-    fullscreen_config = copy.deepcopy(base_config)
-    fullscreen_config["dataZoom"] = [{"type": "inside"}, {"type": "slider"}]
-    fullscreen_config["toolbox"] = _toolbox_config(restore=True)
+    card_config, fullscreen_config = _build_chart_configs(base_config)
 
     with ui.dialog().props("maximized") as dialog:
         with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
             with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
                 ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
             if fullscreen_description:
                 ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
@@ -471,39 +540,18 @@ def render_scatter_graph(
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
         card_chart = ui.echart(card_config)
 
-    if on_point_click is not None:
-        def _extract_click_value(args: object) -> object:
-            if not isinstance(args, dict):
-                return None
-            data = args.get("data")
-            if isinstance(data, dict):
-                return data.get("value")
-            return data if data is not None else args.get("value")
-
-        def _handle_click(event: object) -> None:
-            args = _extract_chart_click_args(event)
-            value = _extract_click_value(args)
-            # Metadata points store workout_index at position 3 in
-            # [x, y, date_label, workout_index].
-            if isinstance(value, tuple):
-                value = list(value)
-            if isinstance(value, list) and len(value) >= 4 and value[3] is not None:
-                on_point_click(value[3])
-                return
-            data_index = _normalize_chart_data_index(args.get("dataIndex"))
-            if data_index is None:
-                data_index = _normalize_chart_data_index(args.get("dataIndexInside"))
-            if isinstance(data_index, int) and 0 <= data_index < len(chart_data):
-                point = chart_data[data_index]
-                if len(point) >= 4 and point[3] is not None:
-                    on_point_click(point[3])
-
-        card_chart.on("click", _handle_click)
-        fullscreen_chart.on("click", _handle_click)
+    if on_point_click is None:
+        return
+    click_handler = _build_scatter_click_handler(
+        on_point_click=on_point_click,
+        chart_data=chart_data,
+    )
+    card_chart.on("click", click_handler)
+    fullscreen_chart.on("click", click_handler)
 
 
 def render_heat_map_graph(
@@ -560,7 +608,7 @@ def render_heat_map_graph(
         "tooltip": {
             "position": "top",
             "renderMode": "richText",
-            ":formatter": _build_tooltip_formatter(y_labels_values),
+            _JS_FORMATTER_KEY: _build_tooltip_formatter(y_labels_values),
         },
         "grid": {"left": "3%", "right": "4%", "bottom": "10%", "containLabel": True},
         "xAxis": {
@@ -596,7 +644,7 @@ def render_heat_map_graph(
     fullscreen_config["tooltip"] = {
         "position": "top",
         "renderMode": "richText",
-        ":formatter": _build_tooltip_formatter(fullscreen_y_labels_values),
+        _JS_FORMATTER_KEY: _build_tooltip_formatter(fullscreen_y_labels_values),
     }
     base_y_axis = base_config["yAxis"]
     if isinstance(base_y_axis, dict):

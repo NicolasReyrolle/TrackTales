@@ -11,6 +11,7 @@ from app_state import get_distance_unit, state
 from i18n import t
 from ui.charts import render_box_plot_graph, render_heat_map_graph
 from ui.css import ROW_CENTERED_CLASSES
+from ui.helpers import filter_workouts_by_date_range
 
 _MAX_ACTIVITIES_IN_BOXPLOT = 6
 
@@ -21,18 +22,11 @@ def _filter_workouts_for_statistics() -> pd.DataFrame:
         return workouts
     if state.selected_activity_type != "All" and "activityType" in workouts.columns:
         workouts = workouts.loc[workouts["activityType"] == state.selected_activity_type]
-    if "startDate" in workouts.columns:
-        if state.start_date is not None:
-            workouts = workouts.loc[workouts["startDate"] >= pd.Timestamp(state.start_date)]
-        if state.end_date is not None:
-            end_timestamp = pd.Timestamp(state.end_date)
-            if end_timestamp == end_timestamp.normalize():
-                workouts = workouts.loc[
-                    workouts["startDate"] < end_timestamp + pd.Timedelta(days=1)
-                ]
-            else:
-                workouts = workouts.loc[workouts["startDate"] <= end_timestamp]
-    return workouts
+    return filter_workouts_by_date_range(
+        workouts,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
 
 
 def _build_day_time_heatmap_values(workouts: pd.DataFrame) -> list[tuple[int, int, int]]:

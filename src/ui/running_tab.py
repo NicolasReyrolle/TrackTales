@@ -10,7 +10,7 @@ from i18n import get_language, t
 from ui.best_segments import render_best_segments_tab
 from ui.charts import render_generic_graph, render_scatter_graph
 from ui.css import ROW_CENTERED_CLASSES
-from ui.helpers import format_date_label
+from ui.helpers import filter_workouts_by_date_range, format_date_label
 
 
 def _filter_running_workouts() -> pd.DataFrame:
@@ -20,18 +20,11 @@ def _filter_running_workouts() -> pd.DataFrame:
     if "activityType" in workouts.columns:
         activity_series = workouts["activityType"].astype(str).str.strip()
         workouts = workouts[activity_series.str.contains(r"\brunning\b", case=False, regex=True)]
-    if "startDate" in workouts.columns:
-        if state.start_date is not None:
-            workouts = workouts.loc[workouts["startDate"] >= pd.Timestamp(state.start_date)]
-        if state.end_date is not None:
-            end_timestamp = pd.Timestamp(state.end_date)
-            if end_timestamp == end_timestamp.normalize():
-                workouts = workouts.loc[
-                    workouts["startDate"] < end_timestamp + pd.Timedelta(days=1)
-                ]
-            else:
-                workouts = workouts.loc[workouts["startDate"] <= end_timestamp]
-    return workouts
+    return filter_workouts_by_date_range(
+        workouts,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
 
 
 def _build_scatter_points(

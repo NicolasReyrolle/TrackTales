@@ -156,6 +156,7 @@ class TestAppStateBestSegmentsState:
         assert app_state.best_segments_loading is False
         assert app_state.best_segments_loaded is False
         assert app_state.best_segments_task is None
+        assert app_state.tab_refresh_task is None
         assert app_state.selected_main_tab == "summary"
 
     def test_reset_restores_best_segments_fields(self) -> None:
@@ -165,6 +166,7 @@ class TestAppStateBestSegmentsState:
         app_state.best_segments_loading = True
         app_state.best_segments_loaded = True
         app_state.best_segments_task = object()  # type: ignore[assignment]
+        app_state.tab_refresh_task = object()  # type: ignore[assignment]
         app_state.selected_main_tab = "best_segments"
 
         app_state.reset()
@@ -173,6 +175,7 @@ class TestAppStateBestSegmentsState:
         assert app_state.best_segments_loading is False
         assert app_state.best_segments_loaded is False
         assert app_state.best_segments_task is None
+        assert app_state.tab_refresh_task is None
         assert app_state.selected_main_tab == "summary"
 
 

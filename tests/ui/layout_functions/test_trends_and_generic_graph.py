@@ -649,6 +649,7 @@ class TestChartsModuleComponents:
 
     def test_render_scatter_graph_click_handler_handles_tuple_value_and_invalid_index(self) -> None:
         """Scatter click handler should parse tuple payloads and ignore invalid indexes."""
+
         class _ChartProbe(DummyComponent):
             def __init__(self) -> None:
                 self.events: dict[str, Any] = {}

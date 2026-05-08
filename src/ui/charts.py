@@ -395,6 +395,10 @@ def render_scatter_graph(
                     [x_single + x_padding, y_mean],
                 ]
 
+    default_tooltip_formatter = (
+        f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n"
+        f"{y_axis_label}: {{@[1]}}{value_suffix_y}"
+    )
     tooltip_formatter = (
         "function(params) {"
         f"var text = '{x_axis_label}: ' + params.value[0] + '{value_suffix_x}' + "
@@ -405,7 +409,7 @@ def render_scatter_graph(
         "return text;"
         "}"
         if includes_metadata
-        else (f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n{y_axis_label}: {{@[1]}}{value_suffix_y}")
+        else default_tooltip_formatter
     )
 
     base_config: dict[str, object] = {

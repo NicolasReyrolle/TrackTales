@@ -136,9 +136,11 @@ def _build_workout_detail_opener() -> Callable[[object], None]:
                     and row_workout_index not in row_index_by_workout_index
                 ):
                     row_index_by_workout_index[row_workout_index] = idx
-                    normalized_row_index = _normalize_workout_index(row_workout_index)
-                    if normalized_row_index not in row_index_by_workout_index:
-                        row_index_by_workout_index[normalized_row_index] = idx
+                if row_workout_index is None:
+                    continue
+                normalized_row_index = _normalize_workout_index(row_workout_index)
+                if normalized_row_index not in row_index_by_workout_index:
+                    row_index_by_workout_index[normalized_row_index] = idx
         normalized_workout_index = _normalize_workout_index(workout_index)
         row_index = row_index_by_workout_index.get(normalized_workout_index)
         if row_index is None:

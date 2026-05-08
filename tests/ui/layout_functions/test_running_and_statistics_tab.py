@@ -187,9 +187,13 @@ def test_running_tab_defers_workout_detail_until_click() -> None:
             patch("ui.running_tab.render_scatter_graph", side_effect=_capture_scatter),
             patch("ui.running_tab.render_running_health_graphs"),
             patch("ui.running_tab.render_best_segments_tab"),
-            patch("ui.running_tab._build_workout_rows", return_value=[]) as build_rows_mock,
-            patch("ui.running_tab.create_workout_detail_modal", return_value=MagicMock()),
+            patch(
+                "ui.running_tab._build_workout_rows", return_value=[{"workout_index": 0}]
+            ) as build_rows_mock,
+            patch("ui.running_tab.create_workout_detail_modal") as create_modal_mock,
         ):
+            open_detail_mock = MagicMock()
+            create_modal_mock.return_value = open_detail_mock
             running_tab.render_running_tab.func()
             build_rows_mock.assert_not_called()
             assert callable(captured_on_click)
@@ -197,6 +201,8 @@ def test_running_tab_defers_workout_detail_until_click() -> None:
             build_rows_mock.assert_called_once()
             captured_on_click("0")
             assert build_rows_mock.call_count == 1
+            create_modal_mock.assert_called_once()
+            assert open_detail_mock.call_count == 2
     finally:
         state.workouts = original_workouts
         state.selected_main_tab = original_selected_tab

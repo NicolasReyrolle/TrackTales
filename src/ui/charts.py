@@ -3,6 +3,7 @@
 import copy
 import json
 from collections.abc import Callable, Mapping, Sequence
+from typing import cast
 
 from nicegui import ui
 
@@ -355,6 +356,27 @@ def render_scatter_graph(
             x, y = point[0], point[1]
             chart_data.append([x, y])
 
+    trend_data: list[list[float]] = []
+    if len(chart_data) >= 2:
+        x_values = [float(cast(float | int | str, point[0])) for point in chart_data]
+        y_values = [float(cast(float | int | str, point[1])) for point in chart_data]
+        x_mean = sum(x_values) / len(x_values)
+        y_mean = sum(y_values) / len(y_values)
+        denominator = sum((x_value - x_mean) ** 2 for x_value in x_values)
+        if denominator > 0:
+            numerator = sum(
+                (x_value - x_mean) * (y_value - y_mean)
+                for x_value, y_value in zip(x_values, y_values, strict=True)
+            )
+            slope = numerator / denominator
+            intercept = y_mean - slope * x_mean
+            x_min = min(x_values)
+            x_max = max(x_values)
+            trend_data = [
+                [x_min, slope * x_min + intercept],
+                [x_max, slope * x_max + intercept],
+            ]
+
     tooltip_formatter = (
         "function(params) {"
         f"var text = '{x_axis_label}: ' + params.value[0] + '{value_suffix_x}' + "
@@ -365,10 +387,7 @@ def render_scatter_graph(
         "return text;"
         "}"
         if includes_metadata
-        else (
-            f"{x_axis_label}: {{@[0]}}{value_suffix_x}"
-            f"\n{y_axis_label}: {{@[1]}}{value_suffix_y}"
-        )
+        else (f"{x_axis_label}: {{@[0]}}{value_suffix_x}\n{y_axis_label}: {{@[1]}}{value_suffix_y}")
     )
 
     base_config: dict[str, object] = {
@@ -381,7 +400,17 @@ def render_scatter_graph(
         },
         "xAxis": {"type": "value", "name": x_axis_label, "scale": True},
         "yAxis": {"type": "value", "name": y_axis_label, "scale": True},
-        "series": [{"type": "scatter", "data": chart_data, "symbolSize": 9}],
+        "series": [
+            {"type": "scatter", "data": chart_data, "symbolSize": 9},
+            {
+                "type": "line",
+                "data": trend_data,
+                "symbol": "none",
+                "lineStyle": {"type": "dashed", "width": 2},
+                "tooltip": {"show": False},
+                "silent": True,
+            },
+        ],
     }
 
     card_config = copy.deepcopy(base_config)
@@ -414,10 +443,23 @@ def render_scatter_graph(
             if not isinstance(args, dict):
                 return
             data = args.get("data")
+            value: object
+            if isinstance(data, dict):
+                value = data.get("value")
+            else:
+                value = data if data is not None else args.get("value")
             # Metadata points store workout_index at position 3 in
             # [x, y, date_label, workout_index].
-            if isinstance(data, list) and len(data) >= 4 and data[3] is not None:
-                on_point_click(data[3])
+            if isinstance(value, tuple):
+                value = list(value)
+            if isinstance(value, list) and len(value) >= 4 and value[3] is not None:
+                on_point_click(value[3])
+                return
+            data_index = args.get("dataIndex")
+            if isinstance(data_index, int) and 0 <= data_index < len(chart_data):
+                point = chart_data[data_index]
+                if len(point) >= 4 and point[3] is not None:
+                    on_point_click(point[3])
 
         card_chart.on("click", _handle_click)
         fullscreen_chart.on("click", _handle_click)
@@ -433,6 +475,7 @@ def render_heat_map_graph(
     value_label: str | None = None,
     value_label_singular: str | None = None,
     value_label_plural: str | None = None,
+    fullscreen_y_labels: Sequence[str] | None = None,
     fullscreen_description: str = "",
 ) -> None:
     """Render an ECharts heat map from indexed (x, y, value) triplets."""
@@ -442,28 +485,33 @@ def render_heat_map_graph(
     plural_label = value_label_plural if value_label_plural is not None else t("workouts")
     x_labels_values = list(x_labels)
     y_labels_values = list(y_labels)
-    y_labels_js = json.dumps(y_labels_values)
     singular_label_js = json.dumps(singular_label)
     plural_label_js = json.dumps(plural_label)
     from_label_js = json.dumps(t("from"))
     to_label_js = json.dumps(t("to"))
-    tooltip_formatter = (
-        "function(params) {"
-        f"var yLabels = {y_labels_js};"
-        f"var singularLabel = {singular_label_js};"
-        f"var pluralLabel = {plural_label_js};"
-        f"var fromLabel = {from_label_js};"
-        f"var toLabel = {to_label_js};"
-        "var point = params.value;"
-        "var hour = Number(point[0]);"
-        "var startHour = String(hour).padStart(2, '0') + ':00';"
-        "var endHour = String((hour + 1) % 24).padStart(2, '0') + ':00';"
-        "var count = Number(point[2]);"
-        "var noun = count === 1 ? singularLabel : pluralLabel;"
-        "return yLabels[point[1]] + ', ' + fromLabel + ' ' + startHour + "
-        "' ' + toLabel + ' ' + endHour + ': ' + count + ' ' + noun;"
-        "}"
+    fullscreen_y_labels_values = (
+        list(fullscreen_y_labels) if fullscreen_y_labels is not None else y_labels_values
     )
+
+    def _build_tooltip_formatter(y_labels_source: Sequence[str]) -> str:
+        y_labels_js = json.dumps(list(y_labels_source))
+        return (
+            "function(params) {"
+            f"var yLabels = {y_labels_js};"
+            f"var singularLabel = {singular_label_js};"
+            f"var pluralLabel = {plural_label_js};"
+            f"var fromLabel = {from_label_js};"
+            f"var toLabel = {to_label_js};"
+            "var point = params.value;"
+            "var hour = Number(point[0]);"
+            "var startHour = String(hour).padStart(2, '0') + ':00';"
+            "var endHour = String((hour + 1) % 24).padStart(2, '0') + ':00';"
+            "var count = Number(point[2]);"
+            "var noun = count === 1 ? singularLabel : pluralLabel;"
+            "return yLabels[point[1]] + ', ' + fromLabel + ' ' + startHour + "
+            "' ' + toLabel + ' ' + endHour + ': ' + count + ' ' + noun;"
+            "}"
+        )
 
     base_config: dict[str, object] = {
         "backgroundColor": "transparent",
@@ -471,7 +519,7 @@ def render_heat_map_graph(
         "tooltip": {
             "position": "top",
             "renderMode": "richText",
-            ":formatter": tooltip_formatter,
+            ":formatter": _build_tooltip_formatter(y_labels_values),
         },
         "grid": {"left": "3%", "right": "4%", "bottom": "10%", "containLabel": True},
         "xAxis": {
@@ -502,6 +550,14 @@ def render_heat_map_graph(
     }
     card_config = copy.deepcopy(base_config)
     fullscreen_config = copy.deepcopy(base_config)
+    fullscreen_config["tooltip"] = {
+        "position": "top",
+        "renderMode": "richText",
+        ":formatter": _build_tooltip_formatter(fullscreen_y_labels_values),
+    }
+    base_y_axis = base_config["yAxis"]
+    if isinstance(base_y_axis, dict):
+        fullscreen_config["yAxis"] = {**base_y_axis, "data": fullscreen_y_labels_values}
     fullscreen_config["visualMap"] = {
         "min": 0,
         "max": max_value,

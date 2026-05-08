@@ -193,7 +193,7 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
             with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
                 with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
                     with patch("ui.layout.render_health_data_tab"):
-                        with patch("ui.layout.render_running_tab") as render_running_tab_mock:
+                        with patch("ui.layout.render_running_health_graphs") as running_health_mock:
                             with patch("ui.layout._reset_health_data_state"):
                                 with patch("ui.layout.schedule_health_data_load"):
                                     layout.render_period_selector()
@@ -206,10 +206,9 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
                                     radio_instance.on_change()
 
         render_graphs_mock.refresh.assert_called_once()
-        render_running_tab_mock.refresh.assert_not_called()
+        running_health_mock.refresh.assert_not_called()
     finally:
         state.selected_main_tab = original_tab
-
 
 
 def test_render_trends_tab_only_renders_graphs() -> None:

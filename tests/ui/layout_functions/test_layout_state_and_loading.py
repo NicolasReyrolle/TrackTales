@@ -129,7 +129,7 @@ async def test_load_health_data_success_and_exception_paths() -> None:
         state.selected_main_tab = "running"
 
         with patch("ui.layout.render_health_data_tab.refresh") as refresh_mock:
-            with patch("ui.layout.render_running_tab.refresh") as running_refresh_mock:
+            with patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock:
                 with patch(
                     "ui.layout.asyncio.to_thread", new=AsyncMock(return_value={"heart_rate": {}})
                 ):
@@ -142,7 +142,7 @@ async def test_load_health_data_success_and_exception_paths() -> None:
 
         state.health_data_loaded = False
         with patch("ui.layout.render_health_data_tab.refresh") as refresh_mock:
-            with patch("ui.layout.render_running_tab.refresh") as running_refresh_mock:
+            with patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock:
                 with patch("ui.layout._logger.exception") as exception_mock:
                     with patch(
                         "ui.layout.asyncio.to_thread",
@@ -212,7 +212,7 @@ async def test_load_health_data_does_not_refresh_running_when_tab_not_selected()
         state.selected_main_tab = "summary"
 
         with patch("ui.layout.render_health_data_tab.refresh"):
-            with patch("ui.layout.render_running_tab.refresh") as running_refresh_mock:
+            with patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock:
                 with patch(
                     "ui.layout.asyncio.to_thread", new=AsyncMock(return_value={"heart_rate": {}})
                 ):

@@ -792,8 +792,8 @@ def test_render_body_tab_change_to_running_schedules_async_load() -> None:
         assert on_change is not None
         on_change(SimpleNamespace(value=SimpleNamespace(name="running")))
 
-    # Running tab now schedules both best-segments and CP/W' loaders.
-    assert create_task_mock.call_count == 2
+    # Running tab schedules tab refresh plus best-segments and CP/W' loaders.
+    assert create_task_mock.call_count == 3
 
 
 def _make_render_body_stubs() -> tuple[list[DummyTabs], list[dict[str, Any]], SimpleNamespace]:

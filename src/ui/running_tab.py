@@ -143,6 +143,9 @@ def render_running_tab() -> None:
     distance_unit = get_distance_unit()
     elevation_unit = get_elevation_unit()
     pace_unit = f"min/{distance_unit}"
+    distance_axis_label = f"{t('Distance')} ({distance_unit})"
+    elevation_axis_label = f"{t('Elevation')} ({elevation_unit})"
+    pace_axis_label = f"{t('Pace')} ({pace_unit})"
     running_workouts = _filter_running_workouts()
     distance_vs_pace, elevation_vs_pace = _build_scatter_points(
         running_workouts,
@@ -155,8 +158,8 @@ def render_running_tab() -> None:
         render_scatter_graph(
             t("Distance vs Pace"),
             distance_vs_pace,
-            t("Distance"),
-            t("Pace"),
+            distance_axis_label,
+            pace_axis_label,
             distance_unit,
             pace_unit,
             date_label=t("Date"),
@@ -168,8 +171,8 @@ def render_running_tab() -> None:
         render_scatter_graph(
             t("Elevation vs Pace"),
             elevation_vs_pace,
-            t("Elevation"),
-            t("Pace"),
+            elevation_axis_label,
+            pace_axis_label,
             elevation_unit,
             pace_unit,
             date_label=t("Date"),
@@ -179,6 +182,14 @@ def render_running_tab() -> None:
             on_point_click=open_workout_detail,
         )
 
+    render_running_health_graphs()
+
+    render_best_segments_tab()
+
+
+@ui.refreshable
+def render_running_health_graphs() -> None:
+    """Render CP/W' section for the running tab."""
     with ui.row().classes(ROW_CENTERED_CLASSES):
         if state.health_data_loading and not state.health_data_loaded:
             ui.spinner(size="lg")
@@ -201,5 +212,3 @@ def render_running_tab() -> None:
                 graph_type="line",
                 show_trend=False,
             )
-
-    render_best_segments_tab()

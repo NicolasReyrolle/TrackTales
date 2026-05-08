@@ -59,7 +59,7 @@ from ui.helpers import (
     translate_parser_progress_message,
 )
 from ui.local_file_picker import LocalFilePicker
-from ui.running_tab import render_running_tab
+from ui.running_tab import render_running_health_graphs, render_running_tab
 from ui.statistics_tab import render_statistics_tab
 from ui.trends_tab import render_trends_graphs, render_trends_tab
 from ui.workout_detail_modal import create_workout_detail_modal
@@ -198,7 +198,7 @@ async def load_health_data(force: bool = False) -> None:
     state.health_data_loading = True
     render_health_data_tab.refresh()
     if state.selected_main_tab == "running":
-        render_running_tab.refresh()
+        render_running_health_graphs.refresh()
 
     try:
         # Phase 1 — fast graphs: HR, body mass, VO2 max
@@ -209,7 +209,7 @@ async def load_health_data(force: bool = False) -> None:
         state.health_data_cp_loading = True
         render_health_data_tab.refresh()
         if state.selected_main_tab == "running":
-            render_running_tab.refresh()
+            render_running_health_graphs.refresh()
 
         # Phase 2 — slow graphs: critical power and W'
         try:
@@ -221,14 +221,14 @@ async def load_health_data(force: bool = False) -> None:
             state.health_data_cp_loading = False
             render_health_data_tab.refresh()
             if state.selected_main_tab == "running":
-                render_running_tab.refresh()
+                render_running_health_graphs.refresh()
     except Exception:
         _logger.exception("Failed to load health data tab")
         state.health_data_loading = False
         state.health_data_cp_loading = False
         render_health_data_tab.refresh()
         if state.selected_main_tab == "running":
-            render_running_tab.refresh()
+            render_running_health_graphs.refresh()
 
 
 def handle_json_export() -> None:
@@ -518,7 +518,7 @@ def render_period_selector() -> None:
         render_trends_graphs.refresh()
         render_health_data_tab.refresh()
         if state.selected_main_tab == "running":
-            render_running_tab.refresh()
+            render_running_health_graphs.refresh()
         if state.selected_main_tab in {"health_data", "running"}:
             schedule_health_data_load()
 
@@ -532,6 +532,17 @@ def render_period_selector() -> None:
         },
         on_change=_on_period_change,
     ).bind_value(state, "trends_period").props("inline")
+
+
+async def _refresh_selected_tab_content(tab_name: str) -> None:
+    """Refresh tab content on the next event-loop turn to keep tab switching responsive."""
+    await asyncio.sleep(0)
+    if state.selected_main_tab != tab_name:
+        return
+    if tab_name == "running":
+        render_running_tab.refresh()
+    elif tab_name == "statistics":
+        render_statistics_tab.refresh()
 
 
 def render_left_drawer() -> None:
@@ -818,11 +829,11 @@ def render_body() -> None:
         )
         state.selected_main_tab = tab_name
         if tab_name == "running":
-            render_running_tab.refresh()
+            asyncio.create_task(_refresh_selected_tab_content("running"))
             schedule_best_segments_load()
             schedule_health_data_load()
         elif tab_name == "statistics":
-            render_statistics_tab.refresh()
+            asyncio.create_task(_refresh_selected_tab_content("statistics"))
         elif tab_name == "health_data":
             schedule_health_data_load()
 

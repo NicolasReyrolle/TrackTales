@@ -98,7 +98,16 @@ def render_statistics_tab() -> None:
     heatmap_values = _build_day_time_heatmap_values(workouts)
     distance_unit = get_distance_unit()
     pace_boxplot_data = _build_pace_boxplot_data(workouts, distance_unit=distance_unit)
-    day_labels = [
+    day_labels_short = [
+        t("Mon"),
+        t("Tue"),
+        t("Wed"),
+        t("Thu"),
+        t("Fri"),
+        t("Sat"),
+        t("Sun"),
+    ]
+    day_labels_long = [
         t("Monday"),
         t("Tuesday"),
         t("Wednesday"),
@@ -112,13 +121,14 @@ def render_statistics_tab() -> None:
         render_heat_map_graph(
             t("Activity heat map (day/time)"),
             [str(hour) for hour in range(24)],
-            day_labels,
+            day_labels_short,
             heatmap_values,
             x_axis_name=t("Hour of day"),
             y_axis_name=t("Day of week"),
             value_label=t("Workouts"),
             value_label_singular=t("workout"),
             value_label_plural=t("workouts"),
+            fullscreen_y_labels=day_labels_long,
             fullscreen_description=t(
                 "This heat map shows when workouts happen. "
                 "X axis is hour of day, Y axis is day of week, "

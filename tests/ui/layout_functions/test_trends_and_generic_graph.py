@@ -472,6 +472,8 @@ class TestChartsModuleComponents:
         assert chart_options["backgroundColor"] == "transparent"
         assert chart_options["series"][0]["type"] == "scatter"
         assert chart_options["series"][0]["data"] == [[5.0, 4.5], [10.0, 5.1]]
+        assert chart_options["series"][1]["type"] == "line"
+        assert chart_options["series"][1]["data"]
         assert "<br" not in chart_options["tooltip"][":formatter"]
         assert "\n" in chart_options["tooltip"][":formatter"]
 
@@ -515,6 +517,9 @@ class TestChartsModuleComponents:
         assert "click" in chart_probe.events
         chart_probe.events["click"](MagicMock(args={"data": [5.0, 4.5, "01/06/2025", 12]}))
         click_callback.assert_called_once_with(12)
+        click_callback.reset_mock()
+        chart_probe.events["click"](MagicMock(args={"dataIndex": 0}))
+        click_callback.assert_called_once_with(12)
 
     def test_render_heat_map_graph_builds_heatmap_series(self) -> None:
         """render_heat_map_graph should build indexed heatmap coordinates."""
@@ -542,6 +547,7 @@ class TestChartsModuleComponents:
                 value_label="Workouts",
                 value_label_singular="workout",
                 value_label_plural="workouts",
+                fullscreen_y_labels=["Monday", "Tuesday"],
             )
 
         fullscreen_options = echart_calls[0]
@@ -553,6 +559,8 @@ class TestChartsModuleComponents:
         assert "visualMap" in fullscreen_options
         assert fullscreen_options["xAxis"]["name"] == "Hour of day"
         assert fullscreen_options["yAxis"]["name"] == "Day of week"
+        assert card_options["yAxis"]["data"] == ["Mon", "Tue"]
+        assert fullscreen_options["yAxis"]["data"] == ["Monday", "Tuesday"]
         assert "from" in fullscreen_options["tooltip"][":formatter"]
         assert "to" in fullscreen_options["tooltip"][":formatter"]
         assert "<br" not in fullscreen_options["tooltip"][":formatter"]

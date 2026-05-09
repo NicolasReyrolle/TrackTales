@@ -12,7 +12,6 @@ from ui.statistics_tab import render_statistics_tab
 @ui.refreshable
 def render_health_data_tab() -> None:
     """Render the health data tab with filters and graphs."""
-    weight_unit = get_weight_unit()
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_statistics_tab()
         if state.health_data_loading:
@@ -22,6 +21,7 @@ def render_health_data_tab() -> None:
         if not state.health_data_loaded:
             ui.label(t("Open this tab to load health data.")).classes(LABEL_MUTED_CLASSES)
             return
+        weight_unit = get_weight_unit()
         render_generic_graph(
             t("Resting HR frequency over time"),
             state.health_data_graphs.get("heart_rate", {}),

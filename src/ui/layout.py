@@ -60,7 +60,6 @@ from ui.helpers import (
 )
 from ui.local_file_picker import LocalFilePicker
 from ui.running_tab import render_running_health_graphs, render_running_tab
-from ui.statistics_tab import render_statistics_tab
 from ui.trends_tab import render_trends_graphs, render_trends_tab
 from ui.workout_detail_modal import create_workout_detail_modal
 from ui.workout_table import (
@@ -498,7 +497,6 @@ def refresh_data() -> None:
 
     render_activity_graphs.refresh()
     render_trends_graphs.refresh()
-    render_statistics_tab.refresh()
     render_health_data_tab.refresh()
     if state.selected_main_tab == "running":
         render_running_tab.refresh()
@@ -849,6 +847,7 @@ def render_body() -> None:
             schedule_best_segments_load()
             schedule_health_data_load()
         elif tab_name == "health_data":
+            render_health_data_tab.refresh()
             schedule_health_data_load()
 
     with ui.tabs(on_change=_on_tab_change).classes(TABS_FULL_CLASSES) as tabs:
@@ -989,5 +988,4 @@ def render_body() -> None:
             render_workout_table()
 
         with ui.tab_panel("health_data"):
-            render_statistics_tab()
             render_health_data_tab()

@@ -31,8 +31,10 @@ class TestRenderHealthDataTab:
             state.health_data_loaded = False
 
             with (
+                patch("ui.health_data_tab.ui.row", return_value=DummyRow()),
                 patch("ui.health_data_tab.ui.label") as label_mock,
                 patch("ui.health_data_tab.render_generic_graph") as render_generic_graph_mock,
+                patch("ui.health_data_tab.render_statistics_tab"),
             ):
                 layout.render_health_data_tab.func()
 
@@ -60,6 +62,7 @@ class TestRenderHealthDataTab:
                 patch("ui.health_data_tab.ui.spinner") as spinner_mock,
                 patch("ui.health_data_tab.ui.label") as label_mock,
                 patch("ui.health_data_tab.render_generic_graph") as render_generic_graph_mock,
+                patch("ui.health_data_tab.render_statistics_tab"),
             ):
                 layout.render_health_data_tab.func()
 
@@ -93,12 +96,15 @@ class TestRenderHealthDataTab:
             }
 
             with (
-                patch("ui.health_data_tab.ui.row", return_value=DummyRow()),
+                patch("ui.health_data_tab.ui.row", return_value=DummyRow()) as row_mock,
                 patch("ui.health_data_tab.render_generic_graph") as render_generic_graph_mock,
+                patch("ui.health_data_tab.render_statistics_tab") as heatmap_mock,
             ):
                 layout.render_health_data_tab.func()
 
             rendered_titles = [call.args[0] for call in render_generic_graph_mock.call_args_list]
+            assert row_mock.call_count == 2
+            heatmap_mock.assert_called_once()
             assert "Resting HR frequency over time" in rendered_titles
             assert "Body Mass over time" in rendered_titles
             assert "VO2 Max over time" in rendered_titles

@@ -8,7 +8,6 @@ from nicegui import ui
 from app_state import state
 from i18n import t
 from ui.charts import render_heat_map_graph
-from ui.css import ROW_CENTERED_CLASSES
 from ui.helpers import filter_workouts_by_date_range
 
 
@@ -68,21 +67,20 @@ def render_statistics_tab() -> None:
         t("Sunday"),
     ]
 
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        render_heat_map_graph(
-            t("Activity heat map (day/time)"),
-            [str(hour) for hour in range(24)],
-            day_labels_short,
-            heatmap_values,
-            x_axis_name=t("Hour of day"),
-            y_axis_name=t("Day of week"),
-            value_label=t("Workouts"),
-            value_label_singular=t("workout"),
-            value_label_plural=t("workouts"),
-            fullscreen_y_labels=day_labels_long,
-            fullscreen_description=t(
-                "This heat map shows when workouts happen. "
-                "X axis is hour of day, Y axis is day of week, "
-                "and color intensity represents workout count."
-            ),
-        )
+    render_heat_map_graph(
+        t("Activity heat map (day/time)"),
+        [str(hour) for hour in range(24)],
+        day_labels_short,
+        heatmap_values,
+        x_axis_name=t("Hour of day"),
+        y_axis_name=t("Day of week"),
+        value_label=t("Workouts"),
+        value_label_singular=t("workout"),
+        value_label_plural=t("workouts"),
+        fullscreen_y_labels=day_labels_long,
+        fullscreen_description=t(
+            "This heat map shows when workouts happen. "
+            "X axis is hour of day, Y axis is day of week, "
+            "and color intensity represents workout count."
+        ),
+    )

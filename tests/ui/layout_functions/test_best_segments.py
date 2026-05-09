@@ -770,7 +770,6 @@ def test_render_body_tab_change_to_running_schedules_async_load() -> None:
         stack.enter_context(patch("ui.layout.stat_card"))
         stack.enter_context(patch("ui.layout.render_activity_graphs"))
         stack.enter_context(patch("ui.layout.render_trends_tab"))
-        stack.enter_context(patch("ui.layout.render_statistics_tab"))
         stack.enter_context(patch("ui.layout.render_health_data_tab"))
         stack.enter_context(patch("ui.layout.render_running_tab"))
         stack.enter_context(patch("ui.layout.load_best_segments_data", new=AsyncMock()))
@@ -853,7 +852,6 @@ def test_render_body_initializes_tabs_from_state() -> None:
             patch("ui.layout.stat_card"),
             patch("ui.layout.render_activity_graphs"),
             patch("ui.layout.render_trends_tab"),
-            patch("ui.layout.render_statistics_tab"),
             patch("ui.layout.render_health_data_tab"),
             patch("ui.layout.render_running_tab"),
             patch("ui.layout.render_workout_table"),
@@ -893,7 +891,6 @@ def test_render_body_defaults_tabs_to_summary_when_state_empty() -> None:
             patch("ui.layout.stat_card"),
             patch("ui.layout.render_activity_graphs"),
             patch("ui.layout.render_trends_tab"),
-            patch("ui.layout.render_statistics_tab"),
             patch("ui.layout.render_health_data_tab"),
             patch("ui.layout.render_running_tab"),
             patch("ui.layout.render_workout_table"),

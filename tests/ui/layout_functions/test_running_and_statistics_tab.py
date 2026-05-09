@@ -83,8 +83,8 @@ def test_render_running_tab_builds_scatter_data_from_workouts() -> None:
         state.selected_main_tab = original_selected_tab
 
 
-def test_render_statistics_tab_builds_heatmap_and_boxplot_from_workouts() -> None:
-    """Statistics tab should derive heat map and pace distribution from workout rows."""
+def test_render_statistics_tab_builds_heatmap_from_workouts() -> None:
+    """Health Data tab should derive the workout heat map from workout rows."""
     original_workouts: Any = state.workouts
     original_activity = state.selected_activity_type
     original_date_text = state.date_range_text
@@ -94,20 +94,16 @@ def test_render_statistics_tab_builds_heatmap_and_boxplot_from_workouts() -> Non
         state.workouts = _sample_workouts_manager()
         state.selected_activity_type = "All"
         state.date_range_text = ""
-        state.selected_main_tab = "statistics"
+        state.selected_main_tab = "health_data"
 
         with (
             patch("ui.statistics_tab.ui.row", return_value=DummyRow()),
             patch("ui.statistics_tab.render_heat_map_graph") as heatmap_mock,
-            patch("ui.statistics_tab.render_box_plot_graph") as box_mock,
         ):
             statistics_tab.render_statistics_tab.func()
 
         heatmap_values = heatmap_mock.call_args.args[3]
-        boxplot_values = box_mock.call_args.args[1]
         assert heatmap_values
-        assert "Running" in boxplot_values
-        assert len(boxplot_values["Running"]) == 2
         assert heatmap_mock.call_args.kwargs["x_axis_name"] == "Hour of day"
         assert heatmap_mock.call_args.kwargs["y_axis_name"] == "Day of week"
         assert heatmap_mock.call_args.args[2] == ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]

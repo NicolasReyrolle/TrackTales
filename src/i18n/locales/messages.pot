@@ -74,9 +74,6 @@ msgstr ""
 msgid "Trends"
 msgstr ""
 
-msgid "Statistics"
-msgstr ""
-
 msgid "Running"
 msgstr ""
 
@@ -233,12 +230,6 @@ msgstr ""
 msgid "Activity heat map (day/time)"
 msgstr ""
 
-msgid "Pace distribution by activity"
-msgstr ""
-
-msgid "All Activities"
-msgstr ""
-
 msgid "More workouts"
 msgstr ""
 
@@ -264,9 +255,6 @@ msgid "to"
 msgstr ""
 
 msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
-msgstr ""
-
-msgid "This chart compares pace distribution by activity type. Lower pace is faster; the box shows quartiles and median, and whiskers show min/max."
 msgstr ""
 
 msgid "Half-marathon"

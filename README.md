@@ -15,7 +15,7 @@ If you are contributing or maintaining the project, see [MAINTAINERS.md](MAINTAI
 - **Workout Extraction**: Focused on running workouts with detailed metrics (distance, duration, METs, heart rate, power, etc.).
 - **Visual Statistics**: Real-time summary of total activities, distance, duration, elevation, and calories with interactive charts (pie/rose charts for activity breakdown, bar charts with trend lines for time-based analysis).
 - **Interactive Charts**: Every chart supports zoom and pan (mouse scroll, pinch, or trackpad gesture). Click the ⛶ fullscreen button on any chart to open it in a maximized view with a range-slider for precise zoom control. Tooltips are rich HTML with bold labels and value+unit on each axis hover.
-- **Health Data Insights**: Dedicated Health Data tab with period-based trends for resting heart rate, body mass, VO2 max, **Critical Power (CP)**, and **W'**. Fast metrics load immediately and CP/W' fill in progressively in the background.
+- **Health Data Insights**: Health Data tab combines workout activity timing (day/hour heat map) with period-based trends for resting heart rate, body mass, VO2 max, **Critical Power (CP)**, and **W'**. Fast metrics load immediately and CP/W' fill in progressively in the background.
 - **Best Segments Tab**: Computes and displays best running segments from 100m to 100km with expandable runner-up rows, formatted durations, localized labels, and segment power confidence.
 - **Robust Segment Distance Model**: Segment search uses GPX speed integration with safeguards for export edge cases (window clipping, final unpaired pause trimming, strict reversal-only trace splits, and realistic workout-level distance normalization).
 - **Activity Filtering**: Filter your workout data by activity type (Running, Cycling, Walking, etc.).
@@ -76,7 +76,7 @@ python -m nicegui src.apple_health_analyzer
 1. Click **Browse** to select your Apple Health `export.zip`.
 1. Click **Load** to parse the data.
 1. View the statistics in the **Overview** tab.
-1. Explore your data in the **Activities** tab (pie/rose charts grouped by activity type), **Trends** tab (weekly/monthly/quarterly/yearly bar charts with moving average trend lines), **Health Data** tab (line charts for resting heart rate, body mass, VO2 max, CP, and W'), and **Best Segments** tab (standard race distances with expandable runner-ups).
+1. Explore your data in the **Activities** tab (pie/rose charts grouped by activity type), **Trends** tab (weekly/monthly/quarterly/yearly bar charts with moving average trend lines), **Health Data** tab (workout heat map plus line charts for resting heart rate, body mass, VO2 max, CP, and W'), and **Running** tab (distance/elevation pace analysis with best segments).
 1. In the **Activities** table, click the **Details** action to open the workout modal (overview, activity-specific metrics, and GPS splits when route data is available).
 1. Use the **Activity filter** in the left drawer to focus on specific workout types.
 1. Use the **Date range picker** to analyze specific time periods.

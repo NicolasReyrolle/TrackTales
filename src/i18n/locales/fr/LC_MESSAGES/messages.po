@@ -79,9 +79,6 @@ msgstr "Vue d'ensemble"
 msgid "Trends"
 msgstr "Tendances"
 
-msgid "Statistics"
-msgstr "Statistiques"
-
 msgid "Running"
 msgstr "Course à pied"
 
@@ -238,12 +235,6 @@ msgstr "Dénivelé vs allure"
 msgid "Activity heat map (day/time)"
 msgstr "Carte de chaleur des activités (jour/heure)"
 
-msgid "Pace distribution by activity"
-msgstr "Distribution de l'allure par activité"
-
-msgid "All Activities"
-msgstr "Toutes les activités"
-
 msgid "More workouts"
 msgstr "Plus d'entraînements"
 
@@ -270,9 +261,6 @@ msgstr "à"
 
 msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
 msgstr "Cette carte de chaleur montre quand les séances ont lieu. L'axe X représente l'heure de la journée, l'axe Y le jour de la semaine, et l'intensité de la couleur représente le nombre de séances."
-
-msgid "This chart compares pace distribution by activity type. Lower pace is faster; the box shows quartiles and median, and whiskers show min/max."
-msgstr "Ce graphique compare la distribution de l'allure par type d'activité. Une allure plus basse est plus rapide ; la boîte montre les quartiles et la médiane, et les moustaches montrent min/max."
 
 msgid "Half-marathon"
 msgstr "Semi-marathon"

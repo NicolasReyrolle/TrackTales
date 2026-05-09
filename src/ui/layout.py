@@ -77,7 +77,6 @@ _MAIN_TABS = {
     "summary",
     "activities",
     "trends",
-    "statistics",
     "running",
     "workouts",
     "health_data",
@@ -499,11 +498,10 @@ def refresh_data() -> None:
 
     render_activity_graphs.refresh()
     render_trends_graphs.refresh()
+    render_statistics_tab.refresh()
     render_health_data_tab.refresh()
     if state.selected_main_tab == "running":
         render_running_tab.refresh()
-    if state.selected_main_tab == "statistics":
-        render_statistics_tab.refresh()
     render_best_segments_tab.refresh()
     render_distance_range_selector.refresh()
     render_duration_range_selector.refresh()
@@ -565,8 +563,9 @@ async def _refresh_selected_tab_content(tab_name: str) -> None:
         return
     if tab_name == "running":
         render_running_tab.refresh()
-    elif tab_name == "statistics":
+    elif tab_name == "health_data":
         render_statistics_tab.refresh()
+        render_health_data_tab.refresh()
 
 
 def render_left_drawer() -> None:
@@ -852,8 +851,6 @@ def render_body() -> None:
             schedule_selected_tab_refresh("running")
             schedule_best_segments_load()
             schedule_health_data_load()
-        elif tab_name == "statistics":
-            schedule_selected_tab_refresh("statistics")
         elif tab_name == "health_data":
             schedule_health_data_load()
 
@@ -861,7 +858,6 @@ def render_body() -> None:
         ui.tab("summary", t("Overview"))
         ui.tab("activities", t("Activities")).bind_enabled_from(state, "file_loaded")
         ui.tab("trends", t("Trends")).bind_enabled_from(state, "file_loaded")
-        ui.tab("statistics", t("Statistics")).bind_enabled_from(state, "file_loaded")
         ui.tab("running", t("Running")).bind_enabled_from(state, "file_loaded")
         ui.tab("workouts", t("Workouts")).bind_enabled_from(state, "file_loaded")
         ui.tab("health_data", t("Health Data")).bind_enabled_from(state, "file_loaded")
@@ -986,9 +982,6 @@ def render_body() -> None:
         with ui.tab_panel("trends"):
             render_trends_tab()
 
-        with ui.tab_panel("statistics"):
-            render_statistics_tab()
-
         with ui.tab_panel("running"):
             render_running_tab()
 
@@ -999,4 +992,5 @@ def render_body() -> None:
             render_workout_table()
 
         with ui.tab_panel("health_data"):
+            render_statistics_tab()
             render_health_data_tab()

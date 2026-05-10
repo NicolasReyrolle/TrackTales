@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime
+
 import pandas as pd
 from nicegui import ui
 
@@ -64,10 +66,14 @@ def _build_scatter_points(
         filtered["elevation_converted"] = pd.Series(0.0, index=filtered.index)
 
     language_code = get_language()
+
+    def _format_start_date_label(start_date: object) -> str:
+        if isinstance(start_date, (datetime, date)):
+            return format_date_label(start_date, language_code)
+        return str(start_date)
+
     date_labels = [
-        format_date_label(start_date, language_code)
-        if hasattr(start_date, "strftime")
-        else str(start_date)
+        _format_start_date_label(start_date)
         for start_date in filtered.get("startDate", pd.Series("", index=filtered.index))
     ]
     workout_indexes = filtered.index.tolist()

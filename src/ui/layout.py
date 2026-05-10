@@ -771,7 +771,8 @@ def load_workouts_from_file(
 
 async def load_file() -> None:
     """Load and parse the selected Apple Health export file."""
-    if state.input_file.value == "":
+    file_path = state.input_file.value
+    if not isinstance(file_path, str) or file_path == "":
         ui.notify(t("Please select an Apple Health export file first."))
         return
 
@@ -797,7 +798,7 @@ async def load_file() -> None:
     try:
         workouts, activity_options, records_by_type = await asyncio.to_thread(
             load_workouts_from_file,
-            state.input_file.value,
+            file_path,
             progress_callback,
         )
         state.workouts = workouts
@@ -813,6 +814,18 @@ async def load_file() -> None:
     finally:
         state.loading_status = ""
         state.loading = False
+
+
+def _handle_main_tab_change(tab_name: str) -> None:
+    """Apply side effects for main-tab selection."""
+    state.selected_main_tab = tab_name
+    if tab_name == "running":
+        schedule_selected_tab_refresh("running")
+        schedule_best_segments_load()
+        schedule_health_data_load()
+    elif tab_name == "health_data":
+        render_health_data_tab.refresh()
+        schedule_health_data_load()
 
 
 def render_body() -> None:
@@ -841,14 +854,7 @@ def render_body() -> None:
     def _on_tab_change(event: Any) -> None:
         value = getattr(event, "value", None)
         tab_name = str(getattr(value, "name", value)) if value is not None else ""
-        state.selected_main_tab = tab_name
-        if tab_name == "running":
-            schedule_selected_tab_refresh("running")
-            schedule_best_segments_load()
-            schedule_health_data_load()
-        elif tab_name == "health_data":
-            render_health_data_tab.refresh()
-            schedule_health_data_load()
+        _handle_main_tab_change(tab_name)
 
     with ui.tabs(on_change=_on_tab_change).classes(TABS_FULL_CLASSES) as tabs:
         ui.tab("summary", t("Overview"))

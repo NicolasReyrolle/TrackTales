@@ -554,7 +554,17 @@ class ExportParser:
                 for _, elem in iterparse(route_file, events=("end",)):
                     if elem.tag == "{http://www.topografix.com/GPX/1/1}trkpt":
                         point_data = self._extract_gpx_point_data(elem)
-                        points.append(self._create_route_point(*point_data))
+                        try:
+                            points.append(self._create_route_point(*point_data))
+                        except (TypeError, ValueError) as exc:
+                            # Missing lat/lon is already reported in _extract_gpx_point_data.
+                            if point_data[0] and point_data[1]:
+                                _logger.debug(
+                                    "Skipping malformed GPX trackpoint for %s (error: %s): %s",
+                                    route_path,
+                                    exc,
+                                    elem.attrib,
+                                )
                         elem.clear()
                 return WorkoutRoute(points=points)
         except KeyError:
@@ -622,6 +632,27 @@ class ExportParser:
         return WorkoutRoute(points=clipped_points)
 
     @staticmethod
+    def _should_skip_merged_point(last_point: RoutePoint | None, point: RoutePoint) -> bool:
+        """Return whether a point should be skipped while merging route parts."""
+        if last_point is None:
+            return False
+
+        if point.time < last_point.time:
+            # Avoid re-introducing overlap before the previous window end.
+            _logger.debug(
+                "Skipping overlapping GPX point during route merge: %s < %s",
+                point.time,
+                last_point.time,
+            )
+            return True
+
+        if point == last_point:
+            # De-duplicate exact boundary points across adjacent windows.
+            return True
+
+        return False
+
+    @staticmethod
     def _merge_route_parts(route_parts: list[WorkoutRoute]) -> WorkoutRoute | None:
         """Merge route parts as a compatibility route while preserving part boundaries.
 
@@ -633,13 +664,11 @@ class ExportParser:
 
         merged_points: list[RoutePoint] = []
         for route_part in route_parts:
-            if not route_part.points:
-                continue
-
-            if merged_points and merged_points[-1] == route_part.points[0]:
-                merged_points.extend(route_part.points[1:])
-            else:
-                merged_points.extend(route_part.points)
+            for point in route_part.points:
+                last_point = merged_points[-1] if merged_points else None
+                if ExportParser._should_skip_merged_point(last_point, point):
+                    continue
+                merged_points.append(point)
 
         return WorkoutRoute(points=merged_points) if merged_points else None
 
@@ -686,12 +715,21 @@ class ExportParser:
             return
 
         existing_parts = record.get("route_parts")
-        if isinstance(existing_parts, list):
-            existing_parts.append(route_part)
+        route_parts: list[WorkoutRoute]
+        if isinstance(existing_parts, list) and all(
+            isinstance(existing_part, WorkoutRoute) for existing_part in existing_parts
+        ):
             route_parts = existing_parts
         else:
-            route_parts = [route_part]
+            route_parts = []
+            if isinstance(existing_parts, list):
+                route_parts = [
+                    existing_part
+                    for existing_part in existing_parts
+                    if isinstance(existing_part, WorkoutRoute)
+                ]
             record["route_parts"] = route_parts
+        route_parts.append(route_part)
 
         merged_route = self._merge_route_parts(route_parts)
         if merged_route is not None:

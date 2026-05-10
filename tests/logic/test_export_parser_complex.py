@@ -385,9 +385,76 @@ class TestLoadRoute:
 
         parser = ExportParser()
         with ZipFile(zip_path, "r") as zf:
-            # This should raise a ValueError when trying to parse empty time string
-            with pytest.raises(ValueError):
-                parser._load_route(zf, "/workout-routes/incomplete_route.gpx")
+            result = parser._load_route(zf, "/workout-routes/incomplete_route.gpx")
+
+        assert result is not None
+        assert result.points == []
+
+    def test_load_route_logs_malformed_trackpoint_error_details(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Malformed trackpoints should include error details in debug logs."""
+        zip_path = tmp_path / "route_export.zip"
+        gpx_content = b"""<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
+    <trk>
+        <trkseg>
+            <trkpt lat="48.8566" lon="2.3522">
+                <time>not-a-time</time>
+            </trkpt>
+        </trkseg>
+    </trk>
+</gpx>
+"""
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/workout-routes/malformed_route.gpx", gpx_content)
+
+        parser = ExportParser()
+        with ZipFile(zip_path, "r") as zf, caplog.at_level("DEBUG"):
+            result = parser._load_route(zf, "/workout-routes/malformed_route.gpx")
+
+        assert result is not None
+        assert result.points == []
+        assert any(
+            "Skipping malformed GPX trackpoint for /workout-routes/malformed_route.gpx (error:"
+            in record.message
+            for record in caplog.records
+        )
+
+    def test_load_route_missing_lat_lon_does_not_emit_duplicate_malformed_log(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Missing coordinates should only emit the dedicated missing-lat/lon log."""
+        zip_path = tmp_path / "route_export.zip"
+        gpx_content = b"""<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
+    <trk>
+        <trkseg>
+            <trkpt lat="" lon="">
+                <time>2024-01-01T10:00:00Z</time>
+            </trkpt>
+        </trkseg>
+    </trk>
+</gpx>
+"""
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/workout-routes/missing_coords_route.gpx", gpx_content)
+
+        parser = ExportParser()
+        with ZipFile(zip_path, "r") as zf, caplog.at_level("DEBUG"):
+            result = parser._load_route(zf, "/workout-routes/missing_coords_route.gpx")
+
+        assert result is not None
+        assert result.points == []
+        assert any(
+            "Skipping GPX trackpoint with missing latitude/longitude" in record.message
+            for record in caplog.records
+        )
+        assert not any(
+            "Skipping malformed GPX trackpoint for /workout-routes/missing_coords_route.gpx"
+            in record.message
+            for record in caplog.records
+        )
 
 
 class TestProcessWorkoutRoute:
@@ -550,3 +617,44 @@ class TestClipRouteToWindow:
         times_second = route.sorted_times()
 
         assert times_first is times_second
+
+
+class TestMergeRouteParts:
+    """Tests for ExportParser._merge_route_parts."""
+
+    @staticmethod
+    def _make_point(minute: int, latitude: float, longitude: float) -> RoutePoint:
+        return RoutePoint(
+            time=datetime.fromisoformat(f"2024-01-01T10:{minute:02d}:00+00:00"),
+            latitude=latitude,
+            longitude=longitude,
+            altitude=0.0,
+        )
+
+    def test_merge_skips_overlapping_prefix_points(self) -> None:
+        """Merged route should not duplicate overlapping points across parts."""
+        first_part = WorkoutRoute(
+            points=[
+                self._make_point(0, 48.0, 2.0),
+                self._make_point(1, 48.1, 2.1),
+                self._make_point(2, 48.2, 2.2),
+            ]
+        )
+        second_part = WorkoutRoute(
+            points=[
+                self._make_point(1, 48.1, 2.1),
+                self._make_point(2, 48.2, 2.2),
+                self._make_point(3, 48.3, 2.3),
+            ]
+        )
+
+        merged = ExportParser._merge_route_parts([first_part, second_part])
+
+        assert merged is not None
+        merged_times = [point.time for point in merged.points]
+        assert merged_times == [
+            datetime.fromisoformat("2024-01-01T10:00:00+00:00"),
+            datetime.fromisoformat("2024-01-01T10:01:00+00:00"),
+            datetime.fromisoformat("2024-01-01T10:02:00+00:00"),
+            datetime.fromisoformat("2024-01-01T10:03:00+00:00"),
+        ]

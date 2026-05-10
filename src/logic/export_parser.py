@@ -629,6 +629,27 @@ class ExportParser:
         return WorkoutRoute(points=clipped_points)
 
     @staticmethod
+    def _should_skip_merged_point(last_point: RoutePoint | None, point: RoutePoint) -> bool:
+        """Return whether a point should be skipped while merging route parts."""
+        if last_point is None:
+            return False
+
+        if point.time < last_point.time:
+            # Avoid re-introducing overlap before the previous window end.
+            _logger.debug(
+                "Skipping overlapping GPX point during route merge: %s < %s",
+                point.time,
+                last_point.time,
+            )
+            return True
+
+        if point == last_point:
+            # De-duplicate exact boundary points across adjacent windows.
+            return True
+
+        return False
+
+    @staticmethod
     def _merge_route_parts(route_parts: list[WorkoutRoute]) -> WorkoutRoute | None:
         """Merge route parts as a compatibility route while preserving part boundaries.
 
@@ -642,16 +663,7 @@ class ExportParser:
         for route_part in route_parts:
             for point in route_part.points:
                 last_point = merged_points[-1] if merged_points else None
-                if last_point is not None and point.time < last_point.time:
-                    # Avoid re-introducing overlap before the previous window end.
-                    _logger.debug(
-                        "Skipping overlapping GPX point during route merge: %s < %s",
-                        point.time,
-                        last_point.time,
-                    )
-                    continue
-                if last_point is not None and point == last_point:
-                    # De-duplicate exact boundary points across adjacent windows.
+                if ExportParser._should_skip_merged_point(last_point, point):
                     continue
                 merged_points.append(point)
 

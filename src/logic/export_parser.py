@@ -641,10 +641,16 @@ class ExportParser:
         merged_points: list[RoutePoint] = []
         for route_part in route_parts:
             for point in route_part.points:
-                if merged_points and point.time < merged_points[-1].time:
+                last_point = merged_points[-1] if merged_points else None
+                if last_point is not None and point.time < last_point.time:
                     # Avoid re-introducing overlap before the previous window end.
+                    _logger.debug(
+                        "Skipping overlapping GPX point during route merge: %s < %s",
+                        point.time,
+                        last_point.time,
+                    )
                     continue
-                if merged_points and point == merged_points[-1]:
+                if last_point is not None and point == last_point:
                     # De-duplicate exact boundary points across adjacent windows.
                     continue
                 merged_points.append(point)
@@ -694,20 +700,19 @@ class ExportParser:
             return
 
         existing_parts = record.get("route_parts")
+        route_parts: list[WorkoutRoute]
         if isinstance(existing_parts, list) and all(
             isinstance(existing_part, WorkoutRoute) for existing_part in existing_parts
         ):
             route_parts = existing_parts
         else:
-            route_parts = (
-                [
+            route_parts = []
+            if isinstance(existing_parts, list):
+                route_parts = [
                     existing_part
                     for existing_part in existing_parts
                     if isinstance(existing_part, WorkoutRoute)
                 ]
-                if isinstance(existing_parts, list)
-                else []
-            )
             record["route_parts"] = route_parts
         route_parts.append(route_part)
 

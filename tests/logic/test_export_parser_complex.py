@@ -557,11 +557,11 @@ class TestMergeRouteParts:
     """Tests for ExportParser._merge_route_parts."""
 
     @staticmethod
-    def _make_point(offset_minutes: int, latitude: float) -> RoutePoint:
+    def _make_point(minute: int, latitude: float, longitude: float) -> RoutePoint:
         return RoutePoint(
-            time=datetime.fromisoformat(f"2024-01-01T10:{offset_minutes:02d}:00+00:00"),
+            time=datetime.fromisoformat(f"2024-01-01T10:{minute:02d}:00+00:00"),
             latitude=latitude,
-            longitude=latitude,
+            longitude=longitude,
             altitude=0.0,
         )
 
@@ -569,16 +569,16 @@ class TestMergeRouteParts:
         """Merged route should not duplicate overlapping points across parts."""
         first_part = WorkoutRoute(
             points=[
-                self._make_point(0, 0.0),
-                self._make_point(1, 1.0),
-                self._make_point(2, 2.0),
+                self._make_point(0, 48.0, 2.0),
+                self._make_point(1, 48.1, 2.1),
+                self._make_point(2, 48.2, 2.2),
             ]
         )
         second_part = WorkoutRoute(
             points=[
-                self._make_point(1, 1.0),
-                self._make_point(2, 2.0),
-                self._make_point(3, 3.0),
+                self._make_point(1, 48.1, 2.1),
+                self._make_point(2, 48.2, 2.2),
+                self._make_point(3, 48.3, 2.3),
             ]
         )
 

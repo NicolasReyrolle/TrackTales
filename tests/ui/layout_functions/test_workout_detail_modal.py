@@ -233,7 +233,12 @@ class TestCreateWorkoutDetailModal:
         )
         rows = [{**_make_row(idx=0), "route": route}]
         tabs_stub = _DummyElement()
-        route_refresh_calls: list[dict[str, Any]] = []
+        route_refresh_row_calls: list[dict[str, Any]] = []
+
+        def capture_route_refresh(
+            _no_route_label: Any, _route_map: Any, row: dict[str, Any]
+        ) -> None:
+            route_refresh_row_calls.append(row)
 
         with ExitStack() as stack:
             for p in _all_patches(tabs_stub=tabs_stub):
@@ -241,16 +246,14 @@ class TestCreateWorkoutDetailModal:
             stack.enter_context(
                 patch(
                     "ui.workout_detail_modal._do_refresh_route_tab",
-                    side_effect=lambda _no_route_label, _route_map, row: route_refresh_calls.append(
-                        row
-                    ),
+                    side_effect=capture_route_refresh,
                 )
             )
             fn = wdm.create_workout_detail_modal(rows)
             fn(0)
-            assert not route_refresh_calls
+            assert not route_refresh_row_calls
             tabs_stub.fire_value_change("route")
-            assert route_refresh_calls
+            assert route_refresh_row_calls
 
 
 class TestActivityTabSection:

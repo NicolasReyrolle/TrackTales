@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import patch
-from uuid import uuid4
 
 
 def _make_row(
@@ -63,11 +62,14 @@ class _DummyEvent:
 class _DummyElement:
     """Generic stub for NiceGUI UI elements; supports context-manager and chaining."""
 
+    _counter = 0
+
     def __init__(self, *_args: Any, **_kwargs: Any) -> None:
         self._visible = True
         self._enabled = True
         self._text = ""
-        self.id = str(uuid4())
+        type(self)._counter += 1
+        self.id = f"dummy-layer-{type(self)._counter}"
         self._props_added: list[str] = []
         self._props_removed: list[str] = []
         self.rows: list[Any] = []

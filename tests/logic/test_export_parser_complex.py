@@ -385,9 +385,10 @@ class TestLoadRoute:
 
         parser = ExportParser()
         with ZipFile(zip_path, "r") as zf:
-            # This should raise a ValueError when trying to parse empty time string
-            with pytest.raises(ValueError):
-                parser._load_route(zf, "/workout-routes/incomplete_route.gpx")
+            result = parser._load_route(zf, "/workout-routes/incomplete_route.gpx")
+
+        assert result is not None
+        assert result.points == []
 
 
 class TestProcessWorkoutRoute:
@@ -550,3 +551,44 @@ class TestClipRouteToWindow:
         times_second = route.sorted_times()
 
         assert times_first is times_second
+
+
+class TestMergeRouteParts:
+    """Tests for ExportParser._merge_route_parts."""
+
+    @staticmethod
+    def _make_point(offset_minutes: int, latitude: float) -> RoutePoint:
+        return RoutePoint(
+            time=datetime.fromisoformat(f"2024-01-01T10:{offset_minutes:02d}:00+00:00"),
+            latitude=latitude,
+            longitude=latitude,
+            altitude=0.0,
+        )
+
+    def test_merge_skips_overlapping_prefix_points(self) -> None:
+        """Merged route should not duplicate overlapping points across parts."""
+        first_part = WorkoutRoute(
+            points=[
+                self._make_point(0, 0.0),
+                self._make_point(1, 1.0),
+                self._make_point(2, 2.0),
+            ]
+        )
+        second_part = WorkoutRoute(
+            points=[
+                self._make_point(1, 1.0),
+                self._make_point(2, 2.0),
+                self._make_point(3, 3.0),
+            ]
+        )
+
+        merged = ExportParser._merge_route_parts([first_part, second_part])
+
+        assert merged is not None
+        merged_times = [point.time for point in merged.points]
+        assert merged_times == [
+            datetime.fromisoformat("2024-01-01T10:00:00+00:00"),
+            datetime.fromisoformat("2024-01-01T10:01:00+00:00"),
+            datetime.fromisoformat("2024-01-01T10:02:00+00:00"),
+            datetime.fromisoformat("2024-01-01T10:03:00+00:00"),
+        ]

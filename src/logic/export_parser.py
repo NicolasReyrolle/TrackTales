@@ -554,7 +554,14 @@ class ExportParser:
                 for _, elem in iterparse(route_file, events=("end",)):
                     if elem.tag == "{http://www.topografix.com/GPX/1/1}trkpt":
                         point_data = self._extract_gpx_point_data(elem)
-                        points.append(self._create_route_point(*point_data))
+                        try:
+                            points.append(self._create_route_point(*point_data))
+                        except (TypeError, ValueError):
+                            _logger.debug(
+                                "Skipping malformed GPX trackpoint for %s: %s",
+                                route_path,
+                                elem.attrib,
+                            )
                         elem.clear()
                 return WorkoutRoute(points=points)
         except KeyError:
@@ -633,13 +640,14 @@ class ExportParser:
 
         merged_points: list[RoutePoint] = []
         for route_part in route_parts:
-            if not route_part.points:
-                continue
-
-            if merged_points and merged_points[-1] == route_part.points[0]:
-                merged_points.extend(route_part.points[1:])
-            else:
-                merged_points.extend(route_part.points)
+            for point in route_part.points:
+                if merged_points and point.time < merged_points[-1].time:
+                    # Avoid re-introducing overlap before the previous window end.
+                    continue
+                if merged_points and point == merged_points[-1]:
+                    # De-duplicate exact boundary points across adjacent windows.
+                    continue
+                merged_points.append(point)
 
         return WorkoutRoute(points=merged_points) if merged_points else None
 
@@ -686,12 +694,22 @@ class ExportParser:
             return
 
         existing_parts = record.get("route_parts")
-        if isinstance(existing_parts, list):
-            existing_parts.append(route_part)
+        if isinstance(existing_parts, list) and all(
+            isinstance(existing_part, WorkoutRoute) for existing_part in existing_parts
+        ):
             route_parts = existing_parts
         else:
-            route_parts = [route_part]
+            route_parts = (
+                [
+                    existing_part
+                    for existing_part in existing_parts
+                    if isinstance(existing_part, WorkoutRoute)
+                ]
+                if isinstance(existing_parts, list)
+                else []
+            )
             record["route_parts"] = route_parts
+        route_parts.append(route_part)
 
         merged_route = self._merge_route_parts(route_parts)
         if merged_route is not None:

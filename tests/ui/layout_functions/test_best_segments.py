@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import ExitStack
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -742,8 +743,8 @@ class TestBestSegmentsHelpers:
             state.best_segments_loaded = original_loaded
 
 
-def test_render_body_tab_change_to_best_segments_schedules_async_load() -> None:
-    """Selecting the best-segments tab should schedule async loading."""
+def test_render_body_tab_change_to_running_schedules_async_load() -> None:
+    """Selecting the running tab should schedule async loading."""
     tabs_created: list[DummyTabs] = []
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={"input_file_path": ""}))
 
@@ -755,28 +756,28 @@ def test_render_body_tab_change_to_best_segments_schedules_async_load() -> None:
     def _tab_factory(name: str, _label: str) -> DummyTab:
         return DummyTab(name)
 
-    with (
-        patch("ui.layout.ui.row", return_value=DummyContext()),
-        patch("ui.layout.ui.input", return_value=DummyComponent()),
-        patch("ui.layout.ui.button", return_value=DummyComponent()),
-        patch("ui.layout.ui.spinner", return_value=DummyComponent()),
-        patch("ui.layout.ui.label", return_value=DummyComponent()),
-        patch("ui.layout.app", fake_app),
-        patch("ui.layout.ui.tabs", side_effect=_tabs_factory),
-        patch("ui.layout.ui.tab", side_effect=_tab_factory),
-        patch("ui.layout.ui.tab_panels", return_value=DummyContext()),
-        patch("ui.layout.ui.tab_panel", return_value=DummyContext()),
-        patch("ui.layout.stat_card"),
-        patch("ui.layout.render_activity_graphs"),
-        patch("ui.layout.render_trends_tab"),
-        patch("ui.layout.render_health_data_tab"),
-        patch("ui.layout.render_best_segments_tab"),
-        patch("ui.layout.load_best_segments_data", new=AsyncMock()),
-        patch("ui.layout.render_workout_table"),
-        patch("ui.layout.render_distance_range_selector"),
-        patch("ui.layout.render_duration_range_selector"),
-        patch("ui.layout.asyncio.create_task") as create_task_mock,
-    ):
+    with ExitStack() as stack:
+        stack.enter_context(patch("ui.layout.ui.row", return_value=DummyContext()))
+        stack.enter_context(patch("ui.layout.ui.input", return_value=DummyComponent()))
+        stack.enter_context(patch("ui.layout.ui.button", return_value=DummyComponent()))
+        stack.enter_context(patch("ui.layout.ui.spinner", return_value=DummyComponent()))
+        stack.enter_context(patch("ui.layout.ui.label", return_value=DummyComponent()))
+        stack.enter_context(patch("ui.layout.app", fake_app))
+        stack.enter_context(patch("ui.layout.ui.tabs", side_effect=_tabs_factory))
+        stack.enter_context(patch("ui.layout.ui.tab", side_effect=_tab_factory))
+        stack.enter_context(patch("ui.layout.ui.tab_panels", return_value=DummyContext()))
+        stack.enter_context(patch("ui.layout.ui.tab_panel", return_value=DummyContext()))
+        stack.enter_context(patch("ui.layout.stat_card"))
+        stack.enter_context(patch("ui.layout.render_activity_graphs"))
+        stack.enter_context(patch("ui.layout.render_trends_tab"))
+        stack.enter_context(patch("ui.layout.render_health_data_tab"))
+        stack.enter_context(patch("ui.layout.render_running_tab"))
+        stack.enter_context(patch("ui.layout.load_best_segments_data", new=AsyncMock()))
+        stack.enter_context(patch("ui.layout.load_health_data", new=AsyncMock()))
+        stack.enter_context(patch("ui.layout.render_workout_table"))
+        stack.enter_context(patch("ui.layout.render_distance_range_selector"))
+        stack.enter_context(patch("ui.layout.render_duration_range_selector"))
+        create_task_mock = stack.enter_context(patch("ui.layout.asyncio.create_task"))
 
         def _close_coro(coro: Any) -> None:
             coro.close()
@@ -788,9 +789,10 @@ def test_render_body_tab_change_to_best_segments_schedules_async_load() -> None:
 
         on_change = tabs_created[0].on_change
         assert on_change is not None
-        on_change(SimpleNamespace(value=SimpleNamespace(name="best_segments")))
+        on_change(SimpleNamespace(value=SimpleNamespace(name="running")))
 
-    create_task_mock.assert_called_once()
+    # Running tab schedules tab refresh plus best-segments and CP/W' loaders.
+    assert create_task_mock.call_count == 3
 
 
 def _make_render_body_stubs() -> tuple[list[DummyTabs], list[dict[str, Any]], SimpleNamespace]:
@@ -851,7 +853,7 @@ def test_render_body_initializes_tabs_from_state() -> None:
             patch("ui.layout.render_activity_graphs"),
             patch("ui.layout.render_trends_tab"),
             patch("ui.layout.render_health_data_tab"),
-            patch("ui.layout.render_best_segments_tab"),
+            patch("ui.layout.render_running_tab"),
             patch("ui.layout.render_workout_table"),
             patch("ui.layout.render_distance_range_selector"),
             patch("ui.layout.render_duration_range_selector"),
@@ -890,7 +892,7 @@ def test_render_body_defaults_tabs_to_summary_when_state_empty() -> None:
             patch("ui.layout.render_activity_graphs"),
             patch("ui.layout.render_trends_tab"),
             patch("ui.layout.render_health_data_tab"),
-            patch("ui.layout.render_best_segments_tab"),
+            patch("ui.layout.render_running_tab"),
             patch("ui.layout.render_workout_table"),
             patch("ui.layout.render_distance_range_selector"),
             patch("ui.layout.render_duration_range_selector"),

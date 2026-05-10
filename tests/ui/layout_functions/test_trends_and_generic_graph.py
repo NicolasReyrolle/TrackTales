@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+import json
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 from app_state import state
@@ -448,3 +449,323 @@ class TestChartsModuleComponents:
         # dataZoom is not added to pie charts (it has no effect on them)
         assert "dataZoom" not in fullscreen_config
         assert "dataZoom" not in echart_calls[1]
+
+    def test_render_scatter_graph_builds_scatter_series(self) -> None:
+        """render_scatter_graph should emit an ECharts scatter series."""
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_scatter_graph(
+                "Distance vs Pace",
+                [(5.0, 4.5), (10.0, 5.1)],
+                "Distance",
+                "Pace",
+                "km",
+                "min/km",
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        assert chart_options["backgroundColor"] == "transparent"
+        assert chart_options["series"][0]["type"] == "scatter"
+        assert chart_options["series"][0]["data"] == [[5.0, 4.5], [10.0, 5.1]]
+        assert chart_options["series"][1]["type"] == "line"
+        assert chart_options["series"][1]["data"]
+        assert "<br" not in chart_options["tooltip"][":formatter"]
+        assert "\n" in chart_options["tooltip"][":formatter"]
+
+    def test_render_scatter_graph_supports_date_tooltip_and_click_handler(self) -> None:
+        """Metadata points should include date in tooltip and expose click callbacks."""
+
+        class _ChartProbe(DummyComponent):
+            def __init__(self) -> None:
+                self.events: dict[str, Any] = {}
+
+            def on(self, event: str, handler: Any, **_kwargs: Any) -> _ChartProbe:
+                self.events[event] = handler
+                return self
+
+        chart_probe = _ChartProbe()
+        click_callback = MagicMock()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=chart_probe) as echart_mock,
+        ):
+            charts.render_scatter_graph(
+                "Distance vs Pace",
+                [(5.0, 4.5, "01/06/2025", 12)],
+                "Distance",
+                "Pace",
+                "km",
+                "min/km",
+                date_label="Date",
+                on_point_click=click_callback,
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        assert chart_options["series"][0]["data"] == [[5.0, 4.5, "01/06/2025", 12]]
+        assert "Date" in chart_options["tooltip"][":formatter"]
+        assert "<br" not in chart_options["tooltip"][":formatter"]
+        assert "click" in chart_probe.events
+        chart_probe.events["click"](MagicMock(args={"data": [5.0, 4.5, "01/06/2025", 12]}))
+        click_callback.assert_called_once_with(12)
+        click_callback.reset_mock()
+        chart_probe.events["click"](MagicMock(args={"dataIndex": 0}))
+        click_callback.assert_called_once_with(12)
+        click_callback.reset_mock()
+        chart_probe.events["click"](MagicMock(args={"dataIndex": "0"}))
+        click_callback.assert_called_once_with(12)
+        click_callback.reset_mock()
+        chart_probe.events["click"](MagicMock(args={"dataIndex": 0.0}))
+        click_callback.assert_called_once_with(12)
+        click_callback.reset_mock()
+        chart_probe.events["click"](MagicMock(args=[{"dataIndexInside": 0}]))
+        click_callback.assert_called_once_with(12)
+
+    def test_render_scatter_graph_keeps_trendline_when_x_values_are_constant(self) -> None:
+        """Trendline should still render as a horizontal guide for constant X values."""
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_scatter_graph(
+                "Elevation vs Pace",
+                [(0.0, 5.0), (0.0, 4.8), (0.0, 5.2)],
+                "Elevation",
+                "Pace",
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        trend_data = chart_options["series"][1]["data"]
+        assert len(trend_data) == 2
+        assert trend_data[0][1] == trend_data[1][1]
+
+    def test_scatter_helpers_cover_uncommon_branches(self) -> None:
+        """Scatter helper utilities should handle invalid values and nested click payloads."""
+        assert charts._to_float("not-a-number") is None
+        assert charts._to_float(None) is None
+        assert charts._build_scatter_trend_data([[1.0, "invalid"], [2.0, 4.0]]) == []
+        assert charts._extract_scatter_click_value("invalid") is None
+        assert charts._extract_scatter_click_value({"data": {"value": [1, 2, 3, 9]}}) == [
+            1,
+            2,
+            3,
+            9,
+        ]
+        formatter = charts._build_scatter_tooltip_formatter(
+            includes_metadata=True,
+            x_axis_label="L'allure",
+            y_axis_label="Pace\\speed",
+            value_suffix_x=" km\\h",
+            value_suffix_y=" min/km",
+            date_label="Date d'activité",
+        )
+        assert json.dumps("L'allure: ") in formatter
+        assert json.dumps("\nPace\\speed: ") in formatter
+        assert json.dumps(" km\\h") in formatter
+        assert json.dumps("\nDate d'activité: ") in formatter
+
+    def test_build_chart_configs_creates_card_and_fullscreen_variants(self) -> None:
+        """Shared chart-config builder should apply card and fullscreen zoom/toolbox settings."""
+        card, fullscreen = charts._build_chart_configs({"series": []})
+        assert card["dataZoom"] == [{"type": "inside"}]
+        assert fullscreen["dataZoom"] == [{"type": "inside"}, {"type": "slider"}]
+        card_toolbox = cast(dict[str, Any], card["toolbox"])
+        fullscreen_toolbox = cast(dict[str, Any], fullscreen["toolbox"])
+        assert "restore" not in cast(dict[str, Any], card_toolbox["feature"])
+        assert "restore" in cast(dict[str, Any], fullscreen_toolbox["feature"])
+
+    def test_render_heat_map_graph_builds_heatmap_series(self) -> None:
+        """render_heat_map_graph should build indexed heatmap coordinates."""
+        echart_calls: list[dict[str, Any]] = []
+
+        def _capture_echart(config: dict[str, Any], *_args: Any, **_kwargs: Any) -> DummyComponent:
+            echart_calls.append(config)
+            return DummyComponent()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", side_effect=_capture_echart),
+        ):
+            charts.render_heat_map_graph(
+                "Activity heat map (day/time)",
+                ["0", "1"],
+                ["Mon", "Tue"],
+                [(0, 0, 2), (1, 1, 4)],
+                x_axis_name="Hour of day",
+                y_axis_name="Day of week",
+                value_label="Workouts",
+                value_label_singular="workout",
+                value_label_plural="workouts",
+                fullscreen_y_labels=["Monday", "Tuesday"],
+            )
+
+        fullscreen_options = echart_calls[0]
+        card_options = echart_calls[1]
+        assert card_options["backgroundColor"] == "transparent"
+        assert card_options["series"][0]["type"] == "heatmap"
+        assert card_options["series"][0]["data"] == [[0, 0, 2], [1, 1, 4]]
+        assert "visualMap" not in card_options
+        assert "visualMap" in fullscreen_options
+        assert fullscreen_options["xAxis"]["name"] == "Hour of day"
+        assert fullscreen_options["yAxis"]["name"] == "Day of week"
+        assert card_options["yAxis"]["data"] == ["Mon", "Tue"]
+        assert fullscreen_options["yAxis"]["data"] == ["Monday", "Tuesday"]
+        assert card_options["yAxis"]["inverse"] is True
+        assert card_options["yAxis"]["axisLabel"]["interval"] == 0
+        assert "from" in fullscreen_options["tooltip"][":formatter"]
+        assert "to" in fullscreen_options["tooltip"][":formatter"]
+        assert "<br" not in fullscreen_options["tooltip"][":formatter"]
+
+    def test_render_scatter_graph_renders_fullscreen_description(self) -> None:
+        """Scatter fullscreen description should be rendered when provided."""
+        label_calls: list[str] = []
+
+        def _capture_label(text: str = "", *_args: Any, **_kwargs: Any) -> DummyComponent:
+            label_calls.append(text)
+            return DummyComponent()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label", side_effect=_capture_label),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=DummyComponent()),
+        ):
+            charts.render_scatter_graph(
+                "Distance vs Pace",
+                [(5.0, 5.1)],
+                "Distance",
+                "Pace",
+                fullscreen_description="Scatter explanation",
+            )
+
+        assert "Scatter explanation" in label_calls
+
+    def test_render_scatter_graph_click_handler_handles_tuple_value_and_invalid_index(self) -> None:
+        """Scatter click handler should parse tuple payloads and ignore invalid indexes."""
+
+        class _ChartProbe(DummyComponent):
+            def __init__(self) -> None:
+                self.events: dict[str, Any] = {}
+
+            def on(self, event: str, handler: Any, **_kwargs: Any) -> _ChartProbe:
+                self.events[event] = handler
+                return self
+
+        chart_probe = _ChartProbe()
+        click_callback = MagicMock()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=chart_probe),
+        ):
+            charts.render_scatter_graph(
+                "Distance vs Pace",
+                [(5.0, 5.1, "2025-01-01", 21)],
+                "Distance",
+                "Pace",
+                date_label="Date",
+                on_point_click=click_callback,
+            )
+
+        chart_probe.events["click"](MagicMock(args={"data": (5.0, 5.1, "2025-01-01", 21)}))
+        click_callback.assert_called_once_with(21)
+        click_callback.reset_mock()
+
+        chart_probe.events["click"](MagicMock(args={"dataIndex": "abc"}))
+        click_callback.assert_not_called()
+
+    def test_render_box_plot_graph_builds_boxplot_series(self) -> None:
+        """render_box_plot_graph should emit one boxplot row per category."""
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_box_plot_graph(
+                "Pace distribution by activity",
+                {"Running": [4.0, 4.5, 5.0], "Walking": [9.0, 10.0, 11.0]},
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        assert chart_options["backgroundColor"] == "transparent"
+        assert chart_options["series"][0]["type"] == "boxplot"
+        assert chart_options["xAxis"]["data"] == ["Running", "Walking"]
+
+    def test_render_heat_map_graph_fullscreen_description_is_rendered(self) -> None:
+        """Heat-map fullscreen description should be rendered when provided."""
+        label_calls: list[str] = []
+
+        def _capture_label(text: str = "", *_args: Any, **_kwargs: Any) -> DummyComponent:
+            label_calls.append(text)
+            return DummyComponent()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label", side_effect=_capture_label),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=DummyComponent()),
+        ):
+            charts.render_heat_map_graph(
+                "Heatmap",
+                ["0"],
+                ["Mon"],
+                [(0, 0, 1)],
+                fullscreen_description="Heatmap explanation",
+            )
+
+        assert "Heatmap explanation" in label_calls
+
+    def test_render_box_plot_graph_handles_empty_category_and_fullscreen_description(self) -> None:
+        """Boxplot should handle empty categories and render fullscreen description."""
+        label_calls: list[str] = []
+
+        def _capture_label(text: str = "", *_args: Any, **_kwargs: Any) -> DummyComponent:
+            label_calls.append(text)
+            return DummyComponent()
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label", side_effect=_capture_label),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_box_plot_graph(
+                "Pace distribution by activity",
+                {"Running": [], "Walking": [9.0, 10.0, 11.0]},
+                fullscreen_description="Boxplot explanation",
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        assert chart_options["series"][0]["data"][0] == [0.0, 0.0, 0.0, 0.0, 0.0]
+        assert "Boxplot explanation" in label_calls

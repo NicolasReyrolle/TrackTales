@@ -79,6 +79,9 @@ msgstr "Vue d'ensemble"
 msgid "Trends"
 msgstr "Tendances"
 
+msgid "Running"
+msgstr "Course à pied"
+
 msgid "Workouts"
 msgstr "Séances"
 
@@ -219,6 +222,45 @@ msgstr "Puissance Critique (PC) au fil du temps"
 
 msgid "W' over time"
 msgstr "W' au fil du temps"
+
+msgid "Distance vs Pace"
+msgstr "Distance vs allure"
+
+msgid "Pace"
+msgstr "Allure"
+
+msgid "Elevation vs Pace"
+msgstr "Dénivelé vs allure"
+
+msgid "Activity heat map (day/time)"
+msgstr "Carte de chaleur des activités (jour/heure)"
+
+msgid "More workouts"
+msgstr "Plus d'entraînements"
+
+msgid "Fewer workouts"
+msgstr "Moins d'entraînements"
+
+msgid "Hour of day"
+msgstr "Heure de la journée"
+
+msgid "Day of week"
+msgstr "Jour de la semaine"
+
+msgid "workout"
+msgstr "entraînement"
+
+msgid "workouts"
+msgstr "entraînements"
+
+msgid "from"
+msgstr "de"
+
+msgid "to"
+msgstr "à"
+
+msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
+msgstr "Cette carte de chaleur montre quand les séances ont lieu. L'axe X représente l'heure de la journée, l'axe Y le jour de la semaine, et l'intensité de la couleur représente le nombre de séances."
 
 msgid "Half-marathon"
 msgstr "Semi-marathon"

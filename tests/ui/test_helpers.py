@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+import pandas as pd
 import pytest
 
 from ui import helpers
@@ -220,3 +221,71 @@ class TestBestSegmentLabelFormatters:
         assert helpers.parse_float(4) == pytest.approx(4.0)
         assert helpers.parse_float(None) is None
         assert helpers.parse_float("abc") is None
+
+
+def test_filter_workouts_by_date_range_no_start_date_column_returns_input() -> None:
+    """Date range helper should return input when startDate column is absent."""
+    workouts = pd.DataFrame({"activityType": ["Running"]})
+    filtered = helpers.filter_workouts_by_date_range(
+        workouts,
+        start_date=datetime(2025, 1, 1),
+        end_date=datetime(2025, 1, 2),
+    )
+    assert filtered.equals(workouts)
+
+
+def test_filter_workouts_by_date_range_with_start_date_only() -> None:
+    """Date range helper should apply an inclusive start date filter."""
+    workouts = pd.DataFrame(
+        {
+            "startDate": [
+                pd.Timestamp("2025-01-01 10:00:00"),
+                pd.Timestamp("2025-01-02 10:00:00"),
+            ]
+        }
+    )
+    filtered = helpers.filter_workouts_by_date_range(
+        workouts,
+        start_date=datetime(2025, 1, 2),
+        end_date=None,
+    )
+    assert len(filtered) == 1
+    assert filtered.iloc[0]["startDate"] == pd.Timestamp("2025-01-02 10:00:00")
+
+
+def test_filter_workouts_by_date_range_with_midnight_end_date_is_end_of_day_inclusive() -> None:
+    """A date-only end date should include the full day."""
+    workouts = pd.DataFrame(
+        {
+            "startDate": [
+                pd.Timestamp("2025-01-02 23:59:00"),
+                pd.Timestamp("2025-01-03 00:00:00"),
+            ]
+        }
+    )
+    filtered = helpers.filter_workouts_by_date_range(
+        workouts,
+        start_date=None,
+        end_date=datetime(2025, 1, 2),
+    )
+    assert len(filtered) == 1
+    assert filtered.iloc[0]["startDate"] == pd.Timestamp("2025-01-02 23:59:00")
+
+
+def test_filter_workouts_by_date_range_with_datetime_end_date_is_timestamp_inclusive() -> None:
+    """A datetime end date should filter up to the exact timestamp."""
+    workouts = pd.DataFrame(
+        {
+            "startDate": [
+                pd.Timestamp("2025-01-02 10:00:00"),
+                pd.Timestamp("2025-01-02 11:00:00"),
+            ]
+        }
+    )
+    filtered = helpers.filter_workouts_by_date_range(
+        workouts,
+        start_date=None,
+        end_date=datetime(2025, 1, 2, 10, 30),
+    )
+    assert len(filtered) == 1
+    assert filtered.iloc[0]["startDate"] == pd.Timestamp("2025-01-02 10:00:00")

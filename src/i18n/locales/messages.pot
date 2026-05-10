@@ -74,6 +74,9 @@ msgstr ""
 msgid "Trends"
 msgstr ""
 
+msgid "Running"
+msgstr ""
+
 msgid "Workouts"
 msgstr ""
 
@@ -213,6 +216,45 @@ msgid "Critical Power (CP) over time"
 msgstr ""
 
 msgid "W' over time"
+msgstr ""
+
+msgid "Distance vs Pace"
+msgstr ""
+
+msgid "Pace"
+msgstr ""
+
+msgid "Elevation vs Pace"
+msgstr ""
+
+msgid "Activity heat map (day/time)"
+msgstr ""
+
+msgid "More workouts"
+msgstr ""
+
+msgid "Fewer workouts"
+msgstr ""
+
+msgid "Hour of day"
+msgstr ""
+
+msgid "Day of week"
+msgstr ""
+
+msgid "workout"
+msgstr ""
+
+msgid "workouts"
+msgstr ""
+
+msgid "from"
+msgstr ""
+
+msgid "to"
+msgstr ""
+
+msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
 msgstr ""
 
 msgid "Half-marathon"

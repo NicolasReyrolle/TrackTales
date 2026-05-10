@@ -3,6 +3,7 @@
 import json
 import re
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Any, Protocol
 
 import pandas as pd
@@ -294,3 +295,26 @@ def calculate_moving_average(
     series = pd.Series(list(y_values), dtype=float)
     result = series.rolling(window=window_size, min_periods=1).mean().round(2)
     return [None if pd.isna(v) else float(v) for v in result]
+
+
+def filter_workouts_by_date_range(
+    workouts: pd.DataFrame,
+    *,
+    start_date: datetime | pd.Timestamp | str | None,
+    end_date: datetime | pd.Timestamp | str | None,
+) -> pd.DataFrame:
+    """Filter workouts by date range using inclusive start and end-day semantics."""
+    if "startDate" not in workouts.columns:
+        return workouts
+
+    filtered = workouts
+    if start_date is not None:
+        filtered = filtered.loc[filtered["startDate"] >= pd.Timestamp(start_date)]
+
+    if end_date is None:
+        return filtered
+
+    end_timestamp = pd.Timestamp(end_date)
+    if end_timestamp == end_timestamp.normalize():
+        return filtered.loc[filtered["startDate"] < end_timestamp + pd.Timedelta(days=1)]
+    return filtered.loc[filtered["startDate"] <= end_timestamp]

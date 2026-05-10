@@ -178,6 +178,7 @@ def test_render_period_selector_radio_bound_to_state() -> None:
 def test_render_period_selector_radio_calls_refresh_on_change() -> None:
     """Test that the period selector on_change callback triggers render_trends_graphs.refresh."""
 
+    original_tab = state.selected_main_tab
     radio_instances: list[_DummyRadio] = []
 
     def _radio_factory(_options: dict[str, str], on_change: Any = None) -> _DummyRadio:
@@ -186,22 +187,28 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
         radio_instances.append(instance)
         return instance
 
-    with patch("ui.layout.ui.label"):
-        with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
-            with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
-                with patch("ui.layout.render_health_data_tab"):
-                    with patch("ui.layout._reset_health_data_state"):
-                        with patch("ui.layout.schedule_health_data_load"):
-                            layout.render_period_selector()
+    try:
+        state.selected_main_tab = "summary"
+        with patch("ui.layout.ui.label"):
+            with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
+                with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
+                    with patch("ui.layout.render_health_data_tab"):
+                        with patch("ui.layout.render_running_health_graphs") as running_health_mock:
+                            with patch("ui.layout._reset_health_data_state"):
+                                with patch("ui.layout.schedule_health_data_load"):
+                                    layout.render_period_selector()
 
-                            assert radio_mock.call_count == 1
-                            radio_instance = radio_instances[0]
-                            assert radio_instance.on_change is not None
+                                    assert radio_mock.call_count == 1
+                                    radio_instance = radio_instances[0]
+                                    assert radio_instance.on_change is not None
 
-                            # Invoke inside patch scope so mocks are still active
-                            radio_instance.on_change()
+                                    # Invoke inside patch scope so mocks are still active
+                                    radio_instance.on_change()
 
-    render_graphs_mock.refresh.assert_called_once()
+        render_graphs_mock.refresh.assert_called_once()
+        running_health_mock.refresh.assert_not_called()
+    finally:
+        state.selected_main_tab = original_tab
 
 
 def test_render_trends_tab_only_renders_graphs() -> None:

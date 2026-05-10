@@ -59,6 +59,7 @@ from ui.helpers import (
     translate_parser_progress_message,
 )
 from ui.local_file_picker import LocalFilePicker
+from ui.running_tab import render_running_health_graphs, render_running_tab
 from ui.trends_tab import render_trends_graphs, render_trends_tab
 from ui.workout_detail_modal import create_workout_detail_modal
 from ui.workout_table import (
@@ -71,6 +72,14 @@ from units import KG_TO_LBS
 
 # Get logger for this module
 _logger = logging.getLogger(__name__)
+_MAIN_TABS = {
+    "summary",
+    "activities",
+    "trends",
+    "running",
+    "workouts",
+    "health_data",
+}
 
 
 def schedule_best_segments_load(force: bool = False) -> None:
@@ -97,6 +106,23 @@ def schedule_health_data_load(force: bool = False) -> None:
     state.health_data_task = task if hasattr(task, "add_done_callback") else None
     if state.health_data_task is not None:
         state.health_data_task.add_done_callback(_clear_completed_task)
+
+
+def schedule_selected_tab_refresh(tab_name: str) -> None:
+    """Schedule selected-tab refresh and keep a reference to the refresh task."""
+
+    def _clear_completed_task(task: asyncio.Task[None]) -> None:
+        if state.tab_refresh_task is task:
+            state.tab_refresh_task = None
+
+    refresh_task: Any = getattr(state, "tab_refresh_task", None)
+    if isinstance(refresh_task, asyncio.Task) and not refresh_task.done():
+        refresh_task.cancel()
+
+    task: Any = asyncio.create_task(_refresh_selected_tab_content(tab_name))
+    state.tab_refresh_task = task if hasattr(task, "add_done_callback") else None
+    if state.tab_refresh_task is not None:
+        state.tab_refresh_task.add_done_callback(_clear_completed_task)
 
 
 def _to_json_safe(d: dict[Any, Any]) -> dict[str, float | int | None]:
@@ -190,6 +216,8 @@ async def load_health_data(force: bool = False) -> None:
 
     state.health_data_loading = True
     render_health_data_tab.refresh()
+    if state.selected_main_tab == "running":
+        render_running_health_graphs.refresh()
 
     try:
         # Phase 1 — fast graphs: HR, body mass, VO2 max
@@ -199,6 +227,8 @@ async def load_health_data(force: bool = False) -> None:
         state.health_data_loading = False
         state.health_data_cp_loading = True
         render_health_data_tab.refresh()
+        if state.selected_main_tab == "running":
+            render_running_health_graphs.refresh()
 
         # Phase 2 — slow graphs: critical power and W'
         try:
@@ -209,11 +239,15 @@ async def load_health_data(force: bool = False) -> None:
         finally:
             state.health_data_cp_loading = False
             render_health_data_tab.refresh()
+            if state.selected_main_tab == "running":
+                render_running_health_graphs.refresh()
     except Exception:
         _logger.exception("Failed to load health data tab")
         state.health_data_loading = False
         state.health_data_cp_loading = False
         render_health_data_tab.refresh()
+        if state.selected_main_tab == "running":
+            render_running_health_graphs.refresh()
 
 
 def handle_json_export() -> None:
@@ -464,14 +498,17 @@ def refresh_data() -> None:
     render_activity_graphs.refresh()
     render_trends_graphs.refresh()
     render_health_data_tab.refresh()
+    if state.selected_main_tab == "running":
+        render_running_tab.refresh()
     render_best_segments_tab.refresh()
     render_distance_range_selector.refresh()
     render_duration_range_selector.refresh()
     render_workout_table.refresh()
 
     # If user is already on the tab, load asynchronously after invalidation.
-    if state.selected_main_tab == "best_segments":
+    if state.selected_main_tab == "running":
         schedule_best_segments_load()
+        schedule_health_data_load()
     if state.selected_main_tab == "health_data":
         schedule_health_data_load()
 
@@ -497,7 +534,9 @@ def render_period_selector() -> None:
         _reset_health_data_state()
         render_trends_graphs.refresh()
         render_health_data_tab.refresh()
-        if state.selected_main_tab == "health_data":
+        if state.selected_main_tab == "running":
+            render_running_health_graphs.refresh()
+        if state.selected_main_tab in {"health_data", "running"}:
             schedule_health_data_load()
 
     ui.label(t("Aggregate by:")).classes(LABEL_SECTION_CLASSES)
@@ -510,6 +549,18 @@ def render_period_selector() -> None:
         },
         on_change=_on_period_change,
     ).bind_value(state, "trends_period").props("inline")
+
+
+async def _refresh_selected_tab_content(tab_name: str) -> None:
+    """Refresh tab content on the next event-loop turn to keep tab switching responsive.
+
+    The selected-tab guard avoids stale refreshes when the user switches tabs quickly.
+    """
+    await asyncio.sleep(0)
+    if state.selected_main_tab != tab_name:
+        return
+    if tab_name == "running":
+        render_running_tab.refresh()
 
 
 def render_left_drawer() -> None:
@@ -720,7 +771,8 @@ def load_workouts_from_file(
 
 async def load_file() -> None:
     """Load and parse the selected Apple Health export file."""
-    if state.input_file.value == "":
+    file_path = state.input_file.value
+    if not isinstance(file_path, str) or file_path == "":
         ui.notify(t("Please select an Apple Health export file first."))
         return
 
@@ -746,7 +798,7 @@ async def load_file() -> None:
     try:
         workouts, activity_options, records_by_type = await asyncio.to_thread(
             load_workouts_from_file,
-            state.input_file.value,
+            file_path,
             progress_callback,
         )
         state.workouts = workouts
@@ -762,6 +814,18 @@ async def load_file() -> None:
     finally:
         state.loading_status = ""
         state.loading = False
+
+
+def _handle_main_tab_change(tab_name: str) -> None:
+    """Apply side effects for main-tab selection."""
+    state.selected_main_tab = tab_name
+    if tab_name == "running":
+        schedule_selected_tab_refresh("running")
+        schedule_best_segments_load()
+        schedule_health_data_load()
+    elif tab_name == "health_data":
+        render_health_data_tab.refresh()
+        schedule_health_data_load()
 
 
 def render_body() -> None:
@@ -790,24 +854,22 @@ def render_body() -> None:
     def _on_tab_change(event: Any) -> None:
         value = getattr(event, "value", None)
         tab_name = str(getattr(value, "name", value)) if value is not None else ""
-        state.selected_main_tab = tab_name
-        if tab_name == "best_segments":
-            schedule_best_segments_load()
-        elif tab_name == "health_data":
-            schedule_health_data_load()
+        _handle_main_tab_change(tab_name)
 
     with ui.tabs(on_change=_on_tab_change).classes(TABS_FULL_CLASSES) as tabs:
         ui.tab("summary", t("Overview"))
         ui.tab("activities", t("Activities")).bind_enabled_from(state, "file_loaded")
         ui.tab("trends", t("Trends")).bind_enabled_from(state, "file_loaded")
+        ui.tab("running", t("Running")).bind_enabled_from(state, "file_loaded")
         ui.tab("workouts", t("Workouts")).bind_enabled_from(state, "file_loaded")
         ui.tab("health_data", t("Health Data")).bind_enabled_from(state, "file_loaded")
-        ui.tab("best_segments", t("Best Segments")).bind_enabled_from(state, "file_loaded")
+    selected_tab = state.selected_main_tab if state.selected_main_tab in _MAIN_TABS else "summary"
+    state.selected_main_tab = selected_tab
 
     # Restore the previously selected tab (defaults to "summary" on first render).
-    tabs.value = state.selected_main_tab or "summary"
+    tabs.value = selected_tab
 
-    with ui.tab_panels(tabs, value=state.selected_main_tab or "summary").classes(TABS_FULL_CLASSES):
+    with ui.tab_panels(tabs, value=selected_tab).classes(TABS_FULL_CLASSES):
         with ui.tab_panel("summary"):
             dist_unit = get_distance_unit()
             elev_unit = get_elevation_unit()
@@ -922,6 +984,9 @@ def render_body() -> None:
         with ui.tab_panel("trends"):
             render_trends_tab()
 
+        with ui.tab_panel("running"):
+            render_running_tab()
+
         with ui.tab_panel("workouts"):
             with ui.row().classes(RANGE_SELECTORS_ROW_CLASSES):
                 render_distance_range_selector()
@@ -930,6 +995,3 @@ def render_body() -> None:
 
         with ui.tab_panel("health_data"):
             render_health_data_tab()
-
-        with ui.tab_panel("best_segments"):
-            render_best_segments_tab()

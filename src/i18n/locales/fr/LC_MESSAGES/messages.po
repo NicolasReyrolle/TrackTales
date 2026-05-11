@@ -91,6 +91,9 @@ msgstr "Données de santé"
 msgid "Best Segments"
 msgstr "Meilleurs segments"
 
+msgid "Route"
+msgstr "Parcours"
+
 # Stat cards
 msgid "Count"
 msgstr "Nombre"

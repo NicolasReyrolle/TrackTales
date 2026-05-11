@@ -86,6 +86,9 @@ msgstr ""
 msgid "Best Segments"
 msgstr ""
 
+msgid "Route"
+msgstr ""
+
 # Stat cards
 msgid "Count"
 msgstr ""

@@ -27,7 +27,9 @@ def test_comparisons_tab_label_is_translated_in_french() -> None:
 def test_no_similar_routes_message_is_translated_in_french() -> None:
     """No-similar-routes empty-state message should have a French translation."""
     i18n.compile_message_catalogs()
-    assert translate("No similar routes found.", language="fr") == "Aucun parcours similaire trouvé."
+    assert (
+        translate("No similar routes found.", language="fr") == "Aucun parcours similaire trouvé."
+    )
 
 
 def test_your_rank_message_is_translated_in_french() -> None:

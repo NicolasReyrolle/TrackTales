@@ -340,12 +340,8 @@ class TestFindSimilarRouteWorkouts:
             (49.73511, 6.10572),  # ~75 % of B ≈ 25 % of A
             (49.744247, 6.097666),  # end (8 m from A's end ✓)
         ]
-        row_a = _make_row_with_route(
-            idx=0, route=_build_route(route_a_pts), distance_sort=7381.0
-        )
-        row_b = _make_row_with_route(
-            idx=1, route=_build_route(route_b_pts), distance_sort=7407.0
-        )
+        row_a = _make_row_with_route(idx=0, route=_build_route(route_a_pts), distance_sort=7381.0)
+        row_b = _make_row_with_route(idx=1, route=_build_route(route_b_pts), distance_sort=7407.0)
         result = wdmc.find_similar_route_workouts(row_a, [row_a, row_b])
         assert row_b in result, "Opposite-direction run of same loop should be matched"
 

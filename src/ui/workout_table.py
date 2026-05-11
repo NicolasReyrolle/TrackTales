@@ -257,9 +257,10 @@ def _extract_row_data(
         "avg_power": power_display,
         "temperature": temp_display,
         "humidity": humidity_display,
-        # Route and distance_unit stored for all activity types so the Splits
-        # tab can be enabled for any workout that has a GPS route (e.g. Cycling).
+        # Route geometry and distance_unit are stored for all activity types so
+        # modal Route/Intervals tabs can be enabled for workouts with GPS data.
         "route": row.get("route"),
+        "route_parts": row.get("route_parts"),
         "distance_unit": distance_unit,
     }
 

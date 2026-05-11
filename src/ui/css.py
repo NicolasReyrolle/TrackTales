@@ -196,3 +196,9 @@ MODAL_SPLITS_TABLE_CLASSES = "w-full"
 
 #: Compact ``ui.table`` used for the swimming interval laps in the modal Intervals tab.
 MODAL_SWIM_TABLE_CLASSES = "w-full"
+
+#: Fixed-height container for the Leaflet workout-route map in the modal Route tab.
+MODAL_ROUTE_MAP_CONTAINER_CLASSES = "w-full workout-route-map-container"
+
+#: Inner HTML map node for Leaflet to mount into (fills the container dimensions).
+MODAL_ROUTE_MAP_HTML_CLASSES = "w-full h-full workout-route-map"

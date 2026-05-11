@@ -86,6 +86,18 @@ msgstr ""
 msgid "Best Segments"
 msgstr ""
 
+msgid "Route"
+msgstr ""
+
+msgid "Route {index}"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "End"
+msgstr ""
+
 # Stat cards
 msgid "Count"
 msgstr ""

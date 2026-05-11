@@ -62,10 +62,14 @@ class _DummyEvent:
 class _DummyElement:
     """Generic stub for NiceGUI UI elements; supports context-manager and chaining."""
 
+    _counter = 0
+
     def __init__(self, *_args: Any, **_kwargs: Any) -> None:
         self._visible = True
         self._enabled = True
         self._text = ""
+        type(self)._counter += 1
+        self.id = f"dummy-layer-{type(self)._counter}"
         self._props_added: list[str] = []
         self._props_removed: list[str] = []
         self.rows: list[Any] = []
@@ -76,6 +80,10 @@ class _DummyElement:
         self.value: str = "overview"
         #: Registered on_value_change handlers (used for tab-change simulation).
         self._value_change_handlers: list[Any] = []
+        #: Captures run_map_method calls in order for route-map assertions.
+        self._run_map_method_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+        #: Number of awaited calls to initialized(); used by async route-map tests.
+        self._initialized_calls = 0
 
     def classes(self, *_a: Any, **_kw: Any) -> _DummyElement:
         return self
@@ -130,6 +138,40 @@ class _DummyElement:
         where no actual NiceGUI context is active.
         """
 
+    def clear_layers(self) -> None:
+        """Stub for ui.leaflet.clear_layers()."""
+
+    def tile_layer(self, *_a: Any, **_kw: Any) -> _DummyElement:
+        """Stub for ui.leaflet.tile_layer()."""
+        return self
+
+    def generic_layer(self, *_a: Any, **_kw: Any) -> _DummyElement:
+        """Stub for ui.leaflet.generic_layer()."""
+        return _DummyElement()
+
+    def marker(self, *_a: Any, **_kw: Any) -> _DummyElement:
+        """Stub for ui.leaflet.marker()."""
+        return _DummyElement()
+
+    def run_layer_method(self, *_a: Any, **_kw: Any) -> _DummyElement:
+        """Stub for ui.leaflet.run_layer_method()."""
+        return self
+
+    def run_map_method(self, *_a: Any, **_kw: Any) -> _DummyElement:
+        """Stub for ui.leaflet.run_map_method()."""
+        self._run_map_method_calls.append((_a, _kw))
+        return self
+
+    def set_center(self, *_a: Any, **_kw: Any) -> None:
+        """Stub for ui.leaflet.set_center()."""
+
+    def set_zoom(self, *_a: Any, **_kw: Any) -> None:
+        """Stub for ui.leaflet.set_zoom()."""
+
+    async def initialized(self) -> None:
+        """Stub for ui.leaflet.initialized()."""
+        self._initialized_calls += 1
+
     def open(self) -> None:
         """Stub for dialog.open()."""
 
@@ -171,7 +213,7 @@ def _all_patches(
     Pass *tabs_stub* to receive the ``ui.tabs`` instance back for simulating
     tab-change events via :meth:`_DummyElement.fire_value_change`.
     Pass *tab_side_effect* to capture individual ``ui.tab`` instances (created in
-    order: overview [0], activity [1], intervals [2]).
+    order: overview [0], activity [1], route [2], intervals [3]).
     """
     stub = _DummyElement()
     effective_tabs = tabs_stub if tabs_stub is not None else stub
@@ -202,4 +244,8 @@ def _all_patches(
             "ui.workout_detail_modal.ui.table",
             side_effect=table_side_effect or (lambda *a, **kw: _DummyElement()),
         ),
+        patch("ui.workout_detail_modal.ui.leaflet", return_value=stub),
+        patch("ui.workout_detail_modal.ui.html", return_value=stub),
+        patch("ui.workout_detail_modal.ui.add_head_html", return_value=None),
+        patch("ui.workout_detail_modal.ui.run_javascript", return_value=None),
     ]

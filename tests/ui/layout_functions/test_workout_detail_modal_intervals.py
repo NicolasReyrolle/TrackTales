@@ -595,7 +595,7 @@ class TestIntervalsTabEnableState:
 
         fn(0)
         # Tab order: overview[0], activity[1], intervals[2]
-        assert not tab_stubs[2]._enabled
+        assert not tab_stubs[3]._enabled
 
     def test_intervals_tab_disabled_for_swimming_with_no_events(self) -> None:
         """Intervals tab should be disabled when swimming_events is empty."""
@@ -614,7 +614,7 @@ class TestIntervalsTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        assert not tab_stubs[2]._enabled
+        assert not tab_stubs[3]._enabled
 
     def test_intervals_tab_enabled_for_swimming_with_events(self) -> None:
         """Intervals tab should be enabled when swimming_events contains data."""
@@ -636,7 +636,7 @@ class TestIntervalsTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        assert tab_stubs[2]._enabled
+        assert tab_stubs[3]._enabled
 
 
 # ---------------------------------------------------------------------------

@@ -202,3 +202,9 @@ MODAL_ROUTE_MAP_CONTAINER_CLASSES = "w-full workout-route-map-container"
 
 #: Inner HTML map node for Leaflet to mount into (fills the container dimensions).
 MODAL_ROUTE_MAP_HTML_CLASSES = "w-full h-full workout-route-map"
+
+#: Compact table for the route-comparison ranking in the modal Comparisons tab.
+MODAL_COMPARISON_TABLE_CLASSES = "w-full"
+
+#: Status label showing the user's rank in the Comparisons tab.
+MODAL_COMPARISON_RANK_CLASSES = "text-sm font-medium"

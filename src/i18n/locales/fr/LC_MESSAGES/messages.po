@@ -813,11 +813,20 @@ msgstr "Puissance seuil fonctionnel"
 msgid "Intervals"
 msgstr "Intervalles"
 
+msgid "Comparisons"
+msgstr "Comparaisons"
+
 msgid "No activity-specific data available."
 msgstr "Aucune donnée spécifique à cette activité."
 
 msgid "No GPS route available."
 msgstr "Aucun tracé GPS disponible."
+
+msgid "No similar routes found."
+msgstr "Aucun parcours similaire trouvé."
+
+msgid "Your rank: {rank} of {total}"
+msgstr "Votre rang : {rank} sur {total}"
 
 msgid "No lap data available."
 msgstr "Aucune donnée de distance disponible."

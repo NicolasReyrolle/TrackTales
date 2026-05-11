@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import ExitStack
 from typing import Any
 from unittest.mock import patch
@@ -254,6 +255,57 @@ class TestCreateWorkoutDetailModal:
             assert not route_refresh_row_calls
             tabs_stub.fire_value_change("route")
             assert route_refresh_row_calls
+
+    def test_fit_route_bounds_after_init_invalidates_and_fits_bounds(self) -> None:
+        """Post-init helper should invalidate size and then fit route bounds."""
+        route_map = _DummyElement()
+        points = [[48.85, 2.35], [48.851, 2.351]]
+
+        asyncio.run(wdm._fit_route_bounds_after_init(route_map, points))
+
+        assert route_map._run_map_method_calls[0][0] == ("invalidateSize", False)
+        assert route_map._run_map_method_calls[1][0] == (
+            "fitBounds",
+            points,
+            {"padding": [20, 20]},
+        )
+
+    def test_do_refresh_route_tab_schedules_post_init_fit(self) -> None:
+        """Route refresh should schedule a post-init fit for reliable centering."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01").to_pydatetime()
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base_time + timedelta(seconds=i),
+                    latitude=48.85 + (i * 0.0001),
+                    longitude=2.35 + (i * 0.0001),
+                    altitude=35.0,
+                    speed=3.0,
+                )
+                for i in range(3)
+            ]
+        )
+        row = {**_make_row(idx=0), "route": route}
+        no_route_label = _DummyElement()
+        route_map = _DummyElement()
+
+        def run_coro(coro: Any) -> Any:
+            return asyncio.run(coro)
+
+        with patch(
+            "ui.workout_detail_modal.background_tasks.create",
+            side_effect=run_coro,
+        ) as create_bg:
+            wdm._do_refresh_route_tab(no_route_label, route_map, row)
+
+        assert create_bg.call_count == 1
+        assert route_map._run_map_method_calls[-1][0][0] == "fitBounds"
 
 
 class TestActivityTabSection:

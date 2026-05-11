@@ -80,6 +80,8 @@ class _DummyElement:
         self.value: str = "overview"
         #: Registered on_value_change handlers (used for tab-change simulation).
         self._value_change_handlers: list[Any] = []
+        #: Captures run_map_method calls in order for route-map assertions.
+        self._run_map_method_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
 
     def classes(self, *_a: Any, **_kw: Any) -> _DummyElement:
         return self
@@ -155,6 +157,7 @@ class _DummyElement:
 
     def run_map_method(self, *_a: Any, **_kw: Any) -> _DummyElement:
         """Stub for ui.leaflet.run_map_method()."""
+        self._run_map_method_calls.append((_a, _kw))
         return self
 
     def set_center(self, *_a: Any, **_kw: Any) -> None:
@@ -162,6 +165,9 @@ class _DummyElement:
 
     def set_zoom(self, *_a: Any, **_kw: Any) -> None:
         """Stub for ui.leaflet.set_zoom()."""
+
+    async def initialized(self) -> None:
+        """Stub for ui.leaflet.initialized()."""
 
     def open(self) -> None:
         """Stub for dialog.open()."""

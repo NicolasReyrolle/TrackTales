@@ -1,10 +1,11 @@
 """Workout detail modal dialog for Apple Health Analyzer."""
 
+import asyncio
 from collections.abc import Callable
 from math import isfinite
 from typing import Any, TypeAlias, cast
 
-from nicegui import ui
+from nicegui import background_tasks, ui
 
 from i18n import t
 from logic.workout_detail_schema import PER_TYPE_FIELDS
@@ -423,10 +424,20 @@ def _do_refresh_route_tab(
         )
 
     if all_points:
-        route_map.run_map_method("fitBounds", all_points, {"padding": [20, 20]})
+        background_tasks.create(
+            _fit_route_bounds_after_init(route_map, list(all_points))
+        )
     else:
         route_map.set_center((0.0, 0.0))
         route_map.set_zoom(1)
+
+
+async def _fit_route_bounds_after_init(route_map: Any, all_points: list[list[float]]) -> None:
+    """Fit map bounds after Leaflet map initialization and tab layout completion."""
+    await route_map.initialized()
+    await asyncio.sleep(0)
+    route_map.run_map_method("invalidateSize", False)
+    route_map.run_map_method("fitBounds", all_points, {"padding": [20, 20]})
 
 
 #: Maps each supported raw activity type to the Activity-tab field keys used by

@@ -82,6 +82,8 @@ class _DummyElement:
         self._value_change_handlers: list[Any] = []
         #: Captures run_map_method calls in order for route-map assertions.
         self._run_map_method_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+        #: Number of awaited calls to initialized(); used by async route-map tests.
+        self._initialized_calls = 0
 
     def classes(self, *_a: Any, **_kw: Any) -> _DummyElement:
         return self
@@ -168,6 +170,7 @@ class _DummyElement:
 
     async def initialized(self) -> None:
         """Stub for ui.leaflet.initialized()."""
+        self._initialized_calls += 1
 
     def open(self) -> None:
         """Stub for dialog.open()."""

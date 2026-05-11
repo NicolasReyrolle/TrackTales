@@ -263,6 +263,7 @@ class TestCreateWorkoutDetailModal:
 
         asyncio.run(wdm._fit_route_bounds_after_init(route_map, points))
 
+        assert route_map._initialized_calls == 1
         assert route_map._run_map_method_calls[0][0] == ("invalidateSize", False)
         assert route_map._run_map_method_calls[1][0] == (
             "fitBounds",
@@ -295,12 +296,12 @@ class TestCreateWorkoutDetailModal:
         no_route_label = _DummyElement()
         route_map = _DummyElement()
 
-        def run_background_task_synchronously(coro: Any) -> Any:
+        def execute_coroutine_immediately(coro: Any) -> Any:
             return asyncio.run(coro)
 
         with patch(
             "ui.workout_detail_modal.background_tasks.create",
-            side_effect=run_background_task_synchronously,
+            side_effect=execute_coroutine_immediately,
         ) as create_bg:
             wdm._do_refresh_route_tab(no_route_label, route_map, row)
 

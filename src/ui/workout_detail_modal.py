@@ -437,7 +437,7 @@ async def _fit_route_bounds_after_init(route_map: Any, all_points: list[list[flo
     await route_map.initialized()
     # Yield control to the event loop so the Route tab panel can complete its
     # visible layout pass before we invalidate size and fit bounds.
-    await asyncio.sleep(0)
+    await asyncio.sleep(0)  # allow pending tab layout work to flush first
     route_map.run_map_method("invalidateSize", False)
     route_map.run_map_method("fitBounds", all_points, {"padding": [20, 20]})
 

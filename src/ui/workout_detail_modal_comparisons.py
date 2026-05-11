@@ -197,25 +197,43 @@ def _routes_shape_match(
     either route returns ``None`` from :meth:`~WorkoutRoute.sample_point_at_fraction`
     (e.g. very short routes with too few points).
 
+    Two routes that traverse the **same course in opposite directions** (e.g. a
+    loop run clockwise vs. counter-clockwise) would fail a simple same-fraction
+    comparison because their 25 % and 75 % waypoints are swapped.  To handle
+    this, when the forward comparison fails the function retries with the
+    fractions mirrored for *route_b* (i.e. ``1.0 - fraction``).  A route pair
+    is considered matching when *either* the forward or the reverse comparison
+    passes.
+
     Args:
         route_a: First GPS route to compare.
         route_b: Second GPS route to compare.
 
     Returns:
-        ``True`` when all sampled waypoints are within the threshold, ``False``
-        when any pair exceeds :data:`_SIMILAR_ROUTE_WAYPOINT_RADIUS_M`.
+        ``True`` when all sampled waypoints are within the threshold in at
+        least one direction, ``False`` when both directions fail.
     """
-    for fraction in _SIMILAR_ROUTE_WAYPOINT_FRACTIONS:
-        pt_a = route_a.sample_point_at_fraction(fraction)
-        pt_b = route_b.sample_point_at_fraction(fraction)
-        if pt_a is None or pt_b is None:
-            continue
-        if (
-            WorkoutRoute.haversine_m(pt_a[0], pt_a[1], pt_b[0], pt_b[1])
-            > _SIMILAR_ROUTE_WAYPOINT_RADIUS_M
-        ):
-            return False
-    return True
+
+    def _check(fractions_b: tuple[float, ...]) -> bool:
+        for frac_a, frac_b in zip(_SIMILAR_ROUTE_WAYPOINT_FRACTIONS, fractions_b):
+            pt_a = route_a.sample_point_at_fraction(frac_a)
+            pt_b = route_b.sample_point_at_fraction(frac_b)
+            if pt_a is None or pt_b is None:
+                continue
+            if (
+                WorkoutRoute.haversine_m(pt_a[0], pt_a[1], pt_b[0], pt_b[1])
+                > _SIMILAR_ROUTE_WAYPOINT_RADIUS_M
+            ):
+                return False
+        return True
+
+    # Forward check: same fraction order.
+    if _check(_SIMILAR_ROUTE_WAYPOINT_FRACTIONS):
+        return True
+    # Reverse check: route_b sampled in the opposite order so that routes
+    # running the same course in opposite directions still match.
+    reversed_fractions = tuple(1.0 - f for f in _SIMILAR_ROUTE_WAYPOINT_FRACTIONS)
+    return _check(reversed_fractions)
 
 
 # ---------------------------------------------------------------------------

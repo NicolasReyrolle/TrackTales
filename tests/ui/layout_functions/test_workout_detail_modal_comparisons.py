@@ -308,6 +308,47 @@ class TestFindSimilarRouteWorkouts:
         result = wdmc.find_similar_route_workouts(current, [current, similar_row])
         assert similar_row in result
 
+    def test_reverse_direction_same_loop_included(self) -> None:
+        """Two runs of the same loop in opposite directions must match.
+
+        Real-world regression: two ~7.4 km GPS routes near Luxembourg
+        (2026-02-12 and 2025-10-20) that share the same start/end area
+        but are traversed in opposite directions.  Their 25%/75% waypoints
+        are swapped relative to each other, which caused the forward-only
+        shape check to reject them.  The fix retries with reversed fractions.
+
+        Coordinates extracted from the actual user-provided GPX files.
+        """
+        # Route A (forward direction – 2026-02-12):
+        #   start=(49.744235,6.097835), 25%=(49.73725,6.11424),
+        #   50%=(49.72406,6.11945), 75%=(49.73491,6.10534), end=(49.744179,6.097686)
+        route_a_pts = [
+            (49.744235, 6.097835),  # start
+            (49.73725, 6.11424),  # ~25 % of total distance
+            (49.72406, 6.11945),  # ~50 %
+            (49.73491, 6.10534),  # ~75 %
+            (49.744179, 6.097686),  # end
+        ]
+        # Route B (reverse direction – 2025-10-20):
+        #   start=(49.744498,6.097646), 25%=(49.73721,6.11422) ≈ A's 75%,
+        #   50%=(49.72418,6.11916) ≈ A's 50%, 75%=(49.73511,6.10572) ≈ A's 25%,
+        #   end=(49.744247,6.097666)
+        route_b_pts = [
+            (49.744498, 6.097646),  # start (32 m from A's start ✓)
+            (49.73721, 6.11422),  # ~25 % of B ≈ 75 % of A
+            (49.72418, 6.11916),  # ~50 %
+            (49.73511, 6.10572),  # ~75 % of B ≈ 25 % of A
+            (49.744247, 6.097666),  # end (8 m from A's end ✓)
+        ]
+        row_a = _make_row_with_route(
+            idx=0, route=_build_route(route_a_pts), distance_sort=7381.0
+        )
+        row_b = _make_row_with_route(
+            idx=1, route=_build_route(route_b_pts), distance_sort=7407.0
+        )
+        result = wdmc.find_similar_route_workouts(row_a, [row_a, row_b])
+        assert row_b in result, "Opposite-direction run of same loop should be matched"
+
 
 # ---------------------------------------------------------------------------
 # _pace_from_row

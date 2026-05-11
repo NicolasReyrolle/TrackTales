@@ -7,6 +7,7 @@ from contextlib import ExitStack
 from typing import Any
 from unittest.mock import patch
 
+import ui.workout_detail_modal_comparisons as wdmc
 from ui import workout_detail_modal as wdm
 
 from ._modal_stubs import _all_patches, _ButtonStub, _DummyElement, _make_row
@@ -899,17 +900,17 @@ class TestRowHasRoute:
 
     def test_returns_false_when_no_route_key(self) -> None:
         """Row without a 'route' key should return False."""
-        assert not wdm._row_has_route({})
+        assert not wdmc._row_has_route({})
 
     def test_returns_false_when_route_is_none(self) -> None:
         """Row with route=None should return False."""
-        assert not wdm._row_has_route({"route": None})
+        assert not wdmc._row_has_route({"route": None})
 
     def test_returns_false_for_empty_route(self) -> None:
         """Row with an empty WorkoutRoute should return False."""
         from logic.workout_manager.workout_route import WorkoutRoute
 
-        assert not wdm._row_has_route({"route": WorkoutRoute(points=[])})
+        assert not wdmc._row_has_route({"route": WorkoutRoute(points=[])})
 
     def test_returns_true_for_non_empty_route(self) -> None:
         """Row with a non-empty WorkoutRoute should return True."""
@@ -930,7 +931,7 @@ class TestRowHasRoute:
             )
             for i in range(5)
         ]
-        assert wdm._row_has_route({"route": WorkoutRoute(points=points)})
+        assert wdmc._row_has_route({"route": WorkoutRoute(points=points)})
 
 
 class TestGetRowRoutes:

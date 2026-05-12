@@ -626,8 +626,9 @@ class TestRouteTabLocalizationAndCoverage:
 
         config = wdm._build_route_profile_chart_config([route])
         data = config["series"][0]["data"]
+        segment_time_s = 60.0
         expected_distance_m = WorkoutRoute.haversine_m(48.8500, 2.3500, 48.8509, 2.3500)
-        expected_pace_min_per_km = 1.0 / (expected_distance_m / 1000.0)
+        expected_pace_min_per_km = (segment_time_s / 60.0) / (expected_distance_m / 1000.0)
 
         assert data[2][2] is not None
         assert data[2][2] == pytest.approx(expected_pace_min_per_km, rel=0.05)

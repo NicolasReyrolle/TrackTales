@@ -56,6 +56,7 @@ _SECONDS_PER_MINUTE = 60.0
 _METERS_PER_KM = 1000.0
 _MIN_MOVING_SPEED_M_S = 0.5
 _PACE_SMOOTHING_WINDOW_M = 200.0
+_MIN_ROLLING_SEGMENTS = 1
 
 # ---------------------------------------------------------------------------
 # Shared label-function constants reused across multiple field display lists.
@@ -368,14 +369,29 @@ def _update_rolling_pace_window(
     segment_distance_m: float,
     speed_m_s: float,
 ) -> tuple[float, float, float | None]:
-    """Update rolling pace window with one segment and return smoothed pace."""
+    """Update the rolling moving-pace window and return the smoothed pace value.
+
+    Args:
+        rolling_pace_segments: Rolling window of ``(distance_m, time_s)`` segment tuples.
+        rolling_distance_m: Total distance represented by the rolling window.
+        rolling_time_s: Total elapsed time represented by the rolling window.
+        segment_distance_m: Distance of the latest segment in meters.
+        speed_m_s: Speed estimate for the latest segment in meters per second.
+
+    Returns:
+        Tuple of ``(rolling_distance_m, rolling_time_s, pace_min_per_km)`` where
+        ``pace_min_per_km`` is ``None`` when the rolling window has no valid data.
+    """
     if speed_m_s >= _MIN_MOVING_SPEED_M_S and segment_distance_m > 0.0:
         segment_time_s = segment_distance_m / speed_m_s
         rolling_pace_segments.append((segment_distance_m, segment_time_s))
         rolling_distance_m += segment_distance_m
         rolling_time_s += segment_time_s
         # Keep at least one segment so pace can remain stable through short pauses.
-        while rolling_distance_m > _PACE_SMOOTHING_WINDOW_M and len(rolling_pace_segments) > 1:
+        while (
+            rolling_distance_m > _PACE_SMOOTHING_WINDOW_M
+            and len(rolling_pace_segments) > _MIN_ROLLING_SEGMENTS
+        ):
             old_distance_m, old_time_s = rolling_pace_segments.pop(0)
             rolling_distance_m -= old_distance_m
             rolling_time_s -= old_time_s

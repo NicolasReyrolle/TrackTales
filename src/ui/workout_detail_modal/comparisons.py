@@ -408,6 +408,36 @@ def _find_row_by_id(rows: list[dict[str, Any]], row_id: str) -> dict[str, Any] |
     return next((r for r in rows if r.get("id") == row_id), None)
 
 
+def _make_leaderboard_row(
+    rank: int,
+    row: dict[str, Any],
+    is_current: bool,
+    best_duration_s: float,
+    distance_unit: str,
+) -> dict[str, Any]:
+    """Build a single leaderboard display row dict for the Comparisons table.
+
+    Args:
+        rank:            1-indexed position of this entry in the sorted list.
+        row:             Workout row dict (as returned by ``_build_workout_rows()``).
+        is_current:      Whether this entry represents the workout currently open.
+        best_duration_s: Duration of the rank-1 (fastest) entry, used for diff.
+        distance_unit:   ``"km"`` or ``"mi"``.
+
+    Returns:
+        A dict suitable for direct use as a ``ui.table`` row.
+    """
+    row_duration_s = float(row.get("duration_sort") or 0.0)
+    return {
+        "rank": rank,
+        "rank_str": f"→ {rank}" if is_current else str(rank),
+        "date": row.get("date", "–"),
+        "duration": row.get("duration", "–"),
+        "pace": _pace_from_row(row, distance_unit),
+        "diff_str": _format_duration_diff(row_duration_s, best_duration_s),
+    }
+
+
 def _build_comparison_display_rows(
     similar: list[dict[str, Any]],
     current_row_id: str,

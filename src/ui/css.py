@@ -185,8 +185,10 @@ MODAL_CENTERED_ROW_CLASSES = "w-full justify-center"
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"
 
 #: Each field row inside the modal rendered as a centered 2-column grid.
+#: ``10rem`` keeps label lengths aligned without truncating common translated labels.
+#: ``32rem`` keeps the overall label/value block compact and centered in wide modals.
 MODAL_FIELD_ROW_CLASSES = (
-    "w-full max-w-[32rem] mx-auto !grid grid-cols-[10rem_minmax(0,1fr)] items-baseline gap-x-4"
+    "w-full max-w-[32rem] mx-auto grid grid-cols-[10rem_minmax(0,1fr)] items-baseline gap-x-4"
 )
 
 #: Muted label for a field inside the modal (reuses LABEL_MUTED_CLASSES for the base style).

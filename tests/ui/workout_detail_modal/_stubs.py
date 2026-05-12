@@ -224,6 +224,7 @@ def _all_patches(
         patch("ui.workout_detail_modal.ui.dialog", return_value=stub),
         patch("ui.workout_detail_modal.ui.card", return_value=stub),
         patch("ui.workout_detail_modal.ui.row", return_value=stub),
+        patch("ui.workout_detail_modal.ui.element", return_value=stub),
         patch("ui.workout_detail_modal.ui.tabs", return_value=effective_tabs),
         patch(
             "ui.workout_detail_modal.ui.tab",

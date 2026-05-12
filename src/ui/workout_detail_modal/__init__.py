@@ -270,7 +270,7 @@ def _build_field_rows(
     """
     field_rows: dict[str, tuple[Any, Any]] = {}
     for field_key, label_fn in field_display:
-        with ui.row().classes(MODAL_FIELD_ROW_CLASSES) as frow:
+        with ui.element("div").classes(MODAL_FIELD_ROW_CLASSES) as frow:
             ui.label(label_fn()).classes(MODAL_FIELD_LABEL_CLASSES)
             value_el = ui.label().classes(MODAL_FIELD_VALUE_CLASSES)
         field_rows[field_key] = (frow, value_el)

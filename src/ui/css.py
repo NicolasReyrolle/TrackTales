@@ -184,14 +184,16 @@ MODAL_CENTERED_ROW_CLASSES = "w-full justify-center"
 #: Modal header row: title on the left, close button on the right.
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"
 
-#: Each field row inside the modal (label + value side by side, baseline-aligned).
-MODAL_FIELD_ROW_CLASSES = "w-full items-baseline gap-4"
+#: Each field row inside the modal rendered as a centered 2-column grid.
+MODAL_FIELD_ROW_CLASSES = (
+    "w-full max-w-[32rem] mx-auto !grid grid-cols-[10rem_minmax(0,1fr)] items-baseline gap-x-4"
+)
 
 #: Muted label for a field inside the modal (reuses LABEL_MUTED_CLASSES for the base style).
-MODAL_FIELD_LABEL_CLASSES = f"{LABEL_MUTED_CLASSES} w-36"
+MODAL_FIELD_LABEL_CLASSES = LABEL_MUTED_CLASSES
 
 #: Value text for a field inside the modal.
-MODAL_FIELD_VALUE_CLASSES = "text-sm font-medium flex-1"
+MODAL_FIELD_VALUE_CLASSES = "text-sm font-medium"
 
 #: Footer row inside the modal: prev button, counter, next button.
 MODAL_NAV_ROW_CLASSES = "w-full justify-between items-center q-mt-sm"

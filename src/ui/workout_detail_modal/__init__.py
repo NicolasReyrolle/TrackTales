@@ -374,6 +374,7 @@ def _update_rolling_pace_window(
         rolling_pace_segments.append((segment_distance_m, segment_time_s))
         rolling_distance_m += segment_distance_m
         rolling_time_s += segment_time_s
+        # Keep at least one segment so pace can remain stable through short pauses.
         while rolling_distance_m > _PACE_SMOOTHING_WINDOW_M and len(rolling_pace_segments) > 1:
             old_distance_m, old_time_s = rolling_pace_segments.pop(0)
             rolling_distance_m -= old_distance_m

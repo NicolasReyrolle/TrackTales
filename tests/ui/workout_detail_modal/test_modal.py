@@ -7,6 +7,8 @@ from contextlib import ExitStack
 from typing import Any
 from unittest.mock import patch
 
+import pytest
+
 import ui.workout_detail_modal.comparisons as wdmc
 from ui import workout_detail_modal as wdm
 
@@ -624,10 +626,11 @@ class TestRouteTabLocalizationAndCoverage:
 
         config = wdm._build_route_profile_chart_config([route])
         data = config["series"][0]["data"]
+        expected_distance_m = WorkoutRoute.haversine_m(48.8500, 2.3500, 48.8509, 2.3500)
+        expected_pace_min_per_km = 1.0 / (expected_distance_m / 1000.0)
 
         assert data[2][2] is not None
-        # 20.0 min/km (~3 km/h) confirms the pause spike is smoothed below near-stop values.
-        assert data[2][2] < 20.0
+        assert data[2][2] == pytest.approx(expected_pace_min_per_km, rel=0.05)
 
     def test_do_refresh_route_tab_uses_metric_based_segment_colors(self) -> None:
         """Route refresh should color each segment by pace and expose metric details in tooltip."""

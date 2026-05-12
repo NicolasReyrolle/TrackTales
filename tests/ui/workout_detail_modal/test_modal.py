@@ -503,14 +503,7 @@ class TestRouteTabLocalizationAndCoverage:
         assert ("Route {index}", {"index": "1"}) in t_calls
         assert ("Start", {}) in t_calls
         assert ("End", {}) in t_calls
-        segment_tooltips = [text for text in tooltip_texts if text.startswith("Parcours 1<br>")]
-        assert segment_tooltips
-        assert "Pace" in segment_tooltips[0]
-        assert "Speed" in segment_tooltips[0]
-        assert "Altitude" in segment_tooltips[0]
-        assert "Distance" in segment_tooltips[0]
-        assert "/km" in segment_tooltips[0]
-        assert "km/h" in segment_tooltips[0]
+        assert "Parcours 1" in tooltip_texts
         assert "Départ - Parcours 1" in tooltip_texts
         assert "Arrivée - Parcours 1" in tooltip_texts
 
@@ -703,8 +696,8 @@ class TestRouteTabLocalizationAndCoverage:
 
         assert config["series"][0]["data"] == []
 
-    def test_do_refresh_route_tab_uses_metric_based_segment_colors(self) -> None:
-        """Route refresh should color each segment by pace and expose metric details in tooltip."""
+    def test_do_refresh_route_tab_uses_plain_route_polyline(self) -> None:
+        """Route refresh should use a single plain polyline per route."""
         from datetime import timedelta
 
         import pandas as pd
@@ -752,9 +745,8 @@ class TestRouteTabLocalizationAndCoverage:
         ):
             wdm._do_refresh_route_tab(no_route_label, route_map, row)
 
-        assert polyline_colors
-        assert polyline_colors[:2] == ["#eab308", "#16a34a"]
-        assert any("Pace" in text and "Speed" in text for text in tooltip_texts)
+        assert polyline_colors == ["#2563eb"]
+        assert "Route 1" in tooltip_texts
 
 
 class TestActivityTabSection:

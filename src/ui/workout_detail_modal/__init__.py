@@ -598,7 +598,7 @@ def _do_refresh_route_tab(
     route_map: Any,
     row: dict[str, Any],
 ) -> None:
-    """Update the Route tab map with pace-colored segments."""
+    """Update the Route tab map with plain route polylines."""
     routes = _get_row_routes(row)
     has_route = bool(routes)
     no_route_label.set_visibility(not has_route)
@@ -626,29 +626,14 @@ def _do_refresh_route_tab(
         if len(valid_points) < 2:
             continue
 
-        for previous, current in zip(valid_points, valid_points[1:]):
-            distance_m, speed_m_s, pace = _route_segment_metrics(previous, current)
-            color = _segment_color_from_pace(pace)
-            segment_points = [
-                [cast(float, previous["lat"]), cast(float, previous["lon"])],
-                [cast(float, current["lat"]), cast(float, current["lon"])],
-            ]
-            polyline = route_map.generic_layer(
-                name="polyline",
-                args=[segment_points, {"color": color, "weight": 4, "opacity": 0.9}],
-            )
-            speed_text = "–" if speed_m_s is None else f"{speed_m_s * _M_S_TO_KM_H:.1f} km/h"
-            tooltip_lines = [
-                route_name,
-                f"{t('Pace')}: {_format_pace_min_per_km(pace)}",
-                f"{t('Speed')}: {speed_text}",
-                f"{t('Altitude')}: {cast(float, current['altitude']):.1f} m",
-                f"{t('Distance')}: {distance_m:.0f} m",
-            ]
-            heart_rate = cast(float | None, current["heart_rate"])
-            if heart_rate is not None:
-                tooltip_lines.append(f"{t('Heart Rate')}: {heart_rate:.0f} bpm")
-            route_map.run_layer_method(polyline.id, "bindTooltip", "<br>".join(tooltip_lines))
+        route_points = [
+            [cast(float, point["lat"]), cast(float, point["lon"])] for point in valid_points
+        ]
+        polyline = route_map.generic_layer(
+            name="polyline",
+            args=[route_points, {"color": "#2563eb", "weight": 4, "opacity": 0.9}],
+        )
+        route_map.run_layer_method(polyline.id, "bindTooltip", route_name)
 
         start_marker = route_map.generic_layer(
             name="circleMarker",
@@ -666,9 +651,7 @@ def _do_refresh_route_tab(
             ],
         )
         route_map.run_layer_method(end_marker.id, "bindTooltip", f"{end_label} - {route_name}")
-        all_points.extend(
-            [[cast(float, point["lat"]), cast(float, point["lon"])] for point in valid_points]
-        )
+        all_points.extend(route_points)
 
     if all_points:
         background_tasks.create(_fit_route_bounds_after_init(route_map, list(all_points)))
@@ -873,7 +856,7 @@ def create_workout_detail_modal(
       Other activity types show a placeholder message; the tab is disabled.
     * **Route** – interactive map for workouts with GPS points. Route geometry is
       rendered from ``route_parts`` (when available) or the merged ``route`` field,
-      with start/end markers and pace-colored segments.
+      with start/end markers.
     * **Profile** – elevation and pace chart for the workout route. Includes
       distance-based tooltip metrics (pace, speed, altitude, optional heart rate).
     * **Intervals** – per-workout interval data.  For Swimming workouts each row

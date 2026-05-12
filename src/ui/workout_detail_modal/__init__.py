@@ -444,7 +444,7 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
             speed_kmh = None
             hr_bpm = cast(float | None, current["heart_rate"])
             if idx > 0:
-                segment_distance_m, speed_m_s, _raw_pace = _route_segment_metrics(
+                segment_distance_m, speed_m_s, _ = _route_segment_metrics(
                     valid_points[idx - 1], current
                 )
                 if speed_m_s is not None:

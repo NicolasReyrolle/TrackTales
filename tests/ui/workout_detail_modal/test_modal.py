@@ -581,8 +581,10 @@ class TestRouteTabLocalizationAndCoverage:
         assert isinstance(config["yAxis"], list)
         assert config["yAxis"][0]["scale"] is True
         assert config["yAxis"][0]["nameLocation"] == "middle"
+        assert config["yAxis"][0]["nameGap"] == 52
         assert config["yAxis"][1]["scale"] is True
         assert config["yAxis"][1]["nameLocation"] == "middle"
+        assert config["yAxis"][1]["nameGap"] == 56
         assert altitude_data[0][1] == 100.0
         assert pace_data[1][2] is not None  # pace min/km
         assert pace_data[1][3] is not None  # speed km/h

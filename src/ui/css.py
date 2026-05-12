@@ -163,9 +163,9 @@ TABLE_FULL_CLASSES = "w-full"
 # ---------------------------------------------------------------------------
 
 #: Modal card: fixed width (≈ 56 rem / 896 px) with viewport cap for smaller screens.
-#: Does not set an explicit height
-#: because the tab panels area uses a fixed height (see MODAL_TAB_PANELS_CLASSES),
-#: keeping the overall modal size stable when switching tabs.
+#: Does not set an explicit height because the tab panels area uses a fixed
+#: height (see MODAL_TAB_PANELS_CLASSES), keeping the overall modal size stable
+#: when switching tabs.
 MODAL_CARD_CLASSES = "w-[56rem] max-w-[95vw]"
 
 #: Tab panels container inside the modal: fixed height so the modal does not

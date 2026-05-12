@@ -178,6 +178,9 @@ MODAL_TAB_PANELS_CLASSES = "w-full h-[30rem] overflow-y-auto"
 #: Uses a fixed target width (capped on small screens) so ``mx-auto`` can center it.
 MODAL_CENTERED_CONTENT_CLASSES = "w-[42rem] max-w-full mx-auto"
 
+#: Full-width row wrapper that enforces horizontal centering in tab panels.
+MODAL_CENTERED_ROW_CLASSES = "w-full justify-center"
+
 #: Modal header row: title on the left, close button on the right.
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"
 

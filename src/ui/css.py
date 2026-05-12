@@ -203,6 +203,15 @@ MODAL_ROUTE_MAP_CONTAINER_CLASSES = "w-full workout-route-map-container"
 #: Inner HTML map node for Leaflet to mount into (fills the container dimensions).
 MODAL_ROUTE_MAP_HTML_CLASSES = "w-full h-full workout-route-map"
 
+#: Route tab wrapper that lays out the map and elevation profile side by side.
+MODAL_ROUTE_CONTENT_CLASSES = "w-full workout-route-content"
+
+#: Fixed-height container for the route elevation profile chart in the modal Route tab.
+MODAL_ROUTE_PROFILE_CONTAINER_CLASSES = "w-full workout-route-profile-container"
+
+#: ECharts node for the route elevation profile (fills its container).
+MODAL_ROUTE_PROFILE_CLASSES = "w-full h-full workout-route-profile"
+
 #: Compact table for the route-comparison ranking in the modal Comparisons tab.
 MODAL_COMPARISON_TABLE_CLASSES = "w-full"
 

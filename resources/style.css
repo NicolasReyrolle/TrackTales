@@ -160,15 +160,37 @@ body.body--dark .q-table tbody tr:not(.q-tr--no-hover):hover td,
 }
 
 /* ===================================================================
-   Workout detail modal Route tab: fixed-height map container so the
-   dialog size stays stable and the Leaflet map has explicit dimensions.
+   Workout detail modal Route tab: map + elevation profile layout.
+   Keeps both panels aligned and wraps vertically on narrow viewports.
    =================================================================== */
+.workout-route-content {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Map panel: fixed height and flexible width inside the route tab split layout. */
 .workout-route-map-container {
     height: 24rem;
+    flex: 1 1 28rem;
+    min-width: 18rem;
 }
 
 /* Leaflet map node fills its parent and inherits the card-like border style. */
 .workout-route-map {
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.5rem;
+}
+
+/* Elevation profile panel: mirrors map panel sizing for side-by-side display. */
+.workout-route-profile-container {
+    height: 24rem;
+    flex: 1 1 18rem;
+    min-width: 18rem;
+}
+
+/* ECharts profile node fills its parent and uses the same card-like border style. */
+.workout-route-profile {
     border: 1px solid var(--border-subtle);
     border-radius: 0.5rem;
 }

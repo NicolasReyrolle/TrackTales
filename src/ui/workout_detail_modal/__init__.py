@@ -1,6 +1,7 @@
 """Workout detail modal dialog for Apple Health Analyzer."""
 
 import asyncio
+import json
 from collections.abc import Callable
 from math import isfinite
 from typing import Any, TypeAlias, cast
@@ -28,8 +29,11 @@ from ui.css import (
     MODAL_HEADER_ROW_CLASSES,
     MODAL_NAV_COUNTER_CLASSES,
     MODAL_NAV_ROW_CLASSES,
+    MODAL_ROUTE_CONTENT_CLASSES,
     MODAL_ROUTE_MAP_CONTAINER_CLASSES,
     MODAL_ROUTE_MAP_HTML_CLASSES,
+    MODAL_ROUTE_PROFILE_CLASSES,
+    MODAL_ROUTE_PROFILE_CONTAINER_CLASSES,
     MODAL_SPLITS_TABLE_CLASSES,
     MODAL_SWIM_TABLE_CLASSES,
     MODAL_TAB_PANELS_CLASSES,
@@ -266,41 +270,182 @@ def _build_field_rows(
     return field_rows
 
 
+def _segment_color_from_pace(pace_min_per_km: float | None) -> str:
+    """Return the route-segment color for the given pace (minutes per km)."""
+    if pace_min_per_km is None:
+        return "#6b7280"
+    if pace_min_per_km <= 4.0:
+        return "#16a34a"
+    if pace_min_per_km <= 5.0:
+        return "#65a30d"
+    if pace_min_per_km <= 6.0:
+        return "#eab308"
+    if pace_min_per_km <= 7.0:
+        return "#f97316"
+    return "#dc2626"
+
+
+def _format_pace_min_per_km(pace_min_per_km: float | None) -> str:
+    """Format pace value for tooltips, or return an unavailable marker."""
+    if pace_min_per_km is None or pace_min_per_km <= 0.0:
+        return "–"
+    minutes = int(pace_min_per_km)
+    seconds = int(round((pace_min_per_km - minutes) * 60.0))
+    if seconds == 60:
+        minutes += 1
+        seconds = 0
+    return f"{minutes}:{seconds:02d} /km"
+
+
+def _route_point_map_data(point: Any) -> dict[str, float | Any] | None:
+    """Extract map/profile fields from a route point; return None when invalid."""
+    lat = getattr(point, "latitude", None)
+    lon = getattr(point, "longitude", None)
+    if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+        return None
+    lat_f, lon_f = float(lat), float(lon)
+    if not (isfinite(lat_f) and isfinite(lon_f)):
+        return None
+    altitude = getattr(point, "altitude", None)
+    speed = getattr(point, "speed", None)
+    heart_rate = getattr(point, "heart_rate", None)
+    return {
+        "lat": lat_f,
+        "lon": lon_f,
+        "altitude": float(altitude)
+        if isinstance(altitude, (int, float)) and isfinite(altitude)
+        else 0.0,
+        "speed": float(speed) if isinstance(speed, (int, float)) and isfinite(speed) else 0.0,
+        "heart_rate": (
+            float(heart_rate)
+            if isinstance(heart_rate, (int, float)) and isfinite(heart_rate)
+            else None
+        ),
+        "time": getattr(point, "time", None),
+    }
+
+
+def _route_segment_metrics(
+    previous: dict[str, Any],
+    current: dict[str, Any],
+) -> tuple[float, float | None, float | None]:
+    """Return segment distance (m), speed (m/s), and pace (min/km)."""
+    distance_m = WorkoutRoute.haversine_m(
+        cast(float, previous["lat"]),
+        cast(float, previous["lon"]),
+        cast(float, current["lat"]),
+        cast(float, current["lon"]),
+    )
+    speed_prev = cast(float, previous["speed"])
+    speed_curr = cast(float, current["speed"])
+    speed_m_s = None
+    if speed_prev > 0.0 and speed_curr > 0.0:
+        speed_m_s = (speed_prev + speed_curr) / 2.0
+    else:
+        prev_time = previous["time"]
+        curr_time = current["time"]
+        if prev_time is not None and curr_time is not None:
+            try:
+                delta_seconds = (curr_time - prev_time).total_seconds()
+            except (AttributeError, TypeError):
+                delta_seconds = 0.0
+            if delta_seconds > 0.0 and distance_m > 0.0:
+                speed_m_s = distance_m / delta_seconds
+    if speed_m_s is None or speed_m_s <= 0.0:
+        return distance_m, None, None
+    pace_min_per_km = (1000.0 / speed_m_s) / 60.0
+    return distance_m, speed_m_s, pace_min_per_km
+
+
+def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, Any]:
+    """Build an elevation profile chart config from route altitude data."""
+    profile_points: list[list[float | None]] = []
+    cumulative_distance_m = 0.0
+    for route in routes:
+        if not route.points:
+            continue
+        route_df = route.to_dataframe()
+        altitudes = [
+            float(a) if isinstance(a, (int, float)) and isfinite(a) else 0.0
+            for a in route_df["altitude"].tolist()
+        ]
+        if not altitudes:
+            continue
+        route_points = [_route_point_map_data(point) for point in route.points]
+        valid_points = [point for point in route_points if point is not None]
+        if len(valid_points) < 2:
+            continue
+        for idx, current in enumerate(valid_points):
+            if idx > 0:
+                previous = valid_points[idx - 1]
+                cumulative_distance_m += WorkoutRoute.haversine_m(
+                    cast(float, previous["lat"]),
+                    cast(float, previous["lon"]),
+                    cast(float, current["lat"]),
+                    cast(float, current["lon"]),
+                )
+            distance_km = cumulative_distance_m / 1000.0
+            altitude_m = altitudes[min(idx, len(altitudes) - 1)]
+            pace = None
+            speed_kmh = None
+            hr_bpm = cast(float | None, current["heart_rate"])
+            if idx > 0:
+                _distance_m, speed_m_s, pace = _route_segment_metrics(
+                    valid_points[idx - 1], current
+                )
+                if speed_m_s is not None:
+                    speed_kmh = speed_m_s * 3.6
+            profile_points.append([distance_km, altitude_m, pace, speed_kmh, hr_bpm])
+
+    pace_label = json.dumps(f"{t('Pace')}: ")
+    speed_label = json.dumps(f"{t('Speed')}: ")
+    altitude_label = json.dumps(f"{t('Altitude')}: ")
+    distance_label = json.dumps(f"{t('Distance')}: ")
+    heart_rate_label = json.dumps(f"{t('Heart Rate')}: ")
+    no_data = json.dumps("–")
+    return {
+        "backgroundColor": "transparent",
+        "tooltip": {
+            "trigger": "axis",
+            "renderMode": "richText",
+            ":formatter": (
+                "function(params) {"
+                "var point = params[0].data;"
+                f"var text = {distance_label} + point[0].toFixed(2) + ' km\\n' + "
+                f"{altitude_label} + point[1].toFixed(1) + ' m';"
+                f"text += '\\n' + {pace_label} + (point[2] == null ? {no_data} : "
+                "("
+                "Math.floor(point[2]) + ':' + "
+                "String(Math.round((point[2] - Math.floor(point[2])) * 60)).padStart(2, '0') + "
+                "' /km'));"
+                f"text += '\\n' + {speed_label} + ("
+                f"point[3] == null ? {no_data} : point[3].toFixed(1) + ' km/h');"
+                "if (point[4] != null) {"
+                f"  text += '\\n' + {heart_rate_label} + point[4].toFixed(0) + ' bpm';"
+                "}"
+                "return text;"
+                "}"
+            ),
+        },
+        "xAxis": {"type": "value", "name": f"{t('Distance')} (km)"},
+        "yAxis": {"type": "value", "name": f"{t('Altitude')} (m)"},
+        "series": [{"type": "line", "data": profile_points, "showSymbol": False, "smooth": False}],
+    }
+
+
 def _do_refresh_route_tab(
     no_route_label: Any,
     route_map: Any,
+    route_profile_chart: Any,
     row: dict[str, Any],
 ) -> None:
-    """Update the Route tab map and markers for the current workout row."""
+    """Update the Route tab map, metric overlays, and elevation profile."""
     routes = _get_row_routes(row)
     has_route = bool(routes)
     no_route_label.set_visibility(not has_route)
     route_map.set_visibility(has_route)
+    route_profile_chart.set_visibility(has_route)
     if not has_route:
-        return
-
-    def _point_pair(point: Any) -> list[float] | None:
-        """Return a [lat, lon] pair for map rendering, or None if invalid."""
-        lat = getattr(point, "latitude", None)
-        lon = getattr(point, "longitude", None)
-        if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
-            return None
-        lat_f, lon_f = float(lat), float(lon)
-        if not (isfinite(lat_f) and isfinite(lon_f)):
-            return None
-        return [lat_f, lon_f]
-
-    route_data: list[dict[str, Any]] = [
-        {
-            "name": t("Route {index}", index=str(idx)),
-            "points": [pair for point in route.points if (pair := _point_pair(point)) is not None],
-        }
-        for idx, route in enumerate(routes, start=1)
-        if route.points
-    ]
-    if not route_data:
-        no_route_label.set_visibility(True)
-        route_map.set_visibility(False)
         return
 
     route_map.clear_layers()
@@ -312,40 +457,61 @@ def _do_refresh_route_tab(
         },
     )
 
-    colors = ["#2563eb", "#ef4444", "#10b981", "#a855f7", "#f59e0b"]
+    route_profile_chart.options = _build_route_profile_chart_config(routes)
+    route_profile_chart.update()
+
     all_points: list[list[float]] = []
     start_label = t("Start")
     end_label = t("End")
 
-    for index, route in enumerate(route_data):
-        points = cast(list[list[float]], route["points"])
-        if not points:
+    for idx, route in enumerate(routes, start=1):
+        route_name = t("Route {index}", index=str(idx))
+        points_data = [_route_point_map_data(point) for point in route.points]
+        valid_points = [point for point in points_data if point is not None]
+        if len(valid_points) < 2:
             continue
-        color = colors[index % len(colors)]
-        polyline = route_map.generic_layer(
-            name="polyline",
-            args=[points, {"color": color, "weight": 4, "opacity": 0.9}],
-        )
-        route_map.run_layer_method(polyline.id, "bindTooltip", route["name"])
-        all_points.extend(points)
+
+        for previous, current in zip(valid_points, valid_points[1:]):
+            distance_m, speed_m_s, pace = _route_segment_metrics(previous, current)
+            color = _segment_color_from_pace(pace)
+            segment_points = [
+                [cast(float, previous["lat"]), cast(float, previous["lon"])],
+                [cast(float, current["lat"]), cast(float, current["lon"])],
+            ]
+            polyline = route_map.generic_layer(
+                name="polyline",
+                args=[segment_points, {"color": color, "weight": 4, "opacity": 0.9}],
+            )
+            tooltip_lines = [
+                route_name,
+                f"{t('Pace')}: {_format_pace_min_per_km(pace)}",
+                f"{t('Speed')}: {'–' if speed_m_s is None else f'{speed_m_s * 3.6:.1f} km/h'}",
+                f"{t('Altitude')}: {cast(float, current['altitude']):.1f} m",
+                f"{t('Distance')}: {distance_m:.0f} m",
+            ]
+            heart_rate = cast(float | None, current["heart_rate"])
+            if heart_rate is not None:
+                tooltip_lines.append(f"{t('Heart Rate')}: {heart_rate:.0f} bpm")
+            route_map.run_layer_method(polyline.id, "bindTooltip", "<br>".join(tooltip_lines))
 
         start_marker = route_map.generic_layer(
             name="circleMarker",
-            args=[points[0], {"radius": 6, "color": "#16a34a", "fillOpacity": 1}],
+            args=[
+                [cast(float, valid_points[0]["lat"]), cast(float, valid_points[0]["lon"])],
+                {"radius": 6, "color": "#16a34a", "fillOpacity": 1},
+            ],
         )
-        route_map.run_layer_method(
-            start_marker.id,
-            "bindTooltip",
-            f"{start_label} - {route['name']}",
-        )
+        route_map.run_layer_method(start_marker.id, "bindTooltip", f"{start_label} - {route_name}")
         end_marker = route_map.generic_layer(
             name="circleMarker",
-            args=[points[-1], {"radius": 6, "color": "#dc2626", "fillOpacity": 1}],
+            args=[
+                [cast(float, valid_points[-1]["lat"]), cast(float, valid_points[-1]["lon"])],
+                {"radius": 6, "color": "#dc2626", "fillOpacity": 1},
+            ],
         )
-        route_map.run_layer_method(
-            end_marker.id,
-            "bindTooltip",
-            f"{end_label} - {route['name']}",
+        route_map.run_layer_method(end_marker.id, "bindTooltip", f"{end_label} - {route_name}")
+        all_points.extend(
+            [[cast(float, point["lat"]), cast(float, point["lon"])] for point in valid_points]
         )
 
     if all_points:
@@ -524,9 +690,9 @@ def create_workout_detail_modal(
       Swimming workouts show location, lap length, and total stroke count.
       Cycling workouts show speed, cadence, power, and functional threshold power.
       Other activity types show a placeholder message; the tab is disabled.
-    * **Route** – interactive map for workouts with GPS points.  Route geometry is
-      rendered from ``route_parts`` (when available) or the merged ``route`` field,
-      with start/end markers and per-part colored polylines for multi-part routes.
+    * **Route** – interactive map for workouts with GPS points plus an elevation
+      profile. Route geometry is rendered from ``route_parts`` (when available) or
+      the merged ``route`` field, with start/end markers and pace-colored segments.
     * **Intervals** – per-workout interval data.  For Swimming workouts each row
       represents one active set with distance, time, stroke style, average SWOLF,
       and rest duration.  For workouts with a GPS route the table shows per-km (or
@@ -696,12 +862,22 @@ def create_workout_detail_modal(
                 # Route tab: interactive Leaflet route map with start/end markers
                 with ui.tab_panel("route"):
                     no_route_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
-                    with ui.row().classes(MODAL_ROUTE_MAP_CONTAINER_CLASSES):
-                        route_map = ui.leaflet(
-                            center=(0.0, 0.0),
-                            zoom=13,
-                            options={"zoomControl": True},
-                        ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
+                    with ui.row().classes(MODAL_ROUTE_CONTENT_CLASSES):
+                        with ui.row().classes(MODAL_ROUTE_MAP_CONTAINER_CLASSES):
+                            route_map = ui.leaflet(
+                                center=(0.0, 0.0),
+                                zoom=13,
+                                options={"zoomControl": True},
+                            ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
+                        with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
+                            route_profile_chart = ui.echart(
+                                {
+                                    "backgroundColor": "transparent",
+                                    "xAxis": {"type": "value"},
+                                    "yAxis": {"type": "value"},
+                                    "series": [{"type": "line", "data": []}],
+                                }
+                            ).classes(MODAL_ROUTE_PROFILE_CLASSES)
 
                 # Comparisons tab: route-comparison leaderboard for GPS workouts
                 with ui.tab_panel("comparisons"):
@@ -795,7 +971,7 @@ def create_workout_detail_modal(
 
     def _refresh_route_tab(row: dict[str, Any]) -> None:
         """Delegate to module-level helper; updates Route tab map and route visibility."""
-        _do_refresh_route_tab(no_route_label, route_map, row)
+        _do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
 
     def _refresh_comparisons_tab(row: dict[str, Any]) -> None:
         """Delegate to module-level helper; updates Comparisons tab leaderboard."""

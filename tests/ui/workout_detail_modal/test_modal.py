@@ -238,7 +238,7 @@ class TestCreateWorkoutDetailModal:
         route_refresh_row_calls: list[dict[str, Any]] = []
 
         def capture_route_refresh(
-            _no_route_label: Any, _route_map: Any, row: dict[str, Any]
+            _no_route_label: Any, _route_map: Any, _route_profile_chart: Any, row: dict[str, Any]
         ) -> None:
             route_refresh_row_calls.append(row)
 
@@ -296,6 +296,7 @@ class TestCreateWorkoutDetailModal:
         row = {**_make_row(idx=0), "route": route}
         no_route_label = _DummyElement()
         route_map = _DummyElement()
+        route_profile_chart = _DummyElement()
 
         def run_coroutine_sync(coro: Any) -> Any:
             return asyncio.run(coro)
@@ -304,7 +305,7 @@ class TestCreateWorkoutDetailModal:
             "ui.workout_detail_modal.background_tasks.create",
             side_effect=run_coroutine_sync,
         ) as create_bg:
-            wdm._do_refresh_route_tab(no_route_label, route_map, row)
+            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
 
         assert create_bg.call_count == 1
         assert route_map._run_map_method_calls[-1][0][0] == "fitBounds"
@@ -348,6 +349,7 @@ class TestRouteTabLocalizationAndCoverage:
         row = {"route_parts": [self._build_route([(48.85, 2.35), (48.851, 2.351)])]}
         no_route_label = _DummyElement()
         route_map = _DummyElement()
+        route_profile_chart = _DummyElement()
 
         t_calls: list[tuple[str, dict[str, str]]] = []
         tooltip_texts: list[str] = []
@@ -378,12 +380,12 @@ class TestRouteTabLocalizationAndCoverage:
                 side_effect=run_coroutine_sync,
             ),
         ):
-            wdm._do_refresh_route_tab(no_route_label, route_map, row)
+            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
 
         assert ("Route {index}", {"index": "1"}) in t_calls
         assert ("Start", {}) in t_calls
         assert ("End", {}) in t_calls
-        assert "Parcours 1" in tooltip_texts
+        assert any("Parcours 1" in text for text in tooltip_texts)
         assert "Départ - Parcours 1" in tooltip_texts
         assert "Arrivée - Parcours 1" in tooltip_texts
 
@@ -407,17 +409,103 @@ class TestRouteTabLocalizationAndCoverage:
         row = {"route": invalid_route}
         no_route_label = _DummyElement()
         route_map = _DummyElement()
+        route_profile_chart = _DummyElement()
 
         with (
             patch.object(route_map, "set_center") as set_center,
             patch.object(route_map, "set_zoom") as set_zoom,
         ):
-            wdm._do_refresh_route_tab(no_route_label, route_map, row)
+            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
 
         assert not no_route_label._visible
         assert route_map._visible
         set_center.assert_called_once_with((0.0, 0.0))
         set_zoom.assert_called_once_with(1)
+
+    def test_build_route_profile_chart_config_includes_altitude_and_metric_columns(self) -> None:
+        """Route profile config should include altitude and sampled pace/speed metadata."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01").to_pydatetime()
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base_time + timedelta(seconds=i * 10),
+                    latitude=48.85 + (i * 0.0001),
+                    longitude=2.35 + (i * 0.0001),
+                    altitude=100.0 + i,
+                    speed=3.0 + i,
+                )
+                for i in range(3)
+            ]
+        )
+
+        config = wdm._build_route_profile_chart_config([route])
+        series = config["series"][0]
+        data = series["data"]
+
+        assert config["backgroundColor"] == "transparent"
+        assert data[0][1] == 100.0
+        assert data[1][2] is not None  # pace min/km
+        assert data[1][3] is not None  # speed km/h
+
+    def test_do_refresh_route_tab_uses_metric_based_segment_colors(self) -> None:
+        """Route refresh should color each segment by pace and expose metric details in tooltip."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01").to_pydatetime()
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base_time + timedelta(seconds=i * 10),
+                    latitude=48.85 + (i * 0.0001),
+                    longitude=2.35 + (i * 0.0001),
+                    altitude=35.0 + i,
+                    speed=2.0 + (i * 2.0),
+                )
+                for i in range(3)
+            ]
+        )
+        row = {"route": route}
+        no_route_label = _DummyElement()
+        route_map = _DummyElement()
+        route_profile_chart = _DummyElement()
+        polyline_colors: list[str] = []
+        tooltip_texts: list[str] = []
+
+        def capture_layer(name: str, args: list[Any]) -> _DummyElement:
+            if name == "polyline":
+                polyline_colors.append(args[1]["color"])
+            return _DummyElement()
+
+        def capture_tooltip(_layer_id: str, method: str, text: str) -> _DummyElement:
+            if method == "bindTooltip":
+                tooltip_texts.append(text)
+            return route_map
+
+        def run_coroutine_sync(coro: Any) -> Any:
+            return asyncio.run(coro)
+
+        with (
+            patch.object(route_map, "generic_layer", side_effect=capture_layer),
+            patch.object(route_map, "run_layer_method", side_effect=capture_tooltip),
+            patch(
+                "ui.workout_detail_modal.background_tasks.create", side_effect=run_coroutine_sync
+            ),
+        ):
+            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
+
+        assert polyline_colors
+        assert all(color.startswith("#") for color in polyline_colors)
+        assert any("Pace" in text and "Speed" in text for text in tooltip_texts)
 
 
 class TestActivityTabSection:

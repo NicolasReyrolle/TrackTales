@@ -112,7 +112,7 @@ Defines the data contract using pure Python (no NiceGUI dependency):
 - `PER_TYPE_FIELDS` — dict mapping an activity-type string (e.g. `"Running"`) to a list of additional `FieldDefinition` instances specific to that type.  Every field here that belongs to the Activity tab must set `display_row_key` to the row-dict key produced by `_build_workout_rows()`.
 - `get_fields_for_activity(activity_type)` — returns `GENERIC_FIELDS + PER_TYPE_FIELDS.get(activity_type, [])`.
 
-### UI layer — `src/ui/workout_detail_modal.py`
+### UI layer — `src/ui/workout_detail_modal/__init__.py`
 
 Builds the NiceGUI dialog from the field display specs:
 
@@ -120,6 +120,7 @@ Builds the NiceGUI dialog from the field display specs:
 - `_RUNNING_FIELD_DISPLAY`, `_WALKING_FIELD_DISPLAY`, `_HIKING_FIELD_DISPLAY`, `_SWIMMING_FIELD_DISPLAY`, `_CYCLING_FIELD_DISPLAY` — display specs for the Activity tab, one per supported type.
 - `_ACTIVITY_FIELD_KEYS` — **derived from `PER_TYPE_FIELDS`** by collecting `display_row_key` values for each activity type.  This dict drives `_row_has_activity_data()` to decide whether to enable the Activity tab.  It is computed at module load time so any new entry in `PER_TYPE_FIELDS` is picked up automatically.
 - `create_workout_detail_modal(rows)` — creates the dialog once in the current NiceGUI context and returns an `open_at(index)` callable.
+- Route-capable workouts expose dedicated **Route** (Leaflet map) and **Profile** (ECharts elevation+pace) tabs. Keep profile-chart readability settings (`legend.top`, centered x/y axis names, and larger grid margins) when editing chart config.
 
 **Adding Activity-tab support for a new type** requires changes in both layers:
 

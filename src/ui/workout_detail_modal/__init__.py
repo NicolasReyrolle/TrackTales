@@ -515,11 +515,11 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
     # Keep this pace formatter aligned with _format_pace_min_per_km used on map tooltips.
     altitude_axis_name = f"{t('Altitude')} (m)"
     pace_axis_name = f"{t('Pace')} (/km)"
-    # Dual-axis layout needs extra right/left grid space for y-axis names and labels.
-    chart_grid = {"left": 56, "right": 64, "top": 36, "bottom": 42}
+    # Keep legend and axis titles separated from tick labels on compact screens.
+    chart_grid = {"left": 72, "right": 80, "top": 56, "bottom": 64}
     return {
         "backgroundColor": "transparent",
-        "legend": {"data": [altitude_axis_name, pace_axis_name]},
+        "legend": {"data": [altitude_axis_name, pace_axis_name], "top": 8},
         "grid": chart_grid,
         "tooltip": {
             "trigger": "axis",
@@ -543,10 +543,28 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
                 "}"
             ),
         },
-        "xAxis": {"type": "value", "name": f"{t('Distance')} (km)"},
+        "xAxis": {
+            "type": "value",
+            "name": f"{t('Distance')} (km)",
+            "nameLocation": "middle",
+            "nameGap": 42,
+        },
         "yAxis": [
-            {"type": "value", "name": altitude_axis_name, "scale": True},
-            {"type": "value", "name": pace_axis_name, "scale": True, "inverse": True},
+            {
+                "type": "value",
+                "name": altitude_axis_name,
+                "scale": True,
+                "nameLocation": "middle",
+                "nameGap": 52,
+            },
+            {
+                "type": "value",
+                "name": pace_axis_name,
+                "scale": True,
+                "inverse": True,
+                "nameLocation": "middle",
+                "nameGap": 56,
+            },
         ],
         "series": [
             {

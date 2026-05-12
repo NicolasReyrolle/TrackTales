@@ -808,10 +808,22 @@ msgstr ""
 msgid "Intervals"
 msgstr ""
 
+msgid "Comparisons"
+msgstr ""
+
 msgid "No activity-specific data available."
 msgstr ""
 
 msgid "No GPS route available."
+msgstr ""
+
+msgid "No similar routes found."
+msgstr ""
+
+msgid "Rank: {rank} of {total}"
+msgstr ""
+
+msgid "Diff"
 msgstr ""
 
 msgid "No lap data available."

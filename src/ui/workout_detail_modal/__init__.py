@@ -20,6 +20,8 @@ from ui.css import (
     LABEL_MUTED_CLASSES,
     LABEL_UPPERCASE_CLASSES,
     MODAL_CARD_CLASSES,
+    MODAL_COMPARISON_RANK_CLASSES,
+    MODAL_COMPARISON_TABLE_CLASSES,
     MODAL_FIELD_LABEL_CLASSES,
     MODAL_FIELD_ROW_CLASSES,
     MODAL_FIELD_VALUE_CLASSES,
@@ -34,10 +36,18 @@ from ui.css import (
     TABLE_DENSE_FLAT_PROPS,
     TABS_FULL_CLASSES,
 )
-from units import METERS_TO_FEET, METERS_TO_MILES
+from ui.helpers import _format_elevation_change, _format_split_pace, _format_split_speed
+from ui.workout_detail_modal.comparisons import (
+    _do_refresh_comparisons_tab,
+    _get_row_routes,
+)
+from units import METERS_TO_MILES
 
 #: Callable returning a translated label string; alias for readability.
 _LabelFn: TypeAlias = Callable[[], str]
+
+#: i18n key reused in three places (Intervals, Route, and Comparisons tabs).
+_NO_GPS_ROUTE_MSG = "No GPS route available."
 
 # ---------------------------------------------------------------------------
 # Shared label-function constants reused across multiple field display lists.
@@ -152,60 +162,6 @@ def _build_swim_display_rows(intervals: list[SwimInterval]) -> list[dict[str, An
     ]
 
 
-def _format_split_pace(pace_min_per_km: float, distance_unit: str) -> str:
-    """Format a pace value (min/km) as a ``mm:ss /unit`` string.
-
-    Args:
-        pace_min_per_km: Pace in minutes per kilometre.
-        distance_unit: ``"km"`` or ``"mi"``.  Controls both the scaling and
-            the unit label appended to the string.
-
-    Returns:
-        Formatted string such as ``"4:32 min/km"`` or ``"7:17 min/mi"``.
-    """
-    pace_scale = 1.0 / (1000.0 * METERS_TO_MILES) if distance_unit == "mi" else 1.0
-    scaled = pace_min_per_km * pace_scale
-    minutes = int(scaled)
-    seconds = int(round((scaled - minutes) * 60))
-    if seconds == 60:
-        minutes += 1
-        seconds = 0
-    return f"{minutes}:{seconds:02d} min/{distance_unit}"
-
-
-def _format_split_speed(pace_min_per_km: float, distance_unit: str) -> str:
-    """Format a speed value derived from a pace (min/km).
-
-    Args:
-        pace_min_per_km: Pace in minutes per kilometre (must be > 0).
-        distance_unit: ``"km"`` to return km/h, ``"mi"`` to return mph.
-
-    Returns:
-        Formatted string such as ``"10.0 km/h"`` or ``"6.2 mph"``.
-    """
-    speed_km_h = 60.0 / pace_min_per_km
-    if distance_unit == "mi":
-        return f"{speed_km_h * 1000.0 * METERS_TO_MILES:.1f} mph"
-    return f"{speed_km_h:.1f} km/h"
-
-
-def _format_elevation_change(elevation_change_m: float, distance_unit: str = "km") -> str:
-    """Format an elevation change as a compact signed string.
-
-    Args:
-        elevation_change_m: Net elevation change in metres.
-        distance_unit: ``"km"`` to display metres, ``"mi"`` to display feet.
-
-    Returns:
-        Formatted string such as ``"+5 m"``, ``"-2 m"``  or ``"+16 ft"``.
-    """
-    sign = "+" if elevation_change_m >= 0 else ""
-    if distance_unit == "mi":
-        feet = elevation_change_m * METERS_TO_FEET
-        return f"{sign}{int(round(feet))} ft"
-    return f"{sign}{int(round(elevation_change_m))} m"
-
-
 def _format_split_rows(
     splits: list[dict[str, Any]],
     distance_unit: str,
@@ -308,37 +264,6 @@ def _build_field_rows(
             value_el = ui.label().classes(MODAL_FIELD_VALUE_CLASSES)
         field_rows[field_key] = (frow, value_el)
     return field_rows
-
-
-def _row_has_route(row: dict[str, Any]) -> bool:
-    """Return True when the row contains a non-empty GPS route.
-
-    Used to decide whether to enable the Splits tab in the workout detail modal.
-
-    Args:
-        row: A workout row dict as returned by ``_build_workout_rows()``.
-
-    Returns:
-        True when a :class:`~logic.workout_manager.workout_route.WorkoutRoute`
-        with at least one point is stored under the ``"route"`` key.
-    """
-    route = row.get("route")
-    return isinstance(route, WorkoutRoute) and not route.is_empty
-
-
-def _get_row_routes(row: dict[str, Any]) -> list[WorkoutRoute]:
-    """Return non-empty route parts for the row, falling back to the merged route."""
-    route_parts = row.get("route_parts")
-    if isinstance(route_parts, list):
-        valid_parts = [
-            part for part in route_parts if isinstance(part, WorkoutRoute) and not part.is_empty
-        ]
-        if valid_parts:
-            return valid_parts
-    route = row.get("route")
-    if isinstance(route, WorkoutRoute) and not route.is_empty:
-        return [route]
-    return []
 
 
 def _do_refresh_route_tab(
@@ -607,6 +532,9 @@ def create_workout_detail_modal(
       and rest duration.  For workouts with a GPS route the table shows per-km (or
       per-mi) splits with pace and elevation change.  The tab is disabled when
       neither lap events nor a GPS route are available.
+    * **Comparisons** – route-comparison leaderboard for workouts with GPS data.
+      Shows up to the top 10 performances on the same course, with the current
+      workout highlighted.  The tab is disabled when no GPS route is available.
 
     Args:
         rows: List of workout row dicts as returned by ``_build_workout_rows()``.
@@ -633,6 +561,7 @@ def create_workout_detail_modal(
                 activity_tab = ui.tab("activity", t("Activity"))
                 route_tab = ui.tab("route", t("Route"))
                 intervals_tab = ui.tab("intervals", t("Intervals"))
+                comparisons_tab = ui.tab("comparisons", t("Comparisons"))
 
             # ---- Tab panels ----
             with ui.tab_panels(detail_tabs, value="overview").classes(MODAL_TAB_PANELS_CLASSES):
@@ -724,9 +653,7 @@ def create_workout_detail_modal(
                     )
 
                     # GPS splits section: per-km or per-mi splits for workouts with a route
-                    no_splits_label = ui.label(t("No GPS route available.")).classes(
-                        LABEL_MUTED_CLASSES
-                    )
+                    no_splits_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
                     # Initialise the split-number column header from the first row's unit so
                     # the correct label ("km" or "mi") is visible before the first tab-click.
                     _initial_du = rows[0].get("distance_unit", "km") if rows else "km"
@@ -768,15 +695,65 @@ def create_workout_detail_modal(
 
                 # Route tab: interactive Leaflet route map with start/end markers
                 with ui.tab_panel("route"):
-                    no_route_label = ui.label(t("No GPS route available.")).classes(
-                        LABEL_MUTED_CLASSES
-                    )
+                    no_route_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
                     with ui.row().classes(MODAL_ROUTE_MAP_CONTAINER_CLASSES):
                         route_map = ui.leaflet(
                             center=(0.0, 0.0),
                             zoom=13,
                             options={"zoomControl": True},
                         ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
+
+                # Comparisons tab: route-comparison leaderboard for GPS workouts
+                with ui.tab_panel("comparisons"):
+                    no_route_label_comp = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
+                        LABEL_MUTED_CLASSES
+                    )
+                    no_similar_label = ui.label(t("No similar routes found.")).classes(
+                        LABEL_MUTED_CLASSES
+                    )
+                    comparison_rank_label = ui.label().classes(MODAL_COMPARISON_RANK_CLASSES)
+                    comparison_columns = [
+                        {
+                            "name": "rank",
+                            "label": "#",
+                            "field": "rank_str",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "date",
+                            "label": t("Date"),
+                            "field": "date",
+                            "align": "left",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "duration",
+                            "label": t("Duration"),
+                            "field": "duration",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "diff",
+                            "label": t("Diff"),
+                            "field": "diff_str",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
+                            "name": "pace",
+                            "label": t("Pace"),
+                            "field": "pace",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                    ]
+                    comparison_table = (
+                        ui.table(columns=comparison_columns, rows=[], row_key="rank")
+                        .classes(MODAL_COMPARISON_TABLE_CLASSES)
+                        .props(TABLE_DENSE_FLAT_PROPS)
+                    )
 
             # ---- Navigation footer ----
             with ui.row().classes(MODAL_NAV_ROW_CLASSES):
@@ -820,6 +797,26 @@ def create_workout_detail_modal(
         """Delegate to module-level helper; updates Route tab map and route visibility."""
         _do_refresh_route_tab(no_route_label, route_map, row)
 
+    def _refresh_comparisons_tab(row: dict[str, Any]) -> None:
+        """Delegate to module-level helper; updates Comparisons tab leaderboard."""
+        _do_refresh_comparisons_tab(
+            no_route_label_comp,
+            no_similar_label,
+            comparison_rank_label,
+            comparison_table,
+            row,
+            rows,
+        )
+
+    # Dispatch table for lazily refreshing the active tab.  Defined once here
+    # so both ``_refresh`` and ``_on_tab_change`` share the same mapping without
+    # repeating the if/elif chain (which would raise the cognitive complexity).
+    _lazy_tab_refresh: dict[str, Callable[[dict[str, Any]], None]] = {
+        "intervals": _refresh_intervals_tab,
+        "route": _refresh_route_tab,
+        "comparisons": _refresh_comparisons_tab,
+    }
+
     def _refresh() -> None:
         """Update all modal elements to reflect the current workout."""
         idx = modal_state["index"]
@@ -832,12 +829,12 @@ def create_workout_detail_modal(
         has_route = bool(_get_row_routes(row))
         route_tab.set_enabled(has_route)
         intervals_tab.set_enabled(_row_has_swim_laps(row) or has_route)
+        comparisons_tab.set_enabled(has_route)
         # Only refresh the Intervals tab when it is currently active; switching to
         # it triggers _on_tab_change which handles the initial load.
-        if detail_tabs.value == "intervals":
-            _refresh_intervals_tab(row)
-        if detail_tabs.value == "route":
-            _refresh_route_tab(row)
+        refresh_fn = _lazy_tab_refresh.get(detail_tabs.value)
+        if refresh_fn:
+            refresh_fn(row)
 
     def _navigate(delta: int) -> None:
         """Move to the next or previous workout by *delta* steps."""
@@ -853,11 +850,12 @@ def create_workout_detail_modal(
         lazily (via :func:`_compute_splits_lazy`) and cached in
         ``row["splits"]`` for instant display on subsequent navigations.
         The Route tab renders a Leaflet map from the workout's GPS geometry.
+        The Comparisons tab searches for similar routes and caches the result
+        in ``row["similar_routes"]``.
         """
-        if e.value == "intervals":
-            _refresh_intervals_tab(rows[modal_state["index"]])
-        if e.value == "route":
-            _refresh_route_tab(rows[modal_state["index"]])
+        refresh_fn = _lazy_tab_refresh.get(e.value)
+        if refresh_fn:
+            refresh_fn(rows[modal_state["index"]])
 
     detail_tabs.on_value_change(_on_tab_change)
 

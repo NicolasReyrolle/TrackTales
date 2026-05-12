@@ -16,3 +16,30 @@ def test_route_map_tooltip_labels_are_translated_in_french() -> None:
     assert translate("Route {index}", language="fr", index="2") == "Parcours 2"
     assert translate("Start", language="fr") == "Départ"
     assert translate("End", language="fr") == "Arrivée"
+
+
+def test_comparisons_tab_label_is_translated_in_french() -> None:
+    """Workout modal Comparisons tab should have a French translation."""
+    i18n.compile_message_catalogs()
+    assert translate("Comparisons", language="fr") == "Comparaisons"
+
+
+def test_no_similar_routes_message_is_translated_in_french() -> None:
+    """No-similar-routes empty-state message should have a French translation."""
+    i18n.compile_message_catalogs()
+    assert (
+        translate("No similar routes found.", language="fr") == "Aucun parcours similaire trouvé."
+    )
+
+
+def test_your_rank_message_is_translated_in_french() -> None:
+    """Rank label template should have a French translation."""
+    i18n.compile_message_catalogs()
+    result = translate("Rank: {rank} of {total}", language="fr", rank="3", total="15")
+    assert result == "Rang : 3 sur 15"
+
+
+def test_diff_column_label_is_translated_in_french() -> None:
+    """Diff column header should have a French translation."""
+    i18n.compile_message_catalogs()
+    assert translate("Diff", language="fr") == "Écart"

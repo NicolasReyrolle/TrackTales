@@ -11,7 +11,7 @@ from babel.core import default_locale
 from babel.numbers import format_decimal
 
 from i18n import translate
-from units import METERS_TO_MILES
+from units import METERS_TO_FEET, METERS_TO_MILES
 
 SECONDS_PER_MINUTE: float = 60.0
 MINUTES_PER_HOUR: float = 60.0
@@ -318,3 +318,62 @@ def filter_workouts_by_date_range(
     if end_timestamp == end_timestamp.normalize():
         return filtered.loc[filtered["startDate"] < end_timestamp + pd.Timedelta(days=1)]
     return filtered.loc[filtered["startDate"] <= end_timestamp]
+
+
+# ---------------------------------------------------------------------------
+# Split / pace / elevation formatters (used in workout detail modal tabs)
+# ---------------------------------------------------------------------------
+
+
+def _format_split_pace(pace_min_per_km: float, distance_unit: str) -> str:
+    """Format a pace value (min/km) as a ``mm:ss /unit`` string.
+
+    Args:
+        pace_min_per_km: Pace in minutes per kilometre.
+        distance_unit: ``"km"`` or ``"mi"``.  Controls both the scaling and
+            the unit label appended to the string.
+
+    Returns:
+        Formatted string such as ``"4:32 min/km"`` or ``"7:17 min/mi"``.
+    """
+    pace_scale = 1.0 / (1000.0 * METERS_TO_MILES) if distance_unit == "mi" else 1.0
+    scaled = pace_min_per_km * pace_scale
+    minutes = int(scaled)
+    seconds = int(round((scaled - minutes) * 60))
+    if seconds == 60:
+        minutes += 1
+        seconds = 0
+    return f"{minutes}:{seconds:02d} min/{distance_unit}"
+
+
+def _format_split_speed(pace_min_per_km: float, distance_unit: str) -> str:
+    """Format a speed value derived from a pace (min/km).
+
+    Args:
+        pace_min_per_km: Pace in minutes per kilometre (must be > 0).
+        distance_unit: ``"km"`` to return km/h, ``"mi"`` to return mph.
+
+    Returns:
+        Formatted string such as ``"10.0 km/h"`` or ``"6.2 mph"``.
+    """
+    speed_km_h = 60.0 / pace_min_per_km
+    if distance_unit == "mi":
+        return f"{speed_km_h * 1000.0 * METERS_TO_MILES:.1f} mph"
+    return f"{speed_km_h:.1f} km/h"
+
+
+def _format_elevation_change(elevation_change_m: float, distance_unit: str = "km") -> str:
+    """Format an elevation change as a compact signed string.
+
+    Args:
+        elevation_change_m: Net elevation change in metres.
+        distance_unit: ``"km"`` to display metres, ``"mi"`` to display feet.
+
+    Returns:
+        Formatted string such as ``"+5 m"``, ``"-2 m"``  or ``"+16 ft"``.
+    """
+    sign = "+" if elevation_change_m >= 0 else ""
+    if distance_unit == "mi":
+        feet = elevation_change_m * METERS_TO_FEET
+        return f"{sign}{int(round(feet))} ft"
+    return f"{sign}{int(round(elevation_change_m))} m"

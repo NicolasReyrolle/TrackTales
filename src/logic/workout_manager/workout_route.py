@@ -90,7 +90,7 @@ class WorkoutRoute:
         return self._sorted_times_cache
 
     @staticmethod
-    def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         """Calculate the Haversine distance between two GPS points in meters."""
         r = 6_371_000.0
         p1, p2 = radians(lat1), radians(lat2)
@@ -119,7 +119,7 @@ class WorkoutRoute:
             if avg_speed > 0.0 and delta_t > 0.0:
                 segment_distance = avg_speed * delta_t
             else:
-                segment_distance = self._haversine_m(
+                segment_distance = self.haversine_m(
                     previous.latitude,
                     previous.longitude,
                     current.latitude,
@@ -129,6 +129,36 @@ class WorkoutRoute:
 
         self._cumulative_distance_cache = distances
         return self._cumulative_distance_cache
+
+    def sample_point_at_fraction(self, fraction: float) -> tuple[float, float] | None:
+        """Return the ``(latitude, longitude)`` of the point nearest to *fraction* of total dist.
+
+        Uses binary search over the cached cumulative-distance list, so repeated
+        calls at different fractions are cheap (O(log n) after the first call).
+
+        Args:
+            fraction: A value in ``[0, 1]`` representing the fraction of the total
+                route distance at which to sample.  Values outside ``[0, 1]`` are
+                clamped silently.
+
+        Returns:
+            ``(lat, lon)`` at the nearest sampled point, or ``None`` when the route
+            has fewer than two points or its total distance is zero.
+        """
+        cum = self._cumulative_distances()
+        if not cum or cum[-1] <= 0:
+            return None
+        fraction = max(0.0, min(1.0, fraction))
+        target = fraction * cum[-1]
+        lo, hi = 0, len(cum) - 1
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if cum[mid] < target:
+                lo = mid + 1
+            else:
+                hi = mid
+        pt = self.points[lo]
+        return pt.latitude, pt.longitude
 
     @classmethod
     def calculate_distance_scale_factor(

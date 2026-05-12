@@ -563,3 +563,91 @@ class TestComputeSplits:
         splits = route.compute_splits(split_distance_m=500.0, distance_scale_factor=2.0)
         # Two complete splits are found; the third iteration hits the boundary guard.
         assert len(splits) == 2
+
+
+# ---------------------------------------------------------------------------
+# WorkoutRoute.sample_point_at_fraction
+# ---------------------------------------------------------------------------
+
+
+class TestSamplePointAtFraction:
+    """Unit tests for WorkoutRoute.sample_point_at_fraction()."""
+
+    def _route(self, points: list[tuple[float, float]]) -> WorkoutRoute:
+        """Build a WorkoutRoute from (lat, lon) pairs, spaced 1 s apart."""
+        base = datetime(2024, 1, 1, 10, 0, 0)
+        return WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base + timedelta(seconds=i),
+                    latitude=lat,
+                    longitude=lon,
+                    altitude=0.0,
+                    speed=0.0,
+                )
+                for i, (lat, lon) in enumerate(points)
+            ]
+        )
+
+    def test_empty_route_returns_none(self) -> None:
+        """Empty route should return None for any fraction."""
+        route = WorkoutRoute(points=[])
+        assert route.sample_point_at_fraction(0.5) is None
+
+    def test_single_point_returns_none(self) -> None:
+        """Single-point route has zero total distance and should return None."""
+        route = self._route([(48.85, 2.35)])
+        assert route.sample_point_at_fraction(0.5) is None
+
+    def test_fraction_zero_returns_start(self) -> None:
+        """Fraction 0.0 should return the first point."""
+        route = self._route([(48.85, 2.35), (48.86, 2.36), (48.87, 2.37)])
+        result = route.sample_point_at_fraction(0.0)
+        assert result is not None
+        lat, lon = result
+        assert lat == pytest.approx(48.85)
+        assert lon == pytest.approx(2.35)
+
+    def test_fraction_one_returns_end(self) -> None:
+        """Fraction 1.0 should return the last point."""
+        route = self._route([(48.85, 2.35), (48.86, 2.36), (48.87, 2.37)])
+        result = route.sample_point_at_fraction(1.0)
+        assert result is not None
+        lat, lon = result
+        assert lat == pytest.approx(48.87)
+        assert lon == pytest.approx(2.37)
+
+    def test_fraction_below_zero_clamped_to_start(self) -> None:
+        """Fraction < 0.0 should be clamped to 0.0 and return the first point."""
+        route = self._route([(48.85, 2.35), (48.86, 2.36), (48.87, 2.37)])
+        result = route.sample_point_at_fraction(-0.5)
+        assert result is not None
+        lat, _ = result
+        assert lat == pytest.approx(48.85)
+
+    def test_fraction_above_one_clamped_to_end(self) -> None:
+        """Fraction > 1.0 should be clamped to 1.0 and return the last point."""
+        route = self._route([(48.85, 2.35), (48.86, 2.36), (48.87, 2.37)])
+        result = route.sample_point_at_fraction(1.5)
+        assert result is not None
+        lat, _ = result
+        assert lat == pytest.approx(48.87)
+
+    def test_fraction_half_returns_middle_point(self) -> None:
+        """Fraction 0.5 on a three-point uniform route should return the middle point."""
+        # Three equidistant points along the same longitude so haversine is uniform.
+        route = self._route([(48.85, 2.35), (48.86, 2.35), (48.87, 2.35)])
+        result = route.sample_point_at_fraction(0.5)
+        assert result is not None
+        lat, _ = result
+        # Middle point is at 48.86; allow for the nearest-index approximation.
+        assert lat == pytest.approx(48.86, abs=0.01)
+
+    def test_two_point_route_any_fraction_returns_valid_point(self) -> None:
+        """Two-point route should return a valid (lat, lon) for any fraction in [0,1]."""
+        route = self._route([(48.85, 2.35), (48.87, 2.37)])
+        for fraction in [0.0, 0.25, 0.5, 0.75, 1.0]:
+            result = route.sample_point_at_fraction(fraction)
+            assert result is not None, f"fraction={fraction} returned None"
+            lat, lon = result
+            assert 48.84 < lat < 48.88

@@ -361,6 +361,29 @@ def _route_segment_metrics(
     return distance_m, speed_m_s, pace_min_per_km
 
 
+def _update_rolling_pace_window(
+    rolling_pace_segments: list[tuple[float, float]],
+    rolling_distance_m: float,
+    rolling_time_s: float,
+    segment_distance_m: float,
+    speed_m_s: float,
+) -> tuple[float, float, float | None]:
+    """Update rolling pace window with one segment and return smoothed pace."""
+    if speed_m_s >= _MIN_MOVING_SPEED_M_S and segment_distance_m > 0.0:
+        segment_time_s = segment_distance_m / speed_m_s
+        rolling_pace_segments.append((segment_distance_m, segment_time_s))
+        rolling_distance_m += segment_distance_m
+        rolling_time_s += segment_time_s
+        while rolling_distance_m > _PACE_SMOOTHING_WINDOW_M and len(rolling_pace_segments) > 1:
+            old_distance_m, old_time_s = rolling_pace_segments.pop(0)
+            rolling_distance_m -= old_distance_m
+            rolling_time_s -= old_time_s
+    pace = None
+    if rolling_distance_m > 0.0 and rolling_time_s > 0.0:
+        pace = (rolling_time_s / _SECONDS_PER_MINUTE) / (rolling_distance_m / _METERS_PER_KM)
+    return rolling_distance_m, rolling_time_s, pace
+
+
 def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, Any]:
     """Build a route profile chart with altitude plus pace/speed/HR hover metrics."""
     profile_points: list[list[float | None]] = []
@@ -409,21 +432,12 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
                 )
                 if speed_m_s is not None:
                     speed_kmh = speed_m_s * _M_S_TO_KM_H
-                    if speed_m_s >= _MIN_MOVING_SPEED_M_S and segment_distance_m > 0.0:
-                        segment_time_s = segment_distance_m / speed_m_s
-                        rolling_pace_segments.append((segment_distance_m, segment_time_s))
-                        rolling_distance_m += segment_distance_m
-                        rolling_time_s += segment_time_s
-                        while (
-                            rolling_distance_m > _PACE_SMOOTHING_WINDOW_M
-                            and len(rolling_pace_segments) > 1
-                        ):
-                            old_distance_m, old_time_s = rolling_pace_segments.pop(0)
-                            rolling_distance_m -= old_distance_m
-                            rolling_time_s -= old_time_s
-                if rolling_distance_m > 0.0 and rolling_time_s > 0.0:
-                    pace = (rolling_time_s / _SECONDS_PER_MINUTE) / (
-                        rolling_distance_m / _METERS_PER_KM
+                    rolling_distance_m, rolling_time_s, pace = _update_rolling_pace_window(
+                        rolling_pace_segments,
+                        rolling_distance_m,
+                        rolling_time_s,
+                        segment_distance_m,
+                        speed_m_s,
                     )
             profile_points.append([distance_km, altitude_m, pace, speed_kmh, hr_bpm])
 

@@ -52,6 +52,7 @@ _LabelFn: TypeAlias = Callable[[], str]
 
 #: i18n key reused in three places (Intervals, Route, and Comparisons tabs).
 _NO_GPS_ROUTE_MSG = "No GPS route available."
+_M_S_TO_KM_H = 3.6
 
 # ---------------------------------------------------------------------------
 # Shared label-function constants reused across multiple field display lists.
@@ -396,7 +397,7 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
                     valid_points[idx - 1], current
                 )
                 if speed_m_s is not None:
-                    speed_kmh = speed_m_s * 3.6
+                    speed_kmh = speed_m_s * _M_S_TO_KM_H
             profile_points.append([distance_km, altitude_m, pace, speed_kmh, hr_bpm])
 
     pace_label = json.dumps(f"{t('Pace')}: ")
@@ -407,6 +408,7 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
     no_data = json.dumps("–")
     # point payload indices for JS formatter:
     # [0]=distance_km, [1]=altitude_m, [2]=pace_min_per_km, [3]=speed_km_h, [4]=heart_rate_bpm
+    # Keep this pace formatter aligned with _format_pace_min_per_km used on map tooltips.
     return {
         "backgroundColor": "transparent",
         "tooltip": {
@@ -486,10 +488,11 @@ def _do_refresh_route_tab(
                 name="polyline",
                 args=[segment_points, {"color": color, "weight": 4, "opacity": 0.9}],
             )
+            speed_text = "–" if speed_m_s is None else f"{speed_m_s * _M_S_TO_KM_H:.1f} km/h"
             tooltip_lines = [
                 route_name,
                 f"{t('Pace')}: {_format_pace_min_per_km(pace)}",
-                f"{t('Speed')}: {'–' if speed_m_s is None else f'{speed_m_s * 3.6:.1f} km/h'}",
+                f"{t('Speed')}: {speed_text}",
                 f"{t('Altitude')}: {cast(float, current['altitude']):.1f} m",
                 f"{t('Distance')}: {distance_m:.0f} m",
             ]

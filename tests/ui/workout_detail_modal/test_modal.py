@@ -354,9 +354,7 @@ class TestCreateWorkoutDetailModal:
         assert create_bg.call_count == 1
         assert route_map._run_map_method_calls[-1][0][0] == "fitBounds"
 
-    def test_do_refresh_profile_tab_updates_echart_options_without_property_assignment(
-        self,
-    ) -> None:
+    def test_do_refresh_profile_tab_mutates_chart_options_in_place(self) -> None:
         """Profile refresh should mutate chart options in place (NiceGUI options has no setter)."""
         from datetime import timedelta
 

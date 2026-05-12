@@ -776,7 +776,7 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        running_container = column_stubs[0]
+        running_container = column_stubs[2]
         assert not running_container._visible
 
     def test_running_container_visible_for_running_activity(self) -> None:
@@ -801,7 +801,7 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        running_container = column_stubs[0]
+        running_container = column_stubs[2]
         assert running_container._visible
 
     def test_running_container_visible_when_activity_type_is_translated(self) -> None:
@@ -834,7 +834,7 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        running_container = column_stubs[0]
+        running_container = column_stubs[2]
         assert running_container._visible  # must be shown despite translated label
 
     def test_walking_container_hidden_for_non_walking_activity(self) -> None:
@@ -853,7 +853,7 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        walking_container = column_stubs[1]
+        walking_container = column_stubs[3]
         assert not walking_container._visible
 
     def test_walking_container_visible_for_walking_activity(self) -> None:
@@ -881,8 +881,8 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        running_container = column_stubs[0]
-        walking_container = column_stubs[1]
+        running_container = column_stubs[2]
+        walking_container = column_stubs[3]
         assert not running_container._visible
         assert walking_container._visible
 
@@ -919,7 +919,7 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        walking_container = column_stubs[1]
+        walking_container = column_stubs[3]
         assert walking_container._visible  # must be shown despite translated label
 
     def test_hiking_container_hidden_for_non_hiking_activity(self) -> None:
@@ -938,7 +938,7 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        hiking_container = column_stubs[2]
+        hiking_container = column_stubs[4]
         assert not hiking_container._visible
 
     def test_hiking_container_visible_for_hiking_activity(self) -> None:
@@ -967,9 +967,9 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        running_container = column_stubs[0]
-        walking_container = column_stubs[1]
-        hiking_container = column_stubs[2]
+        running_container = column_stubs[2]
+        walking_container = column_stubs[3]
+        hiking_container = column_stubs[4]
         assert not running_container._visible
         assert not walking_container._visible
         assert hiking_container._visible
@@ -1002,7 +1002,7 @@ class TestActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        hiking_container = column_stubs[2]
+        hiking_container = column_stubs[4]
         assert hiking_container._visible  # must be shown despite translated label
 
 
@@ -1543,8 +1543,9 @@ class TestCyclingActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        # Container order: running[0], walking[1], hiking[2], swimming[3], cycling[4]
-        cycling_container = column_stubs[4]
+        # Column order includes centered wrappers: overview[0], activity[1], then
+        # running[2], walking[3], hiking[4], swimming[5], cycling[6].
+        cycling_container = column_stubs[6]
         assert cycling_container._visible
 
     def test_cycling_container_hidden_for_non_cycling_activity(self) -> None:
@@ -1563,7 +1564,7 @@ class TestCyclingActivityTabSection:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        cycling_container = column_stubs[4]
+        cycling_container = column_stubs[6]
         assert not cycling_container._visible
 
     def test_activity_tab_enabled_for_cycling_with_data(self) -> None:

@@ -21,6 +21,7 @@ from ui.css import (
     LABEL_MUTED_CLASSES,
     LABEL_UPPERCASE_CLASSES,
     MODAL_CARD_CLASSES,
+    MODAL_CENTERED_CONTENT_CLASSES,
     MODAL_COMPARISON_RANK_CLASSES,
     MODAL_COMPARISON_TABLE_CLASSES,
     MODAL_FIELD_LABEL_CLASSES,
@@ -915,34 +916,36 @@ def create_workout_detail_modal(
             with ui.tab_panels(detail_tabs, value="overview").classes(MODAL_TAB_PANELS_CLASSES):
                 # Overview tab: generic workout attributes
                 with ui.tab_panel("overview"):
-                    field_rows = _build_field_rows(_FIELD_DISPLAY)
+                    with ui.column().classes(MODAL_CENTERED_CONTENT_CLASSES):
+                        field_rows = _build_field_rows(_FIELD_DISPLAY)
 
                 # Activity tab: type-specific metrics
                 with ui.tab_panel("activity"):
-                    # Shown for unsupported activity types
-                    no_activity_label = ui.label(t("No activity-specific data available.")).classes(
-                        LABEL_MUTED_CLASSES
-                    )
-                    # Running-specific metrics; shown only when activity is Running
-                    running_container = ui.column().classes(TABS_FULL_CLASSES)
-                    with running_container:
-                        running_field_rows = _build_field_rows(_RUNNING_FIELD_DISPLAY)
-                    # Walking-specific metrics; shown only when activity is Walking
-                    walking_container = ui.column().classes(TABS_FULL_CLASSES)
-                    with walking_container:
-                        walking_field_rows = _build_field_rows(_WALKING_FIELD_DISPLAY)
-                    # Hiking-specific metrics; shown only when activity is Hiking
-                    hiking_container = ui.column().classes(TABS_FULL_CLASSES)
-                    with hiking_container:
-                        hiking_field_rows = _build_field_rows(_HIKING_FIELD_DISPLAY)
-                    # Swimming summary metrics; shown only when activity is Swimming
-                    swimming_container = ui.column().classes(TABS_FULL_CLASSES)
-                    with swimming_container:
-                        swimming_field_rows = _build_field_rows(_SWIMMING_FIELD_DISPLAY)
-                    # Cycling-specific metrics; shown only when activity is Cycling
-                    cycling_container = ui.column().classes(TABS_FULL_CLASSES)
-                    with cycling_container:
-                        cycling_field_rows = _build_field_rows(_CYCLING_FIELD_DISPLAY)
+                    with ui.column().classes(MODAL_CENTERED_CONTENT_CLASSES):
+                        # Shown for unsupported activity types
+                        no_activity_label = ui.label(
+                            t("No activity-specific data available.")
+                        ).classes(LABEL_MUTED_CLASSES)
+                        # Running-specific metrics; shown only when activity is Running
+                        running_container = ui.column().classes(TABS_FULL_CLASSES)
+                        with running_container:
+                            running_field_rows = _build_field_rows(_RUNNING_FIELD_DISPLAY)
+                        # Walking-specific metrics; shown only when activity is Walking
+                        walking_container = ui.column().classes(TABS_FULL_CLASSES)
+                        with walking_container:
+                            walking_field_rows = _build_field_rows(_WALKING_FIELD_DISPLAY)
+                        # Hiking-specific metrics; shown only when activity is Hiking
+                        hiking_container = ui.column().classes(TABS_FULL_CLASSES)
+                        with hiking_container:
+                            hiking_field_rows = _build_field_rows(_HIKING_FIELD_DISPLAY)
+                        # Swimming summary metrics; shown only when activity is Swimming
+                        swimming_container = ui.column().classes(TABS_FULL_CLASSES)
+                        with swimming_container:
+                            swimming_field_rows = _build_field_rows(_SWIMMING_FIELD_DISPLAY)
+                        # Cycling-specific metrics; shown only when activity is Cycling
+                        cycling_container = ui.column().classes(TABS_FULL_CLASSES)
+                        with cycling_container:
+                            cycling_field_rows = _build_field_rows(_CYCLING_FIELD_DISPLAY)
 
                 # Intervals tab: swim lap table (Swimming) or GPS splits (other workouts with GPS)
                 with ui.tab_panel("intervals"):

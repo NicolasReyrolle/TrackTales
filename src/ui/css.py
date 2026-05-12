@@ -174,6 +174,9 @@ MODAL_CARD_CLASSES = "w-[56rem] max-w-[95vw]"
 #: be reached within the fixed area.
 MODAL_TAB_PANELS_CLASSES = "w-full h-[30rem] overflow-y-auto"
 
+#: Centered content column for text-heavy tabs (Overview/Activity) in wide modal.
+MODAL_CENTERED_CONTENT_CLASSES = "w-full max-w-[42rem] mx-auto"
+
 #: Modal header row: title on the left, close button on the right.
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"
 

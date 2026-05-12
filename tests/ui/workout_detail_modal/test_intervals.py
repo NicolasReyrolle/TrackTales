@@ -7,7 +7,7 @@ from typing import Any
 
 from ui import workout_detail_modal as wdm
 
-from ._modal_stubs import _all_patches, _ButtonStub, _DummyElement, _make_row
+from ._stubs import _all_patches, _ButtonStub, _DummyElement, _make_row
 
 
 class TestFormatSplitPace:

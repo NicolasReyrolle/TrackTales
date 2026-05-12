@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import patch
@@ -170,6 +171,7 @@ class _DummyElement:
 
     async def initialized(self) -> None:
         """Stub for ui.leaflet.initialized()."""
+        await asyncio.sleep(0)
         self._initialized_calls += 1
 
     def open(self) -> None:

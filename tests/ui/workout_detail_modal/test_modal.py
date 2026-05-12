@@ -7,10 +7,10 @@ from contextlib import ExitStack
 from typing import Any
 from unittest.mock import patch
 
-import ui.workout_detail_modal_comparisons as wdmc
+import ui.workout_detail_modal.comparisons as wdmc
 from ui import workout_detail_modal as wdm
 
-from ._modal_stubs import _all_patches, _ButtonStub, _DummyElement, _make_row
+from ._stubs import _all_patches, _ButtonStub, _DummyElement, _make_row
 
 
 class TestFieldDisplay:

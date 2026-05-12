@@ -37,7 +37,7 @@ from ui.css import (
     TABS_FULL_CLASSES,
 )
 from ui.helpers import _format_elevation_change, _format_split_pace, _format_split_speed
-from ui.workout_detail_modal_comparisons import (
+from ui.workout_detail_modal.comparisons import (
     _do_refresh_comparisons_tab,
     _get_row_routes,
 )
@@ -45,6 +45,9 @@ from units import METERS_TO_MILES
 
 #: Callable returning a translated label string; alias for readability.
 _LabelFn: TypeAlias = Callable[[], str]
+
+#: i18n key reused in three places (Intervals, Route, and Comparisons tabs).
+_NO_GPS_ROUTE_MSG = "No GPS route available."
 
 # ---------------------------------------------------------------------------
 # Shared label-function constants reused across multiple field display lists.
@@ -650,9 +653,7 @@ def create_workout_detail_modal(
                     )
 
                     # GPS splits section: per-km or per-mi splits for workouts with a route
-                    no_splits_label = ui.label(t("No GPS route available.")).classes(
-                        LABEL_MUTED_CLASSES
-                    )
+                    no_splits_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
                     # Initialise the split-number column header from the first row's unit so
                     # the correct label ("km" or "mi") is visible before the first tab-click.
                     _initial_du = rows[0].get("distance_unit", "km") if rows else "km"
@@ -694,9 +695,7 @@ def create_workout_detail_modal(
 
                 # Route tab: interactive Leaflet route map with start/end markers
                 with ui.tab_panel("route"):
-                    no_route_label = ui.label(t("No GPS route available.")).classes(
-                        LABEL_MUTED_CLASSES
-                    )
+                    no_route_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
                     with ui.row().classes(MODAL_ROUTE_MAP_CONTAINER_CLASSES):
                         route_map = ui.leaflet(
                             center=(0.0, 0.0),
@@ -706,7 +705,7 @@ def create_workout_detail_modal(
 
                 # Comparisons tab: route-comparison leaderboard for GPS workouts
                 with ui.tab_panel("comparisons"):
-                    no_route_label_comp = ui.label(t("No GPS route available.")).classes(
+                    no_route_label_comp = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
                         LABEL_MUTED_CLASSES
                     )
                     no_similar_label = ui.label(t("No similar routes found.")).classes(
@@ -809,6 +808,15 @@ def create_workout_detail_modal(
             rows,
         )
 
+    # Dispatch table for lazily refreshing the active tab.  Defined once here
+    # so both ``_refresh`` and ``_on_tab_change`` share the same mapping without
+    # repeating the if/elif chain (which would raise the cognitive complexity).
+    _lazy_tab_refresh: dict[str, Callable[[dict[str, Any]], None]] = {
+        "intervals": _refresh_intervals_tab,
+        "route": _refresh_route_tab,
+        "comparisons": _refresh_comparisons_tab,
+    }
+
     def _refresh() -> None:
         """Update all modal elements to reflect the current workout."""
         idx = modal_state["index"]
@@ -824,12 +832,9 @@ def create_workout_detail_modal(
         comparisons_tab.set_enabled(has_route)
         # Only refresh the Intervals tab when it is currently active; switching to
         # it triggers _on_tab_change which handles the initial load.
-        if detail_tabs.value == "intervals":
-            _refresh_intervals_tab(row)
-        if detail_tabs.value == "route":
-            _refresh_route_tab(row)
-        if detail_tabs.value == "comparisons":
-            _refresh_comparisons_tab(row)
+        refresh_fn = _lazy_tab_refresh.get(detail_tabs.value)
+        if refresh_fn:
+            refresh_fn(row)
 
     def _navigate(delta: int) -> None:
         """Move to the next or previous workout by *delta* steps."""
@@ -848,12 +853,9 @@ def create_workout_detail_modal(
         The Comparisons tab searches for similar routes and caches the result
         in ``row["similar_routes"]``.
         """
-        if e.value == "intervals":
-            _refresh_intervals_tab(rows[modal_state["index"]])
-        if e.value == "route":
-            _refresh_route_tab(rows[modal_state["index"]])
-        if e.value == "comparisons":
-            _refresh_comparisons_tab(rows[modal_state["index"]])
+        refresh_fn = _lazy_tab_refresh.get(e.value)
+        if refresh_fn:
+            refresh_fn(rows[modal_state["index"]])
 
     detail_tabs.on_value_change(_on_tab_change)
 

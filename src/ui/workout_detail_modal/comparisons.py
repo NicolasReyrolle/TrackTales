@@ -241,6 +241,61 @@ def _routes_shape_match(
 # ---------------------------------------------------------------------------
 
 
+def _is_candidate_similar(
+    row: dict[str, Any],
+    current_type: Any,
+    current_distance: float,
+    c_s_lat: float,
+    c_s_lon: float,
+    c_e_lat: float,
+    c_e_lon: float,
+    current_merged: WorkoutRoute,
+) -> bool:
+    """Return True if *row*'s GPS route matches the reference route for comparison.
+
+    Checks activity type, GPS data presence, distance tolerance, start/end
+    proximity, and intermediate-waypoint shape in that order.  Early returns
+    are used throughout so the more expensive shape check is skipped unless
+    the cheaper constraints all pass.
+
+    Args:
+        row:             Candidate workout row dict.
+        current_type:    Activity type of the reference workout.
+        current_distance: Total distance of the reference workout (metres).
+        c_s_lat:         Start latitude of the reference route.
+        c_s_lon:         Start longitude of the reference route.
+        c_e_lat:         End latitude of the reference route.
+        c_e_lon:         End longitude of the reference route.
+        current_merged:  Merged reference route (see :func:`_merge_adjacent_route_parts`).
+
+    Returns:
+        ``True`` when all similarity constraints pass.
+    """
+    if row.get("raw_activity_type") != current_type:
+        return False
+    endpoints = _route_endpoints(row)
+    if endpoints is None:
+        return False
+    dist = row.get("distance_sort")
+    if not isinstance(dist, (int, float)) or dist <= 0:
+        return False
+    if abs(dist / current_distance - 1.0) > _SIMILAR_ROUTE_DISTANCE_TOLERANCE:
+        return False
+    r_s_lat, r_s_lon, r_e_lat, r_e_lon = endpoints
+    if (
+        WorkoutRoute.haversine_m(c_s_lat, c_s_lon, r_s_lat, r_s_lon)
+        > _SIMILAR_ROUTE_START_END_RADIUS_M
+    ):
+        return False
+    if (
+        WorkoutRoute.haversine_m(c_e_lat, c_e_lon, r_e_lat, r_e_lon)
+        > _SIMILAR_ROUTE_START_END_RADIUS_M
+    ):
+        return False
+    candidate_merged = _merge_adjacent_route_parts(_get_row_routes(row))
+    return _routes_shape_match(current_merged, candidate_merged)
+
+
 def find_similar_route_workouts(
     current_row: dict[str, Any],
     all_rows: list[dict[str, Any]],
@@ -283,40 +338,14 @@ def find_similar_route_workouts(
 
     current_type = current_row.get("raw_activity_type")
     c_s_lat, c_s_lon, c_e_lat, c_e_lon = current_endpoints
-    current_routes = _get_row_routes(current_row)
-    current_merged = _merge_adjacent_route_parts(current_routes)
+    current_merged = _merge_adjacent_route_parts(_get_row_routes(current_row))
 
     similar: list[dict[str, Any]] = []
     for row in all_rows:
-        if row.get("raw_activity_type") != current_type:
-            continue
-        endpoints = _route_endpoints(row)
-        if endpoints is None:
-            continue
-        dist = row.get("distance_sort")
-        if not isinstance(dist, (int, float)) or dist <= 0:
-            continue
-        if abs(dist / current_distance - 1.0) > _SIMILAR_ROUTE_DISTANCE_TOLERANCE:
-            continue
-        r_s_lat, r_s_lon, r_e_lat, r_e_lon = endpoints
-        if (
-            WorkoutRoute.haversine_m(c_s_lat, c_s_lon, r_s_lat, r_s_lon)
-            > _SIMILAR_ROUTE_START_END_RADIUS_M
+        if _is_candidate_similar(
+            row, current_type, current_distance, c_s_lat, c_s_lon, c_e_lat, c_e_lon, current_merged
         ):
-            continue
-        if (
-            WorkoutRoute.haversine_m(c_e_lat, c_e_lon, r_e_lat, r_e_lon)
-            > _SIMILAR_ROUTE_START_END_RADIUS_M
-        ):
-            continue
-        # Compare intermediate waypoints using the merged routes so multi-segment
-        # workouts are evaluated across their full GPS path.  When segments are not
-        # GPS-adjacent, _merge_adjacent_route_parts falls back to the first segment.
-        candidate_routes = _get_row_routes(row)
-        candidate_merged = _merge_adjacent_route_parts(candidate_routes)
-        if not _routes_shape_match(current_merged, candidate_merged):
-            continue
-        similar.append(row)
+            similar.append(row)
 
     similar.sort(key=lambda r: r.get("duration_sort") or float("inf"))
     return similar
@@ -372,6 +401,11 @@ def _format_duration_diff(duration_s: float, best_duration_s: float) -> str:
 # ---------------------------------------------------------------------------
 # Leaderboard row builder
 # ---------------------------------------------------------------------------
+
+
+def _find_row_by_id(rows: list[dict[str, Any]], row_id: str) -> dict[str, Any] | None:
+    """Return the first element of *rows* whose ``"id"`` matches *row_id*, or ``None``."""
+    return next((r for r in rows if r.get("id") == row_id), None)
 
 
 def _build_comparison_display_rows(
@@ -446,7 +480,7 @@ def _build_comparison_display_rows(
 
     # Append current workout below the top-N cut when it is outside the top N.
     if current_rank is not None and current_rank > top_n:
-        current = next((r for r in similar if r.get("id") == current_row_id), None)
+        current = _find_row_by_id(similar, current_row_id)
         if current is not None:
             display_rows.append(_make_display_row(current_rank, current, is_current=True))
             shown_ids.add(current_row_id)

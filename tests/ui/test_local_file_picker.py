@@ -1,5 +1,6 @@
 """Tests for the local_file_picker class."""
 
+import asyncio
 import sys
 from pathlib import Path
 from types import TracebackType
@@ -223,7 +224,8 @@ class TestHandleOk:
         picker.grid = MagicMock()
 
         # Mock get_selected_rows to return a coroutine
-        async def async_get_selected_rows():  # noqa: S7503
+        async def async_get_selected_rows():
+            await asyncio.sleep(0)
             return [{"path": str(file_path)}]
 
         picker.grid.get_selected_rows = async_get_selected_rows
@@ -247,7 +249,8 @@ class TestHandleOk:
         picker.grid = MagicMock()
 
         # Mock get_selected_rows to return a coroutine
-        async def async_get_selected_rows():  # noqa: S7503
+        async def async_get_selected_rows():
+            await asyncio.sleep(0)
             return [{"path": str(file1)}, {"path": str(file2)}]
 
         picker.grid.get_selected_rows = async_get_selected_rows

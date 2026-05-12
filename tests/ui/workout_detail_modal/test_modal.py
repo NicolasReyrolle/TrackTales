@@ -238,7 +238,7 @@ class TestCreateWorkoutDetailModal:
         route_refresh_row_calls: list[dict[str, Any]] = []
 
         def capture_route_refresh(
-            _no_route_label: Any, _route_map: Any, _route_profile_chart: Any, row: dict[str, Any]
+            _no_route_label: Any, _route_map: Any, row: dict[str, Any]
         ) -> None:
             route_refresh_row_calls.append(row)
 
@@ -256,6 +256,51 @@ class TestCreateWorkoutDetailModal:
             assert not route_refresh_row_calls
             tabs_stub.fire_value_change("route")
             assert route_refresh_row_calls
+
+    def test_profile_tab_change_triggers_profile_refresh(self) -> None:
+        """Switching to the Profile tab should trigger Profile-tab refresh."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01").to_pydatetime()
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base_time + timedelta(seconds=i),
+                    latitude=48.85 + (i * 0.0001),
+                    longitude=2.35 + (i * 0.0001),
+                    altitude=35.0,
+                    speed=3.0,
+                )
+                for i in range(3)
+            ]
+        )
+        rows = [{**_make_row(idx=0), "route": route}]
+        tabs_stub = _DummyElement()
+        profile_refresh_row_calls: list[dict[str, Any]] = []
+
+        def capture_profile_refresh(
+            _no_route_label: Any, _route_profile_chart: Any, row: dict[str, Any]
+        ) -> None:
+            profile_refresh_row_calls.append(row)
+
+        with ExitStack() as stack:
+            for p in _all_patches(tabs_stub=tabs_stub):
+                stack.enter_context(p)
+            stack.enter_context(
+                patch(
+                    "ui.workout_detail_modal._do_refresh_route_profile_tab",
+                    side_effect=capture_profile_refresh,
+                )
+            )
+            fn = wdm.create_workout_detail_modal(rows)
+            fn(0)
+            assert not profile_refresh_row_calls
+            tabs_stub.fire_value_change("profile")
+            assert profile_refresh_row_calls
 
     def test_fit_route_bounds_after_init_invalidates_and_fits_bounds(self) -> None:
         """Post-init helper should invalidate size and then fit route bounds."""
@@ -296,7 +341,6 @@ class TestCreateWorkoutDetailModal:
         row = {**_make_row(idx=0), "route": route}
         no_route_label = _DummyElement()
         route_map = _DummyElement()
-        route_profile_chart = _DummyElement()
 
         def run_coroutine_sync(coro: Any) -> Any:
             return asyncio.run(coro)
@@ -305,13 +349,15 @@ class TestCreateWorkoutDetailModal:
             "ui.workout_detail_modal.background_tasks.create",
             side_effect=run_coroutine_sync,
         ) as create_bg:
-            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
+            wdm._do_refresh_route_tab(no_route_label, route_map, row)
 
         assert create_bg.call_count == 1
         assert route_map._run_map_method_calls[-1][0][0] == "fitBounds"
 
-    def test_do_refresh_route_tab_updates_echart_options_without_property_assignment(self) -> None:
-        """Route refresh should mutate chart options in place (NiceGUI options has no setter)."""
+    def test_do_refresh_profile_tab_updates_echart_options_without_property_assignment(
+        self,
+    ) -> None:
+        """Profile refresh should mutate chart options in place (NiceGUI options has no setter)."""
         from datetime import timedelta
 
         import pandas as pd
@@ -352,7 +398,6 @@ class TestCreateWorkoutDetailModal:
         )
         row = {**_make_row(idx=0), "route": route}
         no_route_label = _DummyElement()
-        route_map = _DummyElement()
         route_profile_chart = _ReadOnlyChart()
 
         def execute_background_task_synchronously(coro: Any) -> Any:
@@ -362,7 +407,7 @@ class TestCreateWorkoutDetailModal:
             "ui.workout_detail_modal.background_tasks.create",
             side_effect=execute_background_task_synchronously,
         ):
-            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
+            wdm._do_refresh_route_profile_tab(no_route_label, route_profile_chart, row)
 
         assert route_profile_chart.options["backgroundColor"] == "transparent"
         profile_data = route_profile_chart.options["series"][0]["data"]
@@ -409,7 +454,6 @@ class TestRouteTabLocalizationAndCoverage:
         row = {"route_parts": [self._build_route([(48.85, 2.35), (48.851, 2.351)])]}
         no_route_label = _DummyElement()
         route_map = _DummyElement()
-        route_profile_chart = _DummyElement()
 
         t_calls: list[tuple[str, dict[str, str]]] = []
         tooltip_texts: list[str] = []
@@ -440,7 +484,7 @@ class TestRouteTabLocalizationAndCoverage:
                 side_effect=run_coroutine_sync,
             ),
         ):
-            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
+            wdm._do_refresh_route_tab(no_route_label, route_map, row)
 
         assert ("Route {index}", {"index": "1"}) in t_calls
         assert ("Start", {}) in t_calls
@@ -476,13 +520,12 @@ class TestRouteTabLocalizationAndCoverage:
         row = {"route": invalid_route}
         no_route_label = _DummyElement()
         route_map = _DummyElement()
-        route_profile_chart = _DummyElement()
 
         with (
             patch.object(route_map, "set_center") as set_center,
             patch.object(route_map, "set_zoom") as set_zoom,
         ):
-            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
+            wdm._do_refresh_route_tab(no_route_label, route_map, row)
 
         assert not no_route_label._visible
         assert route_map._visible
@@ -512,13 +555,18 @@ class TestRouteTabLocalizationAndCoverage:
         )
 
         config = wdm._build_route_profile_chart_config([route])
-        series = config["series"][0]
-        data = series["data"]
+        altitude_series = config["series"][0]
+        pace_series = config["series"][1]
+        altitude_data = altitude_series["data"]
+        pace_data = pace_series["data"]
 
         assert config["backgroundColor"] == "transparent"
-        assert data[0][1] == 100.0
-        assert data[1][2] is not None  # pace min/km
-        assert data[1][3] is not None  # speed km/h
+        assert isinstance(config["yAxis"], list)
+        assert config["yAxis"][0]["scale"] is True
+        assert config["yAxis"][1]["scale"] is True
+        assert altitude_data[0][1] == 100.0
+        assert pace_data[1][2] is not None  # pace min/km
+        assert pace_data[1][3] is not None  # speed km/h
 
     def test_do_refresh_route_tab_uses_metric_based_segment_colors(self) -> None:
         """Route refresh should color each segment by pace and expose metric details in tooltip."""
@@ -544,7 +592,6 @@ class TestRouteTabLocalizationAndCoverage:
         row = {"route": route}
         no_route_label = _DummyElement()
         route_map = _DummyElement()
-        route_profile_chart = _DummyElement()
         polyline_colors: list[str] = []
         tooltip_texts: list[str] = []
 
@@ -568,7 +615,7 @@ class TestRouteTabLocalizationAndCoverage:
                 "ui.workout_detail_modal.background_tasks.create", side_effect=run_coroutine_sync
             ),
         ):
-            wdm._do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
+            wdm._do_refresh_route_tab(no_route_label, route_map, row)
 
         assert polyline_colors
         assert polyline_colors[:2] == ["#eab308", "#16a34a"]

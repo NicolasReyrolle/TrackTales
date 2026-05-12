@@ -29,7 +29,6 @@ from ui.css import (
     MODAL_HEADER_ROW_CLASSES,
     MODAL_NAV_COUNTER_CLASSES,
     MODAL_NAV_ROW_CLASSES,
-    MODAL_ROUTE_CONTENT_CLASSES,
     MODAL_ROUTE_MAP_CONTAINER_CLASSES,
     MODAL_ROUTE_MAP_HTML_CLASSES,
     MODAL_ROUTE_PROFILE_CLASSES,
@@ -50,7 +49,7 @@ from units import METERS_TO_MILES
 #: Callable returning a translated label string; alias for readability.
 _LabelFn: TypeAlias = Callable[[], str]
 
-#: i18n key reused in three places (Intervals, Route, and Comparisons tabs).
+#: i18n key reused in four places (Intervals, Route, Profile, and Comparisons tabs).
 _NO_GPS_ROUTE_MSG = "No GPS route available."
 _M_S_TO_KM_H = 3.6
 
@@ -413,8 +412,12 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
     # point payload indices for JS formatter:
     # [0]=distance_km, [1]=altitude_m, [2]=pace_min_per_km, [3]=speed_km_h, [4]=heart_rate_bpm
     # Keep this pace formatter aligned with _format_pace_min_per_km used on map tooltips.
+    altitude_axis_name = f"{t('Altitude')} (m)"
+    pace_axis_name = f"{t('Pace')} (/km)"
     return {
         "backgroundColor": "transparent",
+        "legend": {"data": [t("Altitude"), t("Pace")]},
+        "grid": {"left": 56, "right": 64, "top": 36, "bottom": 42},
         "tooltip": {
             "trigger": "axis",
             "renderMode": "richText",
@@ -438,23 +441,45 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
             ),
         },
         "xAxis": {"type": "value", "name": f"{t('Distance')} (km)"},
-        "yAxis": {"type": "value", "name": f"{t('Altitude')} (m)"},
-        "series": [{"type": "line", "data": profile_points, "showSymbol": False, "smooth": False}],
+        "yAxis": [
+            {"type": "value", "name": altitude_axis_name, "scale": True},
+            {"type": "value", "name": pace_axis_name, "scale": True, "inverse": True},
+        ],
+        "series": [
+            {
+                "name": t("Altitude"),
+                "type": "line",
+                "data": profile_points,
+                "encode": {"x": 0, "y": 1},
+                "showSymbol": False,
+                "smooth": False,
+                "lineStyle": {"width": 2},
+            },
+            {
+                "name": t("Pace"),
+                "type": "line",
+                "data": profile_points,
+                "encode": {"x": 0, "y": 2},
+                "yAxisIndex": 1,
+                "showSymbol": False,
+                "smooth": False,
+                "connectNulls": True,
+                "lineStyle": {"width": 2},
+            },
+        ],
     }
 
 
 def _do_refresh_route_tab(
     no_route_label: Any,
     route_map: Any,
-    route_profile_chart: Any,
     row: dict[str, Any],
 ) -> None:
-    """Update the Route tab map with pace-colored segments and elevation profile."""
+    """Update the Route tab map with pace-colored segments."""
     routes = _get_row_routes(row)
     has_route = bool(routes)
     no_route_label.set_visibility(not has_route)
     route_map.set_visibility(has_route)
-    route_profile_chart.set_visibility(has_route)
     if not has_route:
         return
 
@@ -466,13 +491,6 @@ def _do_refresh_route_tab(
             "attribution": "&copy; OpenStreetMap contributors",
         },
     )
-
-    route_profile_options = _build_route_profile_chart_config(routes)
-    chart_options = getattr(route_profile_chart, "options", None)
-    if isinstance(chart_options, dict):
-        chart_options.clear()
-        chart_options.update(route_profile_options)
-    route_profile_chart.update()
 
     all_points: list[list[float]] = []
     start_label = t("Start")
@@ -534,6 +552,27 @@ def _do_refresh_route_tab(
     else:
         route_map.set_center((0.0, 0.0))
         route_map.set_zoom(1)
+
+
+def _do_refresh_route_profile_tab(
+    no_route_label: Any,
+    route_profile_chart: Any,
+    row: dict[str, Any],
+) -> None:
+    """Update the Profile tab chart with altitude and pace series."""
+    routes = _get_row_routes(row)
+    has_route = bool(routes)
+    no_route_label.set_visibility(not has_route)
+    route_profile_chart.set_visibility(has_route)
+    if not has_route:
+        return
+
+    route_profile_options = _build_route_profile_chart_config(routes)
+    chart_options = getattr(route_profile_chart, "options", None)
+    if isinstance(chart_options, dict):
+        chart_options.clear()
+        chart_options.update(route_profile_options)
+    route_profile_chart.update()
 
 
 async def _fit_route_bounds_after_init(route_map: Any, all_points: list[list[float]]) -> None:
@@ -694,7 +733,7 @@ def create_workout_detail_modal(
     Navigation within the open modal is supported via left/right arrow buttons.
     The dialog closes on Esc (Quasar default) or when the close button is clicked.
 
-    The modal is organised into four tabs:
+    The modal is organised into six tabs:
 
     * **Overview** – generic workout attributes (date, distance, calories, heart rate,
       VO₂ max, elevation, etc.) shared by all workout types.
@@ -705,9 +744,11 @@ def create_workout_detail_modal(
       Swimming workouts show location, lap length, and total stroke count.
       Cycling workouts show speed, cadence, power, and functional threshold power.
       Other activity types show a placeholder message; the tab is disabled.
-    * **Route** – interactive map for workouts with GPS points plus an elevation
-      profile. Route geometry is rendered from ``route_parts`` (when available) or
-      the merged ``route`` field, with start/end markers and pace-colored segments.
+    * **Route** – interactive map for workouts with GPS points. Route geometry is
+      rendered from ``route_parts`` (when available) or the merged ``route`` field,
+      with start/end markers and pace-colored segments.
+    * **Profile** – elevation and pace chart for the workout route. Includes
+      distance-based tooltip metrics (pace, speed, altitude, optional heart rate).
     * **Intervals** – per-workout interval data.  For Swimming workouts each row
       represents one active set with distance, time, stroke style, average SWOLF,
       and rest duration.  For workouts with a GPS route the table shows per-km (or
@@ -741,6 +782,7 @@ def create_workout_detail_modal(
                 ui.tab("overview", t("Overview"))
                 activity_tab = ui.tab("activity", t("Activity"))
                 route_tab = ui.tab("route", t("Route"))
+                profile_tab = ui.tab("profile", t("Profile"))
                 intervals_tab = ui.tab("intervals", t("Intervals"))
                 comparisons_tab = ui.tab("comparisons", t("Comparisons"))
 
@@ -877,22 +919,27 @@ def create_workout_detail_modal(
                 # Route tab: interactive Leaflet route map with start/end markers
                 with ui.tab_panel("route"):
                     no_route_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
-                    with ui.row().classes(MODAL_ROUTE_CONTENT_CLASSES):
-                        with ui.row().classes(MODAL_ROUTE_MAP_CONTAINER_CLASSES):
-                            route_map = ui.leaflet(
-                                center=(0.0, 0.0),
-                                zoom=13,
-                                options={"zoomControl": True},
-                            ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
-                        with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
-                            route_profile_chart = ui.echart(
-                                {
-                                    "backgroundColor": "transparent",
-                                    "xAxis": {"type": "value"},
-                                    "yAxis": {"type": "value"},
-                                    "series": [{"type": "line", "data": []}],
-                                }
-                            ).classes(MODAL_ROUTE_PROFILE_CLASSES)
+                    with ui.row().classes(MODAL_ROUTE_MAP_CONTAINER_CLASSES):
+                        route_map = ui.leaflet(
+                            center=(0.0, 0.0),
+                            zoom=13,
+                            options={"zoomControl": True},
+                        ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
+
+                # Profile tab: altitude + pace chart for route readability
+                with ui.tab_panel("profile"):
+                    no_route_profile_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
+                        LABEL_MUTED_CLASSES
+                    )
+                    with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
+                        route_profile_chart = ui.echart(
+                            {
+                                "backgroundColor": "transparent",
+                                "xAxis": {"type": "value"},
+                                "yAxis": {"type": "value"},
+                                "series": [{"type": "line", "data": []}],
+                            }
+                        ).classes(MODAL_ROUTE_PROFILE_CLASSES)
 
                 # Comparisons tab: route-comparison leaderboard for GPS workouts
                 with ui.tab_panel("comparisons"):
@@ -986,7 +1033,11 @@ def create_workout_detail_modal(
 
     def _refresh_route_tab(row: dict[str, Any]) -> None:
         """Delegate to module-level helper; updates Route tab map and route visibility."""
-        _do_refresh_route_tab(no_route_label, route_map, route_profile_chart, row)
+        _do_refresh_route_tab(no_route_label, route_map, row)
+
+    def _refresh_profile_tab(row: dict[str, Any]) -> None:
+        """Delegate to module-level helper; updates Profile tab chart and visibility."""
+        _do_refresh_route_profile_tab(no_route_profile_label, route_profile_chart, row)
 
     def _refresh_comparisons_tab(row: dict[str, Any]) -> None:
         """Delegate to module-level helper; updates Comparisons tab leaderboard."""
@@ -1005,6 +1056,7 @@ def create_workout_detail_modal(
     _lazy_tab_refresh: dict[str, Callable[[dict[str, Any]], None]] = {
         "intervals": _refresh_intervals_tab,
         "route": _refresh_route_tab,
+        "profile": _refresh_profile_tab,
         "comparisons": _refresh_comparisons_tab,
     }
 
@@ -1019,6 +1071,7 @@ def create_workout_detail_modal(
         _refresh_activity_tab(row)
         has_route = bool(_get_row_routes(row))
         route_tab.set_enabled(has_route)
+        profile_tab.set_enabled(has_route)
         intervals_tab.set_enabled(_row_has_swim_laps(row) or has_route)
         comparisons_tab.set_enabled(has_route)
         # Only refresh the Intervals tab when it is currently active; switching to
@@ -1041,6 +1094,7 @@ def create_workout_detail_modal(
         lazily (via :func:`_compute_splits_lazy`) and cached in
         ``row["splits"]`` for instant display on subsequent navigations.
         The Route tab renders a Leaflet map from the workout's GPS geometry.
+        The Profile tab renders an elevation + pace chart from the route points.
         The Comparisons tab searches for similar routes and caches the result
         in ``row["similar_routes"]``.
         """

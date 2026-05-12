@@ -633,6 +633,69 @@ class TestRouteTabLocalizationAndCoverage:
         assert data[2][2] is not None
         assert data[2][2] == pytest.approx(expected_pace_min_per_km, rel=0.05)
 
+    def test_build_route_profile_chart_config_skips_empty_altitude_dataframe(self) -> None:
+        """Routes with empty altitude data should produce no profile points."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01").to_pydatetime()
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base_time + timedelta(seconds=i * 10),
+                    latitude=48.85 + (i * 0.0001),
+                    longitude=2.35 + (i * 0.0001),
+                    altitude=100.0 + i,
+                    speed=3.0 + i,
+                )
+                for i in range(2)
+            ]
+        )
+        with patch.object(route, "to_dataframe", return_value=pd.DataFrame({"altitude": []})):
+            config = wdm._build_route_profile_chart_config([route])
+
+        assert config["series"][0]["data"] == []
+
+    def test_build_route_profile_chart_config_skips_invalid_route_points(self) -> None:
+        """Routes with fewer than two valid map points should not emit profile points."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01").to_pydatetime()
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base_time,
+                    latitude=48.85,
+                    longitude=2.35,
+                    altitude=100.0,
+                    speed=3.0,
+                ),
+                RoutePoint(
+                    time=base_time + timedelta(seconds=10),
+                    latitude=float("nan"),
+                    longitude=2.3501,
+                    altitude=101.0,
+                    speed=3.2,
+                ),
+            ]
+        )
+
+        with patch.object(
+            route,
+            "to_dataframe",
+            return_value=pd.DataFrame({"altitude": [100.0, 101.0]}),
+        ):
+            config = wdm._build_route_profile_chart_config([route])
+
+        assert config["series"][0]["data"] == []
+
     def test_do_refresh_route_tab_uses_metric_based_segment_colors(self) -> None:
         """Route refresh should color each segment by pace and expose metric details in tooltip."""
         from datetime import timedelta

@@ -401,6 +401,95 @@ def _update_rolling_pace_window(
     return rolling_distance_m, rolling_time_s, pace
 
 
+def _route_altitudes(route: WorkoutRoute) -> list[float]:
+    """Return finite altitude samples for one route as floats."""
+    return [
+        float(a) if isinstance(a, (int, float)) and isfinite(a) else 0.0
+        for a in route.to_dataframe()["altitude"].tolist()
+    ]
+
+
+def _build_valid_route_points(route: WorkoutRoute) -> list[dict[str, Any]]:
+    """Return route points enriched with altitude and filtered for valid coordinates."""
+    altitudes = _route_altitudes(route)
+    if not altitudes:
+        return []
+    valid_points: list[dict[str, Any]] = []
+    for point, altitude in zip(route.points, altitudes):
+        point_data = _route_point_map_data(point)
+        if point_data is None:
+            continue
+        point_data["altitude"] = altitude
+        valid_points.append(point_data)
+    return valid_points
+
+
+def _add_segment_distance(
+    cumulative_distance_m: float,
+    previous: dict[str, Any] | None,
+    current: dict[str, Any],
+) -> float:
+    """Accumulate traveled distance from the previous point to current point."""
+    if previous is None:
+        return cumulative_distance_m
+    return cumulative_distance_m + WorkoutRoute.haversine_m(
+        cast(float, previous["lat"]),
+        cast(float, previous["lon"]),
+        cast(float, current["lat"]),
+        cast(float, current["lon"]),
+    )
+
+
+def _profile_speed_and_pace(
+    previous: dict[str, Any] | None,
+    current: dict[str, Any],
+    rolling_pace_segments: list[tuple[float, float]],
+    rolling_distance_m: float,
+    rolling_time_s: float,
+) -> tuple[float | None, float | None, float, float]:
+    """Compute speed/pace series values for one profile point."""
+    if previous is None:
+        return None, None, rolling_distance_m, rolling_time_s
+    segment_distance_m, speed_m_s, _ = _route_segment_metrics(previous, current)
+    if speed_m_s is None:
+        return None, None, rolling_distance_m, rolling_time_s
+    speed_kmh = speed_m_s * _M_S_TO_KM_H
+    rolling_distance_m, rolling_time_s, pace = _update_rolling_pace_window(
+        rolling_pace_segments,
+        rolling_distance_m,
+        rolling_time_s,
+        segment_distance_m,
+        speed_m_s,
+    )
+    return speed_kmh, pace, rolling_distance_m, rolling_time_s
+
+
+def _append_route_profile_points(
+    profile_points: list[list[float | None]],
+    valid_points: list[dict[str, Any]],
+    cumulative_distance_m: float,
+) -> float:
+    """Append chart points for one valid route and return updated cumulative distance."""
+    rolling_pace_segments: list[tuple[float, float]] = []
+    rolling_distance_m = 0.0
+    rolling_time_s = 0.0
+    for idx, current in enumerate(valid_points):
+        previous = valid_points[idx - 1] if idx > 0 else None
+        cumulative_distance_m = _add_segment_distance(cumulative_distance_m, previous, current)
+        speed_kmh, pace, rolling_distance_m, rolling_time_s = _profile_speed_and_pace(
+            previous,
+            current,
+            rolling_pace_segments,
+            rolling_distance_m,
+            rolling_time_s,
+        )
+        distance_km = cumulative_distance_m / _METERS_PER_KM
+        altitude_m = cast(float, current["altitude"])
+        hr_bpm = cast(float | None, current["heart_rate"])
+        profile_points.append([distance_km, altitude_m, pace, speed_kmh, hr_bpm])
+    return cumulative_distance_m
+
+
 def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, Any]:
     """Build a route profile chart with altitude plus pace/speed/HR hover metrics."""
     profile_points: list[list[float | None]] = []
@@ -408,55 +497,12 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
     for route in routes:
         if not route.points:
             continue
-        route_df = route.to_dataframe()
-        altitudes = [
-            float(a) if isinstance(a, (int, float)) and isfinite(a) else 0.0
-            for a in route_df["altitude"].tolist()
-        ]
-        if not altitudes:
-            continue
-        route_points: list[dict[str, Any]] = []
-        for idx, point in enumerate(route.points):
-            point_data = _route_point_map_data(point)
-            if point_data is None:
-                continue
-            point_data["altitude"] = altitudes[idx]
-            route_points.append(point_data)
-        valid_points = route_points
+        valid_points = _build_valid_route_points(route)
         if len(valid_points) < 2:
             continue
-        # Keep a short rolling distance window to smooth pause spikes in pace samples.
-        rolling_pace_segments: list[tuple[float, float]] = []
-        rolling_distance_m = 0.0
-        rolling_time_s = 0.0
-        for idx, current in enumerate(valid_points):
-            if idx > 0:
-                previous = valid_points[idx - 1]
-                cumulative_distance_m += WorkoutRoute.haversine_m(
-                    cast(float, previous["lat"]),
-                    cast(float, previous["lon"]),
-                    cast(float, current["lat"]),
-                    cast(float, current["lon"]),
-                )
-            distance_km = cumulative_distance_m / 1000.0
-            altitude_m = cast(float, current["altitude"])
-            pace = None
-            speed_kmh = None
-            hr_bpm = cast(float | None, current["heart_rate"])
-            if idx > 0:
-                segment_distance_m, speed_m_s, _ = _route_segment_metrics(
-                    valid_points[idx - 1], current
-                )
-                if speed_m_s is not None:
-                    speed_kmh = speed_m_s * _M_S_TO_KM_H
-                    rolling_distance_m, rolling_time_s, pace = _update_rolling_pace_window(
-                        rolling_pace_segments,
-                        rolling_distance_m,
-                        rolling_time_s,
-                        segment_distance_m,
-                        speed_m_s,
-                    )
-            profile_points.append([distance_km, altitude_m, pace, speed_kmh, hr_bpm])
+        cumulative_distance_m = _append_route_profile_points(
+            profile_points, valid_points, cumulative_distance_m
+        )
 
     pace_label = json.dumps(f"{t('Pace')}: ")
     speed_label = json.dumps(f"{t('Speed')}: ")

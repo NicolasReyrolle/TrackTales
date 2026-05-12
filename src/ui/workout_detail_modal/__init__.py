@@ -271,7 +271,7 @@ def _build_field_rows(
 
 
 def _segment_color_from_pace(pace_min_per_km: float | None) -> str:
-    """Return the route-segment color for the given pace (minutes per km)."""
+    """Return route-segment color from pace (green=fast, red=slow)."""
     if pace_min_per_km is None:
         return "#6b7280"
     if pace_min_per_km <= 4.0:
@@ -358,7 +358,7 @@ def _route_segment_metrics(
 
 
 def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, Any]:
-    """Build an elevation profile chart config from route altitude data."""
+    """Build a route profile chart with altitude plus pace/speed/HR hover metrics."""
     profile_points: list[list[float | None]] = []
     cumulative_distance_m = 0.0
     for route in routes:
@@ -385,6 +385,8 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
                     cast(float, current["lon"]),
                 )
             distance_km = cumulative_distance_m / 1000.0
+            # Keep altitude lookup safe when a malformed point was filtered out from
+            # valid_points but still exists in the DataFrame.
             altitude_m = altitudes[min(idx, len(altitudes) - 1)]
             pace = None
             speed_kmh = None
@@ -403,6 +405,8 @@ def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, A
     distance_label = json.dumps(f"{t('Distance')}: ")
     heart_rate_label = json.dumps(f"{t('Heart Rate')}: ")
     no_data = json.dumps("–")
+    # point payload indices for JS formatter:
+    # [0]=distance_km, [1]=altitude_m, [2]=pace_min_per_km, [3]=speed_km_h, [4]=heart_rate_bpm
     return {
         "backgroundColor": "transparent",
         "tooltip": {
@@ -439,7 +443,7 @@ def _do_refresh_route_tab(
     route_profile_chart: Any,
     row: dict[str, Any],
 ) -> None:
-    """Update the Route tab map, metric overlays, and elevation profile."""
+    """Update the Route tab map with pace-colored segments and elevation profile."""
     routes = _get_row_routes(row)
     has_route = bool(routes)
     no_route_label.set_visibility(not has_route)

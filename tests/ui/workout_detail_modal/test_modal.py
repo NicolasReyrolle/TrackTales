@@ -385,7 +385,7 @@ class TestRouteTabLocalizationAndCoverage:
         assert ("Route {index}", {"index": "1"}) in t_calls
         assert ("Start", {}) in t_calls
         assert ("End", {}) in t_calls
-        assert any("Parcours 1" in text for text in tooltip_texts)
+        assert any(text.startswith("Parcours 1<br>") for text in tooltip_texts)
         assert "Départ - Parcours 1" in tooltip_texts
         assert "Arrivée - Parcours 1" in tooltip_texts
 

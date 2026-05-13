@@ -248,7 +248,7 @@ class TestCreateWorkoutDetailModal:
                 stack.enter_context(p)
             stack.enter_context(
                 patch(
-                    "ui.workout_detail_modal._do_refresh_route_tab",
+                    "ui.workout_detail_modal.builder._do_refresh_route_tab",
                     side_effect=capture_route_refresh,
                 )
             )
@@ -293,7 +293,7 @@ class TestCreateWorkoutDetailModal:
                 stack.enter_context(p)
             stack.enter_context(
                 patch(
-                    "ui.workout_detail_modal._do_refresh_route_profile_tab",
+                    "ui.workout_detail_modal.builder._do_refresh_route_profile_tab",
                     side_effect=capture_profile_refresh,
                 )
             )

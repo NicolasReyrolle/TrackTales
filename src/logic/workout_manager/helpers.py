@@ -2,8 +2,9 @@
 
 from collections.abc import Callable
 
-SECONDS_PER_MINUTE = 60.0
-SECONDS_PER_HOUR = SECONDS_PER_MINUTE * 60.0
+from units import MINUTES_PER_HOUR, SECONDS_PER_MINUTE
+
+SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR
 
 
 def convert_record_metric_value(

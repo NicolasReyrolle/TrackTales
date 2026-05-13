@@ -14,6 +14,18 @@ METERS_TO_FEET: float = 1 / 0.3048
 #: Multiply kilograms by this value to obtain pounds.
 KG_TO_LBS: float = 2.20462
 
+#: Number of meters in one kilometer.
+METERS_PER_KM: float = 1000.0
+
+#: Multiply m/s by this value to obtain km/h.
+M_S_TO_KM_H: float = 3.6
+
+#: Number of seconds in one minute.
+SECONDS_PER_MINUTE: float = 60.0
+
+#: Number of minutes in one hour.
+MINUTES_PER_HOUR: float = 60.0
+
 
 def celsius_to_fahrenheit(celsius: float) -> float:
     """Convert a temperature value from Celsius to Fahrenheit."""

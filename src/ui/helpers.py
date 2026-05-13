@@ -11,10 +11,7 @@ from babel.core import default_locale
 from babel.numbers import format_decimal
 
 from i18n import translate
-from units import METERS_TO_FEET, METERS_TO_MILES
-
-SECONDS_PER_MINUTE: float = 60.0
-MINUTES_PER_HOUR: float = 60.0
+from units import METERS_TO_FEET, METERS_TO_MILES, MINUTES_PER_HOUR, SECONDS_PER_MINUTE
 
 
 class _SupportsStrftime(Protocol):

@@ -746,7 +746,7 @@ class TestComparisonsTabIntegration:
                 stack.enter_context(p)
             stack.enter_context(
                 patch(
-                    "ui.workout_detail_modal._do_refresh_comparisons_tab",
+                    "ui.workout_detail_modal.builder._do_refresh_comparisons_tab",
                     side_effect=capture_refresh,
                 )
             )

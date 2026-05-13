@@ -12,15 +12,10 @@ from nicegui import background_tasks
 
 from i18n import t
 from logic.workout_manager.workout_route import WorkoutRoute
+from units import M_S_TO_KM_H, METERS_PER_KM, SECONDS_PER_MINUTE
 
 from .comparisons import _get_row_routes
 
-#: Convert speed from meters per second to kilometers per hour for chart payloads.
-_M_S_TO_KM_H = 3.6
-#: Number of seconds in one minute; used for pace conversion in min/km.
-_SECONDS_PER_MINUTE = 60.0
-#: Number of meters in one kilometer; used by distance/pace calculations.
-_METERS_PER_KM = 1000.0
 #: Speeds below this threshold are treated as non-moving for rolling pace smoothing.
 _MIN_MOVING_SPEED_M_S = 0.5
 #: Distance window used to smooth pace and avoid spikes caused by brief pauses.
@@ -96,7 +91,7 @@ def _route_segment_metrics(
                 speed_m_s = distance_m / delta_seconds
     if speed_m_s is None or speed_m_s <= 0.0:
         return distance_m, None, None
-    pace_min_per_km = (_METERS_PER_KM / speed_m_s) / _SECONDS_PER_MINUTE
+    pace_min_per_km = (METERS_PER_KM / speed_m_s) / SECONDS_PER_MINUTE
     return distance_m, speed_m_s, pace_min_per_km
 
 
@@ -122,7 +117,7 @@ def _update_rolling_pace_window(
             rolling_time_s -= old_time_s
     pace = None
     if rolling_distance_m > 0.0 and rolling_time_s > 0.0:
-        pace = (rolling_time_s / _SECONDS_PER_MINUTE) / (rolling_distance_m / _METERS_PER_KM)
+        pace = (rolling_time_s / SECONDS_PER_MINUTE) / (rolling_distance_m / METERS_PER_KM)
     return rolling_distance_m, rolling_time_s, pace
 
 
@@ -178,7 +173,7 @@ def _profile_speed_and_pace(
     segment_distance_m, speed_m_s, _ = _route_segment_metrics(previous, current)
     if speed_m_s is None:
         return None, None, rolling_distance_m, rolling_time_s
-    speed_kmh = speed_m_s * _M_S_TO_KM_H
+    speed_kmh = speed_m_s * M_S_TO_KM_H
     rolling_distance_m, rolling_time_s, pace = _update_rolling_pace_window(
         rolling_pace_segments,
         rolling_distance_m,
@@ -208,7 +203,7 @@ def _append_route_profile_points(
             rolling_distance_m,
             rolling_time_s,
         )
-        distance_km = cumulative_distance_m / _METERS_PER_KM
+        distance_km = cumulative_distance_m / METERS_PER_KM
         altitude_m = cast(float, current["altitude"])
         hr_bpm = cast(float | None, current["heart_rate"])
         profile_points.append([distance_km, altitude_m, pace, speed_kmh, hr_bpm])

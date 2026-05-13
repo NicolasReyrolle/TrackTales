@@ -213,9 +213,7 @@ def _append_route_profile_points(
 
 def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, Any]:
     """Build a route profile chart with altitude plus pace/speed/HR hover metrics."""
-    return _build_route_profile_chart_config_with_translate(
-        routes, translate=t, distance_unit="km"
-    )
+    return _build_route_profile_chart_config_with_translate(routes, translate=t, distance_unit="km")
 
 
 def _build_route_profile_chart_config_with_translate(

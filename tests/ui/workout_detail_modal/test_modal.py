@@ -428,6 +428,60 @@ class TestCreateWorkoutDetailModal:
         assert len(profile_data) == 3
         assert profile_data[0][1] == pytest.approx(35.0)
 
+    def test_do_refresh_profile_tab_uses_imperial_units(self) -> None:
+        """Profile refresh should convert route chart labels/data when distance_unit is miles."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+        from units import METERS_PER_KM, METERS_TO_FEET, METERS_TO_MILES
+
+        class _ReadOnlyChart:
+            def __init__(self) -> None:
+                self._visible = True
+                self._options_store: dict[str, Any] = {}
+
+            @property
+            def options(self) -> dict[str, Any]:
+                return self._options_store
+
+            def set_visibility(self, visible: bool) -> None:
+                self._visible = visible
+
+            def update(self) -> None:
+                return
+
+        base_time = pd.Timestamp("2024-01-01").to_pydatetime()
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base_time + timedelta(seconds=i * 10),
+                    latitude=48.85 + (i * 0.0001),
+                    longitude=2.35 + (i * 0.0001),
+                    altitude=100.0 + i,
+                    speed=3.0,
+                )
+                for i in range(3)
+            ]
+        )
+        row = {**_make_row(idx=0), "route": route, "distance_unit": "mi"}
+        no_route_label = _DummyElement()
+        route_profile_chart = _ReadOnlyChart()
+
+        wdm._do_refresh_route_profile_tab(no_route_label, route_profile_chart, row)
+
+        config = route_profile_chart.options
+        profile_data = config["series"][0]["data"]
+        km_to_miles = METERS_TO_MILES * METERS_PER_KM
+        assert config["xAxis"]["name"].endswith("(mi)")
+        assert config["yAxis"][0]["name"].endswith("(ft)")
+        assert config["yAxis"][1]["name"].endswith("(/mi)")
+        assert profile_data[0][1] == pytest.approx(100.0 * METERS_TO_FEET)
+        assert profile_data[1][0] > 0
+        assert profile_data[1][0] < 1
+        assert profile_data[1][3] == pytest.approx(3.0 * 3.6 * km_to_miles)
+
 
 class TestRouteTabLocalizationAndCoverage:
     """Focused tests for route tab localization and route-parts behavior."""

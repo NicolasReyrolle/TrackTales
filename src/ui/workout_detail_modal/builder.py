@@ -52,9 +52,6 @@ from ui.workout_detail_modal.routes import (
 from ui.workout_detail_modal.routes import (
     _do_refresh_route_tab as _do_refresh_route_tab_impl,
 )
-from ui.workout_detail_modal.routes import (
-    _fit_route_bounds_after_init as _fit_route_bounds_after_init,
-)
 from units import METERS_TO_MILES
 
 #: Callable returning a translated label string; alias for readability.

@@ -13,7 +13,7 @@ from nicegui import background_tasks
 
 from i18n import t
 from logic.workout_manager.workout_route import WorkoutRoute
-from units import M_S_TO_KM_H, METERS_PER_KM, SECONDS_PER_MINUTE
+from units import M_S_TO_KM_H, METERS_PER_KM, METERS_TO_FEET, METERS_TO_MILES, SECONDS_PER_MINUTE
 
 from .comparisons import _get_row_routes
 
@@ -213,13 +213,16 @@ def _append_route_profile_points(
 
 def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, Any]:
     """Build a route profile chart with altitude plus pace/speed/HR hover metrics."""
-    return _build_route_profile_chart_config_with_translate(routes, translate=t)
+    return _build_route_profile_chart_config_with_translate(
+        routes, translate=t, distance_unit="km"
+    )
 
 
 def _build_route_profile_chart_config_with_translate(
     routes: list[WorkoutRoute],
     *,
     translate: Callable[..., str],
+    distance_unit: str = "km",
 ) -> dict[str, Any]:
     """Build profile chart config using an injectable translation function."""
     profile_points: list[list[float | None]] = []
@@ -234,14 +237,37 @@ def _build_route_profile_chart_config_with_translate(
             profile_points, valid_points, cumulative_distance_m
         )
 
+    normalized_distance_unit = "mi" if distance_unit == "mi" else "km"
+    if normalized_distance_unit == "mi":
+        km_to_miles = METERS_TO_MILES * METERS_PER_KM
+        profile_points = [
+            [
+                cast(float, point[0]) * km_to_miles,
+                cast(float, point[1]) * METERS_TO_FEET,
+                None if point[2] is None else cast(float, point[2]) / km_to_miles,
+                None if point[3] is None else cast(float, point[3]) * km_to_miles,
+                point[4],
+            ]
+            for point in profile_points
+        ]
+        altitude_unit = "ft"
+        speed_unit = "mph"
+    else:
+        altitude_unit = "m"
+        speed_unit = "km/h"
+
     pace_label = json.dumps(f"{translate('Pace')}: ")
     speed_label = json.dumps(f"{translate('Speed')}: ")
     altitude_label = json.dumps(f"{translate('Altitude')}: ")
     distance_label = json.dumps(f"{translate('Distance')}: ")
     heart_rate_label = json.dumps(f"{translate('Heart Rate')}: ")
     no_data = json.dumps("–")
-    altitude_axis_name = f"{translate('Altitude')} (m)"
-    pace_axis_name = f"{translate('Pace')} (/km)"
+    distance_unit_label = json.dumps(normalized_distance_unit)
+    altitude_unit_label = json.dumps(altitude_unit)
+    speed_unit_label = json.dumps(speed_unit)
+    altitude_axis_name = f"{translate('Altitude')} ({altitude_unit})"
+    pace_axis_name = f"{translate('Pace')} (/{normalized_distance_unit})"
+    distance_axis_name = f"{translate('Distance')} ({normalized_distance_unit})"
     chart_grid = {"left": 72, "right": 80, "top": 56, "bottom": 64}
     return {
         "backgroundColor": "transparent",
@@ -253,15 +279,16 @@ def _build_route_profile_chart_config_with_translate(
             ":formatter": (
                 "function(params) {"
                 "var point = params[0].data;"
-                f"var text = {distance_label} + point[0].toFixed(2) + ' km\\n' + "
-                f"{altitude_label} + point[1].toFixed(1) + ' m';"
+                f"var text = {distance_label} + point[0].toFixed(2) + ' ' + "
+                f"{distance_unit_label} + '\\n' + "
+                f"{altitude_label} + point[1].toFixed(1) + ' ' + {altitude_unit_label};"
                 f"text += '\\n' + {pace_label} + (point[2] == null ? {no_data} : "
                 "("
                 "Math.floor(Math.round(point[2] * 60) / 60) + ':' + "
                 "String(Math.round(point[2] * 60) % 60).padStart(2, '0') + "
-                "' /km'));"
+                f"' /{normalized_distance_unit}'));"
                 f"text += '\\n' + {speed_label} + ("
-                f"point[3] == null ? {no_data} : point[3].toFixed(1) + ' km/h');"
+                f"point[3] == null ? {no_data} : point[3].toFixed(1) + ' ' + {speed_unit_label});"
                 "if (point[4] != null) {"
                 f"  text += '\\n' + {heart_rate_label} + point[4].toFixed(0) + ' bpm';"
                 "}"
@@ -271,7 +298,7 @@ def _build_route_profile_chart_config_with_translate(
         },
         "xAxis": {
             "type": "value",
-            "name": f"{translate('Distance')} (km)",
+            "name": distance_axis_name,
             "nameLocation": "middle",
             "nameGap": 42,
         },
@@ -403,8 +430,11 @@ def _do_refresh_route_profile_tab(
     if not has_route:
         return
 
+    distance_unit = str(row.get("distance_unit", "km"))
     route_profile_options = _build_route_profile_chart_config_with_translate(
-        routes, translate=translate
+        routes,
+        translate=translate,
+        distance_unit="mi" if distance_unit == "mi" else "km",
     )
     chart_options = getattr(route_profile_chart, "options", None)
     if isinstance(chart_options, dict):

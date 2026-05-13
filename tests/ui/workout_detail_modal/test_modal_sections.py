@@ -22,10 +22,15 @@ class TestTabEnableState:
 
         def make_tab(*_a: Any, **_kw: Any) -> _DummyElement:
             tab = _DummyElement()
+            tab._tab_value = _a[0] if _a else _kw.get("value")
             tab_stubs.append(tab)
             return tab
 
         return tab_stubs, make_tab
+
+    def _tab_by_value(self, tab_stubs: list[_DummyElement], tab_value: str) -> _DummyElement:
+        """Return the first tab stub with the requested ``value``."""
+        return next(tab for tab in tab_stubs if getattr(tab, "_tab_value", None) == tab_value)
 
     def test_activity_tab_disabled_for_unsupported_activity(self) -> None:
         """Activity tab should be disabled when no type-specific data is available."""
@@ -148,7 +153,7 @@ class TestTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        assert not tab_stubs[3]._enabled
+        assert not self._tab_by_value(tab_stubs, "intervals")._enabled
 
     def test_route_tab_disabled_when_no_route(self) -> None:
         """Route tab should be disabled when the workout has no GPS route."""
@@ -198,7 +203,7 @@ class TestTabEnableState:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        assert tab_stubs[3]._enabled
+        assert self._tab_by_value(tab_stubs, "intervals")._enabled
 
     def test_route_tab_enabled_when_route_present(self) -> None:
         """Route tab should be enabled when the workout has a non-empty GPS route."""

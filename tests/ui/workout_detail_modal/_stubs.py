@@ -78,6 +78,8 @@ class _DummyElement:
         #: Captures the ``columns`` kwarg when used as a ``ui.table`` stub.
         #: Stored by reference so in-place mutations to the list are visible here.
         self.columns: list[Any] = _kwargs.get("columns", [])
+        #: Tab value set when this stub is used as a ``ui.tab`` instance.
+        self._tab_value: str | None = None
         #: Current value (used by the tabs stub to track the active tab).
         self.value: str = "overview"
         #: Registered on_value_change handlers (used for tab-change simulation).

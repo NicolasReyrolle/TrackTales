@@ -632,8 +632,8 @@ class TestRouteTabLocalizationAndCoverage:
         assert data[2][2] is not None
         assert data[2][2] == pytest.approx(expected_pace_min_per_km, rel=0.05)
 
-    def test_build_route_profile_chart_config_skips_empty_altitude_dataframe(self) -> None:
-        """Routes with empty altitude data should produce no profile points."""
+    def test_build_route_profile_chart_config_uses_route_points_directly(self) -> None:
+        """Route profile chart should compute altitudes directly from route points."""
         from datetime import timedelta
 
         import pandas as pd
@@ -653,10 +653,12 @@ class TestRouteTabLocalizationAndCoverage:
                 for i in range(2)
             ]
         )
-        with patch.object(route, "to_dataframe", return_value=pd.DataFrame({"altitude": []})):
+        with patch.object(
+            route, "to_dataframe", side_effect=AssertionError("should not be called")
+        ):
             config = wdm._build_route_profile_chart_config([route])
 
-        assert config["series"][0]["data"] == []
+        assert len(config["series"][0]["data"]) == 2
 
     def test_build_route_profile_chart_config_skips_invalid_route_points(self) -> None:
         """Routes with fewer than two valid map points should not emit profile points."""
@@ -686,12 +688,7 @@ class TestRouteTabLocalizationAndCoverage:
             ]
         )
 
-        with patch.object(
-            route,
-            "to_dataframe",
-            return_value=pd.DataFrame({"altitude": [100.0, 101.0]}),
-        ):
-            config = wdm._build_route_profile_chart_config([route])
+        config = wdm._build_route_profile_chart_config([route])
 
         assert config["series"][0]["data"] == []
 

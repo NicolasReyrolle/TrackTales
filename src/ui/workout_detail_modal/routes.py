@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections import deque
 from collections.abc import Callable
 from math import isfinite
 from typing import Any, TypedDict, cast
@@ -35,6 +36,11 @@ class _RoutePointData(TypedDict):
     time: Any
 
 
+def _finite_altitude(value: Any) -> float:
+    """Return a finite altitude float, falling back to 0.0."""
+    return float(value) if isinstance(value, (int, float)) and isfinite(value) else 0.0
+
+
 def _route_point_map_data(point: Any) -> _RoutePointData | None:
     """Extract map/profile fields from a route point; return None when invalid."""
     lat = getattr(point, "latitude", None)
@@ -50,9 +56,7 @@ def _route_point_map_data(point: Any) -> _RoutePointData | None:
     return {
         "lat": lat_f,
         "lon": lon_f,
-        "altitude": float(altitude)
-        if isinstance(altitude, (int, float)) and isfinite(altitude)
-        else 0.0,
+        "altitude": _finite_altitude(altitude),
         "speed": float(speed) if isinstance(speed, (int, float)) and isfinite(speed) else 0.0,
         "heart_rate": (
             float(heart_rate)
@@ -96,7 +100,7 @@ def _route_segment_metrics(
 
 
 def _update_rolling_pace_window(
-    rolling_pace_segments: list[tuple[float, float]],
+    rolling_pace_segments: deque[tuple[float, float]],
     rolling_distance_m: float,
     rolling_time_s: float,
     segment_distance_m: float,
@@ -112,7 +116,7 @@ def _update_rolling_pace_window(
             rolling_distance_m > _PACE_SMOOTHING_WINDOW_M
             and len(rolling_pace_segments) > _MIN_ROLLING_SEGMENTS
         ):
-            old_distance_m, old_time_s = rolling_pace_segments.pop(0)
+            old_distance_m, old_time_s = rolling_pace_segments.popleft()
             rolling_distance_m -= old_distance_m
             rolling_time_s -= old_time_s
     pace = None
@@ -123,10 +127,7 @@ def _update_rolling_pace_window(
 
 def _route_altitudes(route: WorkoutRoute) -> list[float]:
     """Return finite altitude samples for one route as floats."""
-    return [
-        float(a) if isinstance(a, (int, float)) and isfinite(a) else 0.0
-        for a in route.to_dataframe()["altitude"].tolist()
-    ]
+    return [_finite_altitude(point.altitude) for point in route.points]
 
 
 def _build_valid_route_points(route: WorkoutRoute) -> list[_RoutePointData]:
@@ -163,7 +164,7 @@ def _add_segment_distance(
 def _profile_speed_and_pace(
     previous: _RoutePointData | None,
     current: _RoutePointData,
-    rolling_pace_segments: list[tuple[float, float]],
+    rolling_pace_segments: deque[tuple[float, float]],
     rolling_distance_m: float,
     rolling_time_s: float,
 ) -> tuple[float | None, float | None, float, float]:
@@ -190,7 +191,7 @@ def _append_route_profile_points(
     cumulative_distance_m: float,
 ) -> float:
     """Append chart points for one valid route and return updated cumulative distance."""
-    rolling_pace_segments: list[tuple[float, float]] = []
+    rolling_pace_segments: deque[tuple[float, float]] = deque()
     rolling_distance_m = 0.0
     rolling_time_s = 0.0
     for idx, current in enumerate(valid_points):
@@ -256,8 +257,8 @@ def _build_route_profile_chart_config_with_translate(
                 f"{altitude_label} + point[1].toFixed(1) + ' m';"
                 f"text += '\\n' + {pace_label} + (point[2] == null ? {no_data} : "
                 "("
-                "Math.floor(point[2]) + ':' + "
-                "String(Math.round((point[2] - Math.floor(point[2])) * 60)).padStart(2, '0') + "
+                "Math.floor(Math.round(point[2] * 60) / 60) + ':' + "
+                "String(Math.round(point[2] * 60) % 60).padStart(2, '0') + "
                 "' /km'));"
                 f"text += '\\n' + {speed_label} + ("
                 f"point[3] == null ? {no_data} : point[3].toFixed(1) + ' km/h');"

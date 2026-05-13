@@ -3,12 +3,13 @@
 ## Rule precedence
 
 When instructions conflict, apply this order:
-1. Explicit user request for the current task
-2. Safety and platform policy
+1. Safety and platform policy
+2. Explicit user request for the current task
 3. This repository instruction file
 4. General style preferences
 
-If two rules at the same level conflict, choose the simpler option and state the assumption.
+If two rules at the same level conflict, choose the option with fewer implementation steps or dependencies, prioritizing user-facing simplicity, and state the assumption.
+If a user request is ambiguous or incomplete, apply repository instructions that best match the stated intent and document the assumption in your response.
 
 ## Project overview
 
@@ -42,6 +43,7 @@ If two rules at the same level conflict, choose the simpler option and state the
 - Keep XML parsing on `defusedxml` (never switch to stdlib `ElementTree` for untrusted XML parsing).
 - Preserve streaming parsing patterns (`iterparse` + `elem.clear()`) for large files.
 - `ExportParser` remains a context manager and should be used with `with ExportParser() as ep:`.
+- If an Apple Health export is invalid or corrupted and cannot be parsed, display an error message and log the issue.
 
 ### CSS and styling
 - All Tailwind/Quasar class strings and NiceGUI `.props()` strings live in `src/ui/css.py` as named constants (`*_CLASSES` / `*_PROPS`).  Import and use them instead of writing inline string literals.
@@ -74,6 +76,7 @@ If two rules at the same level conflict, choose the simpler option and state the
 - Keep cognitive complexity low; break down complex functions into smaller helpers. Maximum complexity of 15 per function.
 - Keep functions under 50 lines where practical. If a function exceeds this, consider refactoring into smaller functions.
 - Each module must contain less than 1000 lines of code. This limit applies to both source and test files. If a module exceeds this, consider splitting it into smaller, focused modules (e.g. by feature area or tab).
+- Any `__init__.py` content should be kept to a minimum, without much logic inside. Only imports and real setup would be preferable.
 
 ### After coding
 - Run `ruff format src tests`
@@ -87,6 +90,7 @@ If two rules at the same level conflict, choose the simpler option and state the
 ### TDD policy
 - Use TDD for bug fixes and new logic where practical.
 - For trivial refactors/renames/doc-only changes, add or update tests only if behavior meaningfully changes.
+- Do not perform equality checks with floating point values. Use `pytest.approx` for comparisons in tests.
 
 ## Definition of done
 

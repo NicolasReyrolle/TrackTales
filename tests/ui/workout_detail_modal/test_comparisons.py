@@ -667,6 +667,11 @@ class TestDoRefreshComparisonsTab:
 class TestComparisonsTabIntegration:
     """Integration tests for the Comparisons tab in create_workout_detail_modal."""
 
+    @staticmethod
+    def _tab_by_value(tab_stubs: list[_DummyElement], tab_value: str) -> _DummyElement:
+        """Return captured tab stub with matching ``value``."""
+        return next(tab for tab in tab_stubs if getattr(tab, "_tab_value", None) == tab_value)
+
     def test_comparisons_tab_created(self) -> None:
         """create_workout_detail_modal should create a 'comparisons' ui.tab."""
         rows = [_make_row(idx=0)]
@@ -691,6 +696,7 @@ class TestComparisonsTabIntegration:
 
         def capture_tab(*_a: Any, **_kw: Any) -> _DummyElement:
             stub = _DummyElement()
+            stub._tab_value = _a[0] if _a else _kw.get("value")
             tab_stubs.append(stub)
             return stub
 
@@ -700,8 +706,7 @@ class TestComparisonsTabIntegration:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        # Tab order: overview[0], activity[1], route[2], intervals[3], comparisons[4]
-        comparisons_tab = tab_stubs[4]
+        comparisons_tab = self._tab_by_value(tab_stubs, "comparisons")
         assert not comparisons_tab._enabled
 
     def test_comparisons_tab_enabled_with_route(self) -> None:
@@ -712,6 +717,7 @@ class TestComparisonsTabIntegration:
 
         def capture_tab(*_a: Any, **_kw: Any) -> _DummyElement:
             stub = _DummyElement()
+            stub._tab_value = _a[0] if _a else _kw.get("value")
             tab_stubs.append(stub)
             return stub
 
@@ -721,7 +727,7 @@ class TestComparisonsTabIntegration:
             fn = wdm.create_workout_detail_modal(rows)
 
         fn(0)
-        comparisons_tab = tab_stubs[4]
+        comparisons_tab = self._tab_by_value(tab_stubs, "comparisons")
         assert comparisons_tab._enabled
 
     def test_tab_change_to_comparisons_triggers_refresh(self) -> None:
@@ -746,7 +752,7 @@ class TestComparisonsTabIntegration:
                 stack.enter_context(p)
             stack.enter_context(
                 patch(
-                    "ui.workout_detail_modal._do_refresh_comparisons_tab",
+                    "ui.workout_detail_modal.builder._do_refresh_comparisons_tab",
                     side_effect=capture_refresh,
                 )
             )

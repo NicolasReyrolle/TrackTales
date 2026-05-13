@@ -162,10 +162,11 @@ TABLE_FULL_CLASSES = "w-full"
 # Workout detail modal
 # ---------------------------------------------------------------------------
 
-#: Modal card: fixed width (≈ 42 rem / 672 px).  Does not set an explicit height
-#: because the tab panels area uses a fixed height (see MODAL_TAB_PANELS_CLASSES),
-#: keeping the overall modal size stable when switching tabs.
-MODAL_CARD_CLASSES = "w-[42rem]"
+#: Modal card: fixed width (≈ 56 rem / 896 px) with viewport cap for smaller screens.
+#: Does not set an explicit height because the tab panels area uses a fixed
+#: height (see MODAL_TAB_PANELS_CLASSES), keeping the overall modal size stable
+#: when switching tabs.
+MODAL_CARD_CLASSES = "w-[56rem] max-w-[95vw]"
 
 #: Tab panels container inside the modal: fixed height so the modal does not
 #: resize when switching between Overview, Activity, and Splits tabs.
@@ -173,17 +174,28 @@ MODAL_CARD_CLASSES = "w-[42rem]"
 #: be reached within the fixed area.
 MODAL_TAB_PANELS_CLASSES = "w-full h-[30rem] overflow-y-auto"
 
+#: Centered content column for text-heavy tabs (Overview/Activity) in wide modal.
+#: Uses a fixed target width (capped on small screens) so ``mx-auto`` can center it.
+MODAL_CENTERED_CONTENT_CLASSES = "w-[42rem] max-w-full mx-auto"
+
+#: Full-width row wrapper that enforces horizontal centering in tab panels.
+MODAL_CENTERED_ROW_CLASSES = "w-full justify-center"
+
 #: Modal header row: title on the left, close button on the right.
 MODAL_HEADER_ROW_CLASSES = "w-full justify-between items-center"
 
-#: Each field row inside the modal (label + value side by side, baseline-aligned).
-MODAL_FIELD_ROW_CLASSES = "w-full items-baseline gap-4"
+#: Each field row inside the modal rendered as a centered 2-column grid.
+#: ``10rem`` keeps label lengths aligned without truncating common translated labels.
+#: ``32rem`` keeps the overall label/value block compact and centered in wide modals.
+MODAL_FIELD_ROW_CLASSES = (
+    "w-full max-w-[32rem] mx-auto grid grid-cols-[10rem_minmax(0,1fr)] items-baseline gap-x-4"
+)
 
 #: Muted label for a field inside the modal (reuses LABEL_MUTED_CLASSES for the base style).
-MODAL_FIELD_LABEL_CLASSES = f"{LABEL_MUTED_CLASSES} w-36"
+MODAL_FIELD_LABEL_CLASSES = LABEL_MUTED_CLASSES
 
 #: Value text for a field inside the modal.
-MODAL_FIELD_VALUE_CLASSES = "text-sm font-medium flex-1"
+MODAL_FIELD_VALUE_CLASSES = "text-sm font-medium"
 
 #: Footer row inside the modal: prev button, counter, next button.
 MODAL_NAV_ROW_CLASSES = "w-full justify-between items-center q-mt-sm"
@@ -202,6 +214,12 @@ MODAL_ROUTE_MAP_CONTAINER_CLASSES = "w-full workout-route-map-container"
 
 #: Inner HTML map node for Leaflet to mount into (fills the container dimensions).
 MODAL_ROUTE_MAP_HTML_CLASSES = "w-full h-full workout-route-map"
+
+#: Fixed-height container for the route profile chart in the modal Profile tab.
+MODAL_ROUTE_PROFILE_CONTAINER_CLASSES = "w-full workout-route-profile-container"
+
+#: ECharts node for the route profile chart (fills its container).
+MODAL_ROUTE_PROFILE_CLASSES = "w-full h-full workout-route-profile"
 
 #: Compact table for the route-comparison ranking in the modal Comparisons tab.
 MODAL_COMPARISON_TABLE_CLASSES = "w-full"

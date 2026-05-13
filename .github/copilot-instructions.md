@@ -87,6 +87,7 @@ If two rules at the same level conflict, choose the simpler option and state the
 ### TDD policy
 - Use TDD for bug fixes and new logic where practical.
 - For trivial refactors/renames/doc-only changes, add or update tests only if behavior meaningfully changes.
+- Do not perform equality checks with floating point values. Use `pytest.approx` for comparisons in tests.
 
 ## Definition of done
 

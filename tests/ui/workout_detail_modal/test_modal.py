@@ -635,6 +635,39 @@ class TestRouteTabLocalizationAndCoverage:
         assert pace_data[1][2] is not None  # pace min/km
         assert pace_data[1][3] is not None  # speed km/h
 
+    def test_build_route_profile_chart_config_includes_heart_rate_samples(self) -> None:
+        """Profile data should carry HR values for tooltip rendering when present."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01").to_pydatetime()
+        p1 = RoutePoint(
+            time=base_time,
+            latitude=48.85,
+            longitude=2.35,
+            altitude=100.0,
+            speed=3.0,
+        )
+        p2 = RoutePoint(
+            time=base_time + timedelta(seconds=10),
+            latitude=48.8501,
+            longitude=2.3501,
+            altitude=101.0,
+            speed=3.2,
+        )
+        object.__setattr__(p2, "heart_rate", 142.0)
+        route = WorkoutRoute(points=[p1, p2])
+
+        config = wdm._build_route_profile_chart_config([route])
+        profile_data = config["series"][0]["data"]
+
+        assert profile_data[0][4] is None
+        assert profile_data[1][4] == pytest.approx(142.0)
+        assert "Heart Rate" in config["tooltip"][":formatter"]
+
     def test_build_route_profile_chart_config_smooths_pause_spikes(self) -> None:
         """Pause-like segments should not inject extreme pace spikes into profile samples."""
         from datetime import timedelta

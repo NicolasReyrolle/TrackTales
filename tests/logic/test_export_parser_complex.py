@@ -525,6 +525,51 @@ class TestProcessWorkoutRoute:
         # Record should remain unchanged if no FileReference
         assert record == {"activityType": "Running"}
 
+    def test_process_workout_route_clips_points_with_active_end(self, tmp_path: Path) -> None:
+        """active_end should clamp WorkoutRoute windows so trailing points are excluded."""
+        zip_path = tmp_path / "route_export.zip"
+        gpx_content = b"""<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
+    <trk><trkseg>
+        <trkpt lat="48.8566" lon="2.3522"><ele>100.0</ele><time>2024-01-01T10:00:00Z</time></trkpt>
+        <trkpt lat="48.8567" lon="2.3523"><ele>101.0</ele><time>2024-01-01T10:01:00Z</time></trkpt>
+        <trkpt lat="48.8568" lon="2.3524"><ele>102.0</ele><time>2024-01-01T10:02:00Z</time></trkpt>
+    </trkseg></trk>
+</gpx>
+"""
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/workout-routes/test_route.gpx", gpx_content)
+
+        route_elem = Element(
+            "WorkoutRoute",
+            attrib={
+                "startDate": "2024-01-01 10:00:00 +0000",
+                "endDate": "2024-01-01 10:03:00 +0000",
+            },
+        )
+        route_elem.append(
+            Element("FileReference", attrib={"path": "/workout-routes/test_route.gpx"})
+        )
+
+        parser = ExportParser()
+        record: WorkoutRecord = {"activityType": "Running"}
+        active_end = datetime.fromisoformat("2024-01-01T10:01:00+00:00")
+
+        with ZipFile(zip_path, "r") as zf:
+            parser._process_workout_route(route_elem, record, zf, active_end=active_end)
+
+        route_parts = record.get("route_parts")
+        assert isinstance(route_parts, list)
+        assert len(route_parts) == 1
+        first_part = route_parts[0]
+        assert isinstance(first_part, WorkoutRoute)
+        assert len(first_part.points) == 2
+        assert first_part.points[-1].time == active_end
+
+        merged_route = record.get("route")
+        assert isinstance(merged_route, WorkoutRoute)
+        assert len(merged_route.points) == 2
+
 
 class TestClipRouteToWindow:
     """Tests for ExportParser.clip_route_to_window (binary-search implementation)."""
@@ -617,6 +662,26 @@ class TestClipRouteToWindow:
         times_second = route.sorted_times()
 
         assert times_first is times_second
+
+    def test_clip_non_monotonic_route_falls_back_to_linear_scan(self) -> None:
+        """Out-of-order route times should still clip correctly via linear fallback."""
+        route = self._make_route(
+            [
+                "2024-01-01T10:00:00Z",
+                "2024-01-01T10:03:00Z",
+                "2024-01-01T10:01:00Z",
+                "2024-01-01T10:02:00Z",
+            ]
+        )
+        start = datetime.fromisoformat("2024-01-01T10:01:00+00:00")
+        end = datetime.fromisoformat("2024-01-01T10:02:00+00:00")
+
+        clipped = ExportParser.clip_route_to_window(route, start, end)
+
+        assert [point.time for point in clipped.points] == [
+            datetime.fromisoformat("2024-01-01T10:01:00+00:00"),
+            datetime.fromisoformat("2024-01-01T10:02:00+00:00"),
+        ]
 
 
 class TestMergeRouteParts:

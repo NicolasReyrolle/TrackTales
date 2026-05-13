@@ -70,14 +70,9 @@ def _route_point_map_data(point: Any) -> _RoutePointData | None:
 def _route_segment_metrics(
     previous: _RoutePointData,
     current: _RoutePointData,
-) -> tuple[float, float | None, float | None]:
-    """Return segment distance (m), speed (m/s), and pace (min/km)."""
-    distance_m = WorkoutRoute.haversine_m(
-        cast(float, previous["lat"]),
-        cast(float, previous["lon"]),
-        cast(float, current["lat"]),
-        cast(float, current["lon"]),
-    )
+    segment_distance_m: float,
+) -> tuple[float | None, float | None]:
+    """Return segment speed (m/s) and pace (min/km) for a known segment distance."""
     speed_prev = cast(float, previous["speed"])
     speed_curr = cast(float, current["speed"])
     speed_m_s = None
@@ -91,12 +86,12 @@ def _route_segment_metrics(
                 delta_seconds = (curr_time - prev_time).total_seconds()
             except (AttributeError, TypeError):
                 delta_seconds = 0.0
-            if delta_seconds > 0.0 and distance_m > 0.0:
-                speed_m_s = distance_m / delta_seconds
+            if delta_seconds > 0.0 and segment_distance_m > 0.0:
+                speed_m_s = segment_distance_m / delta_seconds
     if speed_m_s is None or speed_m_s <= 0.0:
-        return distance_m, None, None
+        return None, None
     pace_min_per_km = (METERS_PER_KM / speed_m_s) / SECONDS_PER_MINUTE
-    return distance_m, speed_m_s, pace_min_per_km
+    return speed_m_s, pace_min_per_km
 
 
 def _update_rolling_pace_window(
@@ -125,35 +120,25 @@ def _update_rolling_pace_window(
     return rolling_distance_m, rolling_time_s, pace
 
 
-def _route_altitudes(route: WorkoutRoute) -> list[float]:
-    """Return finite altitude samples for one route as floats."""
-    return [_finite_altitude(point.altitude) for point in route.points]
-
-
 def _build_valid_route_points(route: WorkoutRoute) -> list[_RoutePointData]:
     """Return route points enriched with altitude and filtered for valid coordinates."""
-    altitudes = _route_altitudes(route)
-    if not altitudes:
-        return []
     valid_points: list[_RoutePointData] = []
-    for point, altitude in zip(route.points, altitudes):
+    for point in route.points:
         point_data = _route_point_map_data(point)
         if point_data is None:
             continue
-        point_data["altitude"] = altitude
+        point_data["altitude"] = _finite_altitude(getattr(point, "altitude", None))
         valid_points.append(point_data)
     return valid_points
 
 
-def _add_segment_distance(
-    cumulative_distance_m: float,
-    previous: _RoutePointData | None,
-    current: _RoutePointData,
+def _calculate_segment_distance(
+    previous: _RoutePointData | None, current: _RoutePointData
 ) -> float:
-    """Accumulate traveled distance from the previous point to current point."""
+    """Return segment distance in meters (0.0 for the first point with no previous sample)."""
     if previous is None:
-        return cumulative_distance_m
-    return cumulative_distance_m + WorkoutRoute.haversine_m(
+        return 0.0
+    return WorkoutRoute.haversine_m(
         cast(float, previous["lat"]),
         cast(float, previous["lon"]),
         cast(float, current["lat"]),
@@ -164,6 +149,7 @@ def _add_segment_distance(
 def _profile_speed_and_pace(
     previous: _RoutePointData | None,
     current: _RoutePointData,
+    segment_distance_m: float,
     rolling_pace_segments: deque[tuple[float, float]],
     rolling_distance_m: float,
     rolling_time_s: float,
@@ -171,7 +157,11 @@ def _profile_speed_and_pace(
     """Compute speed/pace series values for one profile point."""
     if previous is None:
         return None, None, rolling_distance_m, rolling_time_s
-    segment_distance_m, speed_m_s, _ = _route_segment_metrics(previous, current)
+    speed_m_s, _ = _route_segment_metrics(
+        previous,
+        current,
+        segment_distance_m,
+    )
     if speed_m_s is None:
         return None, None, rolling_distance_m, rolling_time_s
     speed_kmh = speed_m_s * M_S_TO_KM_H
@@ -196,14 +186,16 @@ def _append_route_profile_points(
     rolling_time_s = 0.0
     for idx, current in enumerate(valid_points):
         previous = valid_points[idx - 1] if idx > 0 else None
-        cumulative_distance_m = _add_segment_distance(cumulative_distance_m, previous, current)
+        segment_distance_m = _calculate_segment_distance(previous, current)
         speed_kmh, pace, rolling_distance_m, rolling_time_s = _profile_speed_and_pace(
             previous,
             current,
+            segment_distance_m,
             rolling_pace_segments,
             rolling_distance_m,
             rolling_time_s,
         )
+        cumulative_distance_m += segment_distance_m
         distance_km = cumulative_distance_m / METERS_PER_KM
         altitude_m = cast(float, current["altitude"])
         hr_bpm = cast(float | None, current["heart_rate"])

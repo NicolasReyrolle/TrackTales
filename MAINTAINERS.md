@@ -107,9 +107,9 @@ The workout detail modal is organised into two layers that are **actively connec
 
 Defines the data contract using pure Python (no NiceGUI dependency):
 
-- `FieldDefinition` — frozen dataclass describing a single attribute.  The `display_row_key` attribute (optional, defaults to `None`) names the key used in the modal row dict.  Fields surfaced in the Overview tab (e.g. `averageRunningPower` → generic `avg_power`) leave `display_row_key=None`; Activity-tab fields always set it.
+- `FieldDefinition` — frozen dataclass describing a single attribute. The `display_row_key` attribute (optional, defaults to `None`) names the key used in the modal row dict. Fields surfaced in the Overview tab (e.g. `averageRunningPower` → generic `avg_power`) leave `display_row_key=None`; Activity-tab fields always set it.
 - `GENERIC_FIELDS` — ordered list of `FieldDefinition` instances shown for every workout type (activity, dates, duration, distance, calories, heart rate, VO₂ max, elevation, environment).
-- `PER_TYPE_FIELDS` — dict mapping an activity-type string (e.g. `"Running"`) to a list of additional `FieldDefinition` instances specific to that type.  Every field here that belongs to the Activity tab must set `display_row_key` to the row-dict key produced by `_build_workout_rows()`.
+- `PER_TYPE_FIELDS` — dict mapping an activity-type string (e.g. `"Running"`) to a list of additional `FieldDefinition` instances specific to that type. Every field here that belongs to the Activity tab must set `display_row_key` to the row-dict key produced by `_build_workout_rows()`.
 - `get_fields_for_activity(activity_type)` — returns `GENERIC_FIELDS + PER_TYPE_FIELDS.get(activity_type, [])`.
 
 ### UI layer — `src/ui/workout_detail_modal/__init__.py`
@@ -118,13 +118,13 @@ Builds the NiceGUI dialog from the field display specs:
 
 - `_FIELD_DISPLAY` — display spec for the Overview tab (generic attributes, including VO₂ max which is generic for all workout types).
 - `_RUNNING_FIELD_DISPLAY`, `_WALKING_FIELD_DISPLAY`, `_HIKING_FIELD_DISPLAY`, `_SWIMMING_FIELD_DISPLAY`, `_CYCLING_FIELD_DISPLAY` — display specs for the Activity tab, one per supported type.
-- `_ACTIVITY_FIELD_KEYS` — **derived from `PER_TYPE_FIELDS`** by collecting `display_row_key` values for each activity type.  This dict drives `_row_has_activity_data()` to decide whether to enable the Activity tab.  It is computed at module load time so any new entry in `PER_TYPE_FIELDS` is picked up automatically.
+- `_ACTIVITY_FIELD_KEYS` — **derived from `PER_TYPE_FIELDS`** by collecting `display_row_key` values for each activity type. This dict drives `_row_has_activity_data()` to decide whether to enable the Activity tab. It is computed at module load time so any new entry in `PER_TYPE_FIELDS` is picked up automatically.
 - `create_workout_detail_modal(rows)` — creates the dialog once in the current NiceGUI context and returns an `open_at(index)` callable.
 - Route-capable workouts expose dedicated **Route** (Leaflet map) and **Profile** (ECharts elevation+pace) tabs. Keep profile-chart readability settings (`legend.top`, centered x/y axis names, and larger grid margins) when editing chart config.
 
 **Adding Activity-tab support for a new type** requires changes in both layers:
 
-1. **Schema layer** — add a new `FieldDefinition` list and one entry in `PER_TYPE_FIELDS`.  Every field that should appear in the Activity tab (not the Overview tab) must set `display_row_key` to the row-dict key produced by `_build_workout_rows()`:
+1. **Schema layer** — add a new `FieldDefinition` list and one entry in `PER_TYPE_FIELDS`. Every field that should appear in the Activity tab (not the Overview tab) must set `display_row_key` to the row-dict key produced by `_build_workout_rows()`:
 
 ```python
 _MY_SPORT_FIELDS: list[FieldDefinition] = [
@@ -138,9 +138,9 @@ _MY_SPORT_FIELDS: list[FieldDefinition] = [
 PER_TYPE_FIELDS["MySport"] = _MY_SPORT_FIELDS
 ```
 
-2. **UI layer** — add a `_MY_SPORT_FIELD_DISPLAY` list of `(field_key, label_fn)` tuples, a `ui.column()` container inside the Activity tab panel in `create_workout_detail_modal`, and register the container in `_containers`.  `_ACTIVITY_FIELD_KEYS` is updated automatically from the schema.
+1. **UI layer** — add a `_MY_SPORT_FIELD_DISPLAY` list of `(field_key, label_fn)` tuples, a `ui.column()` container inside the Activity tab panel in `create_workout_detail_modal`, and register the container in `_containers`. `_ACTIVITY_FIELD_KEYS` is updated automatically from the schema.
 
-3. **Data layer** — add extraction logic in `src/ui/workout_table.py` (`_extract_mysport_fields`) and call it from `_extract_row_data`.
+1. **Data layer** — add extraction logic in `src/ui/workout_table.py` (`_extract_mysport_fields`) and call it from `_extract_row_data`.
 
 The workout table wires the modal via `create_workout_detail_modal(rows)` in `render_workout_table()` and emits an `open_detail` custom event from the Vue slot when the user clicks the info button.
 

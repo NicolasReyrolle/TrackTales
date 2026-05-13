@@ -22,6 +22,7 @@ def _translate_func() -> Callable[..., str]:
     """Return the current translation callable with a narrow return type."""
     return cast(Callable[..., str], t)
 
+
 _format_split_pace = _helpers._format_split_pace
 _format_split_speed = _helpers._format_split_speed
 _format_elevation_change = _helpers._format_elevation_change

@@ -6,7 +6,8 @@ modal setup API plus test-referenced helpers from dedicated implementation modul
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Callable
+from typing import Any, cast
 
 from ui import helpers as _helpers
 from ui.workout_detail_modal import builder as _builder
@@ -15,6 +16,11 @@ from ui.workout_detail_modal import routes as _routes
 ui = _builder.ui
 background_tasks = _builder.background_tasks
 t = _builder.t
+
+
+def _translate_func() -> Callable[..., str]:
+    """Return the current translation callable with a narrow return type."""
+    return cast(Callable[..., str], t)
 
 _format_split_pace = _helpers._format_split_pace
 _format_split_speed = _helpers._format_split_speed
@@ -38,7 +44,9 @@ _fit_route_bounds_after_init = _routes._fit_route_bounds_after_init
 
 def _build_route_profile_chart_config(routes: list[Any]) -> dict[str, Any]:
     """Build route profile chart config using the current translation context."""
-    return _routes._build_route_profile_chart_config_with_translate(routes, translate=t)
+    return _routes._build_route_profile_chart_config_with_translate(
+        routes, translate=_translate_func()
+    )
 
 
 def _do_refresh_route_tab(
@@ -52,7 +60,7 @@ def _do_refresh_route_tab(
         route_map,
         row,
         fit_bounds_scheduler=background_tasks.create,
-        translate=t,
+        translate=_translate_func(),
     )
 
 
@@ -66,5 +74,5 @@ def _do_refresh_route_profile_tab(
         no_route_label,
         route_profile_chart,
         row,
-        translate=t,
+        translate=_translate_func(),
     )

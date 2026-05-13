@@ -3,12 +3,12 @@
 ## Rule precedence
 
 When instructions conflict, apply this order:
-1. Explicit user request for the current task
-2. Safety and platform policy
+1. Safety and platform policy
+2. Explicit user request for the current task
 3. This repository instruction file
 4. General style preferences
 
-If two rules at the same level conflict, choose the simpler option and state the assumption.
+If two rules at the same level conflict, choose the option with fewer steps or dependencies and state the assumption.
 
 ## Project overview
 
@@ -42,6 +42,7 @@ If two rules at the same level conflict, choose the simpler option and state the
 - Keep XML parsing on `defusedxml` (never switch to stdlib `ElementTree` for untrusted XML parsing).
 - Preserve streaming parsing patterns (`iterparse` + `elem.clear()`) for large files.
 - `ExportParser` remains a context manager and should be used with `with ExportParser() as ep:`.
+- If an Apple Health export is invalid or corrupted and cannot be parsed, display an error message and log the issue.
 
 ### CSS and styling
 - All Tailwind/Quasar class strings and NiceGUI `.props()` strings live in `src/ui/css.py` as named constants (`*_CLASSES` / `*_PROPS`).  Import and use them instead of writing inline string literals.

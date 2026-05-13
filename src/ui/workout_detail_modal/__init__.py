@@ -1,9 +1,6 @@
 """Workout detail modal dialog for Apple Health Analyzer."""
 
-import asyncio
-import json
 from collections.abc import Callable
-from math import isfinite
 from typing import Any, TypeAlias, cast
 
 from nicegui import background_tasks, ui
@@ -46,6 +43,18 @@ from ui.workout_detail_modal.comparisons import (
     _do_refresh_comparisons_tab,
     _get_row_routes,
 )
+from ui.workout_detail_modal.routes import (
+    _build_route_profile_chart_config_with_translate as _build_route_profile_chart_config_impl,
+)
+from ui.workout_detail_modal.routes import (
+    _do_refresh_route_profile_tab as _do_refresh_route_profile_tab_impl,
+)
+from ui.workout_detail_modal.routes import (
+    _do_refresh_route_tab as _do_refresh_route_tab_impl,
+)
+from ui.workout_detail_modal.routes import (
+    _fit_route_bounds_after_init as _fit_route_bounds_after_init,
+)
 from units import METERS_TO_MILES
 
 #: Callable returning a translated label string; alias for readability.
@@ -53,12 +62,6 @@ _LabelFn: TypeAlias = Callable[[], str]
 
 #: i18n key reused across GPS-dependent modal sections.
 _NO_GPS_ROUTE_MSG = "No GPS route available."
-_M_S_TO_KM_H = 3.6
-_SECONDS_PER_MINUTE = 60.0
-_METERS_PER_KM = 1000.0
-_MIN_MOVING_SPEED_M_S = 0.5
-_PACE_SMOOTHING_WINDOW_M = 200.0
-_MIN_ROLLING_SEGMENTS = 1
 
 # ---------------------------------------------------------------------------
 # Shared label-function constants reused across multiple field display lists.
@@ -277,292 +280,9 @@ def _build_field_rows(
     return field_rows
 
 
-def _route_point_map_data(point: Any) -> dict[str, float | Any] | None:
-    """Extract map/profile fields from a route point; return None when invalid."""
-    lat = getattr(point, "latitude", None)
-    lon = getattr(point, "longitude", None)
-    if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
-        return None
-    lat_f, lon_f = float(lat), float(lon)
-    if not (isfinite(lat_f) and isfinite(lon_f)):
-        return None
-    altitude = getattr(point, "altitude", None)
-    speed = getattr(point, "speed", None)
-    heart_rate = getattr(point, "heart_rate", None)
-    return {
-        "lat": lat_f,
-        "lon": lon_f,
-        "altitude": float(altitude)
-        if isinstance(altitude, (int, float)) and isfinite(altitude)
-        else 0.0,
-        "speed": float(speed) if isinstance(speed, (int, float)) and isfinite(speed) else 0.0,
-        "heart_rate": (
-            float(heart_rate)
-            if isinstance(heart_rate, (int, float)) and isfinite(heart_rate)
-            else None
-        ),
-        "time": getattr(point, "time", None),
-    }
-
-
-def _route_segment_metrics(
-    previous: dict[str, Any],
-    current: dict[str, Any],
-) -> tuple[float, float | None, float | None]:
-    """Return segment distance (m), speed (m/s), and pace (min/km)."""
-    distance_m = WorkoutRoute.haversine_m(
-        cast(float, previous["lat"]),
-        cast(float, previous["lon"]),
-        cast(float, current["lat"]),
-        cast(float, current["lon"]),
-    )
-    speed_prev = cast(float, previous["speed"])
-    speed_curr = cast(float, current["speed"])
-    speed_m_s = None
-    if speed_prev > 0.0 and speed_curr > 0.0:
-        speed_m_s = (speed_prev + speed_curr) / 2.0
-    else:
-        prev_time = previous["time"]
-        curr_time = current["time"]
-        if prev_time is not None and curr_time is not None:
-            try:
-                delta_seconds = (curr_time - prev_time).total_seconds()
-            except (AttributeError, TypeError):
-                delta_seconds = 0.0
-            if delta_seconds > 0.0 and distance_m > 0.0:
-                speed_m_s = distance_m / delta_seconds
-    if speed_m_s is None or speed_m_s <= 0.0:
-        return distance_m, None, None
-    pace_min_per_km = (_METERS_PER_KM / speed_m_s) / _SECONDS_PER_MINUTE
-    return distance_m, speed_m_s, pace_min_per_km
-
-
-def _update_rolling_pace_window(
-    rolling_pace_segments: list[tuple[float, float]],
-    rolling_distance_m: float,
-    rolling_time_s: float,
-    segment_distance_m: float,
-    speed_m_s: float,
-) -> tuple[float, float, float | None]:
-    """Update the rolling moving-pace window and return the smoothed pace value.
-
-    Args:
-        rolling_pace_segments: Rolling window of ``(distance_m, time_s)`` segment tuples.
-        rolling_distance_m: Total distance represented by the rolling window.
-        rolling_time_s: Total elapsed time represented by the rolling window.
-        segment_distance_m: Distance of the latest segment in meters.
-        speed_m_s: Speed estimate for the latest segment in meters per second.
-
-    Returns:
-        Tuple of ``(rolling_distance_m, rolling_time_s, pace_min_per_km)`` where
-        ``pace_min_per_km`` is ``None`` when the rolling window has no valid data.
-    """
-    if speed_m_s >= _MIN_MOVING_SPEED_M_S and segment_distance_m > 0.0:
-        segment_time_s = segment_distance_m / speed_m_s
-        rolling_pace_segments.append((segment_distance_m, segment_time_s))
-        rolling_distance_m += segment_distance_m
-        rolling_time_s += segment_time_s
-        # Keep at least one segment so pace can remain stable through short pauses.
-        while (
-            rolling_distance_m > _PACE_SMOOTHING_WINDOW_M
-            and len(rolling_pace_segments) > _MIN_ROLLING_SEGMENTS
-        ):
-            old_distance_m, old_time_s = rolling_pace_segments.pop(0)
-            rolling_distance_m -= old_distance_m
-            rolling_time_s -= old_time_s
-    pace = None
-    if rolling_distance_m > 0.0 and rolling_time_s > 0.0:
-        pace = (rolling_time_s / _SECONDS_PER_MINUTE) / (rolling_distance_m / _METERS_PER_KM)
-    return rolling_distance_m, rolling_time_s, pace
-
-
-def _route_altitudes(route: WorkoutRoute) -> list[float]:
-    """Return finite altitude samples for one route as floats."""
-    return [
-        float(a) if isinstance(a, (int, float)) and isfinite(a) else 0.0
-        for a in route.to_dataframe()["altitude"].tolist()
-    ]
-
-
-def _build_valid_route_points(route: WorkoutRoute) -> list[dict[str, Any]]:
-    """Return route points enriched with altitude and filtered for valid coordinates."""
-    altitudes = _route_altitudes(route)
-    if not altitudes:
-        return []
-    valid_points: list[dict[str, Any]] = []
-    for point, altitude in zip(route.points, altitudes):
-        point_data = _route_point_map_data(point)
-        if point_data is None:
-            continue
-        point_data["altitude"] = altitude
-        valid_points.append(point_data)
-    return valid_points
-
-
-def _add_segment_distance(
-    cumulative_distance_m: float,
-    previous: dict[str, Any] | None,
-    current: dict[str, Any],
-) -> float:
-    """Accumulate traveled distance from the previous point to current point."""
-    if previous is None:
-        return cumulative_distance_m
-    return cumulative_distance_m + WorkoutRoute.haversine_m(
-        cast(float, previous["lat"]),
-        cast(float, previous["lon"]),
-        cast(float, current["lat"]),
-        cast(float, current["lon"]),
-    )
-
-
-def _profile_speed_and_pace(
-    previous: dict[str, Any] | None,
-    current: dict[str, Any],
-    rolling_pace_segments: list[tuple[float, float]],
-    rolling_distance_m: float,
-    rolling_time_s: float,
-) -> tuple[float | None, float | None, float, float]:
-    """Compute speed/pace series values for one profile point."""
-    if previous is None:
-        return None, None, rolling_distance_m, rolling_time_s
-    segment_distance_m, speed_m_s, _ = _route_segment_metrics(previous, current)
-    if speed_m_s is None:
-        return None, None, rolling_distance_m, rolling_time_s
-    speed_kmh = speed_m_s * _M_S_TO_KM_H
-    rolling_distance_m, rolling_time_s, pace = _update_rolling_pace_window(
-        rolling_pace_segments,
-        rolling_distance_m,
-        rolling_time_s,
-        segment_distance_m,
-        speed_m_s,
-    )
-    return speed_kmh, pace, rolling_distance_m, rolling_time_s
-
-
-def _append_route_profile_points(
-    profile_points: list[list[float | None]],
-    valid_points: list[dict[str, Any]],
-    cumulative_distance_m: float,
-) -> float:
-    """Append chart points for one valid route and return updated cumulative distance."""
-    rolling_pace_segments: list[tuple[float, float]] = []
-    rolling_distance_m = 0.0
-    rolling_time_s = 0.0
-    for idx, current in enumerate(valid_points):
-        previous = valid_points[idx - 1] if idx > 0 else None
-        cumulative_distance_m = _add_segment_distance(cumulative_distance_m, previous, current)
-        speed_kmh, pace, rolling_distance_m, rolling_time_s = _profile_speed_and_pace(
-            previous,
-            current,
-            rolling_pace_segments,
-            rolling_distance_m,
-            rolling_time_s,
-        )
-        distance_km = cumulative_distance_m / _METERS_PER_KM
-        altitude_m = cast(float, current["altitude"])
-        hr_bpm = cast(float | None, current["heart_rate"])
-        profile_points.append([distance_km, altitude_m, pace, speed_kmh, hr_bpm])
-    return cumulative_distance_m
-
-
 def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, Any]:
-    """Build a route profile chart with altitude plus pace/speed/HR hover metrics."""
-    profile_points: list[list[float | None]] = []
-    cumulative_distance_m = 0.0
-    for route in routes:
-        if not route.points:
-            continue
-        valid_points = _build_valid_route_points(route)
-        if len(valid_points) < 2:
-            continue
-        cumulative_distance_m = _append_route_profile_points(
-            profile_points, valid_points, cumulative_distance_m
-        )
-
-    pace_label = json.dumps(f"{t('Pace')}: ")
-    speed_label = json.dumps(f"{t('Speed')}: ")
-    altitude_label = json.dumps(f"{t('Altitude')}: ")
-    distance_label = json.dumps(f"{t('Distance')}: ")
-    heart_rate_label = json.dumps(f"{t('Heart Rate')}: ")
-    no_data = json.dumps("–")
-    # point payload indices for JS formatter:
-    # [0]=distance_km, [1]=altitude_m, [2]=pace_min_per_km, [3]=speed_km_h, [4]=heart_rate_bpm
-    altitude_axis_name = f"{t('Altitude')} (m)"
-    pace_axis_name = f"{t('Pace')} (/km)"
-    # Keep legend and axis titles separated from tick labels on compact screens.
-    chart_grid = {"left": 72, "right": 80, "top": 56, "bottom": 64}
-    return {
-        "backgroundColor": "transparent",
-        "legend": {"data": [altitude_axis_name, pace_axis_name], "top": 8},
-        "grid": chart_grid,
-        "tooltip": {
-            "trigger": "axis",
-            "renderMode": "richText",
-            ":formatter": (
-                "function(params) {"
-                "var point = params[0].data;"
-                f"var text = {distance_label} + point[0].toFixed(2) + ' km\\n' + "
-                f"{altitude_label} + point[1].toFixed(1) + ' m';"
-                f"text += '\\n' + {pace_label} + (point[2] == null ? {no_data} : "
-                "("
-                "Math.floor(point[2]) + ':' + "
-                "String(Math.round((point[2] - Math.floor(point[2])) * 60)).padStart(2, '0') + "
-                "' /km'));"
-                f"text += '\\n' + {speed_label} + ("
-                f"point[3] == null ? {no_data} : point[3].toFixed(1) + ' km/h');"
-                "if (point[4] != null) {"
-                f"  text += '\\n' + {heart_rate_label} + point[4].toFixed(0) + ' bpm';"
-                "}"
-                "return text;"
-                "}"
-            ),
-        },
-        "xAxis": {
-            "type": "value",
-            "name": f"{t('Distance')} (km)",
-            "nameLocation": "middle",
-            "nameGap": 42,
-        },
-        "yAxis": [
-            {
-                "type": "value",
-                "name": altitude_axis_name,
-                "scale": True,
-                "nameLocation": "middle",
-                "nameGap": 52,
-            },
-            {
-                "type": "value",
-                "name": pace_axis_name,
-                "scale": True,
-                "inverse": True,
-                "nameLocation": "middle",
-                "nameGap": 56,
-            },
-        ],
-        "series": [
-            {
-                "name": altitude_axis_name,
-                "type": "line",
-                "data": profile_points,
-                "encode": {"x": 0, "y": 1},
-                "showSymbol": False,
-                "smooth": False,
-                "lineStyle": {"width": 2},
-            },
-            {
-                "name": pace_axis_name,
-                "type": "line",
-                "data": profile_points,
-                "encode": {"x": 0, "y": 2},
-                "yAxisIndex": 1,
-                "showSymbol": False,
-                "smooth": False,
-                "connectNulls": True,
-                "lineStyle": {"width": 2},
-            },
-        ],
-    }
+    """Build route profile chart config using the modal's translation context."""
+    return _build_route_profile_chart_config_impl(routes, translate=t)
 
 
 def _do_refresh_route_tab(
@@ -571,65 +291,13 @@ def _do_refresh_route_tab(
     row: dict[str, Any],
 ) -> None:
     """Update the Route tab map with plain route polylines."""
-    routes = _get_row_routes(row)
-    has_route = bool(routes)
-    no_route_label.set_visibility(not has_route)
-    route_map.set_visibility(has_route)
-    if not has_route:
-        return
-
-    route_map.clear_layers()
-    route_map.tile_layer(
-        url_template=r"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        options={
-            "maxZoom": 19,
-            "attribution": "&copy; OpenStreetMap contributors",
-        },
+    _do_refresh_route_tab_impl(
+        no_route_label,
+        route_map,
+        row,
+        fit_bounds_scheduler=background_tasks.create,
+        translate=t,
     )
-
-    all_points: list[list[float]] = []
-    start_label = t("Start")
-    end_label = t("End")
-
-    for idx, route in enumerate(routes, start=1):
-        route_name = t("Route {index}", index=str(idx))
-        points_data = [_route_point_map_data(point) for point in route.points]
-        valid_points = [point for point in points_data if point is not None]
-        if len(valid_points) < 2:
-            continue
-
-        route_points = [
-            [cast(float, point["lat"]), cast(float, point["lon"])] for point in valid_points
-        ]
-        polyline = route_map.generic_layer(
-            name="polyline",
-            args=[route_points, {"color": "#2563eb", "weight": 4, "opacity": 0.9}],
-        )
-        route_map.run_layer_method(polyline.id, "bindTooltip", route_name)
-
-        start_marker = route_map.generic_layer(
-            name="circleMarker",
-            args=[
-                [cast(float, valid_points[0]["lat"]), cast(float, valid_points[0]["lon"])],
-                {"radius": 6, "color": "#16a34a", "fillOpacity": 1},
-            ],
-        )
-        route_map.run_layer_method(start_marker.id, "bindTooltip", f"{start_label} - {route_name}")
-        end_marker = route_map.generic_layer(
-            name="circleMarker",
-            args=[
-                [cast(float, valid_points[-1]["lat"]), cast(float, valid_points[-1]["lon"])],
-                {"radius": 6, "color": "#dc2626", "fillOpacity": 1},
-            ],
-        )
-        route_map.run_layer_method(end_marker.id, "bindTooltip", f"{end_label} - {route_name}")
-        all_points.extend(route_points)
-
-    if all_points:
-        background_tasks.create(_fit_route_bounds_after_init(route_map, list(all_points)))
-    else:
-        route_map.set_center((0.0, 0.0))
-        route_map.set_zoom(1)
 
 
 def _do_refresh_route_profile_tab(
@@ -638,33 +306,12 @@ def _do_refresh_route_profile_tab(
     row: dict[str, Any],
 ) -> None:
     """Update the Profile tab chart with altitude and pace series."""
-    routes = _get_row_routes(row)
-    has_route = bool(routes)
-    no_route_label.set_visibility(not has_route)
-    route_profile_chart.set_visibility(has_route)
-    if not has_route:
-        return
-
-    route_profile_options = _build_route_profile_chart_config(routes)
-    chart_options = getattr(route_profile_chart, "options", None)
-    if isinstance(chart_options, dict):
-        chart_options.clear()
-        chart_options.update(route_profile_options)
-    route_profile_chart.update()
-
-
-async def _fit_route_bounds_after_init(route_map: Any, all_points: list[list[float]]) -> None:
-    """Fit map bounds after Leaflet map initialization and tab layout completion."""
-    try:
-        await route_map.initialized()
-        # Yield control to the event loop so the Route tab panel can complete its
-        # visible layout pass before we invalidate size and fit bounds.
-        await asyncio.sleep(0)
-        route_map.run_map_method("invalidateSize", False)
-        route_map.run_map_method("fitBounds", all_points, {"padding": [20, 20]})
-    except (TimeoutError, asyncio.CancelledError):
-        # The user may switch away while the map is still initializing.
-        return
+    _do_refresh_route_profile_tab_impl(
+        no_route_label,
+        route_profile_chart,
+        row,
+        translate=t,
+    )
 
 
 #: Maps each supported raw activity type to the Activity-tab field keys used by
@@ -1162,7 +809,8 @@ def create_workout_detail_modal(
         comparisons_tab.set_enabled(has_route)
         # Only refresh the Intervals tab when it is currently active; switching to
         # it triggers _on_tab_change which handles the initial load.
-        refresh_fn = _lazy_tab_refresh.get(detail_tabs.value)
+        active_tab = detail_tabs.value if isinstance(detail_tabs.value, str) else None
+        refresh_fn = _lazy_tab_refresh.get(active_tab) if active_tab is not None else None
         if refresh_fn:
             refresh_fn(row)
 
@@ -1184,7 +832,8 @@ def create_workout_detail_modal(
         The Comparisons tab searches for similar routes and caches the result
         in ``row["similar_routes"]``.
         """
-        refresh_fn = _lazy_tab_refresh.get(e.value)
+        tab_value = e.value if isinstance(e.value, str) else None
+        refresh_fn = _lazy_tab_refresh.get(tab_value) if tab_value is not None else None
         if refresh_fn:
             refresh_fn(rows[modal_state["index"]])
 

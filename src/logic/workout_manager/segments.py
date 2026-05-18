@@ -55,6 +55,7 @@ class WorkoutManagerSegmentsMixin:
         cls,
         times_s: list[float],
         works_j: list[float],
+        point_labels: list[str] | None = None,
     ) -> tuple[float, float] | None:
         """Robustly fit W = CP * t + W' using a deterministic RANSAC-like search."""
         if len(times_s) != len(works_j) or len(times_s) < 2:
@@ -104,6 +105,19 @@ class WorkoutManagerSegmentsMixin:
 
         if len(best_inlier_indexes) < 2:
             return cls._fit_work_time_line(times_s, works_j)
+
+        dropped_indexes = [
+            index for index in range(len(times_s)) if index not in best_inlier_indexes
+        ]
+        if dropped_indexes:
+            if point_labels is None or len(point_labels) != len(times_s):
+                dropped_labels = [f"point_{index}" for index in dropped_indexes]
+            else:
+                dropped_labels = [point_labels[index] for index in dropped_indexes]
+            _logger.info(
+                "Robust CP fit dropped outlier points: %s",
+                ", ".join(dropped_labels),
+            )
 
         inlier_times = [times_s[index] for index in best_inlier_indexes]
         inlier_works = [works_j[index] for index in best_inlier_indexes]
@@ -664,6 +678,7 @@ class WorkoutManagerSegmentsMixin:
         robust_fit = self._fit_work_time_line_ransac_like(
             [float(point["avg_time_s"]) for point in distance_points],
             [float(point["avg_work_j"]) for point in distance_points],
+            [f"{int(point['distance'])}m" for point in distance_points],
         )
         if robust_fit is None:
             return None

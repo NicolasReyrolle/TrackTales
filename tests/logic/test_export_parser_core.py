@@ -164,6 +164,14 @@ class TestDurationToSeconds:
         assert ep.ExportParser.duration_to_seconds(0.01, "h") == 36
 
 
+class TestNormalizeWorkoutStartDate:
+    """Tests for _normalize_workout_start_date helper."""
+
+    def test_normalize_workout_start_date_non_string_returns_none(self) -> None:
+        assert ep.ExportParser._normalize_workout_start_date(None) is None  # type: ignore[misc]
+        assert ep.ExportParser._normalize_workout_start_date(123) is None  # type: ignore[misc]
+
+
 class TestStrDistanceToMeters:
     """Test the str_distance_to_meters method."""
 

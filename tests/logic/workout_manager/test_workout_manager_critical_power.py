@@ -311,6 +311,235 @@ class TestGetCriticalPower:
         # inlier set (800/1500/5000) keeps CP in a realistic range.
         assert result["critical_power_w"] > 220.0  # type: ignore[operator]
 
+    def test_critical_power_skips_missing_intermediate_distances(self) -> None:
+        """Missing 1500/3000 rows should be skipped while keeping a valid CP from anchors."""
+        t800 = datetime(2025, 3, 1, tzinfo=timezone.utc)
+        t5000 = datetime(2025, 3, 2, tzinfo=timezone.utc)
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running", "Running"],
+                    "startDate": [pd.Timestamp(t800), pd.Timestamp(t5000)],
+                    "distance": [800.0, 5000.0],
+                    "route": [
+                        self._make_route(t800, 800.0, 160.0, 0.007),
+                        self._make_route(t5000, 5000.0, 1200.0, 0.045),
+                    ],
+                }
+            )
+        )
+        rp_df = pd.concat(
+            [
+                self._rp_df(t800, 160.0, 350.0),
+                self._rp_df(t5000, 1200.0, 260.0),
+            ],
+            ignore_index=True,
+        )
+
+        result = manager.get_critical_power(running_power_df=rp_df, topn=1)
+
+        assert result is not None
+        assert result["short_distance"] == 800
+        assert result["long_distance"] == 5000
+
+    def test_critical_power_logs_warning_for_non_physical_w_prime(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Negative W' should be kept but explicitly logged as a warning."""
+        t800 = datetime(2025, 4, 1, tzinfo=timezone.utc)
+        t5000 = datetime(2025, 4, 2, tzinfo=timezone.utc)
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running", "Running"],
+                    "startDate": [pd.Timestamp(t800), pd.Timestamp(t5000)],
+                    "distance": [800.0, 5000.0],
+                    "route": [
+                        self._make_route(t800, 800.0, 200.0, 0.007),
+                        self._make_route(t5000, 5000.0, 1000.0, 0.045),
+                    ],
+                }
+            )
+        )
+        rp_df = pd.concat(
+            [
+                self._rp_df(t800, 200.0, 200.0),
+                self._rp_df(t5000, 1000.0, 300.0),
+            ],
+            ignore_index=True,
+        )
+
+        with caplog.at_level("WARNING"):
+            result = manager.get_critical_power(running_power_df=rp_df, topn=1)
+
+        assert result is not None
+        assert result["w_prime_j"] <= 0
+        assert "Non-physical W' detected" in caplog.text
+
+    def test_critical_power_continues_when_additional_distances_have_no_segments(self) -> None:
+        """Distances requested only as additional inputs can be absent and must be skipped."""
+        t1 = datetime(2025, 4, 10, tzinfo=timezone.utc)
+        t2 = datetime(2025, 4, 11, tzinfo=timezone.utc)
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running", "Running"],
+                    "startDate": [pd.Timestamp(t1), pd.Timestamp(t2)],
+                    "distance": [250.0, 260.0],
+                    "route": [
+                        self._make_route(t1, 250.0, 60.0, 0.003),
+                        self._make_route(t2, 260.0, 70.0, 0.0035),
+                    ],
+                }
+            )
+        )
+        rp_df = pd.concat(
+            [
+                self._rp_df(t1, 60.0, 350.0),
+                self._rp_df(t2, 70.0, 320.0),
+            ],
+            ignore_index=True,
+        )
+
+        result = manager.get_critical_power(
+            running_power_df=rp_df,
+            topn=1,
+            short_distance=100,
+            long_distance=200,
+        )
+
+        assert result is not None
+        assert result["short_distance"] == 100
+        assert result["long_distance"] == 200
+
+
+class TestSegmentsHelperCoverage:
+    """Branch-level coverage tests for segments helper methods."""
+
+    @staticmethod
+    def _make_route(start_time: datetime, distance_m: float, duration_s: float) -> WorkoutRoute:
+        speed = distance_m / duration_s
+        return WorkoutRoute(
+            points=[
+                RoutePoint(time=start_time, latitude=0.0, longitude=0.0, altitude=0.0, speed=speed),
+                RoutePoint(
+                    time=start_time + timedelta(seconds=duration_s),
+                    latitude=0.0,
+                    longitude=0.01,
+                    altitude=0.0,
+                    speed=speed,
+                ),
+            ]
+        )
+
+    def test_evaluate_ransac_candidate_returns_none_when_threshold_excludes_all(self) -> None:
+        result = WorkoutManager._evaluate_ransac_candidate(
+            times_s=[100.0, 200.0, 300.0],
+            works_j=[20000.0, 40000.0, 60000.0],
+            index_a=0,
+            index_b=1,
+            residual_threshold_j=-1.0,
+        )
+        assert result is None
+
+    def test_log_dropped_outlier_points_uses_fallback_labels_when_mismatch(self, caplog: pytest.LogCaptureFixture) -> None:
+        with caplog.at_level("INFO"):
+            WorkoutManager._log_dropped_outlier_points(
+                total_points=4,
+                inlier_indexes=[0, 2],
+                point_labels=["only_one_label"],
+            )
+        assert "point_1" in caplog.text
+        assert "point_3" in caplog.text
+
+    def test_fit_work_time_line_returns_none_for_invalid_lengths(self) -> None:
+        assert WorkoutManager._fit_work_time_line([100.0], [20000.0]) is None
+        assert WorkoutManager._fit_work_time_line([100.0, 200.0], [20000.0]) is None
+
+    def test_fit_work_time_line_ransac_like_handles_edge_input_shapes(self) -> None:
+        assert WorkoutManager._fit_work_time_line_ransac_like([100.0], [20000.0]) is None
+
+        two_point = WorkoutManager._fit_work_time_line_ransac_like(
+            [100.0, 200.0],
+            [20000.0, 45000.0],
+        )
+        direct_two_point = WorkoutManager._fit_work_time_line(
+            [100.0, 200.0],
+            [20000.0, 45000.0],
+        )
+        assert two_point == direct_two_point
+
+    def test_fit_work_time_line_ransac_like_falls_back_when_no_candidate_survives(self) -> None:
+        # All time points identical => any two-point OLS fit is undefined.
+        result = WorkoutManager._fit_work_time_line_ransac_like(
+            [100.0, 100.0, 100.0],
+            [20000.0, 25000.0, 30000.0],
+        )
+        assert result is None
+
+    def test_build_best_segments_frame_returns_empty_schema_for_no_results(self) -> None:
+        frame = WorkoutManager._build_best_segments_frame([], topn=5)
+        assert frame.empty
+        assert list(frame.columns) == [
+            "startDate",
+            "distance",
+            "duration_s",
+            "segment_start",
+            "segment_end",
+            "elevation_change_m",
+        ]
+
+    def test_get_run_distance_m_returns_none_for_missing_or_nan(self) -> None:
+        row_none = type("RunRecord", (), {"distance": None})()
+        row_nan = type("RunRecord", (), {"distance": float("nan")})()
+
+        assert WorkoutManager._get_run_distance_m(row_none) is None
+        assert WorkoutManager._get_run_distance_m(row_nan) is None
+
+    def test_extract_route_traces_prefers_valid_route_parts(self) -> None:
+        route = self._make_route(datetime(2025, 1, 1, tzinfo=timezone.utc), 800.0, 160.0)
+        run_record = type(
+            "RunRecord",
+            (),
+            {"route_parts": ["invalid", route], "route": None},
+        )()
+
+        traces = WorkoutManager._extract_route_traces(run_record)
+        assert len(traces) == 1
+        assert traces[0] is route
+
+    def test_fallback_filter_running_workouts_filters_running_and_end_timestamp(self) -> None:
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running", "Cycling", "Running"],
+                    "startDate": [
+                        pd.Timestamp("2025-01-01T10:00:00"),
+                        pd.Timestamp("2025-01-01T12:00:00"),
+                        pd.Timestamp("2025-01-02T10:00:00"),
+                    ],
+                }
+            )
+        )
+        filtered = manager._fallback_filter_running_workouts(
+            start_date=pd.Timestamp("2025-01-01T00:00:00"),
+            end_date=pd.Timestamp("2025-01-01T23:59:59"),
+        )
+
+        assert len(filtered) == 1
+        assert filtered.iloc[0]["activityType"] == "Running"
+
+    def test_get_best_segments_uses_default_distances_when_none(self) -> None:
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Cycling"],
+                    "startDate": [pd.Timestamp("2025-01-01")],
+                }
+            )
+        )
+
+        result = manager.get_best_segments(topn=5)
+        assert result.empty
+
 
 class TestGetCriticalPowerEvolution:
     """Test suite for WorkoutManager.get_critical_power_evolution."""

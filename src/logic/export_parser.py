@@ -212,7 +212,24 @@ class ExportParser:
         }
 
         if len(workouts_df) > 0:
-            workouts_df["startDate"] = pd.to_datetime(workouts_df["startDate"]).dt.tz_localize(None)
+            parsed_start_dates = pd.to_datetime(workouts_df["startDate"], errors="coerce")
+            if pd.api.types.is_datetime64_any_dtype(parsed_start_dates):
+                # Fast path for uniform timezone or naive values.
+                if parsed_start_dates.dt.tz is not None:
+                    workouts_df["startDate"] = parsed_start_dates.dt.tz_localize(None)
+                else:
+                    workouts_df["startDate"] = parsed_start_dates
+            else:
+                # Mixed timezone offsets (e.g. +0100 and +0200) yield object dtype;
+                # strip tzinfo per value while preserving local wall-clock timestamps.
+                normalized_values = [
+                    dt.replace(tzinfo=None) if isinstance(dt, datetime) else pd.NaT
+                    for dt in parsed_start_dates.tolist()
+                ]
+                workouts_df["startDate"] = pd.to_datetime(
+                    normalized_values,
+                    errors="coerce",
+                )
 
         self._log(f"Loaded {len(workouts_df)} workouts total.")
         return ParsedHealthData(workouts=workouts_df, records_by_type=records_by_type_df)

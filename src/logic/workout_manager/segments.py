@@ -571,8 +571,18 @@ class WorkoutManagerSegmentsMixin:
         critical_power_w = (work_long - work_short) / time_diff
         w_prime_j = work_short - critical_power_w * avg_time_short
 
-        if critical_power_w <= 0 or w_prime_j <= 0:
+        if critical_power_w <= 0:
             return None
+
+        if w_prime_j <= 0:
+            _logger.warning(
+                "Non-physical W' detected for period candidate "
+                "(short=%sm long=%sm cp=%.2fW w_prime=%.2fJ); keeping CP result",
+                short_distance,
+                long_distance,
+                critical_power_w,
+                w_prime_j,
+            )
 
         return CriticalPowerResult(
             short_distance=short_distance,

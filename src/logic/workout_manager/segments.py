@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
@@ -27,44 +27,46 @@ class CriticalPowerResult(TypedDict):
 
 
 class WorkoutManagerSegmentsMixin:
-    """Best-segment computation methods for running workouts."""
-
-    workouts: pd.DataFrame
-    DEFAULT_SEGMENT_DISTANCES: list[int]
-
-    def _filter_workouts(
-        self,
-        activity_type: str = "All",
-        start_date: datetime | pd.Timestamp | None = None,
-        end_date: datetime | pd.Timestamp | None = None,
-    ) -> pd.DataFrame:
-        """Stub for type checking; implemented in WorkoutManagerAggregationsMixin."""
-        raise NotImplementedError
+    @staticmethod
+    def _build_best_segments_frame(results: list[list[Any]], topn: int) -> pd.DataFrame:
+        """Build a DataFrame of best segments from result rows, keeping top-N per distance."""
+        if not results:
+            return pd.DataFrame(
+                columns=[
+                    "startDate",
+                    "distance",
+                    "duration_s",
+                    "segment_start",
+                    "segment_end",
+                    "elevation_change_m",
+                ]
+            )
+        df = pd.DataFrame(
+            results,
+            columns=[
+                "startDate",
+                "distance",
+                "duration_s",
+                "segment_start",
+                "segment_end",
+                "elevation_change_m",
+            ],
+        )
+        # Keep top-N (fastest) per distance
+        df = (
+            df.sort_values(["distance", "duration_s"])
+            .groupby("distance", as_index=False)
+            .head(topn)
+        )
+        return df.reset_index(drop=True)
 
     @staticmethod
-    def _split_route_into_traces(route: WorkoutRoute) -> list[WorkoutRoute]:
-        """Split a route into monotonic-time traces.
-
-        Segment analysis must not cross timestamp reversals because they indicate
-        disjoint windows or malformed ordering.
-        """
-        if len(route.points) < 2:
-            return []
-
-        traces: list[WorkoutRoute] = []
-        current_points = [route.points[0]]
-        for point in route.points[1:]:
-            if point.time < current_points[-1].time:
-                if len(current_points) >= 2:
-                    traces.append(WorkoutRoute(points=current_points))
-                current_points = [point]
-                continue
-            current_points.append(point)
-
-        if len(current_points) >= 2:
-            traces.append(WorkoutRoute(points=current_points))
-
-        return traces
+    def _get_run_distance_m(run_record: Any) -> float | None:
+        """Return the run distance in meters when present and finite."""
+        raw_run_distance: Any = getattr(run_record, "distance", None)
+        if raw_run_distance is None or pd.isna(raw_run_distance):
+            return None
+        return float(raw_run_distance)
 
     @classmethod
     def _extract_route_traces(cls, run_record: Any) -> list[WorkoutRoute]:
@@ -76,13 +78,13 @@ class WorkoutManagerSegmentsMixin:
             traces: list[WorkoutRoute] = []
             for route_part in route_parts_obj:  # type: ignore[misc]
                 if isinstance(route_part, WorkoutRoute):
-                    traces.extend(cls._split_route_into_traces(route_part))
+                    traces.append(route_part)
             if traces:
                 return traces
 
         route_obj: Any = run_record.route if hasattr(run_record, "route") else None
         if isinstance(route_obj, WorkoutRoute):
-            return cls._split_route_into_traces(route_obj)
+            return [route_obj]
 
         return []
 
@@ -101,36 +103,10 @@ class WorkoutManagerSegmentsMixin:
         )
 
     @staticmethod
-    def _get_run_distance_m(run_record: Any) -> float | None:
-        """Return the run distance in meters when present and finite."""
-        raw_run_distance: Any = getattr(run_record, "distance", None)
-        if raw_run_distance is None or pd.isna(raw_run_distance):
-            return None
-        return float(raw_run_distance)
-
-    @staticmethod
-    def _build_best_segments_frame(results: list[list[Any]], topn: int) -> pd.DataFrame:
-        """Sort and keep the fastest Top-N segments per requested distance."""
-        df = pd.DataFrame(
-            results,
-            columns=[
-                "startDate",
-                "distance",
-                "duration_s",
-                "segment_start",
-                "segment_end",
-                "elevation_change_m",
-            ],
-        )
-        df = df.sort_values(["distance", "duration_s"], ascending=[True, True])
-        result: pd.DataFrame = df.groupby("distance").head(topn).reset_index(drop=True)
-        return result
-
-    @staticmethod
     def _get_fastest_segment_window(
-        route_traces: list[WorkoutRoute],
-        distance_m: float,
-        distance_scale_factor: float,
+        route_traces,
+        distance_m,
+        distance_scale_factor,
     ) -> tuple[float, datetime, datetime, float] | None:
         """Return (duration_s, start_time, end_time, elevation_change_m)
         for the fastest segment across traces."""
@@ -187,7 +163,11 @@ class WorkoutManagerSegmentsMixin:
         end_date: datetime | pd.Timestamp | None,
     ) -> pd.DataFrame:
         """Fallback: filter running workouts with local logic and end-date handling."""
-        runs: pd.DataFrame = self.workouts[self.workouts["activityType"] == "Running"]
+        from typing import cast
+
+        runs: pd.DataFrame = cast(Any, self).workouts[
+            cast(Any, self).workouts["activityType"] == "Running"
+        ]
         if start_date is not None:
             runs = runs.loc[runs["startDate"] >= pd.Timestamp(start_date)]
         if end_date is not None:
@@ -227,19 +207,19 @@ class WorkoutManagerSegmentsMixin:
                 Empty when no valid segments are found or workouts are missing
         """
         if distances is None:
-            distances = self.DEFAULT_SEGMENT_DISTANCES
+            distances = cast(Any, self).DEFAULT_SEGMENT_DISTANCES
 
         if topn <= 0:
             return self._empty_best_segments_frame()
 
         required_columns = {"activityType", "startDate"}
-        if not required_columns.issubset(self.workouts.columns):
+        if not required_columns.issubset(cast(Any, self).workouts.columns):
             return self._empty_best_segments_frame()
 
         # Prefer shared filtering logic from WorkoutManagerAggregationsMixin to keep
         # date-handling semantics consistent across APIs.
         if hasattr(self, "_filter_workouts"):
-            runs = self._filter_workouts("Running", start_date, end_date)
+            runs = cast(Any, self)._filter_workouts("Running", start_date, end_date)
         else:
             runs = self._fallback_filter_running_workouts(start_date, end_date)
 
@@ -248,6 +228,7 @@ class WorkoutManagerSegmentsMixin:
 
         results: list[list[Any]] = []
 
+        assert distances is not None
         for run in runs.itertuples():
             results.extend(self._get_run_best_segment_rows(run, distances))
 
@@ -331,11 +312,13 @@ class WorkoutManagerSegmentsMixin:
         """Build workout-level fallback lookup: startDate -> averageRunningPower."""
         fallback: dict[Any, float | None] = {}
         avg_power_col = "averageRunningPower"
-        for workout in self.workouts.itertuples():
+        from typing import cast
+
+        for workout in cast(Any, self).workouts.itertuples():
             workout_start = getattr(workout, "startDate", None)
             raw_power = (
                 getattr(workout, avg_power_col, None)
-                if avg_power_col in self.workouts.columns
+                if avg_power_col in cast(Any, self).workouts.columns
                 else None
             )
             fallback[workout_start] = (
@@ -643,7 +626,7 @@ class WorkoutManagerSegmentsMixin:
 
         # Build available periods from filtered running workouts.
         if hasattr(self, "_filter_workouts"):
-            runs = self._filter_workouts("Running", start_date, end_date)
+            runs = cast(Any, self)._filter_workouts("Running", start_date, end_date)
         else:
             runs = self._fallback_filter_running_workouts(start_date, end_date)
 

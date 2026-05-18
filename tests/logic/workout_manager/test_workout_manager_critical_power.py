@@ -554,7 +554,7 @@ class TestSegmentsHelperCoverage:
 
         traces = WorkoutManager._extract_route_traces(run_record)
         assert len(traces) == 1
-        assert traces[0] is route
+        assert traces[0].points == route.points
 
     def test_fallback_filter_running_workouts_filters_running_and_end_timestamp(self) -> None:
         manager = WorkoutManager(

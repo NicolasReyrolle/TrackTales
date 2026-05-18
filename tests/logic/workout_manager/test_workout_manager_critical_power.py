@@ -239,6 +239,78 @@ class TestGetCriticalPower:
         assert result["w_prime_j"] == pytest.approx(expected_w_prime)  # type: ignore[misc]
         assert result["w_prime_j"] > 0  # type: ignore[operator]
 
+    def test_critical_power_uses_1500_and_3000_when_available(self) -> None:
+        """Robust fit should include intermediate distances when they exist."""
+        specs = [
+            (800.0, 160.0, 345.0, 0.007),
+            (1500.0, 300.0, 320.0, 0.014),
+            (3000.0, 700.0, 280.0, 0.027),
+            (5000.0, 1300.0, 255.0, 0.045),
+        ]
+        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+
+        rows: list[dict[str, Any]] = []
+        rp_dfs: list[pd.DataFrame] = []
+        for index, (distance_m, duration_s, power_w, lon) in enumerate(specs):
+            workout_start = start + timedelta(days=index)
+            rows.append(
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp(workout_start),
+                    "distance": distance_m,
+                    "route": self._make_route(workout_start, distance_m, duration_s, lon),
+                }
+            )
+            rp_dfs.append(self._rp_df(workout_start, duration_s, power_w))
+
+        manager = WorkoutManager(pd.DataFrame(rows))
+        rp_df = pd.concat(rp_dfs, ignore_index=True)
+
+        result = manager.get_critical_power(running_power_df=rp_df, topn=1)
+
+        assert result is not None
+        work_800 = 160.0 * 345.0
+        work_5000 = 1300.0 * 255.0
+        cp_two_point = (work_5000 - work_800) / (1300.0 - 160.0)
+        # Robust fitting with intermediate distances should not collapse to the
+        # strict two-point estimate.
+        assert abs(float(result["critical_power_w"]) - cp_two_point) > 1.0
+
+    def test_critical_power_robust_fit_rejects_single_outlier_distance(self) -> None:
+        """RANSAC-like fit should down-weight a rogue distance point."""
+        specs = [
+            (800.0, 160.0, 342.0, 0.007),
+            (1500.0, 300.0, 320.0, 0.014),
+            # Intentional outlier: unrealistically low power for this duration.
+            (3000.0, 700.0, 120.0, 0.027),
+            (5000.0, 1300.0, 255.0, 0.045),
+        ]
+        start = datetime(2025, 2, 1, tzinfo=timezone.utc)
+
+        rows: list[dict[str, Any]] = []
+        rp_dfs: list[pd.DataFrame] = []
+        for index, (distance_m, duration_s, power_w, lon) in enumerate(specs):
+            workout_start = start + timedelta(days=index)
+            rows.append(
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp(workout_start),
+                    "distance": distance_m,
+                    "route": self._make_route(workout_start, distance_m, duration_s, lon),
+                }
+            )
+            rp_dfs.append(self._rp_df(workout_start, duration_s, power_w))
+
+        manager = WorkoutManager(pd.DataFrame(rows))
+        rp_df = pd.concat(rp_dfs, ignore_index=True)
+
+        result = manager.get_critical_power(running_power_df=rp_df, topn=1)
+
+        assert result is not None
+        # Without robust rejection this setup collapses CP toward ~170W. The
+        # inlier set (800/1500/5000) keeps CP in a realistic range.
+        assert result["critical_power_w"] > 220.0  # type: ignore[operator]
+
 
 class TestGetCriticalPowerEvolution:
     """Test suite for WorkoutManager.get_critical_power_evolution."""

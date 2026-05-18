@@ -189,6 +189,14 @@ def _build_cp_graphs() -> dict[str, dict[str, float | int | None]]:
         start_date=state.start_date,
         end_date=state.end_date,
     )
+    non_physical_periods: dict[str, int] = {}
+    if not cp_evolution.empty:
+        non_physical_rows = cp_evolution[
+            cp_evolution["w_prime_kj"].notna() & (cp_evolution["w_prime_kj"] <= 0)
+        ]
+        non_physical_periods = {
+            str(period): 1 for period in non_physical_rows["period"].astype(str).tolist()
+        }
     return {
         "critical_power": _to_json_safe(
             {}
@@ -198,6 +206,7 @@ def _build_cp_graphs() -> dict[str, dict[str, float | int | None]]:
         "w_prime": _to_json_safe(
             {} if cp_evolution.empty else cp_evolution.set_index("period")["w_prime_kj"].to_dict()
         ),
+        "w_prime_non_physical": _to_json_safe(non_physical_periods),
     }
 
 
@@ -460,6 +469,7 @@ def _reset_health_data_state() -> None:
         "vo2_max": {},
         "critical_power": {},
         "w_prime": {},
+        "w_prime_non_physical": {},
     }
 
 

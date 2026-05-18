@@ -157,6 +157,7 @@ class AppState:
             "vo2_max": {},
             "critical_power": {},
             "w_prime": {},
+            "w_prime_non_physical": {},
         }
         self.health_data_loading: bool = False
         self.health_data_loaded: bool = False

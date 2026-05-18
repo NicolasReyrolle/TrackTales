@@ -28,6 +28,91 @@ class CriticalPowerResult(TypedDict):
 
 class WorkoutManagerSegmentsMixin:
     @staticmethod
+    def _fit_work_time_line(
+        times_s: list[float],
+        works_j: list[float],
+    ) -> tuple[float, float] | None:
+        """Fit W = CP * t + W' with ordinary least squares on paired points."""
+        if len(times_s) != len(works_j) or len(times_s) < 2:
+            return None
+
+        x_mean = sum(times_s) / len(times_s)
+        y_mean = sum(works_j) / len(works_j)
+        variance_x = sum((time_s - x_mean) ** 2 for time_s in times_s)
+        if variance_x <= 0:
+            return None
+
+        covariance_xy = sum(
+            (time_s - x_mean) * (work_j - y_mean)
+            for time_s, work_j in zip(times_s, works_j, strict=True)
+        )
+        slope_cp = covariance_xy / variance_x
+        intercept_w_prime = y_mean - slope_cp * x_mean
+        return slope_cp, intercept_w_prime
+
+    @classmethod
+    def _fit_work_time_line_ransac_like(
+        cls,
+        times_s: list[float],
+        works_j: list[float],
+    ) -> tuple[float, float] | None:
+        """Robustly fit W = CP * t + W' using a deterministic RANSAC-like search."""
+        if len(times_s) != len(works_j) or len(times_s) < 2:
+            return None
+        if len(times_s) == 2:
+            return cls._fit_work_time_line(times_s, works_j)
+
+        median_work = sorted(works_j)[len(works_j) // 2]
+        residual_threshold_j = max(3000.0, 0.04 * median_work)
+
+        best_inlier_count = 0
+        best_median_residual = float("inf")
+        best_inlier_indexes: list[int] = []
+
+        for i in range(len(times_s) - 1):
+            for j in range(i + 1, len(times_s)):
+                fit = cls._fit_work_time_line(
+                    [times_s[i], times_s[j]],
+                    [works_j[i], works_j[j]],
+                )
+                if fit is None:
+                    continue
+                cp_candidate, w_prime_candidate = fit
+
+                residuals = [
+                    abs(work_j - (cp_candidate * time_s + w_prime_candidate))
+                    for time_s, work_j in zip(times_s, works_j, strict=True)
+                ]
+                inlier_indexes = [
+                    index
+                    for index, residual in enumerate(residuals)
+                    if residual <= residual_threshold_j
+                ]
+                if len(inlier_indexes) < 2:
+                    continue
+
+                sorted_residuals = sorted(residuals[index] for index in inlier_indexes)
+                median_residual = sorted_residuals[len(sorted_residuals) // 2]
+
+                if (
+                    len(inlier_indexes) > best_inlier_count
+                    or (
+                        len(inlier_indexes) == best_inlier_count
+                        and median_residual < best_median_residual
+                    )
+                ):
+                    best_inlier_count = len(inlier_indexes)
+                    best_median_residual = median_residual
+                    best_inlier_indexes = inlier_indexes
+
+        if len(best_inlier_indexes) < 2:
+            return cls._fit_work_time_line(times_s, works_j)
+
+        inlier_times = [times_s[index] for index in best_inlier_indexes]
+        inlier_works = [works_j[index] for index in best_inlier_indexes]
+        return cls._fit_work_time_line(inlier_times, inlier_works)
+
+    @staticmethod
     def _build_best_segments_frame(results: list[list[Any]], topn: int) -> pd.DataFrame:
         """Build a DataFrame of best segments from result rows, keeping top-N per distance."""
         if not results:
@@ -484,6 +569,7 @@ class WorkoutManagerSegmentsMixin:
         topn: int = 5,
         short_distance: int = 800,
         long_distance: int = 5000,
+        additional_distances: list[int] | None = None,
         start_date: datetime | pd.Timestamp | None = None,
         end_date: datetime | pd.Timestamp | None = None,
     ) -> CriticalPowerResult | None:
@@ -504,6 +590,8 @@ class WorkoutManagerSegmentsMixin:
             topn: Number of best segments to average per distance (default 5).
             short_distance: Shorter target distance in metres (default 800).
             long_distance: Longer target distance in metres (default 5000).
+            additional_distances: Additional target distances to include in the
+                robust fit when available (defaults to [1500, 3000]).
             start_date: Optional start date filter applied to workouts.
             end_date: Optional end date filter applied to workouts (inclusive).
 
@@ -515,9 +603,20 @@ class WorkoutManagerSegmentsMixin:
         if short_distance >= long_distance:
             return None
 
+        if additional_distances is None:
+            additional_distances = [1500, 3000]
+
+        target_distances = sorted(
+            {
+                short_distance,
+                long_distance,
+                *[distance for distance in additional_distances if distance > 0],
+            }
+        )
+
         segments = self.get_best_segments(
             topn=topn,
-            distances=[short_distance, long_distance],
+            distances=target_distances,
             start_date=start_date,
             end_date=end_date,
         )
@@ -537,22 +636,41 @@ class WorkoutManagerSegmentsMixin:
         if short_rows.empty or long_rows.empty:
             return None
 
+        distance_points: list[dict[str, float | int]] = []
+        for distance in target_distances:
+            distance_rows = segments[
+                (segments["distance"] == distance) & segments["segment_avg_power"].notna()
+            ]
+            if distance_rows.empty:
+                continue
+
+            avg_time_s = float(distance_rows["duration_s"].mean())
+            avg_work_j = float(
+                (distance_rows["segment_avg_power"] * distance_rows["duration_s"]).mean()
+            )
+            distance_points.append(
+                {
+                    "distance": distance,
+                    "avg_time_s": avg_time_s,
+                    "avg_work_j": avg_work_j,
+                }
+            )
+
+        if len(distance_points) < 2:
+            return None
+
         avg_time_short = float(short_rows["duration_s"].mean())
         avg_time_long = float(long_rows["duration_s"].mean())
         avg_power_short = float(short_rows["segment_avg_power"].mean())
         avg_power_long = float(long_rows["segment_avg_power"].mean())
 
-        time_diff = avg_time_long - avg_time_short
-        if time_diff <= 0:
+        robust_fit = self._fit_work_time_line_ransac_like(
+            [float(point["avg_time_s"]) for point in distance_points],
+            [float(point["avg_work_j"]) for point in distance_points],
+        )
+        if robust_fit is None:
             return None
-
-        short_work_j = short_rows["segment_avg_power"] * short_rows["duration_s"]
-        long_work_j = long_rows["segment_avg_power"] * long_rows["duration_s"]
-        work_short = float(short_work_j.mean())  # Joules
-        work_long = float(long_work_j.mean())  # Joules
-
-        critical_power_w = (work_long - work_short) / time_diff
-        w_prime_j = work_short - critical_power_w * avg_time_short
+        critical_power_w, w_prime_j = robust_fit
 
         if critical_power_w <= 0:
             return None
@@ -701,3 +819,4 @@ class WorkoutManagerSegmentsMixin:
             for pk in full_range
         ]
         return pd.DataFrame(filled)
+

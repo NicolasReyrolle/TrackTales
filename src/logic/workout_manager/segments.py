@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime
+from itertools import combinations
 from typing import Any, TypedDict, cast
 
 import pandas as pd
@@ -27,6 +28,70 @@ class CriticalPowerResult(TypedDict):
 
 
 class WorkoutManagerSegmentsMixin:
+    @staticmethod
+    def _evaluate_ransac_candidate(
+        times_s: list[float],
+        works_j: list[float],
+        index_a: int,
+        index_b: int,
+        residual_threshold_j: float,
+    ) -> tuple[list[int], float] | None:
+        """Evaluate one two-point candidate and return (inlier_indexes, median_residual)."""
+        fit = WorkoutManagerSegmentsMixin._fit_work_time_line(
+            [times_s[index_a], times_s[index_b]],
+            [works_j[index_a], works_j[index_b]],
+        )
+        if fit is None:
+            return None
+        cp_candidate, w_prime_candidate = fit
+
+        residuals = [
+            abs(work_j - (cp_candidate * time_s + w_prime_candidate))
+            for time_s, work_j in zip(times_s, works_j, strict=True)
+        ]
+        inlier_indexes = [
+            index for index, residual in enumerate(residuals) if residual <= residual_threshold_j
+        ]
+        if len(inlier_indexes) < 2:
+            return None
+
+        sorted_residuals = sorted(residuals[index] for index in inlier_indexes)
+        median_residual = sorted_residuals[len(sorted_residuals) // 2]
+        return inlier_indexes, median_residual
+
+    @staticmethod
+    def _is_better_ransac_candidate(
+        candidate_count: int,
+        candidate_median_residual: float,
+        best_count: int,
+        best_median_residual: float,
+    ) -> bool:
+        """Return True when candidate should replace current best candidate."""
+        return candidate_count > best_count or (
+            candidate_count == best_count and candidate_median_residual < best_median_residual
+        )
+
+    @staticmethod
+    def _log_dropped_outlier_points(
+        total_points: int,
+        inlier_indexes: list[int],
+        point_labels: list[str] | None,
+    ) -> None:
+        """Log dropped outlier labels when robust fitting excludes any point."""
+        dropped_indexes = [index for index in range(total_points) if index not in inlier_indexes]
+        if not dropped_indexes:
+            return
+
+        if point_labels is None or len(point_labels) != total_points:
+            dropped_labels = [f"point_{index}" for index in dropped_indexes]
+        else:
+            dropped_labels = [point_labels[index] for index in dropped_indexes]
+
+        _logger.info(
+            "Robust CP fit dropped outlier points: %s",
+            ", ".join(dropped_labels),
+        )
+
     @staticmethod
     def _fit_work_time_line(
         times_s: list[float],
@@ -70,54 +135,36 @@ class WorkoutManagerSegmentsMixin:
         best_median_residual = float("inf")
         best_inlier_indexes: list[int] = []
 
-        for i in range(len(times_s) - 1):
-            for j in range(i + 1, len(times_s)):
-                fit = cls._fit_work_time_line(
-                    [times_s[i], times_s[j]],
-                    [works_j[i], works_j[j]],
-                )
-                if fit is None:
-                    continue
-                cp_candidate, w_prime_candidate = fit
+        for index_a, index_b in combinations(range(len(times_s)), 2):
+            candidate = cls._evaluate_ransac_candidate(
+                times_s,
+                works_j,
+                index_a,
+                index_b,
+                residual_threshold_j,
+            )
+            if candidate is None:
+                continue
 
-                residuals = [
-                    abs(work_j - (cp_candidate * time_s + w_prime_candidate))
-                    for time_s, work_j in zip(times_s, works_j, strict=True)
-                ]
-                inlier_indexes = [
-                    index
-                    for index, residual in enumerate(residuals)
-                    if residual <= residual_threshold_j
-                ]
-                if len(inlier_indexes) < 2:
-                    continue
-
-                sorted_residuals = sorted(residuals[index] for index in inlier_indexes)
-                median_residual = sorted_residuals[len(sorted_residuals) // 2]
-
-                if len(inlier_indexes) > best_inlier_count or (
-                    len(inlier_indexes) == best_inlier_count
-                    and median_residual < best_median_residual
-                ):
-                    best_inlier_count = len(inlier_indexes)
-                    best_median_residual = median_residual
-                    best_inlier_indexes = inlier_indexes
+            inlier_indexes, median_residual = candidate
+            if cls._is_better_ransac_candidate(
+                len(inlier_indexes),
+                median_residual,
+                best_inlier_count,
+                best_median_residual,
+            ):
+                best_inlier_count = len(inlier_indexes)
+                best_median_residual = median_residual
+                best_inlier_indexes = inlier_indexes
 
         if len(best_inlier_indexes) < 2:
             return cls._fit_work_time_line(times_s, works_j)
 
-        dropped_indexes = [
-            index for index in range(len(times_s)) if index not in best_inlier_indexes
-        ]
-        if dropped_indexes:
-            if point_labels is None or len(point_labels) != len(times_s):
-                dropped_labels = [f"point_{index}" for index in dropped_indexes]
-            else:
-                dropped_labels = [point_labels[index] for index in dropped_indexes]
-            _logger.info(
-                "Robust CP fit dropped outlier points: %s",
-                ", ".join(dropped_labels),
-            )
+        cls._log_dropped_outlier_points(
+            total_points=len(times_s),
+            inlier_indexes=best_inlier_indexes,
+            point_labels=point_labels,
+        )
 
         inlier_times = [times_s[index] for index in best_inlier_indexes]
         inlier_works = [works_j[index] for index in best_inlier_indexes]

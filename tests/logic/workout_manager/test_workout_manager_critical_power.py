@@ -385,7 +385,7 @@ class TestGetCriticalPower:
             {
                 "distance": [100, 200],
                 "duration_s": [30.0, 60.0],
-                "segment_avg_power": [320.0, 320.0],
+                "segment_avg_power": [360.0, 300.0],
             }
         )
 

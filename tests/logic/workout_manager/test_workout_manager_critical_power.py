@@ -342,7 +342,9 @@ class TestGetCriticalPower:
         assert result["short_distance"] == 800
         assert result["long_distance"] == 5000
 
-    def test_critical_power_logs_warning_for_non_physical_w_prime(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_critical_power_logs_warning_for_non_physical_w_prime(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Negative W' should be kept but explicitly logged as a warning."""
         t800 = datetime(2025, 4, 1, tzinfo=timezone.utc)
         t5000 = datetime(2025, 4, 2, tzinfo=timezone.utc)
@@ -384,6 +386,7 @@ class TestGetCriticalPower:
                     "activityType": ["Running", "Running"],
                     "startDate": [pd.Timestamp(t1), pd.Timestamp(t2)],
                     "distance": [250.0, 260.0],
+                    "averageRunningPower": [350.0, 320.0],
                     "route": [
                         self._make_route(t1, 250.0, 60.0, 0.003),
                         self._make_route(t2, 260.0, 70.0, 0.0035),
@@ -391,16 +394,9 @@ class TestGetCriticalPower:
                 }
             )
         )
-        rp_df = pd.concat(
-            [
-                self._rp_df(t1, 60.0, 350.0),
-                self._rp_df(t2, 70.0, 320.0),
-            ],
-            ignore_index=True,
-        )
 
         result = manager.get_critical_power(
-            running_power_df=rp_df,
+            running_power_df=None,
             topn=1,
             short_distance=100,
             long_distance=200,
@@ -440,7 +436,9 @@ class TestSegmentsHelperCoverage:
         )
         assert result is None
 
-    def test_log_dropped_outlier_points_uses_fallback_labels_when_mismatch(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_log_dropped_outlier_points_uses_fallback_labels_when_mismatch(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
         with caplog.at_level("INFO"):
             WorkoutManager._log_dropped_outlier_points(
                 total_points=4,

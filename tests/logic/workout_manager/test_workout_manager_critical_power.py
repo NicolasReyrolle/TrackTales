@@ -376,23 +376,25 @@ class TestGetCriticalPower:
         assert result["w_prime_j"] <= 0
         assert "Non-physical W' detected" in caplog.text
 
-    def test_critical_power_continues_when_additional_distances_have_no_segments(self) -> None:
+    def test_critical_power_continues_when_additional_distances_have_no_segments(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         """Distances requested only as additional inputs can be absent and must be skipped."""
-        t1 = datetime(2025, 4, 10, tzinfo=timezone.utc)
-        t2 = datetime(2025, 4, 11, tzinfo=timezone.utc)
-        manager = WorkoutManager(
-            pd.DataFrame(
-                {
-                    "activityType": ["Running", "Running"],
-                    "startDate": [pd.Timestamp(t1), pd.Timestamp(t2)],
-                    "distance": [250.0, 260.0],
-                    "averageRunningPower": [350.0, 320.0],
-                    "route": [
-                        self._make_route(t1, 250.0, 60.0, 0.003),
-                        self._make_route(t2, 260.0, 70.0, 0.0035),
-                    ],
-                }
-            )
+        manager = WorkoutManager(pd.DataFrame())
+        stub_segments = pd.DataFrame(
+            {
+                "distance": [100, 200],
+                "duration_s": [30.0, 60.0],
+                "segment_avg_power": [320.0, 320.0],
+            }
+        )
+
+        monkeypatch.setattr(manager, "get_best_segments", lambda **_kwargs: stub_segments.copy())
+        monkeypatch.setattr(
+            manager,
+            "annotate_segments_with_power",
+            lambda segments, _running_power_df: segments,
         )
 
         result = manager.get_critical_power(
@@ -405,6 +407,57 @@ class TestGetCriticalPower:
         assert result is not None
         assert result["short_distance"] == 100
         assert result["long_distance"] == 200
+
+    def test_critical_power_returns_none_when_distance_points_drop_below_two(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Defensive path: return None if distance points collapse below two."""
+
+        class StatefulSegmentsFrame(pd.DataFrame):
+            _mask_calls = 0
+
+            @property
+            def _constructor(self):  # type: ignore[override]
+                return StatefulSegmentsFrame
+
+            def __getitem__(self, key):  # type: ignore[override]
+                if isinstance(key, pd.Series) and key.dtype == bool:
+                    StatefulSegmentsFrame._mask_calls += 1
+                    if StatefulSegmentsFrame._mask_calls <= 2:
+                        return super().__getitem__(key)
+                    return self.iloc[0:0].copy()
+                return super().__getitem__(key)
+
+        manager = WorkoutManager(pd.DataFrame())
+        base = pd.DataFrame(
+            {
+                "distance": [100, 200],
+                "duration_s": [30.0, 60.0],
+                "segment_avg_power": [320.0, 320.0],
+            }
+        )
+        stateful_segments = StatefulSegmentsFrame(base)
+
+        monkeypatch.setattr(
+            manager,
+            "get_best_segments",
+            lambda **_kwargs: StatefulSegmentsFrame(stateful_segments.copy()),
+        )
+        monkeypatch.setattr(
+            manager,
+            "annotate_segments_with_power",
+            lambda segments, _running_power_df: segments,
+        )
+
+        result = manager.get_critical_power(
+            running_power_df=None,
+            topn=1,
+            short_distance=100,
+            long_distance=200,
+        )
+
+        assert result is None
 
 
 class TestSegmentsHelperCoverage:

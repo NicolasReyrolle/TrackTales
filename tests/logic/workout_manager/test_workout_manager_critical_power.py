@@ -1,11 +1,14 @@
 """Tests for WorkoutManager.get_critical_power and get_critical_power_evolution."""
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
+from zipfile import ZipFile
 
 import pandas as pd
 import pytest
 
+from logic.export_parser import ExportParser
 from logic.workout_manager import WorkoutManager
 from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 
@@ -515,7 +518,72 @@ class TestSegmentsHelperCoverage:
             [100.0, 200.0],
             [20000.0, 45000.0],
         )
-        assert two_point == direct_two_point
+        assert two_point is not None
+        assert direct_two_point is not None
+        assert two_point[0] == pytest.approx(direct_two_point[0])
+        assert two_point[1] == pytest.approx(direct_two_point[1])
+
+    def test_critical_power_with_cp_fixture(
+        self,
+        tmp_path: Path,
+        build_health_export_xml: Any,
+        load_export_fragment: Any,
+    ) -> None:
+        """Use the CP fixture export and route to exercise end-to-end CP computation."""
+        workout_xml = load_export_fragment("workout_cp_calculation.xml")
+        route_file = (
+            Path(__file__).resolve().parents[2]
+            / "fixtures"
+            / "exports"
+            / "workout-routes"
+            / "route_2026-03-29_11.44am.gpx"
+        )
+        zip_path = tmp_path / "cp_fixture_with_route.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", build_health_export_xml([workout_xml]))
+            zf.writestr(
+                "apple_health_export/workout-routes/route_2026-03-29_11.44am.gpx",
+                route_file.read_bytes(),
+            )
+
+        parser = ExportParser()
+        with parser:
+            parsed = parser.parse(str(zip_path))
+
+        manager = WorkoutManager(parsed.workouts)
+        segments = manager.get_best_segments(topn=1, distances=[800, 5000])
+        assert len(segments) == 2
+
+        cp_target = 260.0
+        w_prime_target = 20000.0
+        power_records: list[dict[str, float | str]] = []
+        for _, row in segments.iterrows():
+            segment_start = pd.Timestamp(row["segment_start"])
+            segment_start_utc = (
+                segment_start.tz_convert(timezone.utc)
+                if segment_start.tzinfo is not None
+                else segment_start.tz_localize(timezone.utc)
+            )
+            midpoint = segment_start_utc + timedelta(seconds=float(row["duration_s"]) / 2)
+            power_records.append(
+                {
+                    "startDate": midpoint.strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+                    "value": cp_target + (w_prime_target / float(row["duration_s"])),
+                }
+            )
+        running_power_df = pd.DataFrame(power_records)
+
+        result = manager.get_critical_power(
+            running_power_df=running_power_df,
+            topn=1,
+            short_distance=800,
+            long_distance=5000,
+        )
+        assert result is not None
+        assert result["critical_power_w"] > 0
+        assert result["w_prime_j"] > 0
+        assert result["count_short"] == 1
+        assert result["count_long"] == 1
 
     def test_fit_work_time_line_ransac_like_falls_back_when_no_candidate_survives(self) -> None:
         # All time points identical => any two-point OLS fit is undefined.

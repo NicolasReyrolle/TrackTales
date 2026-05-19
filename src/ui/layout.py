@@ -60,6 +60,7 @@ from ui.helpers import (
 )
 from ui.local_file_picker import LocalFilePicker
 from ui.running_tab import render_running_health_graphs, render_running_tab
+from ui.summary_tab import render_summary_tab
 from ui.trends_tab import render_trends_graphs, render_trends_tab
 from ui.workout_detail_modal import create_workout_detail_modal
 from ui.workout_table import (
@@ -189,6 +190,14 @@ def _build_cp_graphs() -> dict[str, dict[str, float | int | None]]:
         start_date=state.start_date,
         end_date=state.end_date,
     )
+    non_physical_periods: dict[str, int] = {}
+    if not cp_evolution.empty:
+        non_physical_rows = cp_evolution[
+            cp_evolution["w_prime_kj"].notna() & (cp_evolution["w_prime_kj"] <= 0)
+        ]
+        non_physical_periods = {
+            str(period): 1 for period in non_physical_rows["period"].astype(str).tolist()
+        }
     return {
         "critical_power": _to_json_safe(
             {}
@@ -198,6 +207,7 @@ def _build_cp_graphs() -> dict[str, dict[str, float | int | None]]:
         "w_prime": _to_json_safe(
             {} if cp_evolution.empty else cp_evolution.set_index("period")["w_prime_kj"].to_dict()
         ),
+        "w_prime_non_physical": _to_json_safe(non_physical_periods),
     }
 
 
@@ -460,6 +470,7 @@ def _reset_health_data_state() -> None:
         "vo2_max": {},
         "critical_power": {},
         "w_prime": {},
+        "w_prime_non_physical": {},
     }
 
 
@@ -873,110 +884,14 @@ def render_body() -> None:
         with ui.tab_panel("summary"):
             dist_unit = get_distance_unit()
             elev_unit = get_elevation_unit()
-
-            def _open_record_metric(metric_key: str) -> None:
-                workout_index = state.metrics_workout_index.get(metric_key)
-                if workout_index is None:
-                    return
-                full_rows = _build_workout_rows(
-                    activity_type="All",
-                    skip_range_filters=True,
-                )
-                row_index_by_workout_index: dict[object, int] = {}
-                for idx, row_workout_index in enumerate(
-                    row.get("workout_index") for row in full_rows
-                ):
-                    if (
-                        row_workout_index is not None
-                        and row_workout_index not in row_index_by_workout_index
-                    ):
-                        row_index_by_workout_index[row_workout_index] = idx
-                row_index = row_index_by_workout_index.get(workout_index)
-                if row_index is None:
-                    return
-                open_detail = create_workout_detail_modal(full_rows)
-                open_detail(row_index)
-
-            with ui.row().classes(ROW_CENTERED_CLASSES):
-                stat_card(t("Count"), state.metrics_display, "count")
-                stat_card(t("Distance"), state.metrics_display, "distance", dist_unit)
-                stat_card(t("Duration"), state.metrics_display, "duration", "h")
-                stat_card(t("Elevation"), state.metrics_display, "elevation", elev_unit)
-                stat_card(t("Calories"), state.metrics_display, "calories", "kcal")
-            with ui.row().classes(ROW_CENTERED_CLASSES):
-                stat_card(
-                    t("Longest Run"),
-                    state.metrics_display,
-                    "longest_run",
-                    dist_unit,
-                    tooltip_ref=state.metrics_tooltip,
-                    tooltip_key="longest_run",
-                    on_click=lambda: _open_record_metric("longest_run"),
-                )
-                stat_card(
-                    t("Longest Walk/Hike"),
-                    state.metrics_display,
-                    "longest_walk",
-                    dist_unit,
-                    tooltip_ref=state.metrics_tooltip,
-                    tooltip_key="longest_walk",
-                    on_click=lambda: _open_record_metric("longest_walk"),
-                )
-                stat_card(
-                    t("Most Elevation (Run)"),
-                    state.metrics_display,
-                    "most_elevation_run",
-                    elev_unit,
-                    tooltip_ref=state.metrics_tooltip,
-                    tooltip_key="most_elevation_run",
-                    on_click=lambda: _open_record_metric("most_elevation_run"),
-                )
-                stat_card(
-                    t("Most Elevation (Walk/Hike)"),
-                    state.metrics_display,
-                    "most_elevation_walk",
-                    elev_unit,
-                    tooltip_ref=state.metrics_tooltip,
-                    tooltip_key="most_elevation_walk",
-                    on_click=lambda: _open_record_metric("most_elevation_walk"),
-                )
-            with ui.row().classes(ROW_CENTERED_CLASSES):
-                stat_card(
-                    t("Longest Cycling"),
-                    state.metrics_display,
-                    "longest_cycling",
-                    dist_unit,
-                    tooltip_ref=state.metrics_tooltip,
-                    tooltip_key="longest_cycling",
-                    on_click=lambda: _open_record_metric("longest_cycling"),
-                )
-                stat_card(
-                    t("Longest Swim"),
-                    state.metrics_display,
-                    "longest_swim",
-                    dist_unit,
-                    tooltip_ref=state.metrics_tooltip,
-                    tooltip_key="longest_swim",
-                    on_click=lambda: _open_record_metric("longest_swim"),
-                )
-                stat_card(
-                    t("Longest Duration Workout"),
-                    state.metrics_display,
-                    "longest_duration_workout",
-                    "",
-                    tooltip_ref=state.metrics_tooltip,
-                    tooltip_key="longest_duration_workout",
-                    on_click=lambda: _open_record_metric("longest_duration_workout"),
-                )
-                stat_card(
-                    t("Most Calories Workout"),
-                    state.metrics_display,
-                    "most_calories_workout",
-                    "kcal",
-                    tooltip_ref=state.metrics_tooltip,
-                    tooltip_key="most_calories_workout",
-                    on_click=lambda: _open_record_metric("most_calories_workout"),
-                )
+            render_summary_tab(
+                dist_unit=dist_unit,
+                elev_unit=elev_unit,
+                stat_card_fn=stat_card,
+                build_workout_rows_fn=_build_workout_rows,
+                create_workout_detail_modal_fn=create_workout_detail_modal,
+                row_centered_classes=ROW_CENTERED_CLASSES,
+            )
 
         with ui.tab_panel("activities"):
             render_activity_graphs()

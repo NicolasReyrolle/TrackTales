@@ -11,7 +11,13 @@ from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
 from ui.best_segments import render_best_segments_tab
 from ui.charts import render_generic_graph, render_scatter_graph
-from ui.css import ROW_CENTERED_CLASSES
+from ui.css import (
+    LABEL_MUTED_CLASSES,
+    ROW_CENTERED_CLASSES,
+    ROW_WARNING_CLASSES,
+    WARNING_BADGE_CLASSES,
+    WARNING_BADGE_PROPS,
+)
 from ui.helpers import filter_workouts_by_date_range, format_date_label
 
 
@@ -169,3 +175,31 @@ def render_running_health_graphs() -> None:
                 graph_type="line",
                 show_trend=False,
             )
+
+            non_physical_map = state.health_data_graphs.get("w_prime_non_physical", {})
+            if isinstance(non_physical_map, dict):
+                non_physical_periods = sorted(
+                    period
+                    for period, marker in non_physical_map.items()
+                    if isinstance(period, str) and isinstance(marker, (int, float)) and marker > 0
+                )
+            else:
+                non_physical_periods = []
+
+            if non_physical_periods:
+                with ui.row().classes(ROW_WARNING_CLASSES):
+                    warning_badge = ui.badge(t("Non-physical W'"))
+                    warning_badge.props(WARNING_BADGE_PROPS)
+                    warning_badge.classes(WARNING_BADGE_CLASSES)
+                    with warning_badge:
+                        ui.tooltip(
+                            t(
+                                "W' <= 0 is non-physical in the CP model. "
+                                "This usually means sparse data or inconsistent "
+                                "pace/power estimates "
+                                "for those periods."
+                            )
+                        )
+                    ui.label(f"{t('Periods')}: {', '.join(non_physical_periods)}").classes(
+                        LABEL_MUTED_CLASSES
+                    )

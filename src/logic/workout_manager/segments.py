@@ -2,7 +2,8 @@
 
 import logging
 from datetime import datetime
-from typing import Any, TypedDict
+from itertools import combinations
+from typing import Any, TypedDict, cast
 
 import pandas as pd
 
@@ -27,27 +28,9 @@ class CriticalPowerResult(TypedDict):
 
 
 class WorkoutManagerSegmentsMixin:
-    """Best-segment computation methods for running workouts."""
-
-    workouts: pd.DataFrame
-    DEFAULT_SEGMENT_DISTANCES: list[int]
-
-    def _filter_workouts(
-        self,
-        activity_type: str = "All",
-        start_date: datetime | pd.Timestamp | None = None,
-        end_date: datetime | pd.Timestamp | None = None,
-    ) -> pd.DataFrame:
-        """Stub for type checking; implemented in WorkoutManagerAggregationsMixin."""
-        raise NotImplementedError
-
     @staticmethod
     def _split_route_into_traces(route: WorkoutRoute) -> list[WorkoutRoute]:
-        """Split a route into monotonic-time traces.
-
-        Segment analysis must not cross timestamp reversals because they indicate
-        disjoint windows or malformed ordering.
-        """
+        """Split route into monotonic-time traces to avoid cross-reversal windows."""
         if len(route.points) < 2:
             return []
 
@@ -65,6 +48,189 @@ class WorkoutManagerSegmentsMixin:
             traces.append(WorkoutRoute(points=current_points))
 
         return traces
+
+    @staticmethod
+    def _evaluate_ransac_candidate(
+        times_s: list[float],
+        works_j: list[float],
+        index_a: int,
+        index_b: int,
+        residual_threshold_j: float,
+    ) -> tuple[list[int], float] | None:
+        """Evaluate one two-point candidate and return (inlier_indexes, median_residual)."""
+        fit = WorkoutManagerSegmentsMixin._fit_work_time_line(
+            [times_s[index_a], times_s[index_b]],
+            [works_j[index_a], works_j[index_b]],
+        )
+        if fit is None:
+            return None
+        cp_candidate, w_prime_candidate = fit
+
+        residuals = [
+            abs(work_j - (cp_candidate * time_s + w_prime_candidate))
+            for time_s, work_j in zip(times_s, works_j, strict=True)
+        ]
+        inlier_indexes = [
+            index for index, residual in enumerate(residuals) if residual <= residual_threshold_j
+        ]
+        if len(inlier_indexes) < 2:
+            return None
+
+        sorted_residuals = sorted(residuals[index] for index in inlier_indexes)
+        median_residual = sorted_residuals[len(sorted_residuals) // 2]
+        return inlier_indexes, median_residual
+
+    @staticmethod
+    def _is_better_ransac_candidate(
+        candidate_count: int,
+        candidate_median_residual: float,
+        best_count: int,
+        best_median_residual: float,
+    ) -> bool:
+        """Return True when candidate should replace current best candidate."""
+        return candidate_count > best_count or (
+            candidate_count == best_count and candidate_median_residual < best_median_residual
+        )
+
+    @staticmethod
+    def _log_dropped_outlier_points(
+        total_points: int,
+        inlier_indexes: list[int],
+        point_labels: list[str] | None,
+    ) -> None:
+        """Log dropped outlier labels when robust fitting excludes any point."""
+        dropped_indexes = [index for index in range(total_points) if index not in inlier_indexes]
+        if not dropped_indexes:
+            return
+
+        if point_labels is None or len(point_labels) != total_points:
+            dropped_labels = [f"point_{index}" for index in dropped_indexes]
+        else:
+            dropped_labels = [point_labels[index] for index in dropped_indexes]
+
+        _logger.info(
+            "Robust CP fit dropped outlier points: %s",
+            ", ".join(dropped_labels),
+        )
+
+    @staticmethod
+    def _fit_work_time_line(
+        times_s: list[float],
+        works_j: list[float],
+    ) -> tuple[float, float] | None:
+        """Fit W = CP * t + W' with ordinary least squares on paired points."""
+        if len(times_s) != len(works_j) or len(times_s) < 2:
+            return None
+
+        x_mean = sum(times_s) / len(times_s)
+        y_mean = sum(works_j) / len(works_j)
+        variance_x = sum((time_s - x_mean) ** 2 for time_s in times_s)
+        if variance_x <= 0:
+            return None
+
+        covariance_xy = sum(
+            (time_s - x_mean) * (work_j - y_mean)
+            for time_s, work_j in zip(times_s, works_j, strict=True)
+        )
+        slope_cp = covariance_xy / variance_x
+        intercept_w_prime = y_mean - slope_cp * x_mean
+        return slope_cp, intercept_w_prime
+
+    @classmethod
+    def _fit_work_time_line_ransac_like(
+        cls,
+        times_s: list[float],
+        works_j: list[float],
+        point_labels: list[str] | None = None,
+    ) -> tuple[float, float] | None:
+        """Robustly fit W = CP * t + W' using a deterministic RANSAC-like search."""
+        if len(times_s) != len(works_j) or len(times_s) < 2:
+            return None
+        if len(times_s) == 2:
+            return cls._fit_work_time_line(times_s, works_j)
+
+        median_work = sorted(works_j)[len(works_j) // 2]
+        residual_threshold_j = max(3000.0, 0.04 * median_work)
+
+        best_inlier_count = 0
+        best_median_residual = float("inf")
+        best_inlier_indexes: list[int] = []
+
+        for index_a, index_b in combinations(range(len(times_s)), 2):
+            candidate = cls._evaluate_ransac_candidate(
+                times_s,
+                works_j,
+                index_a,
+                index_b,
+                residual_threshold_j,
+            )
+            if candidate is None:
+                continue
+
+            inlier_indexes, median_residual = candidate
+            if cls._is_better_ransac_candidate(
+                len(inlier_indexes),
+                median_residual,
+                best_inlier_count,
+                best_median_residual,
+            ):
+                best_inlier_count = len(inlier_indexes)
+                best_median_residual = median_residual
+                best_inlier_indexes = inlier_indexes
+
+        if len(best_inlier_indexes) < 2:
+            return cls._fit_work_time_line(times_s, works_j)
+
+        cls._log_dropped_outlier_points(
+            total_points=len(times_s),
+            inlier_indexes=best_inlier_indexes,
+            point_labels=point_labels,
+        )
+
+        inlier_times = [times_s[index] for index in best_inlier_indexes]
+        inlier_works = [works_j[index] for index in best_inlier_indexes]
+        return cls._fit_work_time_line(inlier_times, inlier_works)
+
+    @staticmethod
+    def _build_best_segments_frame(results: list[list[Any]], topn: int) -> pd.DataFrame:
+        """Build a DataFrame of best segments from result rows, keeping top-N per distance."""
+        if not results:
+            return pd.DataFrame(
+                columns=[
+                    "startDate",
+                    "distance",
+                    "duration_s",
+                    "segment_start",
+                    "segment_end",
+                    "elevation_change_m",
+                ]
+            )
+        df = pd.DataFrame(
+            results,
+            columns=[
+                "startDate",
+                "distance",
+                "duration_s",
+                "segment_start",
+                "segment_end",
+                "elevation_change_m",
+            ],
+        )
+        # Keep top-N (fastest) per distance
+        df = (
+            df.sort_values(["distance", "duration_s"])
+            .groupby("distance", as_index=False)
+            .head(topn)
+        )
+        return df.reset_index(drop=True)
+
+    @staticmethod
+    def _get_run_distance_m(run_record: Any) -> float | None:
+        """Return the run distance in meters when present and finite."""
+        raw_run_distance: Any = getattr(run_record, "distance", None)
+        if raw_run_distance is None or pd.isna(raw_run_distance):
+            return None
+        return float(raw_run_distance)
 
     @classmethod
     def _extract_route_traces(cls, run_record: Any) -> list[WorkoutRoute]:
@@ -101,36 +267,10 @@ class WorkoutManagerSegmentsMixin:
         )
 
     @staticmethod
-    def _get_run_distance_m(run_record: Any) -> float | None:
-        """Return the run distance in meters when present and finite."""
-        raw_run_distance: Any = getattr(run_record, "distance", None)
-        if raw_run_distance is None or pd.isna(raw_run_distance):
-            return None
-        return float(raw_run_distance)
-
-    @staticmethod
-    def _build_best_segments_frame(results: list[list[Any]], topn: int) -> pd.DataFrame:
-        """Sort and keep the fastest Top-N segments per requested distance."""
-        df = pd.DataFrame(
-            results,
-            columns=[
-                "startDate",
-                "distance",
-                "duration_s",
-                "segment_start",
-                "segment_end",
-                "elevation_change_m",
-            ],
-        )
-        df = df.sort_values(["distance", "duration_s"], ascending=[True, True])
-        result: pd.DataFrame = df.groupby("distance").head(topn).reset_index(drop=True)
-        return result
-
-    @staticmethod
     def _get_fastest_segment_window(
-        route_traces: list[WorkoutRoute],
-        distance_m: float,
-        distance_scale_factor: float,
+        route_traces,
+        distance_m,
+        distance_scale_factor,
     ) -> tuple[float, datetime, datetime, float] | None:
         """Return (duration_s, start_time, end_time, elevation_change_m)
         for the fastest segment across traces."""
@@ -187,7 +327,11 @@ class WorkoutManagerSegmentsMixin:
         end_date: datetime | pd.Timestamp | None,
     ) -> pd.DataFrame:
         """Fallback: filter running workouts with local logic and end-date handling."""
-        runs: pd.DataFrame = self.workouts[self.workouts["activityType"] == "Running"]
+        from typing import cast
+
+        runs: pd.DataFrame = cast(Any, self).workouts[
+            cast(Any, self).workouts["activityType"] == "Running"
+        ]
         if start_date is not None:
             runs = runs.loc[runs["startDate"] >= pd.Timestamp(start_date)]
         if end_date is not None:
@@ -227,19 +371,19 @@ class WorkoutManagerSegmentsMixin:
                 Empty when no valid segments are found or workouts are missing
         """
         if distances is None:
-            distances = self.DEFAULT_SEGMENT_DISTANCES
+            distances = cast(Any, self).DEFAULT_SEGMENT_DISTANCES
 
         if topn <= 0:
             return self._empty_best_segments_frame()
 
         required_columns = {"activityType", "startDate"}
-        if not required_columns.issubset(self.workouts.columns):
+        if not required_columns.issubset(cast(Any, self).workouts.columns):
             return self._empty_best_segments_frame()
 
         # Prefer shared filtering logic from WorkoutManagerAggregationsMixin to keep
         # date-handling semantics consistent across APIs.
         if hasattr(self, "_filter_workouts"):
-            runs = self._filter_workouts("Running", start_date, end_date)
+            runs = cast(Any, self)._filter_workouts("Running", start_date, end_date)
         else:
             runs = self._fallback_filter_running_workouts(start_date, end_date)
 
@@ -248,6 +392,7 @@ class WorkoutManagerSegmentsMixin:
 
         results: list[list[Any]] = []
 
+        assert distances is not None
         for run in runs.itertuples():
             results.extend(self._get_run_best_segment_rows(run, distances))
 
@@ -314,11 +459,15 @@ class WorkoutManagerSegmentsMixin:
         ):
             return None, None, None
 
-        rp_times = pd.to_datetime(running_power_df["startDate"], format="ISO8601", errors="coerce")
+        # Use utc=True so mixed offsets (+0100/+0200) remain datetimelike and
+        # can safely flow through .dt operations in overlap computations.
+        rp_times = pd.to_datetime(
+            running_power_df["startDate"], format="ISO8601", errors="coerce", utc=True
+        )
         rp_end_times: pd.Series | None = None
         if "endDate" in running_power_df.columns:
             rp_end_times = pd.to_datetime(
-                running_power_df["endDate"], format="ISO8601", errors="coerce"
+                running_power_df["endDate"], format="ISO8601", errors="coerce", utc=True
             )
         rp_values = pd.to_numeric(running_power_df["value"], errors="coerce")
         return rp_times, rp_end_times, rp_values
@@ -327,11 +476,13 @@ class WorkoutManagerSegmentsMixin:
         """Build workout-level fallback lookup: startDate -> averageRunningPower."""
         fallback: dict[Any, float | None] = {}
         avg_power_col = "averageRunningPower"
-        for workout in self.workouts.itertuples():
+        from typing import cast
+
+        for workout in cast(Any, self).workouts.itertuples():
             workout_start = getattr(workout, "startDate", None)
             raw_power = (
                 getattr(workout, avg_power_col, None)
-                if avg_power_col in self.workouts.columns
+                if avg_power_col in cast(Any, self).workouts.columns
                 else None
             )
             fallback[workout_start] = (
@@ -497,6 +648,7 @@ class WorkoutManagerSegmentsMixin:
         topn: int = 5,
         short_distance: int = 800,
         long_distance: int = 5000,
+        additional_distances: list[int] | None = None,
         start_date: datetime | pd.Timestamp | None = None,
         end_date: datetime | pd.Timestamp | None = None,
     ) -> CriticalPowerResult | None:
@@ -517,6 +669,8 @@ class WorkoutManagerSegmentsMixin:
             topn: Number of best segments to average per distance (default 5).
             short_distance: Shorter target distance in metres (default 800).
             long_distance: Longer target distance in metres (default 5000).
+            additional_distances: Additional target distances to include in the
+                robust fit when available (defaults to [1500, 3000]).
             start_date: Optional start date filter applied to workouts.
             end_date: Optional end date filter applied to workouts (inclusive).
 
@@ -528,9 +682,20 @@ class WorkoutManagerSegmentsMixin:
         if short_distance >= long_distance:
             return None
 
+        if additional_distances is None:
+            additional_distances = [1500, 3000]
+
+        target_distances = sorted(
+            {
+                short_distance,
+                long_distance,
+                *[distance for distance in additional_distances if distance > 0],
+            }
+        )
+
         segments = self.get_best_segments(
             topn=topn,
-            distances=[short_distance, long_distance],
+            distances=target_distances,
             start_date=start_date,
             end_date=end_date,
         )
@@ -550,22 +715,55 @@ class WorkoutManagerSegmentsMixin:
         if short_rows.empty or long_rows.empty:
             return None
 
+        distance_points: list[dict[str, float | int]] = []
+        for distance in target_distances:
+            distance_rows = segments[
+                (segments["distance"] == distance) & segments["segment_avg_power"].notna()
+            ]
+            if distance_rows.empty:
+                continue
+
+            avg_time_s = float(distance_rows["duration_s"].mean())
+            avg_work_j = float(
+                (distance_rows["segment_avg_power"] * distance_rows["duration_s"]).mean()
+            )
+            distance_points.append(
+                {
+                    "distance": distance,
+                    "avg_time_s": avg_time_s,
+                    "avg_work_j": avg_work_j,
+                }
+            )
+
+        if len(distance_points) < 2:
+            return None
+
         avg_time_short = float(short_rows["duration_s"].mean())
         avg_time_long = float(long_rows["duration_s"].mean())
         avg_power_short = float(short_rows["segment_avg_power"].mean())
         avg_power_long = float(long_rows["segment_avg_power"].mean())
 
-        time_diff = avg_time_long - avg_time_short
-        if time_diff <= 0:
+        robust_fit = self._fit_work_time_line_ransac_like(
+            [float(point["avg_time_s"]) for point in distance_points],
+            [float(point["avg_work_j"]) for point in distance_points],
+            [f"{int(point['distance'])}m" for point in distance_points],
+        )
+        if robust_fit is None:
+            return None
+        critical_power_w, w_prime_j = robust_fit
+
+        if critical_power_w <= 0:
             return None
 
-        work_short = avg_power_short * avg_time_short  # Joules
-        work_long = avg_power_long * avg_time_long  # Joules
-
-        critical_power_w = (work_long - work_short) / time_diff
-        w_prime_j = work_short - critical_power_w * avg_time_short
-
-        if critical_power_w <= 0 or w_prime_j <= 0:
+        if w_prime_j <= 0:
+            _logger.warning(
+                "Non-physical W' detected for period candidate "
+                "(short=%sm long=%sm cp=%.2fW w_prime=%.2fJ); dropping CP result",
+                short_distance,
+                long_distance,
+                critical_power_w,
+                w_prime_j,
+            )
             return None
 
         return CriticalPowerResult(
@@ -627,7 +825,7 @@ class WorkoutManagerSegmentsMixin:
 
         # Build available periods from filtered running workouts.
         if hasattr(self, "_filter_workouts"):
-            runs = self._filter_workouts("Running", start_date, end_date)
+            runs = cast(Any, self)._filter_workouts("Running", start_date, end_date)
         else:
             runs = self._fallback_filter_running_workouts(start_date, end_date)
 

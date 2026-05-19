@@ -43,3 +43,22 @@ def test_diff_column_label_is_translated_in_french() -> None:
     """Diff column header should have a French translation."""
     i18n.compile_message_catalogs()
     assert translate("Diff", language="fr") == "Écart"
+
+
+def test_non_physical_w_prime_warning_strings_are_translated_in_french() -> None:
+    """Running-tab non-physical W' warning strings should have French translations."""
+    i18n.compile_message_catalogs()
+    warning_message = (
+        "W' <= 0 is non-physical in the CP model. "
+        "This usually means sparse data or inconsistent "
+        "pace/power estimates for those periods."
+    )
+    warning_translation = (
+        "W' <= 0 est non physique dans le modèle de PC. "
+        "Cela indique généralement des données clairsemées "
+        "ou des estimations d'allure/puissance incohérentes "
+        "pour ces périodes."
+    )
+    assert translate("Non-physical W'", language="fr") == "W' non physique"
+    assert translate(warning_message, language="fr") == warning_translation
+    assert translate("Periods", language="fr") == "Périodes"

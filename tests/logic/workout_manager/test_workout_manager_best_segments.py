@@ -196,6 +196,50 @@ class TestGetBestSegments:
         assert list(result["distance"]) == [1000]
         assert abs(float(result.iloc[0]["duration_s"]) - 260.0) < 1e-6
 
+    def test_route_fallback_splits_timestamp_reversals_into_monotonic_traces(self) -> None:
+        """Route fallback should split on timestamp reversals and avoid bridge artifacts."""
+        start_time = datetime(2025, 9, 26, tzinfo=timezone.utc)
+        route_with_reversal = WorkoutRoute(
+            points=[
+                RoutePoint(time=start_time, latitude=0.0, longitude=0.0, altitude=0.0),
+                RoutePoint(
+                    time=start_time + pd.Timedelta(seconds=400),
+                    latitude=0.0,
+                    longitude=0.01,
+                    altitude=0.0,
+                ),
+                RoutePoint(
+                    time=start_time + pd.Timedelta(seconds=200),
+                    latitude=0.0,
+                    longitude=0.01,
+                    altitude=0.0,
+                ),
+                RoutePoint(
+                    time=start_time + pd.Timedelta(seconds=460),
+                    latitude=0.0,
+                    longitude=0.02,
+                    altitude=0.0,
+                ),
+            ]
+        )
+
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running"],
+                    "startDate": [pd.Timestamp("2025-09-26")],
+                    "route": [route_with_reversal],
+                    "distance": [2000.0],
+                }
+            )
+        )
+
+        result = manager.get_best_segments(topn=1, distances=[1000])
+
+        assert len(result) == 1
+        assert list(result["distance"]) == [1000]
+        assert abs(float(result.iloc[0]["duration_s"]) - 260.0) < 1e-6
+
     def test_last_unpaired_motion_paused_trims_vehicle_section(
         self,
         tmp_path: Path,

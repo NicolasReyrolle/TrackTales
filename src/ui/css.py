@@ -23,6 +23,9 @@ ROW_FULL_ITEMS_CLASSES = "w-full items-center"
 #: Full-width row with children centred both axes and a horizontal gap.
 ROW_CENTERED_CLASSES = "w-full justify-center gap-4"
 
+#: Full-width row for warning badges; wraps on narrow screens.
+ROW_WARNING_CLASSES = "w-full items-center justify-center gap-2 flex-wrap"
+
 #: Full-width row with centred children and Quasar spacing (used for loaders).
 ROW_LOADING_CLASSES = "w-full items-center justify-center q-gutter-sm"
 
@@ -80,6 +83,12 @@ RANGE_LABEL_CLASSES = "text-sm text-gray-500"
 
 #: Muted small label (status text, helper text).
 LABEL_MUTED_CLASSES = "text-sm text-gray-500"
+
+#: Warning badge used to flag non-physical model outputs.
+WARNING_BADGE_CLASSES = "font-medium"
+
+#: Quasar badge props for warning emphasis.
+WARNING_BADGE_PROPS = "color=orange-8 text-color=white"
 
 #: Muted small label used as a section heading (uppercase + self-centred).
 LABEL_SECTION_CLASSES = "text-sm text-gray-500 uppercase self-center"

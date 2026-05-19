@@ -212,10 +212,33 @@ class ExportParser:
         }
 
         if len(workouts_df) > 0:
-            workouts_df["startDate"] = pd.to_datetime(workouts_df["startDate"]).dt.tz_localize(None)
+            # Parse each Apple Health datetime and drop timezone information while
+            # preserving the local wall-clock timestamp.
+            normalized_start_dates = [
+                self._normalize_workout_start_date(raw_start_date)
+                for raw_start_date in workouts_df["startDate"].tolist()
+            ]
+            workouts_df["startDate"] = pd.Series(normalized_start_dates, dtype="datetime64[ns]")
 
         self._log(f"Loaded {len(workouts_df)} workouts total.")
         return ParsedHealthData(workouts=workouts_df, records_by_type=records_by_type_df)
+
+    @staticmethod
+    def _normalize_workout_start_date(raw_start_date: Any) -> datetime | pd.Timestamp | None:
+        """Normalize workout start date to a naive datetime-like value.
+
+        Supports Apple Health timestamps with timezone offsets as well as plain
+        date strings used in tests.
+        """
+        if not isinstance(raw_start_date, str):
+            return None
+
+        parsed_health_dt = ExportParser._parse_health_datetime(raw_start_date)
+        if parsed_health_dt is not None:
+            return parsed_health_dt.replace(tzinfo=None)
+
+        parsed_fallback = pd.to_datetime(raw_start_date, errors="coerce")
+        return parsed_fallback if not pd.isna(parsed_fallback) else None
 
     def _load_data(self, zipfile: ZipFile) -> ParsedHealthData:
         """Load workouts and HealthKit records from the export file into ParsedHealthData."""

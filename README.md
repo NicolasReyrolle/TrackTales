@@ -125,7 +125,9 @@ Best segments are computed with a route-aware sliding-window search on running w
 
 ### Critical Power and W' (summary)
 
-- The app computes CP and W' from best running segments (default distances: 800m and 5000m).
+- The app computes CP and W' from best running segments using required anchor distances (800m and 5000m) plus intermediate distances when available (default: 1500m and 3000m).
+- CP/W' is fit on the work-time model (`W = CP * t + W'`) with a deterministic RANSAC-like robust fit to reduce the influence of outlier distance points.
+- When robust fitting excludes outlier points, the dropped points are logged at info level.
 - Segment power is estimated from `RunningPower` records in priority order: direct window match, overlap-based estimate, then workout-level fallback.
 - Evolution charts keep interior missing periods as gaps while trimming leading/trailing empty periods.
 

@@ -235,6 +235,15 @@ msgstr "Puissance Critique (PC) au fil du temps"
 msgid "W' over time"
 msgstr "W' au fil du temps"
 
+msgid "Non-physical W'"
+msgstr "W' non physique"
+
+msgid "W' <= 0 is non-physical in the CP model. This usually means sparse data or inconsistent pace/power estimates for those periods."
+msgstr "W' <= 0 est non physique dans le modèle de PC. Cela indique généralement des données clairsemées ou des estimations d'allure/puissance incohérentes pour ces périodes."
+
+msgid "Periods"
+msgstr "Périodes"
+
 msgid "Distance vs Pace"
 msgstr "Distance vs allure"
 

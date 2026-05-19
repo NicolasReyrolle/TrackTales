@@ -230,6 +230,15 @@ msgstr ""
 msgid "W' over time"
 msgstr ""
 
+msgid "Non-physical W'"
+msgstr ""
+
+msgid "W' <= 0 is non-physical in the CP model. This usually means sparse data or inconsistent pace/power estimates for those periods."
+msgstr ""
+
+msgid "Periods"
+msgstr ""
+
 msgid "Distance vs Pace"
 msgstr ""
 

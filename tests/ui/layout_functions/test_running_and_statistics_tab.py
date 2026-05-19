@@ -11,7 +11,7 @@ from app_state import state
 from logic.workout_manager import WorkoutManager
 from ui import running_tab, statistics_tab
 
-from ._helpers import DummyRow
+from ._helpers import DummyContext, DummyRow
 
 
 def _sample_workouts_manager() -> WorkoutManager:
@@ -222,3 +222,41 @@ def test_render_running_health_graphs_shows_loading_state() -> None:
         state.health_data_loading = original_loading
         state.health_data_loaded = original_loaded
         state.health_data_cp_loading = original_cp_loading
+
+
+def test_render_running_health_graphs_shows_non_physical_warning_badge() -> None:
+    """Running health section should render warning badge when non-physical periods exist."""
+    original_loading = state.health_data_loading
+    original_loaded = state.health_data_loaded
+    original_cp_loading = state.health_data_cp_loading
+    original_graphs = state.health_data_graphs
+
+    try:
+        state.health_data_loading = False
+        state.health_data_loaded = True
+        state.health_data_cp_loading = False
+        state.health_data_graphs = {
+            "critical_power": {"2025-01": 280.0},
+            "w_prime": {"2025-01": 18.0},
+            "w_prime_non_physical": {"2025-02": 1},
+        }
+
+        with (
+            patch("ui.running_tab.ui.row", return_value=DummyRow()),
+            patch("ui.running_tab.ui.badge", return_value=DummyContext()) as badge_mock,
+            patch("ui.running_tab.ui.tooltip") as tooltip_mock,
+            patch("ui.running_tab.ui.label") as label_mock,
+            patch("ui.running_tab.render_generic_graph"),
+        ):
+            running_tab.render_running_health_graphs.func()
+
+        badge_mock.assert_called_once_with("Non-physical W'")
+        tooltip_mock.assert_called_once()
+        assert any(
+            call.args and call.args[0] == "Periods: 2025-02" for call in label_mock.call_args_list
+        )
+    finally:
+        state.health_data_loading = original_loading
+        state.health_data_loaded = original_loaded
+        state.health_data_cp_loading = original_cp_loading
+        state.health_data_graphs = original_graphs

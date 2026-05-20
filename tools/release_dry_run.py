@@ -13,7 +13,9 @@ from pathlib import Path
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run a local dry run of the release flow.")
+    parser = argparse.ArgumentParser(
+        description="Run a local dry run of the release flow (without generating release notes)."
+    )
     parser.add_argument("--skip-tests", action="store_true", help="Skip pytest execution.")
     parser.add_argument("--skip-python-build", action="store_true", help="Skip wheel/sdist build.")
     parser.add_argument("--skip-pyinstaller", action="store_true", help="Skip PyInstaller build.")
@@ -102,7 +104,10 @@ def main() -> int:
         if not args.skip_python_build:
             run([sys.executable, "-m", "build"], workspace)
         if not args.skip_tests:
-            run([sys.executable, "-m", "pytest", "--cov=src", "tests/"], workspace)
+            run(
+                [sys.executable, "-m", "pytest", "-o", "addopts=", "--cov=src", "tests/"],
+                workspace,
+            )
         if not args.skip_pyinstaller:
             run([sys.executable, "-m", "PyInstaller", "tracktales.spec"], workspace)
 

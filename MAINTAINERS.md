@@ -181,7 +181,7 @@ Examples:
 2. **Ensure tests pass** locally:
 
    ```bash
-   pytest --cov=src tests/
+   pytest -o addopts='' --cov=src tests/
    ruff format src tests
    ruff check src tests
    mypy src tests
@@ -193,8 +193,6 @@ Examples:
    - Click **Release** workflow on the left
    - Set **Dry run** if you want to build and validate without publishing
    - Click **Run workflow** button
-   - (Optional) Enter custom release notes in the input field
-   - Click **Run workflow**
 5. **Workflow automatically**:
    - Calculates next version (YYYY.MM.PATCH with auto-incremented PATCH)
    - Updates and commits `pyproject.toml` with the new version before creating the release tag
@@ -241,6 +239,7 @@ The script:
 - Copies the repo to a temporary workspace
 - Rewrites `pyproject.toml` there with the computed release version
 - Optionally builds Python distributions, runs tests, and builds PyInstaller artifacts
+- Does not generate release notes
 - Copies the generated outputs to `output/release-dry-run/`
 
 ### Distribution Channels

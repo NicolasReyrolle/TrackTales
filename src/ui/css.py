@@ -1,4 +1,4 @@
-"""Centralized CSS class and props constants for Apple Health Analyzer UI.
+"""Centralized CSS class and props constants for TrackTales UI.
 
 All Tailwind/Quasar class strings and NiceGUI props strings used across UI
 modules are defined here as named constants.  Keeping them in one place makes

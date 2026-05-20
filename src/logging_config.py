@@ -1,4 +1,4 @@
-"""Logging configuration for Apple Health Analyzer."""
+"""Logging configuration for TrackTales."""
 
 import logging
 import logging.handlers
@@ -47,12 +47,12 @@ def setup_logging(log_level: str, enable_file_logging: bool = True) -> None:
     # File handler for persistence (in case console is captured)
     if enable_file_logging:
         # Allow overriding the log directory via environment variable
-        log_dir_env = os.getenv("APPLE_HEALTH_ANALYZER_LOG_DIR")
+        log_dir_env = os.getenv("TRACKTALES_LOG_DIR")
         log_dir = Path(log_dir_env) if log_dir_env else Path("logs")
         try:
             log_dir.mkdir(parents=True, exist_ok=True)
             file_handler = _ImmediateFlushHandler(
-                log_dir / "apple_health_analyzer.log",
+                log_dir / "tracktales.log",
                 maxBytes=10 * 1024 * 1024,  # 10MB
                 backupCount=3,
             )

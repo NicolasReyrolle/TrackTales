@@ -1,4 +1,4 @@
-"""Workout detail modal dialog for Apple Health Analyzer."""
+"""Workout detail modal dialog for TrackTales."""
 
 from collections.abc import Callable
 from typing import Any, TypeAlias, cast

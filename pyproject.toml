@@ -3,16 +3,16 @@ requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "apple-health-analyzer"
+name = "tracktales"
 version = "0.1.0"
-description = "A Python project for analyzing Apple Health data"
+description = "TrackTales: Parse, analyze, and visualize your Apple Health workout data with an interactive NiceGUI interface."
 readme = "README.md"
 license = {text = "GPL-3.0-or-later"}
 requires-python = ">=3.10"
 authors = [
     {name = "Nicolas Reyrolle", email = "405928+NicolasReyrolle@users.noreply.github.com"},
 ]
-keywords = ["apple", "health", "analyzer"]
+keywords = ["apple", "health", "workouts", "fitness", "analytics"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -26,15 +26,18 @@ classifiers = [
 ]
 
 [project.scripts]
-apple-health-analyzer = "apple_health_analyzer:cli_main"
+tracktales = "tracktales:cli_main"
 
 [project.urls]
-Homepage = "https://github.com/NicolasReyrolle/apple-health-analyzer"
-Repository = "https://github.com/NicolasReyrolle/apple-health-analyzer.git"
-Issues = "https://github.com/NicolasReyrolle/apple-health-analyzer/issues"
+Homepage = "https://github.com/NicolasReyrolle/tracktales"
+Repository = "https://github.com/NicolasReyrolle/tracktales.git"
+Issues = "https://github.com/NicolasReyrolle/tracktales/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools]
+py-modules = ["app_state", "assets", "logging_config", "tracktales", "units"]
 
 [tool.mypy]
 mypy_path = "src"
@@ -48,7 +51,7 @@ disallow_untyped_defs = false
 pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-main_file = "src/apple_health_analyzer.py"
+main_file = "src/tracktales.py"
 addopts = "-p nicegui.testing.user_plugin --testmon"
 
 [tool.ruff]

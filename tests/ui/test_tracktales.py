@@ -1,4 +1,4 @@
-"""Tests for the Apple Health Analyzer main GUI module."""
+"""Tests for the TrackTales main GUI module."""
 
 import asyncio
 import json
@@ -64,14 +64,14 @@ class TestFileBrowsing:
     async def test_click_browse(self, user: User) -> None:
         """Test that the browse button works."""
         await user.open("/")
-        await user.should_see("Apple Health Analyzer")
+        await user.should_see("TrackTales")
         user.find("Browse").click()
         await user.should_see("Ok")
 
     async def test_browse_button_opens_picker(self, user: User) -> None:
         """Test that the browse button opens the file picker dialog."""
         await user.open("/")
-        await user.should_see("Apple Health Analyzer")
+        await user.should_see("TrackTales")
         user.find("Browse").click()
         await user.should_see("Ok")
         # Small delay to ensure Windows releases file handles before teardown
@@ -120,14 +120,14 @@ class TestFileLoading:
     async def test_load_without_file(self, user: User) -> None:
         """Test that loading without selecting a file shows a notification."""
         await user.open("/")
-        await user.should_see("Apple Health Analyzer")
+        await user.should_see("TrackTales")
         user.find("Load").click()
         await user.should_see("Please select an Apple Health export file first.")
 
     async def test_load_with_non_existent_file(self, user: User) -> None:
         """Test that loading a non-existent file shows an error notification."""
         await user.open("/")
-        await user.should_see("Apple Health Analyzer")
+        await user.should_see("TrackTales")
         user.find("Apple Health export file").type("invalid_export.zip")
         user.find("Load").click()
         await user.should_see("No such file or directory")
@@ -188,7 +188,7 @@ class TestLanguageSwitching:
         await user.open("/")
 
         # Baseline English labels
-        await user.should_see("Apple Health Analyzer")
+        await user.should_see("TrackTales")
         await user.should_see("Apple Health export file")
 
         # Open the preferences menu and select French
@@ -197,8 +197,8 @@ class TestLanguageSwitching:
         change_language = cast(Callable[[str], None], getattr(layout_module, "_change_language"))
         change_language("fr")
 
-        # _change_language triggers ui.navigate.reload(); wait for translated labels
-        await user.should_see("Analyseur de santé Apple", retries=50)
+        # _change_language triggers ui.navigate.reload(); title stays literal
+        await user.should_see("TrackTales", retries=50)
         await user.should_see("Fichier d'export Apple Health", retries=50)
 
         # Small delay before teardown

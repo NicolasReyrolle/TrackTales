@@ -1,4 +1,4 @@
-"""Fixtures for testing Apple Health Analyzer."""
+"""Fixtures for testing TrackTales."""
 
 import asyncio
 import contextlib

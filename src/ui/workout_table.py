@@ -1,4 +1,4 @@
-"""Workout details table and range-filter selectors for Apple Health Analyzer."""
+"""Workout details table and range-filter selectors for TrackTales."""
 
 import logging
 import math

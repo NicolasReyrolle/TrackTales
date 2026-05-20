@@ -1,4 +1,4 @@
-"""Best-segments loading and rendering for Apple Health Analyzer."""
+"""Best-segments loading and rendering for TrackTales."""
 
 import asyncio
 import logging

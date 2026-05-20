@@ -82,8 +82,8 @@ class TestTranslationFunction:
 
     def test_t_returns_english_string_by_default(self) -> None:
         """t() should return the English source string when no language is stored."""
-        result = t("Apple Health Analyzer")
-        assert result == "Apple Health Analyzer"
+        result = t("TrackTales")
+        assert result == "TrackTales"
 
     def test_t_returns_msgid_for_unknown_strings(self) -> None:
         """t() should return the input unchanged when no translation exists."""
@@ -98,7 +98,7 @@ class TestTranslationFunction:
     def test_t_returns_french_for_fr_language(self) -> None:
         """t() should return French text when 'fr' is the active language."""
         with patch("i18n.get_language", return_value="fr"):
-            result = t("Apple Health Analyzer")
+            result = t("TrackTales")
         assert result == "Analyseur de santé Apple"
 
     def test_t_french_format_kwargs_preserved(self) -> None:
@@ -110,8 +110,8 @@ class TestTranslationFunction:
     def test_t_falls_back_to_english_when_lang_has_no_mo(self) -> None:
         """t() falls back gracefully when no .mo file exists for the active language."""
         with patch("i18n.get_language", return_value="xx"):  # non-existent language
-            result = t("Apple Health Analyzer")
-        assert result == "Apple Health Analyzer"
+            result = t("TrackTales")
+        assert result == "TrackTales"
 
     def test_t_returns_unformatted_result_on_missing_kwarg(self) -> None:
         """t() must not raise when a required format kwarg is missing;
@@ -224,3 +224,4 @@ class TestTranslationModuleBranchCoverage:
 
         assert result == "Value: {missing}"
         assert any("Failed to format translation" in r.message for r in caplog.records)
+

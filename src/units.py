@@ -1,4 +1,4 @@
-"""Unit conversion constants for Apple Health Analyzer.
+"""Unit conversion constants for TrackTales.
 
 All values represent multiplication factors applied to a value stored in its
 canonical SI base unit (metres for distance/elevation, kilograms for mass) to
@@ -30,3 +30,4 @@ MINUTES_PER_HOUR: float = 60.0
 def celsius_to_fahrenheit(celsius: float) -> float:
     """Convert a temperature value from Celsius to Fahrenheit."""
     return celsius * 9 / 5 + 32
+

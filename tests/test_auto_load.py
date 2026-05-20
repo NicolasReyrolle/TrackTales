@@ -119,7 +119,7 @@ class TestAutoLoadFunctionality:
         await asyncio.sleep(2.0)
 
         # Verify no file was loaded (should still see zero values)
-        await user.should_see("Apple Health Analyzer")
+        await user.should_see("TrackTales")
         # Should not see the "Finished parsing" message
         input_elements = list(user.find("Apple Health export file").elements)
         assert len(input_elements) > 0
@@ -269,3 +269,4 @@ class TestAutoLoadFunctionality:
             # Cleanup
             app.storage.general.pop("_dev_file_path", None)
             await asyncio.sleep(0.2)
+

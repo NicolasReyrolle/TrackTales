@@ -1,4 +1,4 @@
-"""Fixtures for testing Apple Health Analyzer."""
+"""Fixtures for testing TrackTales."""
 
 import asyncio
 import contextlib
@@ -310,3 +310,4 @@ def clean_logger() -> Generator[logging.Logger, None, None]:
 
     # Restore original logger level
     logger.setLevel(original_level)
+

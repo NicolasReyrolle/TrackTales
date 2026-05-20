@@ -96,7 +96,7 @@ To analyze your data, you first need to export it from your iPhone:
 1. Scroll to the bottom and tap **Export All Health Data**.
 1. Tap **Export** to confirm. This process may take a few minutes depending on the amount of data.
 1. Once the export is ready, share the `export.zip` file to your computer (via AirDrop, iCloud Drive, OneDrive, GoogleDrive or any other mean).
-1. Use this file in the **Apple Health Analyzer** app.
+1. Use this file in the **TrackTales** app.
 
 ## 🛠️ Development & Testing
 
@@ -163,3 +163,4 @@ This application uses **streaming XML parsing** (`iterparse`) to remain memory-e
 ## 📄 License
 
 This project is licensed under the **GPL-3.0 License**. See the [LICENSE](LICENSE) file for details.
+

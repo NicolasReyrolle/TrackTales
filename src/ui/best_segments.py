@@ -1,4 +1,4 @@
-"""Best-segments loading and rendering for Apple Health Analyzer."""
+"""Best-segments loading and rendering for TrackTales."""
 
 import asyncio
 import logging
@@ -389,3 +389,4 @@ def render_best_segments_tab() -> None:
                 _lazy["open_detail"](row_index)
 
         table.on("open_segment_detail", _handle_open_segment_detail)
+

@@ -1,4 +1,4 @@
-"""Workout details table and range-filter selectors for Apple Health Analyzer."""
+"""Workout details table and range-filter selectors for TrackTales."""
 
 import logging
 import math
@@ -863,3 +863,4 @@ def render_duration_range_selector() -> None:
         ).bind_value(state, "duration_range_min").bind_enabled_from(state, "file_loaded").classes(
             TABLE_FULL_CLASSES
         )
+

@@ -1,4 +1,4 @@
-"""Application state management for Apple Health Analyzer."""
+"""Application state management for TrackTales."""
 
 import asyncio
 from datetime import datetime
@@ -213,3 +213,4 @@ class AppState:
 
 
 state = AppState()
+

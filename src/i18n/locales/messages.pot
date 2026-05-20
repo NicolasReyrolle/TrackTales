@@ -1,9 +1,9 @@
-# Apple Health Analyzer - Message Catalog Template
+# TrackTales - Message Catalog Template
 # Copyright (C) 2026 Nicolas Reyrolle
-# This file is distributed under the same license as the Apple Health Analyzer package.
+# This file is distributed under the same license as the TrackTales package.
 msgid ""
 msgstr ""
-"Project-Id-Version: Apple Health Analyzer 0.1.0\n"
+"Project-Id-Version: TrackTales 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-03-05 13:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 # App title
-msgid "Apple Health Analyzer"
+msgid "TrackTales"
 msgstr ""
 
 # Header
@@ -899,3 +899,4 @@ msgstr ""
 
 msgid "Open Water"
 msgstr ""
+

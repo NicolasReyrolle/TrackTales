@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Apple Health Analyzer GUI
+TrackTales GUI
 
 A graphical user interface for analyzing Apple Health data.
 """
@@ -92,7 +92,7 @@ def cli_main() -> None:
     """
     # Parse command-line arguments for developer mode
     parser = argparse.ArgumentParser(
-        description="Apple Health Analyzer - Analyze your Apple Health data",
+        description="TrackTales - Analyze your Apple Health data",
         prog="tracktales",
     )
     parser.add_argument(
@@ -147,7 +147,7 @@ def cli_main() -> None:
         )
         _logger.info("Dev file specified: %s", resolved_path)
 
-    _logger.info("Starting Apple Health Analyzer with log level: %s", args.log_level)
+    _logger.info("Starting TrackTales with log level: %s", args.log_level)
 
     secret = uuid.uuid4().hex if "pytest" in sys.modules else os.getenv("STORAGE_SECRET", "secret")
 
@@ -161,7 +161,7 @@ def cli_main() -> None:
     _logger.debug("Initializing NiceGUI app")
     ui.run(  # type: ignore[misc]
         main,
-        title="Apple Health Analyzer",
+        title="TrackTales",
         favicon=APP_ICON_BASE64,
         storage_secret=secret,
         uvicorn_reload_dirs="src,resources",  # Only include needed dirs for the reload
@@ -171,3 +171,4 @@ def cli_main() -> None:
 
 if __name__ in {"__main__", "__mp_main__"}:
     cli_main()
+

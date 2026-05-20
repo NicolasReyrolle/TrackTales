@@ -1,4 +1,4 @@
-# Apple Health Analyzer - Tools
+# TrackTales - Tools
 
 Utility scripts and tools for development, profiling, and testing.
 
@@ -62,3 +62,4 @@ Use this tool to:
 - Monitor performance after algorithm changes
 - Identify optimization targets
 - Verify regression testing on performance
+

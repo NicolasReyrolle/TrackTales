@@ -1,4 +1,4 @@
-"""UI layout components for Apple Health Analyzer application."""
+"""UI layout components for TrackTales application."""
 
 import asyncio
 import logging
@@ -681,7 +681,7 @@ def render_header() -> None:
 
     with ui.header().classes(HEADER_CLASSES):
         ui.image(APP_ICON_BASE64).classes(APP_LOGO_CLASSES)
-        ui.label(t("Apple Health Analyzer")).classes(APP_TITLE_CLASSES)
+        ui.label("TrackTales").classes(APP_TITLE_CLASSES)
 
         # Toggle button with dynamic icon
         ui.button(icon="dark_mode", on_click=_enable_dark).bind_visibility_from(

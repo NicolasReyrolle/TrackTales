@@ -1,4 +1,4 @@
-"""Unit conversion constants for Apple Health Analyzer.
+"""Unit conversion constants for TrackTales.
 
 All values represent multiplication factors applied to a value stored in its
 canonical SI base unit (metres for distance/elevation, kilograms for mass) to

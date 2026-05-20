@@ -1,4 +1,4 @@
-"""Internationalization (i18n) support for Apple Health Analyzer.
+"""Internationalization (i18n) support for TrackTales.
 
 Translations are stored in GNU gettext ``.po``/``.mo`` files under
 ``src/i18n/locales/`` and can be edited with any PO-file editor such as

@@ -1,4 +1,4 @@
-"""Shared UI chart and card components for Apple Health Analyzer."""
+"""Shared UI chart and card components for TrackTales."""
 
 import copy
 import json

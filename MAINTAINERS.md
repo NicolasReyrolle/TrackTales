@@ -1,16 +1,16 @@
 # Maintainers Guide
 
-This document contains development, testing, and maintenance notes for `apple-health-analyzer`.
+This document contains development, testing, and maintenance notes for `tracktales`.
 
 ## Requesting Enhancements or Reporting Issues
 
 Use the standard GitHub workflow for all feedback:
 
-- **Bug reports**: [Open a new issue](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/new?template=bug_report.md)
-- **Feature requests**: [Open a new issue](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/new?template=feature_request.md)
-- **Discussions**: Use [GitHub Discussions](https://github.com/NicolasReyrolle/apple-health-analyzer/discussions)
+- **Bug reports**: [Open a new issue](https://github.com/NicolasReyrolle/tracktales/issues/new?template=bug_report.md)
+- **Feature requests**: [Open a new issue](https://github.com/NicolasReyrolle/tracktales/issues/new?template=feature_request.md)
+- **Discussions**: Use [GitHub Discussions](https://github.com/NicolasReyrolle/tracktales/discussions)
 
-Search [existing issues](https://github.com/NicolasReyrolle/apple-health-analyzer/issues) first to avoid duplicates.
+Search [existing issues](https://github.com/NicolasReyrolle/tracktales/issues) first to avoid duplicates.
 
 ## Development Setup
 
@@ -25,28 +25,28 @@ pytest --cov=src tests/
 Preferred entry point:
 
 ```bash
-apple-health-analyzer --dev-file tests/fixtures/export_sample.zip
+tracktales --dev-file tests/fixtures/export_sample.zip
 ```
 
 Alternative module run:
 
 ```bash
-python src/apple_health_analyzer.py --dev-file tests/fixtures/export_sample.zip
+python src/tracktales.py --dev-file tests/fixtures/export_sample.zip
 ```
 
 ### Debug logging for dev-file loading
 
 ```bash
-apple-health-analyzer --dev-file tests/fixtures/export_sample.zip --log-level DEBUG
+tracktales --dev-file tests/fixtures/export_sample.zip --log-level DEBUG
 ```
 
 or:
 
 ```bash
-python src/apple_health_analyzer.py --dev-file tests/fixtures/export_sample.zip --log-level DEBUG
+python src/tracktales.py --dev-file tests/fixtures/export_sample.zip --log-level DEBUG
 ```
 
-In normal mode logs are written to console and `logs/apple_health_analyzer.log`.
+In normal mode logs are written to console and `logs/tracktales.log`.
 In `--dev-file` mode logs are console-only to avoid reload loops.
 
 Available log levels: `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: `INFO`).

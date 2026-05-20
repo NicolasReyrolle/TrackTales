@@ -27,7 +27,7 @@ SECTION_ORDER = [
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate release notes from git history.")
-    parser.add_argument("--tag", required=True, help="Target release tag, for example v2026.5.2")
+    parser.add_argument("--tag", required=True, help="Target release tag, for example v2026.05.2")
     parser.add_argument(
         "--last-tag", default="", help="Previous release tag used as changelog start."
     )
@@ -80,6 +80,7 @@ def grouped_changelog_lines(commits: list[tuple[str, str]]) -> list[str]:
 
         if match.group("breaking"):
             breaking.append(line)
+            continue
 
         if commit_type in grouped:
             grouped[commit_type].append(line)

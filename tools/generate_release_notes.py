@@ -28,7 +28,9 @@ SECTION_ORDER = [
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate release notes from git history.")
     parser.add_argument("--tag", required=True, help="Target release tag, for example v2026.5.2")
-    parser.add_argument("--last-tag", default="", help="Previous release tag used as changelog start.")
+    parser.add_argument(
+        "--last-tag", default="", help="Previous release tag used as changelog start."
+    )
     parser.add_argument("--release-notes", default="", help="Optional maintainer notes.")
     parser.add_argument("--output", default="release-notes.md", help="Output file path.")
     parser.add_argument(

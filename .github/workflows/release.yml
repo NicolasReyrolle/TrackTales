@@ -60,12 +60,12 @@ jobs:
             - name: Generate release notes
               uses: TriPSs/conventional-changelog-action@v3
               with:
-                preset: conventionalcommits
-                output-file: release-notes.md
-                release-count: 1
-                tag-prefix: v
+                  preset: conventionalcommits
+                  output-file: release-notes.md
+                  release-count: 1
+                  tag-prefix: v
               env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Upload release notes
               uses: actions/upload-artifact@v4

@@ -87,7 +87,7 @@ def copy_outputs(workspace: Path, output_dir: Path) -> None:
 def main() -> int:
     args = parse_args()
     root = repo_root()
-    version, tag, last_tag = compute_version(root)
+    version, tag, _ = compute_version(root)
     workspace = copy_workspace(root)
     output_dir = root / "output" / "release-dry-run"
 

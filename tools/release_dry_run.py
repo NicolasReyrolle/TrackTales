@@ -54,6 +54,7 @@ def copy_workspace(root: Path) -> Path:
         ignore=shutil.ignore_patterns(
             ".git",
             ".venv",
+            "output",
             "build",
             "dist",
             "output",

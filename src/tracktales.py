@@ -35,7 +35,7 @@ def _compile_catalogs() -> None:  # pyright: ignore[reportUnusedFunction]
 
     Registered as an app-startup callback so that catalogs are compiled
     regardless of whether the app is launched via the CLI entry point
-    (``cli_main``) or directly via ``python -m nicegui src.apple_health_analyzer``.
+    (``cli_main``) or directly via ``python -m nicegui src.tracktales``.
     """
     compiled_catalogs = compile_message_catalogs()
     if compiled_catalogs:
@@ -93,7 +93,7 @@ def cli_main() -> None:
     # Parse command-line arguments for developer mode
     parser = argparse.ArgumentParser(
         description="Apple Health Analyzer - Analyze your Apple Health data",
-        prog="apple-health-analyzer",
+        prog="tracktales",
     )
     parser.add_argument(
         "--dev-file",

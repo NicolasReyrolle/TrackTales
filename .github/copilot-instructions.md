@@ -1,4 +1,4 @@
-# Apple Health Analyzer - AI Coding Agent Instructions
+# TrackTales - AI Coding Agent Instructions
 
 ## Rule precedence
 
@@ -16,7 +16,7 @@ If a user request is ambiguous or incomplete, apply repository instructions that
 **Purpose**: NiceGUI app that parses Apple Health exports (ZIP containing XML/GPX) and presents workout analytics.
 
 **Core modules**:
-- `src/apple_health_analyzer.py` - app entrypoint and `@ui.page` registration
+- `src/tracktales.py` - app entrypoint and `@ui.page` registration
 - `src/app_state.py` - shared UI/data singleton state
 - `src/ui/layout.py` - UI composition (header, drawer, tabs, charts)
 - `src/ui/css.py` - all CSS class/props string constants (single source of truth)
@@ -33,7 +33,7 @@ If a user request is ambiguous or incomplete, apply repository instructions that
 ## Development commands
 
 - Setup (Windows): `.\.venv\Scripts\Activate.ps1`
-- Run app: `python -m nicegui src.apple_health_analyzer`
+- Run app: `python -m nicegui src.tracktales`
 - Tests: `pytest --cov=src tests/`
 - Quality: `ruff format src tests`, `ruff check src tests`, `mypy src tests`
 
@@ -105,7 +105,7 @@ A task is complete when all of the following are true:
 
 | File | Responsibility |
 |---|---|
-| `src/apple_health_analyzer.py` | App entrypoint, page registration, CLI args |
+| `src/tracktales.py` | App entrypoint, page registration, CLI args |
 | `src/app_state.py` | Shared application state |
 | `src/ui/layout.py` | Main UI rendering/composition |
 | `src/ui/css.py` | All CSS class/props string constants (single source of truth) |

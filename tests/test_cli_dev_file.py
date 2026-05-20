@@ -1,6 +1,6 @@
 """Tests for command-line dev file parameter.
 
-These tests invoke the actual application script (src/apple_health_analyzer.py) as a subprocess
+These tests invoke the actual application script (src/tracktales.py) as a subprocess
 to validate the CLI argument parsing and application startup behavior. This approach tests the
 real application code path that users would experience when running the application, rather than
 testing argument parsing in isolation with mock implementations.
@@ -48,7 +48,7 @@ def _terminate_process_tree(process: subprocess.Popen[str], timeout: float = 5.0
 def test_dev_file_help() -> None:
     """Test that --help shows the --dev-file option on the real CLI.
 
-    This test invokes the actual application module (src/apple_health_analyzer.py)
+    This test invokes the actual application module (src/tracktales.py)
     as a subprocess, ensuring we test the real CLI argument parser, not a mock.
     This guarantees that --dev-file will be detected here if and only if it exists
     in the actual argparse setup in cli_main().
@@ -56,7 +56,7 @@ def test_dev_file_help() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "src/apple_health_analyzer.py",
+            "src/tracktales.py",
             "--help",
         ],
         capture_output=True,
@@ -73,7 +73,7 @@ def test_dev_file_invalid_path() -> None:
     """Test that an invalid --dev-file path causes a non-zero exit on startup.
 
     This test validates the actual application's file validation logic at
-    src/apple_health_analyzer.py (cli_main function) by running the real
+    src/tracktales.py (cli_main function) by running the real
     application and verifying both exit code and error message.
     """
     invalid_path = "/nonexistent/file.zip"
@@ -81,7 +81,7 @@ def test_dev_file_invalid_path() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "src/apple_health_analyzer.py",
+            "src/tracktales.py",
             "--dev-file",
             invalid_path,
             "--no-browser",
@@ -118,7 +118,7 @@ def test_dev_file_valid_path() -> None:
     process = subprocess.Popen(
         [
             sys.executable,
-            "src/apple_health_analyzer.py",
+            "src/tracktales.py",
             "--dev-file",
             str(fixture_path),
             "--no-browser",
@@ -169,7 +169,7 @@ def test_dev_file_directory_instead_of_file() -> None:
     result = subprocess.run(
         [
             sys.executable,
-            "src/apple_health_analyzer.py",
+            "src/tracktales.py",
             "--dev-file",
             directory_path,
             "--no-browser",
@@ -206,7 +206,7 @@ def test_dev_file_combined_with_log_level() -> None:
     process = subprocess.Popen(
         [
             sys.executable,
-            "src/apple_health_analyzer.py",
+            "src/tracktales.py",
             "--dev-file",
             str(fixture_path),
             "--log-level",

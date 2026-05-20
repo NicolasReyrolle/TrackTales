@@ -1,9 +1,9 @@
-# 🏃‍♂️ Apple Health Analyzer
+# 🏃‍♂️ TrackTales
 
-A modern, graphical tool to parse, analyze, and export your Apple Health data. Originally a CLI, this project now features a clean **NiceGUI** interface for easier interaction with your workout history. Of course this is still a work-in-progress, so feel free to contribute.
+A modern, interactive tool to parse, analyze, and visualize your Apple Health workout data. Built with **NiceGUI**, TrackTales transforms your fitness journey into rich interactive charts, segment analysis, and personalized insights. This is a personal project, but contributions are welcome!
 
-[![codecov](https://codecov.io/gh/NicolasReyrolle/apple-health-analyzer/graph/badge.svg?token=2yKEc6OOkx)](https://codecov.io/gh/NicolasReyrolle/apple-health-analyzer)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=NicolasReyrolle_apple-health-analyzer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=NicolasReyrolle_apple-health-analyzer)
+[![codecov](https://codecov.io/gh/NicolasReyrolle/tracktales/graph/badge.svg?token=2yKEc6OOkx)](https://codecov.io/gh/NicolasReyrolle/tracktales)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=NicolasReyrolle_tracktales&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=NicolasReyrolle_tracktales)
 
 ## 👩‍💻 For Contributors
 
@@ -42,8 +42,8 @@ If you are contributing or maintaining the project, see [MAINTAINERS.md](MAINTAI
 #### Clone the repository
 
 ```bash
-git clone https://github.com/NicolasReyrolle/apple-health-analyzer.git
-cd apple-health-analyzer
+git clone https://github.com/NicolasReyrolle/tracktales.git
+cd tracktales
 ```
 
 #### Create a virtual environment
@@ -69,7 +69,7 @@ pip install -r requirements.txt
 Start the application using the following command:
 
 ```bash
-python -m nicegui src.apple_health_analyzer
+python -m nicegui src.tracktales
 ```
 
 1. Open your browser to `http://localhost:8080`.
@@ -135,11 +135,11 @@ Best segments are computed with a route-aware sliding-window search on running w
 
 Feedback, bug reports, and feature requests are welcome! Please use the standard GitHub workflows:
 
-- **Bug reports**: [Open a new issue](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/new?template=bug_report.md) and describe the problem, steps to reproduce, and expected behaviour.
-- **Feature requests**: [Open a new issue](https://github.com/NicolasReyrolle/apple-health-analyzer/issues/new?template=feature_request.md) and describe the enhancement and its motivation.
-- **Questions or discussions**: Use [GitHub Discussions](https://github.com/NicolasReyrolle/apple-health-analyzer/discussions) for open-ended questions or design ideas.
+- **Bug reports**: [Open a new issue](https://github.com/NicolasReyrolle/tracktales/issues/new?template=bug_report.md) and describe the problem, steps to reproduce, and expected behaviour.
+- **Feature requests**: [Open a new issue](https://github.com/NicolasReyrolle/tracktales/issues/new?template=feature_request.md) and describe the enhancement and its motivation.
+- **Questions or discussions**: Use [GitHub Discussions](https://github.com/NicolasReyrolle/tracktales/discussions) for open-ended questions or design ideas.
 
-Please search [existing issues](https://github.com/NicolasReyrolle/apple-health-analyzer/issues) before opening a new one to avoid duplicates.
+Please search [existing issues](https://github.com/NicolasReyrolle/tracktales/issues) before opening a new one to avoid duplicates.
 
 ### Workout manager package layout
 

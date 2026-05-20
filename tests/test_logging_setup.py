@@ -1,4 +1,4 @@
-"""Tests for the setup_logging function in apple_health_analyzer.py."""
+"""Tests for the setup_logging function in tracktales.py."""
 
 import logging
 import logging.handlers
@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Import the module to test
-import apple_health_analyzer as apple_health_analyzer
+import tracktales as tracktales
 
 
 class TestSetupLogging:
@@ -37,7 +37,7 @@ class TestSetupLogging:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            apple_health_analyzer.setup_logging("DEBUG", enable_file_logging=True)
+            tracktales.setup_logging("DEBUG", enable_file_logging=True)
 
             # Verify logger is configured at DEBUG level
             assert logger.level == logging.DEBUG
@@ -70,7 +70,7 @@ class TestSetupLogging:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            apple_health_analyzer.setup_logging("INFO", enable_file_logging=True)
+            tracktales.setup_logging("INFO", enable_file_logging=True)
 
             # Verify logger is configured at INFO level
             assert logger.level == logging.INFO
@@ -91,7 +91,7 @@ class TestSetupLogging:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            apple_health_analyzer.setup_logging("WARNING", enable_file_logging=True)
+            tracktales.setup_logging("WARNING", enable_file_logging=True)
 
             assert logger.level == logging.WARNING
             for handler in self._non_pytest_handlers(logger):
@@ -109,7 +109,7 @@ class TestSetupLogging:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            apple_health_analyzer.setup_logging("ERROR", enable_file_logging=True)
+            tracktales.setup_logging("ERROR", enable_file_logging=True)
 
             assert logger.level == logging.ERROR
             for handler in self._non_pytest_handlers(logger):
@@ -123,7 +123,7 @@ class TestSetupLogging:
         """Test that file logging is disabled when enable_file_logging=False."""
         logger = clean_logger
 
-        apple_health_analyzer.setup_logging("INFO", enable_file_logging=False)
+        tracktales.setup_logging("INFO", enable_file_logging=False)
 
         # Verify we have only 1 handler (console only, no file handler)
         assert len(self._non_pytest_handlers(logger)) == 1
@@ -155,7 +155,7 @@ class TestSetupLogging:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            apple_health_analyzer.setup_logging("INFO", enable_file_logging=True)
+            tracktales.setup_logging("INFO", enable_file_logging=True)
 
             # After calling setup_logging, verify none of the dummy handlers remain
             handlers_after = set(logger.handlers)
@@ -183,7 +183,7 @@ class TestSetupLogging:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            apple_health_analyzer.setup_logging("INFO", enable_file_logging=True)
+            tracktales.setup_logging("INFO", enable_file_logging=True)
 
             # Verify log directory was created
             assert log_dir.exists(), "Log directory should be created"
@@ -194,7 +194,7 @@ class TestSetupLogging:
         """Test that the console handler writes to stdout."""
         logger = clean_logger
 
-        apple_health_analyzer.setup_logging("INFO", enable_file_logging=False)
+        tracktales.setup_logging("INFO", enable_file_logging=False)
 
         # Get the StreamHandler
         stream_handlers = [  # type: ignore[var-annotated]
@@ -215,7 +215,7 @@ class TestSetupLogging:
         original_cwd = os.getcwd()
         try:
             os.chdir(tmp_path)
-            apple_health_analyzer.setup_logging("INFO", enable_file_logging=True)
+            tracktales.setup_logging("INFO", enable_file_logging=True)
 
             # Verify all handlers have formatters
             for handler in self._non_pytest_handlers(logger):
@@ -235,7 +235,7 @@ class TestSetupLogging:
             log_dir = tmp_path / "logs"
             log_dir.mkdir(exist_ok=True)
 
-            apple_health_analyzer.setup_logging("INFO", enable_file_logging=True)
+            tracktales.setup_logging("INFO", enable_file_logging=True)
 
             # Find the RotatingFileHandler in the handlers
             file_handlers = [
@@ -261,11 +261,11 @@ class TestSetupLogging:
     ) -> None:
         """Test that setup_logging logs a warning when file handler fails."""
         assert clean_logger is logging.getLogger()
-        monkeypatch.setenv("APPLE_HEALTH_ANALYZER_LOG_DIR", str(tmp_path / "logs"))
+        monkeypatch.setenv("TRACKTALES_LOG_DIR", str(tmp_path / "logs"))
 
         with patch("pathlib.Path.mkdir", side_effect=OSError("no permission")):
             with caplog.at_level(logging.WARNING):
-                apple_health_analyzer.setup_logging("INFO", enable_file_logging=True)
+                tracktales.setup_logging("INFO", enable_file_logging=True)
 
         assert any("File logging disabled" in record.message for record in caplog.records), (
             "Expected a warning when file logging cannot be initialized"
@@ -296,11 +296,11 @@ class TestCLIArgumentParsing:
     def test_log_level_argument_default(self) -> None:
         """Test that --log-level defaults to INFO in the real CLI."""
         with (
-            patch("sys.argv", ["apple_health_analyzer.py"]),
-            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch("sys.argv", ["tracktales.py"]),
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
         ):
-            apple_health_analyzer.cli_main()
+            tracktales.cli_main()
 
         mock_setup_logging.assert_called()
         log_level = self._extract_log_level_from_mock(mock_setup_logging)
@@ -312,12 +312,12 @@ class TestCLIArgumentParsing:
         with (
             patch(
                 "sys.argv",
-                ["apple_health_analyzer.py", "--log-level", "DEBUG"],
+                ["tracktales.py", "--log-level", "DEBUG"],
             ),
-            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
         ):
-            apple_health_analyzer.cli_main()
+            tracktales.cli_main()
 
         mock_setup_logging.assert_called()
         log_level = self._extract_log_level_from_mock(mock_setup_logging)
@@ -329,12 +329,12 @@ class TestCLIArgumentParsing:
         with (
             patch(
                 "sys.argv",
-                ["apple_health_analyzer.py", "--log-level", "WARNING"],
+                ["tracktales.py", "--log-level", "WARNING"],
             ),
-            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
         ):
-            apple_health_analyzer.cli_main()
+            tracktales.cli_main()
 
         mock_setup_logging.assert_called()
         log_level = self._extract_log_level_from_mock(mock_setup_logging)
@@ -346,12 +346,12 @@ class TestCLIArgumentParsing:
         with (
             patch(
                 "sys.argv",
-                ["apple_health_analyzer.py", "--log-level", "ERROR"],
+                ["tracktales.py", "--log-level", "ERROR"],
             ),
-            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
         ):
-            apple_health_analyzer.cli_main()
+            tracktales.cli_main()
 
         mock_setup_logging.assert_called()
         log_level = self._extract_log_level_from_mock(mock_setup_logging)
@@ -361,11 +361,11 @@ class TestCLIArgumentParsing:
     def test_no_browser_argument_default(self) -> None:
         """Test that browser opens by default (show=True)."""
         with (
-            patch("sys.argv", ["apple_health_analyzer.py"]),
-            patch.object(apple_health_analyzer, "setup_logging"),
+            patch("sys.argv", ["tracktales.py"]),
+            patch.object(tracktales, "setup_logging"),
             patch("nicegui.ui.run") as mock_ui_run,
         ):
-            apple_health_analyzer.cli_main()
+            tracktales.cli_main()
 
         # Verify ui.run was called with show=True (default)
         mock_ui_run.assert_called_once()
@@ -375,11 +375,11 @@ class TestCLIArgumentParsing:
     def test_no_browser_argument_prevents_browser_open(self) -> None:
         """Test that --no-browser prevents browser from opening (show=False)."""
         with (
-            patch("sys.argv", ["apple_health_analyzer.py", "--no-browser"]),
-            patch.object(apple_health_analyzer, "setup_logging"),
+            patch("sys.argv", ["tracktales.py", "--no-browser"]),
+            patch.object(tracktales, "setup_logging"),
             patch("nicegui.ui.run") as mock_ui_run,
         ):
-            apple_health_analyzer.cli_main()
+            tracktales.cli_main()
 
         # Verify ui.run was called with show=False
         mock_ui_run.assert_called_once()
@@ -389,13 +389,13 @@ class TestCLIArgumentParsing:
     def test_cli_main_invalid_dev_file_path_exits(self) -> None:
         """Test that invalid dev file paths cause an early exit with an error."""
         with (
-            patch("sys.argv", ["apple_health_analyzer.py", "--dev-file", "~/bad/path.zip"]),
+            patch("sys.argv", ["tracktales.py", "--dev-file", "~/bad/path.zip"]),
             patch("pathlib.Path.resolve", side_effect=OSError("bad path")),
-            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
         ):
             with pytest.raises(SystemExit) as exc_info:
-                apple_health_analyzer.cli_main()
+                tracktales.cli_main()
 
         assert exc_info.value.code == 1
         mock_setup_logging.assert_called_once()
@@ -408,37 +408,37 @@ class TestCLIArgumentParsing:
         dev_file = tmp_path / "export.zip"
         dev_file.write_text("data", encoding="utf-8")
 
-        monkeypatch.setattr(sys, "argv", ["apple_health_analyzer.py", "--dev-file", str(dev_file)])
+        monkeypatch.setattr(sys, "argv", ["tracktales.py", "--dev-file", str(dev_file)])
 
         with (
-            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
         ):
             try:
-                apple_health_analyzer.cli_main()
-                storage_general = cast(dict[str, str], apple_health_analyzer.app.storage.general)
+                tracktales.cli_main()
+                storage_general = cast(dict[str, str], tracktales.app.storage.general)
                 assert storage_general.get("_dev_file_path") == str(dev_file)
                 mock_setup_logging.assert_called_once()
                 assert mock_setup_logging.call_args[1]["enable_file_logging"] is False
                 mock_ui_run.assert_called_once()
             finally:
-                apple_health_analyzer.app.storage.general.pop("_dev_file_path", None)
+                tracktales.app.storage.general.pop("_dev_file_path", None)
 
     def test_cli_main_sets_dev_file_path_to_none_without_dev_file(
         self, clean_logger: logging.Logger, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test that cli_main explicitly stores None when no dev file is provided."""
         assert clean_logger is logging.getLogger()
-        monkeypatch.setattr(sys, "argv", ["apple_health_analyzer.py"])
+        monkeypatch.setattr(sys, "argv", ["tracktales.py"])
 
         with (
-            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
         ):
             try:
-                apple_health_analyzer.cli_main()
+                tracktales.cli_main()
                 storage_general = cast(
-                    dict[str, str | None], apple_health_analyzer.app.storage.general
+                    dict[str, str | None], tracktales.app.storage.general
                 )
                 assert "_dev_file_path" in storage_general
                 assert storage_general["_dev_file_path"] is None
@@ -446,7 +446,7 @@ class TestCLIArgumentParsing:
                 assert mock_setup_logging.call_args[1]["enable_file_logging"] is True
                 mock_ui_run.assert_called_once()
             finally:
-                apple_health_analyzer.app.storage.general.pop("_dev_file_path", None)
+                tracktales.app.storage.general.pop("_dev_file_path", None)
 
     def test_cli_main_dev_file_not_found_exits(
         self, clean_logger: logging.Logger, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -455,14 +455,14 @@ class TestCLIArgumentParsing:
         dev_file = tmp_path / "nonexistent.zip"
         # File does not exist
 
-        monkeypatch.setattr(sys, "argv", ["apple_health_analyzer.py", "--dev-file", str(dev_file)])
+        monkeypatch.setattr(sys, "argv", ["tracktales.py", "--dev-file", str(dev_file)])
 
         with (
-            patch.object(apple_health_analyzer, "setup_logging") as mock_setup_logging,
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
         ):
             with pytest.raises(SystemExit) as exc_info:
-                apple_health_analyzer.cli_main()
+                tracktales.cli_main()
 
         assert exc_info.value.code == 1
         mock_setup_logging.assert_called_once()
@@ -482,10 +482,10 @@ class TestCLIArgumentParsing:
             called["run"] = True
 
         monkeypatch.chdir(tmp_path)
-        monkeypatch.setenv("APPLE_HEALTH_ANALYZER_LOG_DIR", str(tmp_path / "logs"))
-        monkeypatch.setattr(sys, "argv", ["apple_health_analyzer.py"])
+        monkeypatch.setenv("TRACKTALES_LOG_DIR", str(tmp_path / "logs"))
+        monkeypatch.setattr(sys, "argv", ["tracktales.py"])
         monkeypatch.setattr("nicegui.ui.run", _fake_run)
 
-        runpy.run_module("apple_health_analyzer", run_name="__main__")
+        runpy.run_module("tracktales", run_name="__main__")
 
         assert called["run"], "cli_main should start the NiceGUI server"

@@ -181,7 +181,7 @@ Examples:
 2. **Ensure tests pass** locally:
 
    ```bash
-   pytest --cov=src tests/
+   pytest -o addopts='' --cov=src tests/
    ruff format src tests
    ruff check src tests
    mypy src tests
@@ -197,7 +197,7 @@ Examples:
    - Click **Run workflow**
 5. **Workflow automatically**:
    - Calculates next version (YYYY.MM.PATCH with auto-incremented PATCH)
-   - Updates `pyproject.toml` with new version
+   - Updates and commits `pyproject.toml` with the new version before creating the release tag
    - Builds Windows executable (.exe) via PyInstaller
    - Builds macOS app bundle (.dmg) via PyInstaller
    - Builds Python distributions (.whl and .tar.gz) via setuptools

@@ -37,7 +37,7 @@ Issues = "https://github.com/NicolasReyrolle/tracktales/issues"
 where = ["src"]
 
 [tool.setuptools]
-py-modules = ["app_state", "assets", "logging_config", "tracktales", "units"]
+py-modules = ["app_state", "assets", "logging_config", "tracktales", "units", "version"]
 
 [tool.mypy]
 mypy_path = "src"

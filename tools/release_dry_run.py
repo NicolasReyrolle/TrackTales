@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 
@@ -35,8 +36,8 @@ def git_output(args: list[str], cwd: Path) -> str:
 
 
 def compute_version(root: Path) -> tuple[str, str, str]:
-    current_month = git_output(["log", "-1", "--date=format:%Y.%m", "--format=%ad", "HEAD"], root)
-    tags = git_output(["tag", "-l", f"v{current_month}.*"], root)
+    current_month = datetime.now().strftime("%Y.%m")
+    tags = git_output(["tag", "-l", "--sort=version:refname", f"v{current_month}.*"], root)
     last_tag = tags.splitlines()[-1] if tags else ""
     last_patch = int(last_tag.rsplit(".", 1)[-1]) if last_tag else 0
     new_version = f"{current_month}.{last_patch + 1}"

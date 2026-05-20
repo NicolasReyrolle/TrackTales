@@ -177,8 +177,22 @@ jobs:
               run: |
                   pip install --only-binary :all: --constraint .github/workflows/constraints-test.txt pytest==9.0.3 pytest-cov==7.1.0
 
+            - name: Verify tests use installed wheel
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  python - <<'PY'
+                  from pathlib import Path
+                  import tracktales
+
+                  module_path = Path(tracktales.__file__).resolve()
+                  print(module_path)
+                  if "site-packages" not in module_path.parts and "dist-packages" not in module_path.parts:
+                      raise SystemExit(f"tracktales imported from unexpected path: {module_path}")
+                  PY
+
             - name: Run tests
-              run: pytest --cov=src tests/
+              run: pytest -o pythonpath= tests/
 
             - name: Verify CLI starts
               run: tracktales --help
@@ -323,14 +337,38 @@ jobs:
               with:
                   path: release-artifacts
 
+            - name: Commit version update
+              shell: bash
+              env:
+                  NEW_VERSION: ${{ needs.prepare.outputs.new_version }}
+                  GITHUB_REF_NAME: ${{ github.ref_name }}
+              run: |
+                  set -euo pipefail
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  python - <<'PY'
+                  from pathlib import Path
+                  import os
+                  import re
+
+                  version = os.environ["NEW_VERSION"]
+                  path = Path("pyproject.toml")
+                  text = path.read_text(encoding="utf-8")
+                  text = re.sub(r'^version = ".*"$', f'version = "{version}"', text, flags=re.M)
+                  path.write_text(text, encoding="utf-8")
+                  PY
+                  if ! git diff --quiet -- pyproject.toml; then
+                    git add pyproject.toml
+                    git commit -m "chore: bump version to ${NEW_VERSION}"
+                    git push origin "HEAD:${GITHUB_REF_NAME}"
+                  fi
+
             - name: Create git tag
               shell: bash
               env:
                   NEW_TAG: ${{ needs.prepare.outputs.new_tag }}
               run: |
                   set -euo pipefail
-                  git config user.name "github-actions[bot]"
-                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
                   git tag "$NEW_TAG"
                   git push origin "$NEW_TAG"
 

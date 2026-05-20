@@ -57,7 +57,7 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 main_file = "src/tracktales.py"
-addopts = "-p nicegui.testing.user_plugin --testmon"
+addopts = "-p nicegui.testing.user_plugin"
 
 [tool.ruff]
 line-length = 100

@@ -181,7 +181,7 @@ Examples:
 2. **Ensure tests pass** locally:
 
    ```bash
-   pytest -o addopts='' --cov=src tests/
+   pytest --cov=src tests/
    ruff format src tests
    ruff check src tests
    mypy src tests
@@ -230,7 +230,6 @@ python tools/release_dry_run.py
 Useful options:
 
 ```bash
-python tools/release_dry_run.py --release-notes "Urgent parser fix"
 python tools/release_dry_run.py --skip-tests
 python tools/release_dry_run.py --skip-pyinstaller
 python tools/release_dry_run.py --keep-temp
@@ -239,7 +238,6 @@ python tools/release_dry_run.py --keep-temp
 The script:
 
 - Computes the next `YYYY.MM.PATCH` version from local git tags
-- Generates release notes from commit messages
 - Copies the repo to a temporary workspace
 - Rewrites `pyproject.toml` there with the computed release version
 - Optionally builds Python distributions, runs tests, and builds PyInstaller artifacts

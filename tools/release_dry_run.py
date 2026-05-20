@@ -56,6 +56,7 @@ def copy_workspace(root: Path) -> Path:
             ".venv",
             "build",
             "dist",
+            "output",
             ".pytest_cache",
             ".mypy_cache",
             ".ruff_cache",

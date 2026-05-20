@@ -681,7 +681,7 @@ def render_header() -> None:
 
     with ui.header().classes(HEADER_CLASSES):
         ui.image(APP_ICON_BASE64).classes(APP_LOGO_CLASSES)
-        ui.label(t("TrackTales")).classes(APP_TITLE_CLASSES)
+        ui.label("TrackTales").classes(APP_TITLE_CLASSES)
 
         # Toggle button with dynamic icon
         ui.button(icon="dark_mode", on_click=_enable_dark).bind_visibility_from(

@@ -197,8 +197,8 @@ class TestLanguageSwitching:
         change_language = cast(Callable[[str], None], getattr(layout_module, "_change_language"))
         change_language("fr")
 
-        # _change_language triggers ui.navigate.reload(); wait for translated labels
-        await user.should_see("Analyseur de santé Apple", retries=50)
+        # _change_language triggers ui.navigate.reload(); title stays literal
+        await user.should_see("TrackTales", retries=50)
         await user.should_see("Fichier d'export Apple Health", retries=50)
 
         # Small delay before teardown

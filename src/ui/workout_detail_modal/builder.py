@@ -187,13 +187,19 @@ def _format_split_rows(
 
     Returns:
         List of row dicts with ``"split"``, ``"pace_str"``, ``"speed_str"``,
-        and ``"elev_str"`` keys ready for direct assignment to ``ui.table.rows``.
+        ``"avg_hr_str"``, and ``"elev_str"`` keys ready for direct assignment to
+        ``ui.table.rows``.
     """
     return [
         {
             "split": int(s["split"]),
             "pace_str": _format_split_pace(float(s["pace_min_per_km"]), distance_unit),
             "speed_str": _format_split_speed(float(s["pace_min_per_km"]), distance_unit),
+            "avg_hr_str": (
+                "–"
+                if s.get("avg_heart_rate") is None
+                else f"{int(round(float(cast(float, s['avg_heart_rate']))))} bpm"
+            ),
             "elev_str": _format_elevation_change(float(s["elevation_change_m"]), distance_unit),
         }
         for s in splits
@@ -302,7 +308,7 @@ def _do_refresh_route_profile_tab(
     route_profile_chart: Any,
     row: dict[str, Any],
 ) -> None:
-    """Update the Profile tab chart with altitude and pace series."""
+    """Update the Charts tab chart with altitude, pace, and heart-rate series."""
     _do_refresh_route_profile_tab_impl(
         no_route_label,
         route_profile_chart,
@@ -473,8 +479,8 @@ def create_workout_detail_modal(
     * **Route** – interactive map for workouts with GPS points. Route geometry is
       rendered from ``route_parts`` (when available) or the merged ``route`` field,
       with start/end markers.
-    * **Profile** – elevation and pace chart for the workout route. Includes
-      distance-based tooltip metrics (pace, speed, altitude, optional heart rate).
+    * **Charts** – elevation, pace, and heart-rate charts for the workout route.
+      Includes distance-based tooltip metrics (pace, speed, altitude, optional heart rate).
     * **Intervals** – per-workout interval data.  For Swimming workouts each row
       represents one active set with distance, time, stroke style, average SWOLF,
       and rest duration.  For workouts with a GPS route the table shows per-km (or
@@ -508,7 +514,7 @@ def create_workout_detail_modal(
                 ui.tab("overview", t("Overview"))
                 activity_tab = ui.tab("activity", t("Activity"))
                 route_tab = ui.tab("route", t("Route"))
-                profile_tab = ui.tab("profile", t("Profile"))
+                profile_tab = ui.tab("profile", t("Charts"))
                 intervals_tab = ui.tab("intervals", t("Intervals"))
                 comparisons_tab = ui.tab("comparisons", t("Comparisons"))
 
@@ -633,6 +639,13 @@ def create_workout_detail_modal(
                             "sortable": False,
                         },
                         {
+                            "name": "avg_hr",
+                            "label": t("Avg HR"),
+                            "field": "avg_hr_str",
+                            "align": "right",
+                            "sortable": False,
+                        },
+                        {
                             "name": "elevation",
                             "label": t("Elev"),
                             "field": "elev_str",
@@ -656,7 +669,7 @@ def create_workout_detail_modal(
                             options={"zoomControl": True},
                         ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
 
-                # Profile tab: altitude + pace chart for route readability
+                # Charts tab: altitude + pace + heart-rate chart for route readability
                 with ui.tab_panel("profile"):
                     no_route_profile_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
                         LABEL_MUTED_CLASSES
@@ -766,7 +779,7 @@ def create_workout_detail_modal(
         _do_refresh_route_tab(no_route_label, route_map, row)
 
     def _refresh_profile_tab(row: dict[str, Any]) -> None:
-        """Delegate to module-level helper; updates Profile tab chart and visibility."""
+        """Delegate to module-level helper; updates Charts tab chart and visibility."""
         _do_refresh_route_profile_tab(no_route_profile_label, route_profile_chart, row)
 
     def _refresh_comparisons_tab(row: dict[str, Any]) -> None:
@@ -826,7 +839,7 @@ def create_workout_detail_modal(
         lazily (via :func:`_compute_splits_lazy`) and cached in
         ``row["splits"]`` for instant display on subsequent navigations.
         The Route tab renders a Leaflet map from the workout's GPS geometry.
-        The Profile tab renders an elevation + pace chart from the route points.
+        The Charts tab renders an elevation + pace + heart-rate chart from the route points.
         The Comparisons tab searches for similar routes and caches the result
         in ``row["similar_routes"]``.
         """

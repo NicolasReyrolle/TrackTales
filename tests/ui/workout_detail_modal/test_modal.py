@@ -370,7 +370,7 @@ class TestCreateWorkoutDetailModal:
         assert route_map._run_map_method_calls[-1][0][0] == "fitBounds"
 
     def test_do_refresh_profile_tab_mutates_chart_options_in_place(self) -> None:
-        """Profile refresh should mutate chart options in place (NiceGUI options has no setter)."""
+        """Charts refresh should mutate chart options in place (NiceGUI options has no setter)."""
         from datetime import timedelta
 
         import pandas as pd
@@ -429,7 +429,7 @@ class TestCreateWorkoutDetailModal:
         assert profile_data[0][1] == pytest.approx(35.0)
 
     def test_do_refresh_profile_tab_uses_imperial_units(self) -> None:
-        """Profile refresh should convert route chart labels/data when distance_unit is miles."""
+        """Charts refresh should convert route chart labels/data when distance_unit is miles."""
         from datetime import timedelta
 
         import pandas as pd
@@ -636,7 +636,7 @@ class TestRouteTabLocalizationAndCoverage:
         assert pace_data[1][3] is not None  # speed km/h
 
     def test_build_route_profile_chart_config_includes_heart_rate_samples(self) -> None:
-        """Profile data should carry HR values for tooltip rendering when present."""
+        """Profile data should carry HR values for tooltip and chart rendering when present."""
         from datetime import timedelta
 
         import pandas as pd
@@ -657,15 +657,19 @@ class TestRouteTabLocalizationAndCoverage:
             longitude=2.3501,
             altitude=101.0,
             speed=3.2,
+            heart_rate=142.0,
         )
-        object.__setattr__(p2, "heart_rate", 142.0)
         route = WorkoutRoute(points=[p1, p2])
 
         config = wdm._build_route_profile_chart_config([route])
         profile_data = config["series"][0]["data"]
+        heart_rate_series = config["series"][2]
 
         assert profile_data[0][4] is None
         assert profile_data[1][4] == pytest.approx(142.0)
+        assert heart_rate_series["encode"]["y"] == 4
+        assert config["legend"]["data"][-1] == "Heart Rate (bpm)"
+        assert config["yAxis"][2]["name"] == "Heart Rate (bpm)"
         assert "Heart Rate" in config["tooltip"][":formatter"]
 
     def test_build_route_profile_chart_config_smooths_pause_spikes(self) -> None:

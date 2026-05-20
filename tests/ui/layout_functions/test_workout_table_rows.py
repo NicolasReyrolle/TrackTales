@@ -271,6 +271,62 @@ class TestBuildWorkoutRows:
             assert "vo2_max" in row
             assert row["vo2_max"] != ""
 
+    def test_routes_are_enriched_with_workout_heart_rate_samples(self) -> None:
+        """Workout rows should attach nearby heart-rate samples onto route points for the modal."""
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        original_workouts: Any = state.workouts
+        original_records = state.records_by_type
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=pd.Timestamp("2025-01-02 10:00:00+00:00").to_pydatetime(),
+                    latitude=48.85,
+                    longitude=2.35,
+                    altitude=35.0,
+                    speed=3.0,
+                ),
+                RoutePoint(
+                    time=pd.Timestamp("2025-01-02 10:05:00+00:00").to_pydatetime(),
+                    latitude=48.86,
+                    longitude=2.36,
+                    altitude=36.0,
+                    speed=3.1,
+                ),
+            ]
+        )
+        workouts_mock = MagicMock()
+        workouts_mock._filter_workouts.return_value = pd.DataFrame(
+            [
+                {
+                    "activityType": "Running",
+                    "startDate": pd.Timestamp("2025-01-02 10:00:00+00:00"),
+                    "endDate": pd.Timestamp("2025-01-02 10:10:00+00:00"),
+                    "duration": 600.0,
+                    "route": route,
+                }
+            ]
+        )
+        heart_rate_df = pd.DataFrame(
+            [
+                {"startDate": "2025-01-02 10:00:10+00:00", "value": 141},
+                {"startDate": "2025-01-02 10:04:50+00:00", "value": 149},
+            ]
+        )
+
+        try:
+            state.workouts = workouts_mock
+            state.records_by_type = RecordsByType(data={"HeartRate": heart_rate_df})
+            rows = wt._build_workout_rows()
+        finally:
+            state.workouts = original_workouts
+            state.records_by_type = original_records
+
+        assert rows[0]["route"].points[0].heart_rate == pytest.approx(141.0)
+        assert rows[0]["route"].points[1].heart_rate == pytest.approx(149.0)
+
     """Tests for _find_row_index()."""
 
     def test_returns_correct_index_for_matching_id(self) -> None:

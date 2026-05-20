@@ -5,6 +5,8 @@ from __future__ import annotations
 from contextlib import ExitStack
 from typing import Any
 
+import pytest
+
 from ui import workout_detail_modal as wdm
 
 from ._stubs import _all_patches, _ButtonStub, _DummyElement, _make_row
@@ -115,6 +117,7 @@ class TestFormatSplitRows:
         rows = wdm._format_split_rows(splits, "km")
         assert "speed_str" in rows[0]
         assert rows[0]["speed_str"] == "10.0 km/h"
+        assert rows[0]["avg_hr_str"] == "–"
 
     def test_mi_pace_includes_unit_label_and_is_scaled(self) -> None:
         """In mi mode the pace should be converted to min/mi and labelled 'min/mi'."""
@@ -153,6 +156,20 @@ class TestFormatSplitRows:
         assert len(rows) == 2
         assert rows[1]["split"] == 2
         assert rows[1]["elev_str"] == "-1 m"
+
+    def test_avg_heart_rate_is_formatted_when_present(self) -> None:
+        """Split rows should show average heart rate when the split includes HR samples."""
+        splits = [
+            {
+                "split": 1,
+                "pace_min_per_km": 5.0,
+                "elevation_change_m": 2.0,
+                "avg_heart_rate": 146.4,
+            }
+        ]
+        rows = wdm._format_split_rows(splits, "km")
+
+        assert rows[0]["avg_hr_str"] == "146 bpm"
 
 
 class TestSplitsTabSection:
@@ -274,6 +291,42 @@ class TestSplitsTabSection:
         pace_str = splits_table.rows[0]["pace_str"]
         minutes = int(pace_str.split(":")[0])
         assert minutes == 9
+
+    def test_splits_table_shows_average_heart_rate_when_available(self) -> None:
+        """Intervals table should expose per-split average heart rate when present."""
+        splits_data = [
+            {
+                "split": 1,
+                "pace_min_per_km": 5.5,
+                "elevation_change_m": 3.0,
+                "avg_heart_rate": 149.5,
+            }
+        ]
+        rows = [
+            {
+                **_make_row(idx=0, activity_type="Running", raw_activity_type="Running"),
+                "pace": "5:30 /km",
+                "splits": splits_data,
+            },
+        ]
+        table_stubs: list[_DummyElement] = []
+        tabs_stub = _DummyElement()
+
+        def make_table(*_a: Any, **_kw: Any) -> _DummyElement:
+            tbl = _DummyElement()
+            table_stubs.append(tbl)
+            return tbl
+
+        with ExitStack() as stack:
+            for p in _all_patches(table_side_effect=make_table, tabs_stub=tabs_stub):
+                stack.enter_context(p)
+            fn = wdm.create_workout_detail_modal(rows)
+
+        fn(0)
+        tabs_stub.fire_value_change("intervals")
+        splits_table = table_stubs[1]
+
+        assert splits_table.rows[0]["avg_hr_str"] == "150 bpm"
 
     def test_navigate_while_on_splits_tab_refreshes_splits(self) -> None:
         """Navigating while the Intervals tab is active should refresh splits.
@@ -520,9 +573,37 @@ class TestComputeSplitsLazy:
         # Lazy computation should have produced ≥ 3 splits and shown the table.
         assert splits_table._visible
         assert len(splits_table.rows) >= 3
+
+    def test_computed_splits_include_average_heart_rate_when_route_points_have_it(self) -> None:
+        """Lazy split computation should carry per-split average heart rate values."""
+        from datetime import timedelta
+
+        import pandas as pd
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        base_time = pd.Timestamp("2024-01-01 10:00:00").to_pydatetime().replace(tzinfo=None)
+        points = [
+            RoutePoint(
+                time=base_time + timedelta(seconds=i),
+                latitude=0.0,
+                longitude=0.0,
+                altitude=0.0,
+                speed=3.0,
+                heart_rate=140.0 + (i % 2),
+            )
+            for i in range(1001)
+        ]
+        route = WorkoutRoute(points=points)
+        row: dict[str, Any] = {"route": route, "distance_unit": "km", "distance_sort": 3000.0}
+
+        result = wdm._compute_splits_lazy(row)
+
+        assert result
+        assert result[0]["avg_heart_rate"] == pytest.approx(140.5, abs=0.6)
         # Result must be cached in the row dict for subsequent navigations.
-        assert "splits" in rows[0]
-        assert len(rows[0]["splits"]) >= 3
+        assert "splits" in row
+        assert len(row["splits"]) >= 3
 
 
 # ---------------------------------------------------------------------------

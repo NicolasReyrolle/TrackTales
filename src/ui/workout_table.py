@@ -2,7 +2,8 @@
 
 import logging
 import math
-from typing import Any
+from datetime import datetime
+from typing import Any, cast
 
 import pandas as pd
 from nicegui import ui
@@ -10,6 +11,7 @@ from nicegui import ui
 from app_state import get_distance_unit, get_elevation_unit, get_temperature_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
+from logic.workout_manager.workout_route import WorkoutRoute
 from ui.css import (
     LABEL_EMPTY_STATE_CLASSES,
     RANGE_LABEL_CLASSES,
@@ -107,6 +109,82 @@ def _apply_range_filters(df: pd.DataFrame, distance_unit: str) -> pd.DataFrame:
     return df
 
 
+def _normalize_datetime(value: Any) -> datetime | None:
+    """Return a timezone-normalized naive datetime, or ``None`` when unavailable."""
+    if value is None:
+        return None
+    try:
+        ts = pd.Timestamp(value)
+    except (TypeError, ValueError):
+        return None
+    if pd.isna(ts):
+        return None
+    if ts.tzinfo is not None:
+        ts = ts.tz_convert("UTC").tz_localize(None)
+    return ts.to_pydatetime()
+
+
+def _extract_workout_heart_rate_samples(
+    heart_rate_samples: pd.DataFrame,
+    start_date: datetime | None,
+    end_date: datetime | None,
+) -> list[tuple[datetime, float]]:
+    """Return heart-rate samples whose timestamps fall within the workout bounds."""
+    if heart_rate_samples.empty or start_date is None or end_date is None:
+        return []
+    samples = heart_rate_samples[
+        (heart_rate_samples["startDate"] >= start_date)
+        & (heart_rate_samples["startDate"] <= end_date)
+    ]
+    return list(
+        zip(
+            samples["startDate"].map(lambda ts: ts.to_pydatetime()).tolist(),
+            samples["value"].astype(float).tolist(),
+            strict=False,
+        )
+    )
+
+
+def _annotate_route_with_heart_rate(
+    route: WorkoutRoute | None,
+    heart_rate_samples: list[tuple[datetime, float]],
+) -> WorkoutRoute | None:
+    """Return a copy of *route* with nearest heart-rate samples attached to each point."""
+    if route is None or route.is_empty or not heart_rate_samples:
+        return route
+
+    annotated_points = []
+    sample_index = 0
+    for point in route.points:
+        point_time = _normalize_datetime(point.time)
+        if point_time is None:
+            annotated_points.append(point)
+            continue
+        while (
+            sample_index + 1 < len(heart_rate_samples)
+            and heart_rate_samples[sample_index + 1][0] <= point_time
+        ):
+            sample_index += 1
+        closest_index = sample_index
+        if sample_index + 1 < len(heart_rate_samples):
+            previous_delta = abs((point_time - heart_rate_samples[sample_index][0]).total_seconds())
+            next_delta = abs((heart_rate_samples[sample_index + 1][0] - point_time).total_seconds())
+            if next_delta < previous_delta:
+                closest_index = sample_index + 1
+        heart_rate = heart_rate_samples[closest_index][1]
+        annotated_points.append(
+            point.__class__(
+                time=point.time,
+                latitude=point.latitude,
+                longitude=point.longitude,
+                altitude=point.altitude,
+                speed=point.speed,
+                heart_rate=heart_rate,
+            )
+        )
+    return WorkoutRoute(points=annotated_points)
+
+
 def _build_workout_rows(
     activity_type: str | None = None,
     skip_range_filters: bool = False,
@@ -156,6 +234,18 @@ def _build_workout_rows(
     if not vo2_df.empty and "startDate" in vo2_df.columns:
         vo2_dates = pd.to_datetime(vo2_df["startDate"], errors="coerce").dt.tz_localize(None)
 
+    heart_rate_df = state.records_by_type.heart_rate()
+    heart_rate_samples = pd.DataFrame(columns=["startDate", "value"])
+    if not heart_rate_df.empty and {"startDate", "value"}.issubset(heart_rate_df.columns):
+        heart_rate_samples = heart_rate_df[["startDate", "value"]].copy()
+        heart_rate_samples["startDate"] = pd.to_datetime(
+            heart_rate_samples["startDate"], utc=True, errors="coerce"
+        ).dt.tz_localize(None)
+        heart_rate_samples["value"] = pd.to_numeric(heart_rate_samples["value"], errors="coerce")
+        heart_rate_samples = heart_rate_samples.dropna(subset=["startDate", "value"]).sort_values(
+            "startDate"
+        )
+
     for idx, (workout_index, row) in enumerate(df.iterrows()):
         row_data = _extract_row_data(
             row,
@@ -165,6 +255,7 @@ def _build_workout_rows(
             elevation_unit,
             vo2_dates,
             temperature_unit,
+            heart_rate_samples,
             workout_index=workout_index,
         )
         rows.append(row_data)
@@ -180,6 +271,7 @@ def _extract_row_data(
     elevation_unit: str = "m",
     vo2_dates: pd.Series | None = None,
     temperature_unit: str = "°C",
+    heart_rate_samples: pd.DataFrame | None = None,
     workout_index: object | None = None,
 ) -> dict[str, Any]:
     """Extract and format a single workout row.
@@ -263,6 +355,27 @@ def _extract_row_data(
         "route_parts": row.get("route_parts"),
         "distance_unit": distance_unit,
     }
+
+    workout_start = _normalize_datetime(row.get("startDate"))
+    workout_end = _normalize_datetime(row.get("endDate"))
+    workout_heart_rate_samples = _extract_workout_heart_rate_samples(
+        heart_rate_samples if heart_rate_samples is not None else pd.DataFrame(),
+        workout_start,
+        workout_end,
+    )
+    if workout_heart_rate_samples:
+        result["route"] = _annotate_route_with_heart_rate(
+            cast(WorkoutRoute | None, result.get("route")),
+            workout_heart_rate_samples,
+        )
+        route_parts = result.get("route_parts")
+        if isinstance(route_parts, list):
+            result["route_parts"] = [
+                _annotate_route_with_heart_rate(part, workout_heart_rate_samples)
+                if isinstance(part, WorkoutRoute)
+                else part
+                for part in route_parts
+            ]
 
     # VO2 max is a generic field shown for all activity types (Apple Watch reports
     # VO2 max estimates for every workout type, not only running).  Compute it once

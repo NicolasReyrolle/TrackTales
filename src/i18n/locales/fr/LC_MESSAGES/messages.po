@@ -178,6 +178,9 @@ msgstr "Activité"
 msgid "Avg HR"
 msgstr "FC moy."
 
+msgid "Charts"
+msgstr "Graphiques"
+
 msgid "Details"
 msgstr "Détails"
 
@@ -216,6 +219,9 @@ msgstr "Température"
 
 msgid "Humidity"
 msgstr "Humidité"
+
+msgid "Heart Rate"
+msgstr "Fréquence cardiaque"
 
 msgid "Measured from segment samples"
 msgstr "Mesuré à partir des échantillons du segment"

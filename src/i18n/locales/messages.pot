@@ -173,6 +173,9 @@ msgstr ""
 msgid "Avg HR"
 msgstr ""
 
+msgid "Charts"
+msgstr ""
+
 msgid "Details"
 msgstr ""
 
@@ -210,6 +213,9 @@ msgid "Temperature"
 msgstr ""
 
 msgid "Humidity"
+msgstr ""
+
+msgid "Heart Rate"
 msgstr ""
 
 msgid "Measured from segment samples"

@@ -70,7 +70,7 @@ def _do_refresh_route_profile_tab(
     route_profile_chart: Any,
     row: dict[str, Any],
 ) -> None:
-    """Update the Profile tab chart with altitude and pace series."""
+    """Update the Charts tab chart with altitude, pace, and heart-rate series."""
     _routes._do_refresh_route_profile_tab(
         no_route_label,
         route_profile_chart,

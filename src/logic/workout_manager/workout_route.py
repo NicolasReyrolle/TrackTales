@@ -19,6 +19,7 @@ class RoutePoint:
     longitude: float
     altitude: float = 0.0
     speed: float = 0.0  # GPS-measured speed in m/s; 0.0 means unknown/unavailable
+    heart_rate: float | None = None
 
 
 @dataclass
@@ -314,6 +315,8 @@ class WorkoutRoute:
             - ``"pace_min_per_km"``:      float – pace in min/km for this split.
             - ``"elevation_change_m"``:   float – net altitude change from split
               start to split end (positive = uphill, negative = downhill).
+            - ``"avg_heart_rate"``:       float – average heart rate in bpm for the
+              split when route points carry heart-rate samples.
         """
         if len(self.points) < 2 or split_distance_m <= 0:
             return []
@@ -351,14 +354,20 @@ class WorkoutRoute:
                 elevation_change_m = (
                     self.points[split_end_idx].altitude - self.points[split_start_idx].altitude
                 )
-                splits.append(
-                    {
-                        "split": split_num,
-                        "duration_s": duration_s,
-                        "pace_min_per_km": pace_min_per_km,
-                        "elevation_change_m": elevation_change_m,
-                    }
-                )
+                split_data: dict[str, float | int] = {
+                    "split": split_num,
+                    "duration_s": duration_s,
+                    "pace_min_per_km": pace_min_per_km,
+                    "elevation_change_m": elevation_change_m,
+                }
+                heart_rates = [
+                    point.heart_rate
+                    for point in self.points[split_start_idx : split_end_idx + 1]
+                    if point.heart_rate is not None
+                ]
+                if heart_rates:
+                    split_data["avg_heart_rate"] = sum(heart_rates) / len(heart_rates)
+                splits.append(split_data)
 
             split_num += 1
             split_start_idx = split_end_idx

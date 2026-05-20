@@ -258,10 +258,78 @@ def _build_route_profile_chart_config_with_translate(
     altitude_axis_name = f"{translate('Altitude')} ({altitude_unit})"
     pace_axis_name = f"{translate('Pace')} (/{normalized_distance_unit})"
     distance_axis_name = f"{translate('Distance')} ({normalized_distance_unit})"
-    chart_grid = {"left": 72, "right": 80, "top": 56, "bottom": 64}
+    heart_rate_axis_name = f"{translate('Heart Rate')} (bpm)"
+    has_heart_rate = any(point[4] is not None for point in profile_points)
+    chart_grid = {"left": 72, "right": 128 if has_heart_rate else 80, "top": 56, "bottom": 64}
+    legend_items = [altitude_axis_name, pace_axis_name]
+    y_axes: list[dict[str, Any]] = [
+        {
+            "type": "value",
+            "name": altitude_axis_name,
+            "scale": True,
+            "nameLocation": "middle",
+            "nameGap": 52,
+        },
+        {
+            "type": "value",
+            "name": pace_axis_name,
+            "scale": True,
+            "inverse": True,
+            "nameLocation": "middle",
+            "nameGap": 56,
+        },
+    ]
+    series: list[dict[str, Any]] = [
+        {
+            "name": altitude_axis_name,
+            "type": "line",
+            "data": profile_points,
+            "encode": {"x": 0, "y": 1},
+            "showSymbol": False,
+            "smooth": False,
+            "lineStyle": {"width": 2},
+        },
+        {
+            "name": pace_axis_name,
+            "type": "line",
+            "data": profile_points,
+            "encode": {"x": 0, "y": 2},
+            "yAxisIndex": 1,
+            "showSymbol": False,
+            "smooth": False,
+            "connectNulls": True,
+            "lineStyle": {"width": 2},
+        },
+    ]
+    if has_heart_rate:
+        legend_items.append(heart_rate_axis_name)
+        y_axes.append(
+            {
+                "type": "value",
+                "name": heart_rate_axis_name,
+                "scale": True,
+                "position": "right",
+                "offset": 52,
+                "nameLocation": "middle",
+                "nameGap": 52,
+            }
+        )
+        series.append(
+            {
+                "name": heart_rate_axis_name,
+                "type": "line",
+                "data": profile_points,
+                "encode": {"x": 0, "y": 4},
+                "yAxisIndex": 2,
+                "showSymbol": False,
+                "smooth": False,
+                "connectNulls": True,
+                "lineStyle": {"width": 2},
+            }
+        )
     return {
         "backgroundColor": "transparent",
-        "legend": {"data": [altitude_axis_name, pace_axis_name], "top": 8},
+        "legend": {"data": legend_items, "top": 8},
         "grid": chart_grid,
         "tooltip": {
             "trigger": "axis",
@@ -292,45 +360,8 @@ def _build_route_profile_chart_config_with_translate(
             "nameLocation": "middle",
             "nameGap": 42,
         },
-        "yAxis": [
-            {
-                "type": "value",
-                "name": altitude_axis_name,
-                "scale": True,
-                "nameLocation": "middle",
-                "nameGap": 52,
-            },
-            {
-                "type": "value",
-                "name": pace_axis_name,
-                "scale": True,
-                "inverse": True,
-                "nameLocation": "middle",
-                "nameGap": 56,
-            },
-        ],
-        "series": [
-            {
-                "name": altitude_axis_name,
-                "type": "line",
-                "data": profile_points,
-                "encode": {"x": 0, "y": 1},
-                "showSymbol": False,
-                "smooth": False,
-                "lineStyle": {"width": 2},
-            },
-            {
-                "name": pace_axis_name,
-                "type": "line",
-                "data": profile_points,
-                "encode": {"x": 0, "y": 2},
-                "yAxisIndex": 1,
-                "showSymbol": False,
-                "smooth": False,
-                "connectNulls": True,
-                "lineStyle": {"width": 2},
-            },
-        ],
+        "yAxis": y_axes,
+        "series": series,
     }
 
 
@@ -412,7 +443,7 @@ def _do_refresh_route_profile_tab(
     *,
     translate: Callable[..., str] = t,
 ) -> None:
-    """Update the Profile tab chart with altitude and pace series."""
+    """Update the Charts tab chart with altitude, pace, and heart-rate series."""
     routes = _get_row_routes(row)
     has_route = bool(routes)
     no_route_label.set_visibility(not has_route)

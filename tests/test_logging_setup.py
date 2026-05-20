@@ -437,9 +437,7 @@ class TestCLIArgumentParsing:
         ):
             try:
                 tracktales.cli_main()
-                storage_general = cast(
-                    dict[str, str | None], tracktales.app.storage.general
-                )
+                storage_general = cast(dict[str, str | None], tracktales.app.storage.general)
                 assert "_dev_file_path" in storage_general
                 assert storage_general["_dev_file_path"] is None
                 mock_setup_logging.assert_called_once()

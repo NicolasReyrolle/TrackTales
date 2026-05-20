@@ -863,4 +863,3 @@ def render_duration_range_selector() -> None:
         ).bind_value(state, "duration_range_min").bind_enabled_from(state, "file_loaded").classes(
             TABLE_FULL_CLASSES
         )
-

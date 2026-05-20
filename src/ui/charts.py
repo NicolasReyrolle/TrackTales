@@ -733,4 +733,3 @@ def render_box_plot_graph(
             ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
         ui.echart(base_config)
-

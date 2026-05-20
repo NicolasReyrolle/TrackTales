@@ -910,4 +910,3 @@ def render_body() -> None:
 
         with ui.tab_panel("health_data"):
             render_health_data_tab()
-

@@ -224,4 +224,3 @@ class TestTranslationModuleBranchCoverage:
 
         assert result == "Value: {missing}"
         assert any("Failed to format translation" in r.message for r in caplog.records)
-

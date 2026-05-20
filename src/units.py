@@ -30,4 +30,3 @@ MINUTES_PER_HOUR: float = 60.0
 def celsius_to_fahrenheit(celsius: float) -> float:
     """Convert a temperature value from Celsius to Fahrenheit."""
     return celsius * 9 / 5 + 32
-

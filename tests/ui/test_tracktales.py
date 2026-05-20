@@ -585,4 +585,3 @@ class TestLoadingState:
 
         # Small delay before teardown
         await asyncio.sleep(0.2)
-

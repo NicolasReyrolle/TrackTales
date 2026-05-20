@@ -844,4 +844,3 @@ def create_workout_detail_modal(
         dialog.open()
 
     return open_at
-

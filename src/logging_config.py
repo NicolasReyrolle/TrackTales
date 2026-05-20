@@ -69,4 +69,3 @@ def setup_logging(log_level: str, enable_file_logging: bool = True) -> None:
             )
             file_handler.setFormatter(file_formatter)
             logger.addHandler(file_handler)
-

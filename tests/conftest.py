@@ -310,4 +310,3 @@ def clean_logger() -> Generator[logging.Logger, None, None]:
 
     # Restore original logger level
     logger.setLevel(original_level)
-

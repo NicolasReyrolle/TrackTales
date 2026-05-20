@@ -194,4 +194,3 @@ def translate(message: str, language: str, **kwargs: str) -> str:
             )
             return result
     return result
-

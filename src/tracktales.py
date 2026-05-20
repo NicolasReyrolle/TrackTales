@@ -171,4 +171,3 @@ def cli_main() -> None:
 
 if __name__ in {"__main__", "__mp_main__"}:
     cli_main()
-

@@ -235,4 +235,3 @@ MODAL_COMPARISON_TABLE_CLASSES = "w-full"
 
 #: Status label showing the user's rank in the Comparisons tab.
 MODAL_COMPARISON_RANK_CLASSES = "text-sm font-medium"
-

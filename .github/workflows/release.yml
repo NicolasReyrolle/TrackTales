@@ -195,7 +195,7 @@ jobs:
                   PY
 
             - name: Run tests
-              run: pytest -o addopts= -o pythonpath= tests/
+              run: pytest -o pythonpath= tests/
 
             - name: Verify CLI starts
               run: tracktales --help

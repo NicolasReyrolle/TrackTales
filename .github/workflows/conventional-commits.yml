@@ -44,4 +44,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cz check --rev-range "origin/${{ github.base_ref }}..HEAD"
+          cz check --rev-range "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"

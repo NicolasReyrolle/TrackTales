@@ -106,7 +106,7 @@ def main() -> int:
             run([sys.executable, "-m", "build"], workspace)
         if not args.skip_tests:
             run(
-                [sys.executable, "-m", "pytest", "-o", "addopts=", "--cov=src", "tests/"],
+                [sys.executable, "-m", "pytest", "--cov=src", "tests/"],
                 workspace,
             )
         if not args.skip_pyinstaller:

@@ -30,6 +30,7 @@ MANIFEST
 # PyInstaller
 *.manifest
 *.spec
+!tracktales.spec
 
 # Installer logs
 pip-log.txt

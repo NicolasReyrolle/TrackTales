@@ -304,12 +304,37 @@ jobs:
               run: |
                   set -euo pipefail
                   dmg_name="tracktales-${NEW_VERSION}.dmg"
-                  hdiutil create \
-                    -volname "TrackTales" \
-                    -srcfolder "dist/tracktales.app" \
-                    -ov \
-                    -format UDZO \
-                    "dist/${dmg_name}"
+                  dmg_path="dist/${dmg_name}"
+                  volume_name="TrackTales-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}"
+
+                  # Clean up potential leftovers from previous attempts on shared runners.
+                  if [ -d "/Volumes/TrackTales" ]; then
+                    hdiutil detach "/Volumes/TrackTales" -force || true
+                  fi
+                  rm -f "${dmg_path}"
+
+                  for attempt in 1 2 3; do
+                    if hdiutil create \
+                      -volname "${volume_name}" \
+                      -srcfolder "dist/tracktales.app" \
+                      -ov \
+                      -format UDZO \
+                      "${dmg_path}"; then
+                      echo "DMG created on attempt ${attempt}"
+                      break
+                    fi
+
+                    if [ "${attempt}" -eq 3 ]; then
+                      echo "Failed to create DMG after ${attempt} attempts"
+                      exit 1
+                    fi
+
+                    # Retry once transient runner file locks are released.
+                    if [ -d "/Volumes/TrackTales" ]; then
+                      hdiutil detach "/Volumes/TrackTales" -force || true
+                    fi
+                    rm -f "${dmg_path}"
+                  done
 
             - name: Upload macOS artifact
               uses: actions/upload-artifact@v7

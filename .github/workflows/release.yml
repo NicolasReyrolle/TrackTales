@@ -459,6 +459,7 @@ jobs:
     name: Publish to PyPI
     runs-on: ubuntu-latest
     if: ${{ !inputs.dry_run && (github.ref_name == 'main' || startsWith(github.ref_name, 'release/')) }}
+    environment: ${{ vars.PYPI_ENVIRONMENT || 'pypi' }}
     needs:
       - release
     permissions:

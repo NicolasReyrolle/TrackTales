@@ -18,7 +18,7 @@ from nicegui import app, ui
 from app_state import state
 from assets import APP_ICON_BASE64
 from i18n import compile_message_catalogs
-from logging_config import setup_logging
+from logging_config import ensure_standard_streams, setup_logging
 from ui.layout import load_file, render_body, render_header, render_left_drawer
 
 # Module-level logger; avoid configuring global logging at import time.
@@ -27,6 +27,30 @@ from ui.layout import load_file, render_body, render_header, render_left_drawer
 _logger = logging.getLogger(__name__)
 if not _logger.handlers:
     _logger.addHandler(logging.NullHandler())
+
+
+def _resource_dir() -> Path:
+    """Return the directory containing bundled UI resources."""
+    frozen_root = getattr(sys, "_MEIPASS", None)
+    if frozen_root is not None:
+        return Path(frozen_root) / "resources"
+    return Path(__file__).resolve().parent.parent / "resources"
+
+
+def _register_static_assets() -> None:
+    """Register bundled static assets if they are available."""
+    resources_dir = _resource_dir()
+    style_css = resources_dir / "style.css"
+
+    if resources_dir.is_dir():
+        app.add_static_files("/resources", str(resources_dir))
+    else:
+        _logger.warning("Resources directory missing at %s", resources_dir)
+
+    if style_css.is_file():
+        ui.add_css(style_css, shared=True)
+    else:
+        _logger.warning("Stylesheet missing at %s", style_css)
 
 
 @app.on_startup  # type: ignore[arg-type]
@@ -55,12 +79,7 @@ def main() -> None:
     render_left_drawer()
     render_body()
 
-    app.add_static_files("/resources", "resources")
-    # Inject style.css inline rather than via an external link so that browsers
-    # always receive the latest styles.  External links are cached by
-    # NiceGUI/Starlette with a 1-hour max-age, meaning users would keep seeing
-    # stale CSS after a server update until the cache expires.
-    ui.add_css(Path(__file__).parent.parent / "resources" / "style.css", shared=True)
+    _register_static_assets()
 
     # Check if dev file was passed through app storage
     # Note: This auto-load mechanism intentionally triggers on every page render
@@ -115,6 +134,9 @@ def cli_main() -> None:
     )
     args, _ = parser.parse_known_args()
 
+    # Keep std streams available for logging and Uvicorn formatter setup.
+    ensure_standard_streams()
+
     # Validate dev file if provided (before setting up logging)
     resolved_path: Path | None = None
     dev_file_error: str | None = None
@@ -158,14 +180,18 @@ def cli_main() -> None:
     else:
         app.storage.general["_dev_file_path"] = None
 
+    if getattr(sys, "frozen", False):
+        _logger.info("Running in frozen mode: uvicorn reload watcher disabled")
+
     _logger.debug("Initializing NiceGUI app")
     ui.run(  # type: ignore[misc]
         main,
         title="TrackTales",
         favicon=APP_ICON_BASE64,
         storage_secret=secret,
-        uvicorn_reload_dirs="src,resources",  # Only include needed dirs for the reload
         show=not args.no_browser,
+        # Avoid spawning reload watcher subprocesses from this entrypoint.
+        reload=False,
     )
 
 

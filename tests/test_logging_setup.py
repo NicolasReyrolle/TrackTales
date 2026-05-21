@@ -205,6 +205,28 @@ class TestSetupLogging:
         # Verify it uses stdout
         assert stream_handlers[0].stream == sys.stdout  # type: ignore[attr-defined]
 
+    def test_setup_logging_recovers_when_std_streams_missing(
+        self,
+        clean_logger: logging.Logger,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """setup_logging should recreate stdout/stderr when missing."""
+        assert clean_logger is logging.getLogger()
+        monkeypatch.setattr(sys, "stdout", None)
+        monkeypatch.setattr(sys, "stderr", None)
+
+        tracktales.setup_logging("INFO", enable_file_logging=False)
+
+        stream_handlers = [
+            h
+            for h in self._non_pytest_handlers(clean_logger)
+            if isinstance(h, logging.StreamHandler)
+        ]
+        assert len(stream_handlers) == 1
+        assert sys.stdout is not None
+        assert sys.stderr is not None
+        assert stream_handlers[0].stream == sys.stdout  # type: ignore[attr-defined]
+
     def test_setup_logging_handlers_have_formatters(
         self, clean_logger: logging.Logger, tmp_path: Path
     ) -> None:
@@ -385,6 +407,78 @@ class TestCLIArgumentParsing:
         mock_ui_run.assert_called_once()
         call_kwargs = mock_ui_run.call_args[1]
         assert call_kwargs.get("show") is False  # type: ignore[union-attr]
+
+    def test_cli_main_disables_reload_watcher_by_default(self) -> None:
+        """cli_main should always disable uvicorn reload subprocesses."""
+        with (
+            patch("sys.argv", ["tracktales.py"]),
+            patch.object(tracktales, "setup_logging"),
+            patch("nicegui.ui.run") as mock_ui_run,
+        ):
+            tracktales.cli_main()
+
+        call_kwargs = mock_ui_run.call_args[1]
+        assert call_kwargs.get("reload") is False  # type: ignore[union-attr]
+        assert "uvicorn_reload_dirs" not in call_kwargs
+
+    def test_cli_main_disables_reload_dirs_when_frozen(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Frozen/binary runs must not enable uvicorn reload dirs."""
+        monkeypatch.setattr(sys, "argv", ["tracktales.py"])
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+
+        with (
+            patch.object(tracktales, "setup_logging"),
+            patch("nicegui.ui.run") as mock_ui_run,
+        ):
+            tracktales.cli_main()
+
+        call_kwargs = mock_ui_run.call_args[1]
+        assert call_kwargs.get("reload") is False  # type: ignore[union-attr]
+        assert "uvicorn_reload_dirs" not in call_kwargs
+
+    def test_register_static_assets_skips_missing_resources(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Missing bundled resources should not crash page rendering."""
+        missing_resources = tmp_path / "missing-resources"
+        monkeypatch.setattr(tracktales, "_resource_dir", lambda: missing_resources)
+
+        with (
+            patch.object(tracktales.app, "add_static_files") as mock_add_static_files,
+            patch.object(tracktales.ui, "add_css") as mock_add_css,
+            patch.object(tracktales._logger, "warning") as mock_warning,
+        ):
+            tracktales._register_static_assets()
+
+        mock_add_static_files.assert_not_called()
+        mock_add_css.assert_not_called()
+        assert mock_warning.call_count == 2
+
+    def test_cli_main_recovers_when_std_streams_missing(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """cli_main should recreate stdout/stderr when running without a console."""
+
+        def _fake_run(*_args: object, **_kwargs: object) -> None:
+            assert sys.stdout is not None
+            assert sys.stderr is not None
+            assert hasattr(sys.stdout, "isatty")
+            assert hasattr(sys.stderr, "isatty")
+
+        monkeypatch.setattr(sys, "argv", ["tracktales.py", "--no-browser"])
+        monkeypatch.setattr(sys, "stdout", None)
+        monkeypatch.setattr(sys, "stderr", None)
+
+        with (
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run", side_effect=_fake_run) as mock_ui_run,
+        ):
+            tracktales.cli_main()
+
+        mock_setup_logging.assert_called_once()
+        mock_ui_run.assert_called_once()
 
     def test_cli_main_invalid_dev_file_path_exits(self) -> None:
         """Test that invalid dev file paths cause an early exit with an error."""

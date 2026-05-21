@@ -44,6 +44,9 @@ where = ["src"]
 [tool.setuptools]
 py-modules = ["app_state", "assets", "logging_config", "tracktales", "units", "version"]
 
+[tool.setuptools.package-data]
+i18n = ["locales/**/*.po", "locales/**/*.mo", "locales/**/*.pot", "locales/README.md"]
+
 [tool.mypy]
 mypy_path = "src"
 explicit_package_bases = true

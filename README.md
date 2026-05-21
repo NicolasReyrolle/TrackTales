@@ -100,81 +100,9 @@ To analyze your data, you first need to export it from your iPhone:
 
 ## 🛠️ Development & Testing
 
-Maintainer and contributor documentation has moved to [MAINTAINERS.md](MAINTAINERS.md).
+Maintainer and contributor documentation is centralized in [MAINTAINERS.md](MAINTAINERS.md).
 
-### Conventional Commits (required)
-
-This repository enforces Conventional Commits (for example: `feat:`, `fix:`, `docs:`) on every commit.
-
-One-time local setup:
-
-```bash
-pip install -r requirements-dev.txt
-pre-commit install --hook-type commit-msg
-```
-
-After installation, each `git commit` is validated locally by a `commit-msg` hook.
-The same rule is also validated in CI on every push and pull request.
-
-Examples:
-
-- `feat: add pace trend smoothing option`
-- `fix(parser): handle empty workout route nodes`
-- `docs: clarify release dry-run usage`
-
-Quality checks (Ruff + mypy):
-
-```bash
-ruff format src tests
-ruff check src tests
-mypy src tests
-```
-
-If you are here to use the app, you can skip directly to the sections above.
-
-### Best Segments algorithm (summary)
-
-Best segments are computed with a route-aware sliding-window search on running workouts:
-
-- GPX points are first clipped to each `WorkoutRoute` XML time window.
-- If a workout ends with `MotionPaused` and no later `MotionResumed`, points after that pause are excluded.
-- Route traces split only on strict timestamp reversal (`t[n+1] < t[n]`), so duplicated timestamps do not fragment long routes.
-- Traveled distance progression uses GPX speed integration (`speed × Δt`, trapezoidal between points), with haversine fallback when speed is unavailable.
-- A single workout-level distance normalization factor can be applied when route distance and workout summary distance differ only by a realistic margin; the same factor is reused for all queried segment distances.
-- Segment distances longer than the workout's reported distance are skipped.
-
-### Critical Power and W' (summary)
-
-- The app computes CP and W' from best running segments using required anchor distances (800m and 5000m) plus intermediate distances when available (default: 1500m and 3000m).
-- CP/W' is fit on the work-time model (`W = CP * t + W'`) with a deterministic RANSAC-like robust fit to reduce the influence of outlier distance points.
-- When robust fitting excludes outlier points, the dropped points are logged at info level.
-- Segment power is estimated from `RunningPower` records in priority order: direct window match, overlap-based estimate, then workout-level fallback.
-- Evolution charts keep interior missing periods as gaps while trimming leading/trailing empty periods.
-
-## 💬 Requesting Enhancements or Reporting Issues
-
-Feedback, bug reports, and feature requests are welcome! Please use the standard GitHub workflows:
-
-- **Bug reports**: [Open a new issue](https://github.com/NicolasReyrolle/tracktales/issues/new?template=bug_report.md) and describe the problem, steps to reproduce, and expected behaviour.
-- **Feature requests**: [Open a new issue](https://github.com/NicolasReyrolle/tracktales/issues/new?template=feature_request.md) and describe the enhancement and its motivation.
-- **Questions or discussions**: Use [GitHub Discussions](https://github.com/NicolasReyrolle/tracktales/discussions) for open-ended questions or design ideas.
-
-Please search [existing issues](https://github.com/NicolasReyrolle/tracktales/issues) before opening a new one to avoid duplicates.
-
-### Workout manager package layout
-
-Workout management internals are organized in a dedicated package under `src/logic/workout_manager/`:
-
-- `manager.py`: core `WorkoutManager` class and public distance constants.
-- `aggregations.py`: filtering, totals, and by-activity/by-period aggregations.
-- `export.py`: statistics and CSV/JSON export helpers.
-- `segments.py`: best-segment computation, segment power annotation, and CP/W' calculations.
-- `workout_route.py`: `RoutePoint`/`WorkoutRoute` models and route computations used by segment analysis.
-- `__init__.py`: public compatibility exports.
-
-The import path remains unchanged for consumers:
-
-- `from logic.workout_manager import WorkoutManager`
+For development setup, quality checks, release workflow, packaging validation, and architecture notes, use [MAINTAINERS.md](MAINTAINERS.md) as the single source of truth.
 
 ## 🔒 Security
 

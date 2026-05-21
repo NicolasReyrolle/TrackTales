@@ -1,5 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+
 a = Analysis(
     ["src/tracktales.py"],
     pathex=["src"],
@@ -34,7 +36,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
-if is_darwin:
+if sys.platform == "darwin":
     app = BUNDLE(
         exe,
         name="tracktales.app",

@@ -161,21 +161,19 @@ def cli_main() -> None:
     else:
         app.storage.general["_dev_file_path"] = None
 
-    run_kwargs: dict[str, object] = {
-        "title": "TrackTales",
-        "favicon": APP_ICON_BASE64,
-        "storage_secret": secret,
-        "show": not args.no_browser,
-    }
-    if not getattr(sys, "frozen", False):
-        # Hot-reload is useful for source/dev runs, but must stay disabled for
-        # packaged executables to avoid process respawn loops.
-        run_kwargs["uvicorn_reload_dirs"] = "src,resources"
-    else:
+    if getattr(sys, "frozen", False):
         _logger.info("Running in frozen mode: uvicorn reload watcher disabled")
 
     _logger.debug("Initializing NiceGUI app")
-    ui.run(main, **run_kwargs)  # type: ignore[misc]
+    ui.run(  # type: ignore[misc]
+        main,
+        title="TrackTales",
+        favicon=APP_ICON_BASE64,
+        storage_secret=secret,
+        show=not args.no_browser,
+        # Avoid spawning reload watcher subprocesses from this entrypoint.
+        reload=False,
+    )
 
 
 if __name__ in {"__main__", "__mp_main__"}:

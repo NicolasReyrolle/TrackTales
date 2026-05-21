@@ -10,6 +10,11 @@ updates:
     schedule:
       interval: "weekly"
 
+  - package-ecosystem: "pip"
+    directory: "/.github/workflows" # CI pinned dependency manifests (requirements-release-*.txt)
+    schedule:
+      interval: "weekly"
+
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
     schedule:

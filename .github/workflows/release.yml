@@ -133,7 +133,7 @@ jobs:
 
             - name: Install build tooling
               run: |
-                  pip install --only-binary :all: --constraint .github/workflows/constraints-build.txt build==1.5.0 twine==6.2.0
+                  pip install --only-binary :all: --constraint .github/workflows/requirements-release-build.txt build==1.5.0 twine==6.2.0
 
             - name: Build distributions
               run: python -m build
@@ -174,11 +174,11 @@ jobs:
               run: |
                   set -euo pipefail
                   wheel=$(ls dist/*.whl | head -n 1)
-                  pip install --only-binary :all: --constraint .github/workflows/constraints-test.txt "$wheel"
+                  pip install --only-binary :all: --constraint .github/workflows/requirements-release-test.txt "$wheel"
 
             - name: Install test tooling
               run: |
-                  pip install --only-binary :all: --constraint .github/workflows/constraints-test.txt -r requirements.txt pytest==9.0.3 pytest-cov==7.1.0
+                  pip install --only-binary :all: --constraint .github/workflows/requirements-release-test.txt -r requirements.txt pytest==9.0.3 pytest-cov==7.1.0
 
             - name: Verify tests use installed wheel
               shell: bash
@@ -236,7 +236,7 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  pip install --only-binary :all: --constraint .github/workflows/constraints-pyinstaller.txt -r requirements.txt pyinstaller==6.20.0
+                  pip install --only-binary :all: --constraint .github/workflows/requirements-release-pyinstaller.txt -r requirements.txt pyinstaller==6.20.0
 
             - name: Build executable
               run: pyinstaller tracktales.spec
@@ -292,7 +292,7 @@ jobs:
 
             - name: Install dependencies
               run: |
-                  pip install --only-binary :all: --constraint .github/workflows/constraints-pyinstaller.txt -r requirements.txt pyinstaller==6.20.0
+                  pip install --only-binary :all: --constraint .github/workflows/requirements-release-pyinstaller.txt -r requirements.txt pyinstaller==6.20.0
 
             - name: Build app bundle
               run: pyinstaller tracktales.spec

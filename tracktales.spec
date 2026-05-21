@@ -2,8 +2,6 @@
 
 import sys
 
-is_darwin = sys.platform == "darwin"
-
 a = Analysis(
     ["src/tracktales.py"],
     pathex=["src"],
@@ -38,7 +36,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
-if is_darwin:
+if sys.platform == "darwin":
     app = BUNDLE(
         exe,
         name="tracktales.app",

@@ -408,6 +408,34 @@ class TestCLIArgumentParsing:
         call_kwargs = mock_ui_run.call_args[1]
         assert call_kwargs.get("show") is False  # type: ignore[union-attr]
 
+    def test_cli_main_enables_reload_dirs_when_not_frozen(self) -> None:
+        """Source/dev runs should include uvicorn reload dirs."""
+        with (
+            patch("sys.argv", ["tracktales.py"]),
+            patch.object(tracktales, "setup_logging"),
+            patch("nicegui.ui.run") as mock_ui_run,
+        ):
+            tracktales.cli_main()
+
+        call_kwargs = mock_ui_run.call_args[1]
+        assert call_kwargs.get("uvicorn_reload_dirs") == "src,resources"  # type: ignore[union-attr]
+
+    def test_cli_main_disables_reload_dirs_when_frozen(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Frozen/binary runs must not enable uvicorn reload dirs."""
+        monkeypatch.setattr(sys, "argv", ["tracktales.py"])
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+
+        with (
+            patch.object(tracktales, "setup_logging"),
+            patch("nicegui.ui.run") as mock_ui_run,
+        ):
+            tracktales.cli_main()
+
+        call_kwargs = mock_ui_run.call_args[1]
+        assert "uvicorn_reload_dirs" not in call_kwargs
+
     def test_cli_main_recovers_when_std_streams_missing(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

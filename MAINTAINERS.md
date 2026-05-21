@@ -270,7 +270,37 @@ For testing or local builds, you can use PyInstaller:
    - **Windows**: `dist/tracktales.exe` (run directly, no Python required)
    - **macOS**: `dist/tracktales.app` (open via Finder or `open dist/tracktales.app`)
 
-4. **Create macOS .dmg installer** (optional):
+### Windows executable smoke test
+
+Use this startup smoke test after building the Windows executable to catch early runtime crashes.
+
+```powershell
+# from repository root
+Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
+pyinstaller tracktales.spec
+
+$exe = "dist/tracktales.exe"
+if (-not (Test-Path $exe)) {
+   throw "Executable not found: $exe"
+}
+
+$process = Start-Process -FilePath $exe -ArgumentList @("--no-browser") -PassThru
+try {
+   $exited = $process.WaitForExit(15000)
+   if ($exited) {
+      throw "Executable exited during startup smoke test with code $($process.ExitCode)"
+   }
+}
+finally {
+   if (-not $process.HasExited) {
+      Stop-Process -Id $process.Id -Force
+   }
+}
+```
+
+If this smoke test fails with a traceback, include the full stack trace in the issue.
+
+1. **Create macOS .dmg installer** (optional):
 
    ```bash
    pip install create-dmg

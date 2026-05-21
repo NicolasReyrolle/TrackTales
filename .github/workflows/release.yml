@@ -1,0 +1,454 @@
+name: Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            dry_run:
+                description: Build and validate artifacts without pushing a tag, creating a release, or publishing to PyPI
+                required: false
+                default: false
+                type: boolean
+
+permissions:
+    contents: read
+
+concurrency:
+    group: release
+    cancel-in-progress: false
+
+jobs:
+    prepare:
+        name: Prepare release metadata
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        outputs:
+            new_version: ${{ steps.version.outputs.new_version }}
+            new_tag: ${{ steps.version.outputs.new_tag }}
+            last_tag: ${{ steps.version.outputs.last_tag }}
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Compute release version
+              id: version
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  current_month=$(date +%Y.%m)
+                  last_tag=$(git tag -l "v${current_month}.*" | sort -V | tail -n 1)
+                  if [ -z "$last_tag" ]; then
+                    last_patch=0
+                  else
+                    last_patch=${last_tag##*.}
+                  fi
+                  new_patch=$((last_patch + 1))
+                  new_version="${current_month}.${new_patch}"
+                  new_tag="v${new_version}"
+                  {
+                    echo "new_version=${new_version}"
+                    echo "new_tag=${new_tag}"
+                    echo "last_tag=${last_tag}"
+                  } >> "$GITHUB_OUTPUT"
+
+            - name: Generate release notes
+              uses: TriPSs/conventional-changelog-action@952b14bbc4be87e8458a6ac5926fc655608b1b19 # v6
+              with:
+                  preset: conventionalcommits
+                  output-file: release-notes.md
+                  release-count: 1
+                  tag-prefix: v
+                  skip-version-file: "true"
+                  skip-commit: "true"
+                  skip-tag: "true"
+                  skip-git-pull: "true"
+                  git-push: "false"
+                  skip-bump: "true"
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Remove unwanted changelog sections
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  python - <<'PY'
+                  from pathlib import Path
+
+                  path = Path("release-notes.md")
+                  lines = path.read_text(encoding="utf-8").splitlines()
+                  filtered: list[str] = []
+                  skip = False
+
+                  for line in lines:
+                    if line.startswith("### "):
+                      title = line[4:].strip().lower()
+                      skip = title in {"other", "other changes", "reverts", "revert"}
+                    if not skip:
+                      filtered.append(line)
+
+                  path.write_text("\n".join(filtered).rstrip() + "\n", encoding="utf-8")
+                  PY
+
+            - name: Upload release notes
+              uses: actions/upload-artifact@v4
+              with:
+                  name: release-notes
+                  path: release-notes.md
+
+    build-python:
+        name: Build Python distributions
+        runs-on: ubuntu-latest
+        needs: prepare
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+                  cache: pip
+
+            - name: Update version in pyproject.toml
+              shell: bash
+              env:
+                  NEW_VERSION: ${{ needs.prepare.outputs.new_version }}
+              run: |
+                  set -euo pipefail
+                  python - <<'PY'
+                  from pathlib import Path
+                  import os
+                  import re
+
+                  version = os.environ["NEW_VERSION"]
+                  path = Path("pyproject.toml")
+                  text = path.read_text(encoding="utf-8")
+                  text = re.sub(r'^version = ".*"$', f'version = "{version}"', text, flags=re.M)
+                  path.write_text(text, encoding="utf-8")
+                  PY
+
+            - name: Install build tooling
+              run: |
+                  pip install --only-binary :all: --constraint .github/workflows/constraints-build.txt build==1.5.0 twine==6.2.0
+
+            - name: Build distributions
+              run: python -m build
+
+            - name: Validate distributions
+              run: twine check dist/*
+
+            - name: Upload Python artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: python-dist
+                  path: dist/
+
+    test:
+        name: Test built wheel
+        runs-on: ubuntu-latest
+        needs: build-python
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+                  cache: pip
+
+            - name: Download Python artifacts
+              uses: actions/download-artifact@v4.1.3
+              with:
+                  name: python-dist
+                  path: dist/
+
+            - name: Install built wheel
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  wheel=$(ls dist/*.whl | head -n 1)
+                  pip install --only-binary :all: --constraint .github/workflows/constraints-test.txt "$wheel"
+
+            - name: Install test tooling
+              run: |
+                  pip install --only-binary :all: --constraint .github/workflows/constraints-test.txt -r requirements.txt pytest==9.0.3 pytest-cov==7.1.0
+
+            - name: Verify tests use installed wheel
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  python - <<'PY'
+                  from pathlib import Path
+                  import tracktales
+
+                  module_path = Path(tracktales.__file__).resolve()
+                  print(module_path)
+                  if "site-packages" not in module_path.parts and "dist-packages" not in module_path.parts:
+                      raise SystemExit(f"tracktales imported from unexpected path: {module_path}")
+                  PY
+
+            - name: Run tests
+              run: pytest -o pythonpath= tests/
+
+            - name: Verify CLI starts
+              run: tracktales --help
+
+    build-windows:
+        name: Build Windows executable
+        runs-on: windows-latest
+        needs: prepare
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+                  cache: pip
+
+            - name: Update version in pyproject.toml
+              shell: bash
+              env:
+                  NEW_VERSION: ${{ needs.prepare.outputs.new_version }}
+              run: |
+                  set -euo pipefail
+                  python - <<'PY'
+                  from pathlib import Path
+                  import os
+                  import re
+
+                  version = os.environ["NEW_VERSION"]
+                  path = Path("pyproject.toml")
+                  text = path.read_text(encoding="utf-8")
+                  text = re.sub(r'^version = ".*"$', f'version = "{version}"', text, flags=re.M)
+                  path.write_text(text, encoding="utf-8")
+                  PY
+
+            - name: Install dependencies
+              run: |
+                  pip install --only-binary :all: --constraint .github/workflows/constraints-pyinstaller.txt -r requirements.txt pyinstaller==6.20.0
+
+            - name: Build executable
+              run: pyinstaller tracktales.spec
+
+            - name: Rename Windows artifact
+              shell: pwsh
+              env:
+                  NEW_VERSION: ${{ needs.prepare.outputs.new_version }}
+              run: |
+                  $target = "dist/tracktales-$env:NEW_VERSION.exe"
+                  Copy-Item "dist/tracktales.exe" $target
+                  Get-Item $target | Format-List FullName,Length
+
+            - name: Upload Windows artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: windows-exe
+                  path: dist/tracktales-${{ needs.prepare.outputs.new_version }}.exe
+
+    build-macos:
+        name: Build macOS app
+        runs-on: macos-latest
+        needs: prepare
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+                  cache: pip
+
+            - name: Update version in pyproject.toml
+              shell: bash
+              env:
+                  NEW_VERSION: ${{ needs.prepare.outputs.new_version }}
+              run: |
+                  set -euo pipefail
+                  python - <<'PY'
+                  from pathlib import Path
+                  import os
+                  import re
+
+                  version = os.environ["NEW_VERSION"]
+                  path = Path("pyproject.toml")
+                  text = path.read_text(encoding="utf-8")
+                  text = re.sub(r'^version = ".*"$', f'version = "{version}"', text, flags=re.M)
+                  path.write_text(text, encoding="utf-8")
+                  PY
+
+            - name: Install dependencies
+              run: |
+                  pip install --only-binary :all: --constraint .github/workflows/constraints-pyinstaller.txt -r requirements.txt pyinstaller==6.20.0
+
+            - name: Build app bundle
+              run: pyinstaller tracktales.spec
+
+            - name: Create DMG
+              shell: bash
+              env:
+                  NEW_VERSION: ${{ needs.prepare.outputs.new_version }}
+              run: |
+                  set -euo pipefail
+                  dmg_name="tracktales-${NEW_VERSION}.dmg"
+                  hdiutil create \
+                    -volname "TrackTales" \
+                    -srcfolder "dist/tracktales.app" \
+                    -ov \
+                    -format UDZO \
+                    "dist/${dmg_name}"
+
+            - name: Upload macOS artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: macos-dmg
+                  path: dist/tracktales-${{ needs.prepare.outputs.new_version }}.dmg
+
+    release:
+        name: Create GitHub release
+        runs-on: ubuntu-latest
+        if: ${{ !inputs.dry_run }}
+        needs:
+            - prepare
+            - build-python
+            - test
+            - build-windows
+            - build-macos
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4.1.3
+              with:
+                  path: release-artifacts
+
+            - name: Commit version update
+              shell: bash
+              env:
+                  NEW_VERSION: ${{ needs.prepare.outputs.new_version }}
+                  GITHUB_REF_NAME: ${{ github.ref_name }}
+              run: |
+                  set -euo pipefail
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  python - <<'PY'
+                  from pathlib import Path
+                  import os
+                  import re
+
+                  version = os.environ["NEW_VERSION"]
+                  path = Path("pyproject.toml")
+                  text = path.read_text(encoding="utf-8")
+                  text = re.sub(r'^version = ".*"$', f'version = "{version}"', text, flags=re.M)
+                  path.write_text(text, encoding="utf-8")
+                  PY
+                  if ! git diff --quiet -- pyproject.toml; then
+                    git add pyproject.toml
+                    git commit -m "chore: bump version to ${NEW_VERSION}"
+                    git push origin "HEAD:${GITHUB_REF_NAME}"
+                  fi
+
+            - name: Create git tag
+              shell: bash
+              env:
+                  NEW_TAG: ${{ needs.prepare.outputs.new_tag }}
+              run: |
+                  set -euo pipefail
+                  git tag "$NEW_TAG"
+                  git push origin "$NEW_TAG"
+
+            - name: Create GitHub release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ needs.prepare.outputs.new_tag }}
+                  name: TrackTales ${{ needs.prepare.outputs.new_version }}
+                  body_path: release-artifacts/release-notes/release-notes.md
+                  files: |
+                      release-artifacts/windows-exe/tracktales-${{ needs.prepare.outputs.new_version }}.exe
+                      release-artifacts/macos-dmg/tracktales-${{ needs.prepare.outputs.new_version }}.dmg
+                      release-artifacts/python-dist/*.whl
+                      release-artifacts/python-dist/*.tar.gz
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    dry-run-preview:
+        name: Upload dry-run preview
+        runs-on: ubuntu-latest
+        if: ${{ inputs.dry_run }}
+        needs:
+            - prepare
+            - build-python
+            - test
+            - build-windows
+            - build-macos
+        permissions:
+            contents: read
+        steps:
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4.1.3
+              with:
+                  path: release-artifacts
+
+            - name: Write dry-run summary
+              shell: bash
+              env:
+                  NEW_TAG: ${{ needs.prepare.outputs.new_tag }}
+              run: |
+                  set -euo pipefail
+                  cat <<EOF > dry-run-summary.txt
+                  Dry run completed for ${NEW_TAG}.
+
+                  No git tag was pushed.
+                  No GitHub release was created.
+                  No package was published to PyPI.
+                  EOF
+
+            - name: Upload dry-run bundle
+              uses: actions/upload-artifact@v4
+              with:
+                  name: release-dry-run-${{ needs.prepare.outputs.new_version }}
+                  path: |
+                      dry-run-summary.txt
+                      release-artifacts/release-notes/release-notes.md
+                      release-artifacts/windows-exe/tracktales-${{ needs.prepare.outputs.new_version }}.exe
+                      release-artifacts/macos-dmg/tracktales-${{ needs.prepare.outputs.new_version }}.dmg
+                      release-artifacts/python-dist/*.whl
+                      release-artifacts/python-dist/*.tar.gz
+
+    publish-pypi:
+        name: Publish to PyPI
+        runs-on: ubuntu-latest
+        if: ${{ !inputs.dry_run }}
+        needs:
+            - release
+        permissions:
+            id-token: write
+        steps:
+            - name: Download Python artifacts
+              uses: actions/download-artifact@v4.1.3
+              with:
+                  name: python-dist
+                  path: dist/
+
+            - name: Publish package
+              uses: pypa/gh-action-pypi-publish@release/v1
+              with:
+                  packages-dir: dist/

@@ -102,6 +102,26 @@ To analyze your data, you first need to export it from your iPhone:
 
 Maintainer and contributor documentation has moved to [MAINTAINERS.md](MAINTAINERS.md).
 
+### Conventional Commits (required)
+
+This repository enforces Conventional Commits (for example: `feat:`, `fix:`, `docs:`) on every commit.
+
+One-time local setup:
+
+```bash
+pip install -r requirements-dev.txt
+pre-commit install --hook-type commit-msg
+```
+
+After installation, each `git commit` is validated locally by a `commit-msg` hook.
+The same rule is also validated in CI on every push and pull request.
+
+Examples:
+
+- `feat: add pace trend smoothing option`
+- `fix(parser): handle empty workout route nodes`
+- `docs: clarify release dry-run usage`
+
 Quality checks (Ruff + mypy):
 
 ```bash
@@ -163,4 +183,3 @@ This application uses **streaming XML parsing** (`iterparse`) to remain memory-e
 ## 📄 License
 
 This project is licensed under the **GPL-3.0 License**. See the [LICENSE](LICENSE) file for details.
-

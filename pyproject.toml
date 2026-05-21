@@ -33,11 +33,16 @@ Homepage = "https://github.com/NicolasReyrolle/tracktales"
 Repository = "https://github.com/NicolasReyrolle/tracktales.git"
 Issues = "https://github.com/NicolasReyrolle/tracktales/issues"
 
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "pep621"
+tag_format = "v$version"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools]
-py-modules = ["app_state", "assets", "logging_config", "tracktales", "units"]
+py-modules = ["app_state", "assets", "logging_config", "tracktales", "units", "version"]
 
 [tool.mypy]
 mypy_path = "src"
@@ -52,7 +57,7 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 main_file = "src/tracktales.py"
-addopts = "-p nicegui.testing.user_plugin --testmon"
+addopts = "-p nicegui.testing.user_plugin"
 
 [tool.ruff]
 line-length = 100

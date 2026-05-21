@@ -37,6 +37,15 @@ If a user request is ambiguous or incomplete, apply repository instructions that
 - Tests: `pytest --cov=src tests/`
 - Quality: `ruff format src tests`, `ruff check src tests`, `mypy src tests`
 
+## Commit message policy
+
+- Use Conventional Commits for every commit message.
+- Allowed format: `<type>(<optional-scope>): <description>`.
+- Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`.
+- Examples: `feat(ui): add trends period selector`, `fix(parser): guard empty route nodes`.
+- Do not create commits with non-conventional messages.
+- Local enforcement is done with a `pre-commit` `commit-msg` hook (`commitizen`), and CI validates commit messages on every push and pull request.
+
 ## Mandatory engineering constraints
 
 ### Parsing and security

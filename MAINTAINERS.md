@@ -158,3 +158,175 @@ Runtime notes:
 ## Windows-specific testing note
 
 `tests/conftest.py` includes workarounds for `WinError 32` (PermissionError) during teardown by isolating storage and patching cleanup behavior.
+
+## Release Process
+
+TrackTales uses **Calendar Versioning (CalVer)** with the format `YYYY.MM.PATCH` (e.g., `2026.05.1`, `2026.05.2`).
+
+### Versioning Scheme
+
+- **YYYY**: Current year (4 digits)
+- **MM**: Current month (2 digits, zero-padded)
+- **PATCH**: Sequential patch number within the month, auto-incremented (starts at 1)
+
+Examples:
+
+- First release in May 2026: `v2026.05.1`
+- Second release in May 2026: `v2026.05.2`
+- First release in June 2026: `v2026.06.1`
+
+### How to Release
+
+1. **Make commits** with descriptive commit messages (e.g., `fix: handle corrupted ZIP files`, `feat: add French language support`)
+2. **Ensure tests pass** locally:
+
+   ```bash
+   pytest -o addopts='' --cov=src tests/
+   ruff format src tests
+   ruff check src tests
+   mypy src tests
+   ```
+
+3. **Push commits** to `main` branch
+4. **Trigger release workflow**:
+   - Go to GitHub repository → **Actions** tab
+   - Click **Release** workflow on the left
+   - Set **Dry run** if you want to build and validate without publishing
+   - Click **Run workflow** button
+5. **Workflow automatically**:
+   - Calculates next version (YYYY.MM.PATCH with auto-incremented PATCH)
+   - Updates and commits `pyproject.toml` with the new version before creating the release tag
+   - Builds Windows executable (.exe) via PyInstaller
+   - Builds macOS app bundle (.dmg) via PyInstaller
+   - Builds Python distributions (.whl and .tar.gz) via setuptools
+   - Runs full test suite
+   - Creates git tag (e.g., `v2026.05.2`)
+   - Creates GitHub Release with:
+     - Installation instructions for each platform
+     - Auto-generated changelog from commits since last release
+     - All built artifacts (.exe, .dmg, .whl, .tar.gz)
+   - Publishes to PyPI
+
+### GitHub Dry Run
+
+Use the workflow-dispatch **Dry run** input when you want CI to build and validate everything without publishing.
+
+- Builds and tests still run
+- A `release-dry-run-<version>` artifact is uploaded with release notes and built artifacts
+- No git tag is pushed
+- No GitHub release is created
+- Nothing is published to PyPI
+
+### Local Dry Run
+
+You can dry-run the release flow locally without GitHub Actions:
+
+```bash
+python tools/release_dry_run.py
+```
+
+Useful options:
+
+```bash
+python tools/release_dry_run.py --skip-tests
+python tools/release_dry_run.py --skip-pyinstaller
+python tools/release_dry_run.py --keep-temp
+```
+
+The script:
+
+- Computes the next `YYYY.MM.PATCH` version from local git tags
+- Copies the repo to a temporary workspace
+- Rewrites `pyproject.toml` there with the computed release version
+- Optionally builds Python distributions, runs tests, and builds PyInstaller artifacts
+- Does not generate release notes
+- Copies the generated outputs to `output/release-dry-run/`
+
+### Distribution Channels
+
+After release, end-users can install TrackTales:
+
+- **Windows**: Download `.exe` from GitHub Releases, double-click to run (no installation needed)
+- **macOS**: Download `.dmg` from GitHub Releases, double-click and drag app to Applications folder
+- **Python/pip**: `pip install tracktales==YYYY.MM.PATCH` (from PyPI)
+
+### Building Standalone Executables Locally
+
+For testing or local builds, you can use PyInstaller:
+
+1. **Install PyInstaller**:
+
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. **Build executable**:
+
+   ```bash
+   pyinstaller tracktales.spec
+   ```
+
+3. **Test the built executable**:
+   - **Windows**: `dist/tracktales.exe` (run directly, no Python required)
+   - **macOS**: `dist/tracktales.app` (open via Finder or `open dist/tracktales.app`)
+
+4. **Create macOS .dmg installer** (optional):
+
+   ```bash
+   pip install create-dmg
+   create-dmg --volname "TrackTales" --app-drop-link 450 250 "dist/tracktales-YYYY.MM.PATCH.dmg" "dist/tracktales.app"
+   ```
+
+### PyInstaller Configuration
+
+The `tracktales.spec` file configures PyInstaller to:
+
+- Bundle all Python dependencies (nicegui, pandas, babel, defusedxml, etc.)
+- Include i18n locale files and resources
+- Create a Windows .exe with no console window
+- Create a macOS .app bundle with appropriate metadata
+
+Edit `tracktales.spec` if you need to:
+
+- Add new hidden imports (if PyInstaller doesn't auto-detect a module)
+- Include additional data files
+- Change bundle settings
+
+### Setting Up PyPI Trusted Publisher (One-Time)
+
+For the release workflow to publish to PyPI, you must configure GitHub as a trusted publisher:
+
+1. Go to [PyPI project settings](https://pypi.org/project/tracktales/settings/)
+2. Under **Publishing**, add a trusted publisher:
+   - **GitHub Owner**: `NicolasReyrolle`
+   - **Repository**: `TrackTales`
+   - **Workflow name**: `release.yml`
+3. Click **Add trusted publisher**
+
+No API tokens need to be stored in GitHub secrets; the workflow uses OpenID Connect (OIDC) for secure authentication.
+
+### Troubleshooting Releases
+
+**Release workflow fails**: Check the Actions tab for error details. Common issues:
+
+- Python dependencies not installed: Ensure `requirements.txt` is up-to-date
+- PyInstaller build failed: Run `pyinstaller tracktales.spec` locally to debug
+- Test failures: Fix failing tests before retrying workflow
+- Local runner cannot resolve `actions/checkout@v4`: this is usually a problem with the local GitHub Actions runner tooling, network access, or GitHub credential setup, not the workflow itself
+
+**`Unable to resolve action actions/checkout@v4`**:
+
+- On GitHub-hosted runners, `actions/checkout@v4` is valid and should resolve normally
+- If you see this locally, it usually means your local Actions emulator cannot fetch GitHub-hosted actions
+- Common causes: offline environment, corporate proxy/firewall, outdated `act`, or missing GitHub authentication for action downloads
+- Use `python tools/release_dry_run.py` when you want a local release rehearsal without depending on remote action resolution
+
+**Need to release a hotfix immediately**:
+
+- No manual version management needed; just push commits and trigger the workflow again
+- The workflow auto-increments PATCH (2026.05.1 → 2026.05.2 → etc.)
+
+**Rollback strategy**:
+
+- If a released version is broken, publish a new version with the fix (no rollback)
+- Older releases remain available on GitHub Releases for users who need to downgrade

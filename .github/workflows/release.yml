@@ -388,32 +388,6 @@ jobs:
         with:
           path: release-artifacts
 
-      - name: Commit version update
-        shell: bash
-        env:
-          NEW_VERSION: ${{ needs.prepare.outputs.new_version }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          python - <<'PY'
-          from pathlib import Path
-          import os
-          import re
-
-          version = os.environ["NEW_VERSION"]
-          path = Path("pyproject.toml")
-          text = path.read_text(encoding="utf-8")
-          text = re.sub(r'^version = ".*"$', f'version = "{version}"', text, flags=re.M)
-          path.write_text(text, encoding="utf-8")
-          PY
-          if ! git diff --quiet -- pyproject.toml; then
-            git add pyproject.toml
-            git commit -m "chore: bump version to ${NEW_VERSION}"
-            git push origin "HEAD:${GITHUB_REF_NAME}"
-          fi
-
       - name: Create git tag
         shell: bash
         env:

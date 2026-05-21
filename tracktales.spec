@@ -1,5 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+
+is_darwin = sys.platform == "darwin"
+
 a = Analysis(
     ["src/tracktales.py"],
     pathex=["src"],

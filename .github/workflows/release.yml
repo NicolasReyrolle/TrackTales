@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
         inputs:
             dry_run:
-                description: Build and validate artifacts without pushing a tag, creating a release, or publishing to PyPI
+                description: Build and validate artifacts without pushing a tag, creating a release, or publishing to PyPI (dry-run)
                 required: false
                 default: false
                 type: boolean

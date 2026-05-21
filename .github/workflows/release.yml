@@ -306,10 +306,11 @@ jobs:
                   dmg_name="tracktales-${NEW_VERSION}.dmg"
                   dmg_path="dist/${dmg_name}"
                   volume_name="TrackTales-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}"
+                  volume_path="/Volumes/${volume_name}"
 
                   # Clean up potential leftovers from previous attempts on shared runners.
-                  if [ -d "/Volumes/TrackTales" ]; then
-                    hdiutil detach "/Volumes/TrackTales" -force || true
+                  if [ -d "${volume_path}" ]; then
+                    hdiutil detach "${volume_path}" -force || true
                   fi
                   rm -f "${dmg_path}"
 
@@ -330,10 +331,11 @@ jobs:
                     fi
 
                     # Retry once transient runner file locks are released.
-                    if [ -d "/Volumes/TrackTales" ]; then
-                      hdiutil detach "/Volumes/TrackTales" -force || true
+                    if [ -d "${volume_path}" ]; then
+                      hdiutil detach "${volume_path}" -force || true
                     fi
                     rm -f "${dmg_path}"
+                    sleep $((attempt * 2))
                   done
 
             - name: Upload macOS artifact

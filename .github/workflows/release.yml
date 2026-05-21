@@ -164,7 +164,7 @@ jobs:
                   cache: pip
 
             - name: Download Python artifacts
-              uses: actions/download-artifact@v5
+              uses: actions/download-artifact@v8
               with:
                   name: python-dist
                   path: dist/

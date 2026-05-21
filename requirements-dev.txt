@@ -12,7 +12,7 @@ ruff==0.15.13
 
 # Development
 ipython>=8.39.0
-pre-commit>=4.3.0
+pre-commit>=4.6.0
 commitizen>=4.8.3
 
 # Type stubs

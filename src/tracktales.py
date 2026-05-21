@@ -18,7 +18,7 @@ from nicegui import app, ui
 from app_state import state
 from assets import APP_ICON_BASE64
 from i18n import compile_message_catalogs
-from logging_config import setup_logging
+from logging_config import ensure_standard_streams, setup_logging
 from ui.layout import load_file, render_body, render_header, render_left_drawer
 
 # Module-level logger; avoid configuring global logging at import time.
@@ -27,20 +27,6 @@ from ui.layout import load_file, render_body, render_header, render_left_drawer
 _logger = logging.getLogger(__name__)
 if not _logger.handlers:
     _logger.addHandler(logging.NullHandler())
-
-
-def _ensure_standard_streams() -> None:
-    """Ensure stdout/stderr are usable in GUI-bundled executions.
-
-    In windowed executables (e.g. PyInstaller with ``console=False``),
-    ``sys.stdout`` and ``sys.stderr`` can be ``None``. Uvicorn's default
-    formatter probes ``stream.isatty()`` during startup, so missing streams
-    would crash the app before the UI starts.
-    """
-    if sys.stdout is None:
-        sys.stdout = open(os.devnull, "w", encoding="utf-8")
-    if sys.stderr is None:
-        sys.stderr = open(os.devnull, "w", encoding="utf-8")
 
 
 @app.on_startup  # type: ignore[arg-type]
@@ -130,7 +116,7 @@ def cli_main() -> None:
     args, _ = parser.parse_known_args()
 
     # Keep std streams available for logging and Uvicorn formatter setup.
-    _ensure_standard_streams()
+    ensure_standard_streams()
 
     # Validate dev file if provided (before setting up logging)
     resolved_path: Path | None = None

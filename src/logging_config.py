@@ -1,10 +1,25 @@
 """Logging configuration for TrackTales."""
 
+import atexit
 import logging
 import logging.handlers
 import os
 import sys
 from pathlib import Path
+from typing import TextIO
+
+# Module-level devnull stream cache.  Created on first use and closed on
+# interpreter exit via atexit so callers never need to manage its lifetime.
+_devnull_stream: TextIO | None = None
+
+
+def _get_or_create_devnull() -> TextIO:
+    """Return a module-level devnull stream, opening it on first call."""
+    global _devnull_stream
+    if _devnull_stream is None:
+        _devnull_stream = open(os.devnull, "w", encoding="utf-8")
+        atexit.register(_devnull_stream.close)
+    return _devnull_stream
 
 
 class _ImmediateFlushHandler(logging.handlers.RotatingFileHandler):
@@ -16,16 +31,22 @@ class _ImmediateFlushHandler(logging.handlers.RotatingFileHandler):
         self.flush()
 
 
-def _ensure_standard_streams() -> None:
-    """Ensure stdout/stderr exist in windowed or frozen executions.
+def ensure_standard_streams() -> None:
+    """Ensure stdout/stderr are usable in windowed or frozen executions.
 
     Uvicorn's default formatter checks ``sys.stderr.isatty()`` during
     startup. In windowed executables, those streams can be ``None``.
+
+    Prefers ``sys.__stdout__``/``sys.__stderr__`` when available to avoid
+    creating extra file handles (and to reduce the chance of FD leaks in
+    tests that monkeypatch stdout/stderr). Falls back to a module-level
+    cached devnull stream (closed on interpreter exit via ``atexit``) only
+    when the canonical streams are also ``None``.
     """
     if sys.stdout is None:
-        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+        sys.stdout = sys.__stdout__ if sys.__stdout__ is not None else _get_or_create_devnull()
     if sys.stderr is None:
-        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+        sys.stderr = sys.__stderr__ if sys.__stderr__ is not None else _get_or_create_devnull()
 
 
 def setup_logging(log_level: str, enable_file_logging: bool = True) -> None:
@@ -37,7 +58,7 @@ def setup_logging(log_level: str, enable_file_logging: bool = True) -> None:
             (disabled in dev mode to avoid reload loops)
     """
     # Keep std streams available for formatters that probe TTY support.
-    _ensure_standard_streams()
+    ensure_standard_streams()
 
     logger = logging.getLogger()
     logger.setLevel(getattr(logging, log_level))

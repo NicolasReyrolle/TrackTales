@@ -7,7 +7,7 @@ from collections.abc import Callable
 from datetime import datetime
 from types import TracebackType
 from typing import Any
-from xml.etree.ElementTree import Element
+from xml.etree.ElementTree import Element, tostring
 from zipfile import ZipFile
 
 import pandas as pd
@@ -180,6 +180,7 @@ class ExportParser:
         """Process a workout element and append the normalized workout record."""
         activity_type = self._extract_activity_type(elem)
         record = self._create_workout_record(elem, activity_type)
+        record["xmlFragment"] = tostring(elem, encoding="unicode")
         self._process_workout_children(elem, record, zipfile)
         workout_rows.append(record)
 

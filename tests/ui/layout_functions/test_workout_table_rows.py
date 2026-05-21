@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -385,8 +386,11 @@ class TestBuildWorkoutRows:
         assert rows[0]["route"].points[0].heart_rate == pytest.approx(141.0)
         assert rows[0]["route"].points[1].heart_rate == pytest.approx(149.0)
 
-    def test_missing_route_values_do_not_crash_heart_rate_enrichment(self) -> None:
-        """Missing routes represented as NaN should be left untouched when HR samples exist."""
+    def test_missing_route_values_log_xml_fragment_in_debug(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Malformed routes should be left untouched and log the workout XML fragment."""
         from app_state import state
         from logic.records_by_type import RecordsByType
 
@@ -401,6 +405,7 @@ class TestBuildWorkoutRows:
                     "endDate": pd.Timestamp("2025-01-02 10:10:00+00:00"),
                     "duration": 600.0,
                     "route": float("nan"),
+                    "xmlFragment": '<Workout startDate="2025-01-02 11:00:00 +0100" />',
                 }
             ]
         )
@@ -414,13 +419,19 @@ class TestBuildWorkoutRows:
         try:
             state.workouts = workouts_mock
             state.records_by_type = RecordsByType(data={"HeartRate": heart_rate_df})
-            rows = wt._build_workout_rows()
+            with caplog.at_level(logging.DEBUG, logger="ui.workout_table"):
+                rows = wt._build_workout_rows()
         finally:
             state.workouts = original_workouts
             state.records_by_type = original_records
 
         assert len(rows) == 1
         assert pd.isna(rows[0]["route"])
+        assert any(
+            "Skipping heart-rate route enrichment for malformed route" in record.message
+            and 'XML fragment: <Workout startDate="2025-01-02 11:00:00 +0100" />' in record.message
+            for record in caplog.records
+        )
 
     def test_annotate_route_with_heart_rate_ignores_float_inputs(self) -> None:
         """Helper should return float/NaN route placeholders unchanged."""

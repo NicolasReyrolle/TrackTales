@@ -55,6 +55,8 @@ class TestLoadWorkouts:
             pd.Timestamp("2024-01-02 00:00:00"),
             pd.Timestamp("2024-01-03 00:00:00"),
         ]
+        assert "xmlFragment" in workouts.get_workouts().columns
+        assert "<Workout " in workouts.get_workouts().iloc[0]["xmlFragment"]
 
     def test_load_workouts_empty(self, tmp_path: Path) -> None:
         """Test loading workouts from ZIP with no running workouts."""

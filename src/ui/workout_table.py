@@ -189,6 +189,36 @@ def _annotate_route_with_heart_rate(
     return WorkoutRoute(points=annotated_points)
 
 
+def _log_malformed_route_fragment(
+    row: Any,
+    route_value: Any,
+    *,
+    field_name: str,
+    workout_index: object | None,
+) -> None:
+    """Log malformed route data with its source XML fragment for debugging."""
+    xml_fragment = row.get("xmlFragment")
+    workout_ref = f" at index {workout_index}" if workout_index is not None else ""
+    if isinstance(xml_fragment, str) and xml_fragment:
+        _logger.debug(
+            "Skipping heart-rate route enrichment for malformed %s%s (%s): %r; XML fragment: %s",
+            field_name,
+            workout_ref,
+            type(route_value).__name__,
+            route_value,
+            xml_fragment,
+        )
+        return
+
+    _logger.debug(
+        "Skipping heart-rate route enrichment for malformed %s%s (%s): %r",
+        field_name,
+        workout_ref,
+        type(route_value).__name__,
+        route_value,
+    )
+
+
 def _build_workout_rows(
     activity_type: str | None = None,
     skip_range_filters: bool = False,
@@ -368,12 +398,29 @@ def _extract_row_data(
         workout_end,
     )
     if workout_heart_rate_samples:
+        route_value = result.get("route")
+        if route_value is not None and not isinstance(route_value, WorkoutRoute):
+            _log_malformed_route_fragment(
+                row, route_value, field_name="route", workout_index=workout_index
+            )
         result["route"] = _annotate_route_with_heart_rate(
-            cast(WorkoutRoute | None, result.get("route")),
+            cast(WorkoutRoute | None, route_value),
             workout_heart_rate_samples,
         )
         route_parts = result.get("route_parts")
         if isinstance(route_parts, list):
+            invalid_route_parts = [
+                part
+                for part in route_parts
+                if part is not None and not isinstance(part, WorkoutRoute)
+            ]
+            if invalid_route_parts:
+                _log_malformed_route_fragment(
+                    row,
+                    invalid_route_parts,
+                    field_name="route_parts",
+                    workout_index=workout_index,
+                )
             result["route_parts"] = [
                 _annotate_route_with_heart_rate(part, workout_heart_rate_samples)
                 if isinstance(part, WorkoutRoute)

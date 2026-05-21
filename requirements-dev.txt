@@ -18,7 +18,7 @@ commitizen>=4.16.2
 # Type stubs
 pandas-stubs==2.3.3.260113
 types-defusedxml==0.7.0.20260504
-types-pywin32==311.0.0.20260508
+types-pywin32==311.0.0.20260521
 
 # Building (dry-run)
 build==1.5.0

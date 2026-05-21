@@ -24,7 +24,7 @@ jobs:
                   python-version: "3.12"
 
             - name: Install Commitizen
-              run: pip install commitizen==4.8.3
+              run: "pip install --only-binary :all: commitizen==4.8.3 --require-hashes --hash=sha256:91f261387ca2bbb4ab6c79a1a6378dc1576ffb40e3b7dbee201724d95aceba38"
 
             - name: Validate commit messages (push)
               if: github.event_name == 'push'

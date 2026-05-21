@@ -29,6 +29,20 @@ if not _logger.handlers:
     _logger.addHandler(logging.NullHandler())
 
 
+def _ensure_standard_streams() -> None:
+    """Ensure stdout/stderr are usable in GUI-bundled executions.
+
+    In windowed executables (e.g. PyInstaller with ``console=False``),
+    ``sys.stdout`` and ``sys.stderr`` can be ``None``. Uvicorn's default
+    formatter probes ``stream.isatty()`` during startup, so missing streams
+    would crash the app before the UI starts.
+    """
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
+
 @app.on_startup  # type: ignore[arg-type]
 def _compile_catalogs() -> None:  # pyright: ignore[reportUnusedFunction]
     """Compile translation catalogs at startup.
@@ -114,6 +128,9 @@ def cli_main() -> None:
         help="Prevent browser from automatically opening on startup",
     )
     args, _ = parser.parse_known_args()
+
+    # Keep std streams available for logging and Uvicorn formatter setup.
+    _ensure_standard_streams()
 
     # Validate dev file if provided (before setting up logging)
     resolved_path: Path | None = None

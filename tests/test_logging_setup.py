@@ -386,6 +386,30 @@ class TestCLIArgumentParsing:
         call_kwargs = mock_ui_run.call_args[1]
         assert call_kwargs.get("show") is False  # type: ignore[union-attr]
 
+    def test_cli_main_recovers_when_std_streams_missing(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """cli_main should recreate stdout/stderr when running without a console."""
+
+        def _fake_run(*_args: object, **_kwargs: object) -> None:
+            assert sys.stdout is not None
+            assert sys.stderr is not None
+            assert hasattr(sys.stdout, "isatty")
+            assert hasattr(sys.stderr, "isatty")
+
+        monkeypatch.setattr(sys, "argv", ["tracktales.py", "--no-browser"])
+        monkeypatch.setattr(sys, "stdout", None)
+        monkeypatch.setattr(sys, "stderr", None)
+
+        with (
+            patch.object(tracktales, "setup_logging") as mock_setup_logging,
+            patch("nicegui.ui.run", side_effect=_fake_run) as mock_ui_run,
+        ):
+            tracktales.cli_main()
+
+        mock_setup_logging.assert_called_once()
+        mock_ui_run.assert_called_once()
+
     def test_cli_main_invalid_dev_file_path_exits(self) -> None:
         """Test that invalid dev file paths cause an early exit with an error."""
         with (

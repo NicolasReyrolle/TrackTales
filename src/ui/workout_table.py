@@ -439,7 +439,9 @@ def _enrich_routes_with_heart_rate(
 
     route_value = result.get("route")
     if not _is_missing_route_placeholder(route_value) and not isinstance(route_value, WorkoutRoute):
-        _log_malformed_route_fragment(row, route_value, field_name="route", workout_index=workout_index)
+        _log_malformed_route_fragment(
+            row, route_value, field_name="route", workout_index=workout_index
+        )
     result["route"] = _annotate_route_with_heart_rate(
         cast(WorkoutRoute | None, route_value),
         workout_heart_rate_samples,

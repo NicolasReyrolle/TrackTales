@@ -196,26 +196,18 @@ def _log_malformed_route_fragment(
     field_name: str,
     workout_index: object | None,
 ) -> None:
-    """Log malformed route data with its source XML fragment for debugging."""
+    """Log malformed route data using non-sensitive metadata only."""
     xml_fragment = row.get("xmlFragment")
     workout_ref = f" at index {workout_index}" if workout_index is not None else ""
-    if isinstance(xml_fragment, str) and xml_fragment:
-        _logger.debug(
-            "Skipping heart-rate route enrichment for malformed %s%s (%s): %r; XML fragment: %s",
-            field_name,
-            workout_ref,
-            type(route_value).__name__,
-            route_value,
-            xml_fragment,
-        )
-        return
-
+    has_xml_fragment = isinstance(xml_fragment, str) and bool(xml_fragment)
+    malformed_count = len(route_value) if isinstance(route_value, list) else 1
     _logger.debug(
-        "Skipping heart-rate route enrichment for malformed %s%s (%s): %r",
+        "Skipping heart-rate route enrichment for malformed %s%s (type=%s, count=%d, has_xml_fragment=%s)",
         field_name,
         workout_ref,
         type(route_value).__name__,
-        route_value,
+        malformed_count,
+        has_xml_fragment,
     )
 
 

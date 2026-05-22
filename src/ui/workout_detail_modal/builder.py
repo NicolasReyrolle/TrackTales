@@ -45,6 +45,12 @@ from ui.workout_detail_modal.comparisons import (
     _get_row_routes,
 )
 from ui.workout_detail_modal.routes import (
+    _build_heart_rate_chart_config_from_routes_with_translate as _build_heart_rate_chart_config_from_routes_impl,
+)
+from ui.workout_detail_modal.routes import (
+    _build_heart_rate_chart_config_with_translate as _build_heart_rate_chart_config_impl,
+)
+from ui.workout_detail_modal.routes import (
     _build_route_profile_chart_config_with_translate as _build_route_profile_chart_config_impl,
 )
 from ui.workout_detail_modal.routes import (
@@ -60,7 +66,8 @@ _LabelFn: TypeAlias = Callable[[], str]
 
 #: i18n key reused across GPS-dependent modal sections.
 _NO_GPS_ROUTE_MSG = "No GPS route available."
-_HEART_RATE_SAMPLES_CACHE: tuple[int, pd.DataFrame] | None = None
+_NO_HEART_RATE_MSG = "No heart rate data available."
+_HEART_RATE_SAMPLES_CACHE: tuple[Any, pd.DataFrame] | None = None
 
 # ---------------------------------------------------------------------------
 # Shared label-function constants reused across multiple field display lists.
@@ -252,8 +259,8 @@ def _get_cached_heart_rate_samples() -> pd.DataFrame:
 
     global _HEART_RATE_SAMPLES_CACHE
 
-    cache_key = id(state.records_by_type)
-    if _HEART_RATE_SAMPLES_CACHE is not None and _HEART_RATE_SAMPLES_CACHE[0] == cache_key:
+    cache_key = state.records_by_type
+    if _HEART_RATE_SAMPLES_CACHE is not None and _HEART_RATE_SAMPLES_CACHE[0] is cache_key:
         return _HEART_RATE_SAMPLES_CACHE[1]
 
     heart_rate_df = state.records_by_type.heart_rate()
@@ -296,6 +303,30 @@ def _ensure_row_heart_rate_enriched(row: dict[str, Any]) -> None:
         row.get("workout_index"),
     )
     row["_heart_rate_routes_enriched"] = True
+
+
+def _get_row_workout_heart_rate_samples(row: dict[str, Any]) -> list[tuple[Any, float]]:
+    """Return workout-window heart-rate samples for the current row, cached on first use."""
+    cached_samples = row.get("_workout_heart_rate_samples")
+    if isinstance(cached_samples, list):
+        return cast(list[tuple[Any, float]], cached_samples)
+
+    from ui import workout_table as wt
+
+    workout_start = wt._normalize_datetime(row.get("workout_start_utc"))
+    workout_end = wt._normalize_datetime(row.get("workout_end_utc"))
+    samples = wt._extract_workout_heart_rate_samples(
+        _get_cached_heart_rate_samples(),
+        workout_start,
+        workout_end,
+    )
+    row["_workout_heart_rate_samples"] = samples
+    return samples
+
+
+def _row_has_workout_heart_rate(row: dict[str, Any]) -> bool:
+    """Return whether the row has any workout-window heart-rate samples."""
+    return bool(_get_row_workout_heart_rate_samples(row))
 
 
 def _update_fields(
@@ -363,7 +394,7 @@ def _do_refresh_route_profile_tab(
     route_profile_chart: Any,
     row: dict[str, Any],
 ) -> None:
-    """Update the Charts tab chart with altitude, pace, and heart-rate series."""
+    """Update the Charts tab route chart with altitude and pace series."""
     _ensure_row_heart_rate_enriched(row)
     _do_refresh_route_profile_tab_impl(
         no_route_label,
@@ -371,6 +402,37 @@ def _do_refresh_route_profile_tab(
         row,
         translate=t,
     )
+
+
+def _do_refresh_heart_rate_profile_tab(
+    no_heart_rate_label: Any,
+    heart_rate_chart: Any,
+    row: dict[str, Any],
+) -> None:
+    """Update the standalone heart-rate chart in the Charts tab."""
+    heart_rate_samples = _get_row_workout_heart_rate_samples(row)
+    has_heart_rate = bool(heart_rate_samples)
+    no_heart_rate_label.set_visibility(not has_heart_rate)
+    heart_rate_chart.set_visibility(has_heart_rate)
+    if not has_heart_rate:
+        return
+
+    routes = _get_row_routes(row)
+    distance_unit = str(row.get("distance_unit", "km"))
+    if routes:
+        _ensure_row_heart_rate_enriched(row)
+        heart_rate_options = _build_heart_rate_chart_config_from_routes_impl(
+            routes,
+            translate=t,
+            distance_unit="mi" if distance_unit == "mi" else "km",
+        )
+    else:
+        heart_rate_options = _build_heart_rate_chart_config_impl(heart_rate_samples, translate=t)
+    chart_options = getattr(heart_rate_chart, "options", None)
+    if isinstance(chart_options, dict):
+        chart_options.clear()
+        chart_options.update(heart_rate_options)
+    heart_rate_chart.update()
 
 
 #: Maps each supported raw activity type to the Activity-tab field keys used by
@@ -509,6 +571,19 @@ def _do_refresh_intervals_tab(
         splits_table.update()
 
 
+def _refresh_lazy_tab(
+    lazy_tab_refresh: dict[str, Callable[[dict[str, Any]], None]],
+    tab_value: Any,
+    row: dict[str, Any],
+) -> None:
+    """Refresh a lazy tab section when *tab_value* maps to a known refresh callback."""
+    if not isinstance(tab_value, str):
+        return
+    refresh_fn = lazy_tab_refresh.get(tab_value)
+    if refresh_fn is not None:
+        refresh_fn(row)
+
+
 def create_workout_detail_modal(
     rows: list[dict[str, Any]],
 ) -> Callable[[int], None]:
@@ -535,8 +610,9 @@ def create_workout_detail_modal(
     * **Route** – interactive map for workouts with GPS points. Route geometry is
       rendered from ``route_parts`` (when available) or the merged ``route`` field,
       with start/end markers.
-    * **Charts** – elevation, pace, and heart-rate charts for the workout route.
-      Includes distance-based tooltip metrics (pace, speed, altitude, optional heart rate).
+        * **Charts** – route profile chart (elevation + pace) plus a standalone
+            heart-rate chart.  Heart rate is shown when workout-window HR samples are
+            available, even if no GPS route exists.
     * **Intervals** – per-workout interval data.  For Swimming workouts each row
       represents one active set with distance, time, stroke style, average SWOLF,
       and rest duration.  For workouts with a GPS route the table shows per-km (or
@@ -725,13 +801,25 @@ def create_workout_detail_modal(
                             options={"zoomControl": True},
                         ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
 
-                # Charts tab: altitude + pace + heart-rate chart for route readability
+                # Charts tab: route profile (altitude/pace) + standalone heart-rate chart
                 with ui.tab_panel("profile"):
                     no_route_profile_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
                         LABEL_MUTED_CLASSES
                     )
                     with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
                         route_profile_chart = ui.echart(
+                            {
+                                "backgroundColor": "transparent",
+                                "xAxis": {"type": "value"},
+                                "yAxis": {"type": "value"},
+                                "series": [{"type": "line", "data": []}],
+                            }
+                        ).classes(MODAL_ROUTE_PROFILE_CLASSES)
+                    no_heart_rate_profile_label = ui.label(t(_NO_HEART_RATE_MSG)).classes(
+                        LABEL_MUTED_CLASSES
+                    )
+                    with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
+                        heart_rate_profile_chart = ui.echart(
                             {
                                 "backgroundColor": "transparent",
                                 "xAxis": {"type": "value"},
@@ -835,8 +923,13 @@ def create_workout_detail_modal(
         _do_refresh_route_tab(no_route_label, route_map, row)
 
     def _refresh_profile_tab(row: dict[str, Any]) -> None:
-        """Delegate to module-level helper; updates Charts tab chart and visibility."""
+        """Delegate to module-level helpers; updates Charts tab route and HR charts."""
         _do_refresh_route_profile_tab(no_route_profile_label, route_profile_chart, row)
+        _do_refresh_heart_rate_profile_tab(
+            no_heart_rate_profile_label,
+            heart_rate_profile_chart,
+            row,
+        )
 
     def _refresh_comparisons_tab(row: dict[str, Any]) -> None:
         """Delegate to module-level helper; updates Comparisons tab leaderboard."""
@@ -870,16 +963,11 @@ def create_workout_detail_modal(
         _refresh_activity_tab(row)
         has_route = bool(_get_row_routes(row))
         route_tab.set_enabled(has_route)
-        profile_tab.set_enabled(has_route)
+        profile_tab.set_enabled(has_route or _row_has_workout_heart_rate(row))
         intervals_tab.set_enabled(_row_has_swim_laps(row) or has_route)
         comparisons_tab.set_enabled(has_route)
-        # Only refresh the Intervals tab when it is currently active; switching to
-        # it triggers _on_tab_change which handles the initial load.
-        refresh_fn = (
-            _lazy_tab_refresh.get(detail_tabs.value) if isinstance(detail_tabs.value, str) else None
-        )
-        if refresh_fn:
-            refresh_fn(row)
+        # Only refresh the active lazy tab section; switching tabs triggers _on_tab_change.
+        _refresh_lazy_tab(_lazy_tab_refresh, detail_tabs.value, row)
 
     def _navigate(delta: int) -> None:
         """Move to the next or previous workout by *delta* steps."""
@@ -895,14 +983,12 @@ def create_workout_detail_modal(
         lazily (via :func:`_compute_splits_lazy`) and cached in
         ``row["splits"]`` for instant display on subsequent navigations.
         The Route tab renders a Leaflet map from the workout's GPS geometry.
-        The Charts tab renders an elevation + pace + heart-rate chart from the route points.
+        The Charts tab renders a route profile chart (elevation + pace) when a
+        GPS route exists and a standalone heart-rate chart when HR samples exist.
         The Comparisons tab searches for similar routes and caches the result
         in ``row["similar_routes"]``.
         """
-        tab_value = e.value if isinstance(e.value, str) else None
-        refresh_fn = _lazy_tab_refresh.get(tab_value) if tab_value is not None else None
-        if refresh_fn:
-            refresh_fn(rows[modal_state["index"]])
+        _refresh_lazy_tab(_lazy_tab_refresh, e.value, rows[modal_state["index"]])
 
     detail_tabs.on_value_change(_on_tab_change)
 

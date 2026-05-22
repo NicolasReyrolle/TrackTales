@@ -6,6 +6,7 @@ import asyncio
 import json
 from collections import deque
 from collections.abc import Callable
+from datetime import datetime
 from math import isfinite
 from typing import Any, TypedDict, cast
 
@@ -23,6 +24,8 @@ _MIN_MOVING_SPEED_M_S = 0.5
 _PACE_SMOOTHING_WINDOW_M = 200.0
 #: Keep at least this many segments in the rolling window for short-stop stability.
 _MIN_ROLLING_SEGMENTS = 1
+#: ECharts key for JavaScript tooltip formatters.
+_FORMATTER_KEY = ":formatter"
 
 
 class _RoutePointData(TypedDict):
@@ -204,7 +207,7 @@ def _append_route_profile_points(
 
 
 def _build_route_profile_chart_config(routes: list[WorkoutRoute]) -> dict[str, Any]:
-    """Build a route profile chart with altitude plus pace/speed/HR hover metrics."""
+    """Build a route profile chart with altitude plus pace/speed hover metrics."""
     return _build_route_profile_chart_config_with_translate(routes, translate=t, distance_unit="km")
 
 
@@ -250,7 +253,6 @@ def _build_route_profile_chart_config_with_translate(
     speed_label = json.dumps(f"{translate('Speed')}: ")
     altitude_label = json.dumps(f"{translate('Altitude')}: ")
     distance_label = json.dumps(f"{translate('Distance')}: ")
-    heart_rate_label = json.dumps(f"{translate('Heart Rate')}: ")
     no_data = json.dumps("–")
     distance_unit_label = json.dumps(normalized_distance_unit)
     altitude_unit_label = json.dumps(altitude_unit)
@@ -258,9 +260,7 @@ def _build_route_profile_chart_config_with_translate(
     altitude_axis_name = f"{translate('Altitude')} ({altitude_unit})"
     pace_axis_name = f"{translate('Pace')} (/{normalized_distance_unit})"
     distance_axis_name = f"{translate('Distance')} ({normalized_distance_unit})"
-    heart_rate_axis_name = f"{translate('Heart Rate')} (bpm)"
-    has_heart_rate = any(point[4] is not None for point in profile_points)
-    chart_grid = {"left": 72, "right": 128 if has_heart_rate else 80, "top": 56, "bottom": 64}
+    chart_grid = {"left": 72, "right": 80, "top": 56, "bottom": 64}
     legend_items = [altitude_axis_name, pace_axis_name]
     y_axes: list[dict[str, Any]] = [
         {
@@ -301,32 +301,6 @@ def _build_route_profile_chart_config_with_translate(
             "lineStyle": {"width": 2},
         },
     ]
-    if has_heart_rate:
-        legend_items.append(heart_rate_axis_name)
-        y_axes.append(
-            {
-                "type": "value",
-                "name": heart_rate_axis_name,
-                "scale": True,
-                "position": "right",
-                "offset": 52,
-                "nameLocation": "middle",
-                "nameGap": 52,
-            }
-        )
-        series.append(
-            {
-                "name": heart_rate_axis_name,
-                "type": "line",
-                "data": profile_points,
-                "encode": {"x": 0, "y": 4},
-                "yAxisIndex": 2,
-                "showSymbol": False,
-                "smooth": False,
-                "connectNulls": True,
-                "lineStyle": {"width": 2},
-            }
-        )
     return {
         "backgroundColor": "transparent",
         "legend": {"data": legend_items, "top": 8},
@@ -334,7 +308,7 @@ def _build_route_profile_chart_config_with_translate(
         "tooltip": {
             "trigger": "axis",
             "renderMode": "richText",
-            ":formatter": (
+            _FORMATTER_KEY: (
                 "function(params) {"
                 "var point = params[0].data;"
                 f"var text = {distance_label} + point[0].toFixed(2) + ' ' + "
@@ -347,9 +321,6 @@ def _build_route_profile_chart_config_with_translate(
                 f"' /{normalized_distance_unit}'));"
                 f"text += '\\n' + {speed_label} + ("
                 f"point[3] == null ? {no_data} : point[3].toFixed(1) + ' ' + {speed_unit_label});"
-                "if (point[4] != null) {"
-                f"  text += '\\n' + {heart_rate_label} + point[4].toFixed(0) + ' bpm';"
-                "}"
                 "return text;"
                 "}"
             ),
@@ -362,6 +333,139 @@ def _build_route_profile_chart_config_with_translate(
         },
         "yAxis": y_axes,
         "series": series,
+    }
+
+
+def _build_heart_rate_chart_config_from_routes_with_translate(
+    routes: list[WorkoutRoute],
+    *,
+    translate: Callable[..., str],
+    distance_unit: str = "km",
+) -> dict[str, Any]:
+    """Build a standalone heart-rate chart config using route distance on the X axis."""
+    profile_points: list[list[float]] = []
+    cumulative_distance_m = 0.0
+    for route in routes:
+        if not route.points:
+            continue
+        valid_points = _build_valid_route_points(route)
+        if len(valid_points) < 2:
+            continue
+        for idx, current in enumerate(valid_points):
+            previous = valid_points[idx - 1] if idx > 0 else None
+            segment_distance_m = _calculate_segment_distance(previous, current)
+            cumulative_distance_m += segment_distance_m
+            heart_rate = cast(float | None, current["heart_rate"])
+            if heart_rate is None:
+                continue
+            profile_points.append([cumulative_distance_m / METERS_PER_KM, heart_rate])
+
+    normalized_distance_unit = "mi" if distance_unit == "mi" else "km"
+    if normalized_distance_unit == "mi":
+        km_to_miles = METERS_TO_MILES * METERS_PER_KM
+        profile_points = [[point[0] * km_to_miles, point[1]] for point in profile_points]
+
+    heart_rate_axis_name = f"{translate('Heart Rate')} (bpm)"
+    distance_axis_name = f"{translate('Distance')} ({normalized_distance_unit})"
+    heart_rate_label = json.dumps(f"{translate('Heart Rate')}: ")
+    distance_label = json.dumps(f"{translate('Distance')}: ")
+    distance_unit_label = json.dumps(normalized_distance_unit)
+    return {
+        "backgroundColor": "transparent",
+        "grid": {"left": 72, "right": 80, "top": 56, "bottom": 64},
+        "tooltip": {
+            "trigger": "axis",
+            "renderMode": "richText",
+            _FORMATTER_KEY: (
+                "function(params) {"
+                "var point = params[0].data;"
+                f"return {distance_label} + point[0].toFixed(2) + ' ' + {distance_unit_label} + '\\n' + "
+                f"{heart_rate_label} + point[1].toFixed(0) + ' bpm';"
+                "}"
+            ),
+        },
+        "xAxis": {
+            "type": "value",
+            "name": distance_axis_name,
+            "nameLocation": "middle",
+            "nameGap": 42,
+        },
+        "yAxis": {
+            "type": "value",
+            "name": heart_rate_axis_name,
+            "scale": True,
+            "nameLocation": "middle",
+            "nameGap": 52,
+        },
+        "series": [
+            {
+                "name": heart_rate_axis_name,
+                "type": "line",
+                "data": profile_points,
+                "showSymbol": False,
+                "smooth": False,
+                "lineStyle": {"width": 2},
+            }
+        ],
+    }
+
+
+def _build_heart_rate_chart_config_with_translate(
+    heart_rate_samples: list[tuple[datetime, float]],
+    *,
+    translate: Callable[..., str],
+) -> dict[str, Any]:
+    """Build a standalone heart-rate chart config from workout-window samples."""
+    if not heart_rate_samples:
+        series_data: list[list[float]] = []
+    else:
+        start_time = heart_rate_samples[0][0]
+        series_data = [
+            [max((sample_time - start_time).total_seconds(), 0.0) / 60.0, heart_rate]
+            for sample_time, heart_rate in heart_rate_samples
+        ]
+
+    heart_rate_axis_name = f"{translate('Heart Rate')} (bpm)"
+    elapsed_axis_name = f"{translate('Time')} (min)"
+    heart_rate_label = json.dumps(f"{translate('Heart Rate')}: ")
+    elapsed_label = json.dumps(f"{translate('Time')}: ")
+    return {
+        "backgroundColor": "transparent",
+        "grid": {"left": 72, "right": 80, "top": 56, "bottom": 64},
+        "tooltip": {
+            "trigger": "axis",
+            "renderMode": "richText",
+            _FORMATTER_KEY: (
+                "function(params) {"
+                "var point = params[0].data;"
+                f"return {elapsed_label} + point[0].toFixed(1) + ' min' + '\\n' + "
+                f"{heart_rate_label} + point[1].toFixed(0) + ' bpm';"
+                "}"
+            ),
+        },
+        "xAxis": {
+            "type": "value",
+            "name": elapsed_axis_name,
+            "nameLocation": "middle",
+            "nameGap": 42,
+        },
+        "yAxis": {
+            "type": "value",
+            "name": heart_rate_axis_name,
+            "scale": True,
+            "nameLocation": "middle",
+            "nameGap": 52,
+        },
+        "series": [
+            {
+                "name": heart_rate_axis_name,
+                "type": "line",
+                "data": series_data,
+                "showSymbol": False,
+                "smooth": False,
+                "lineStyle": {"width": 2},
+            }
+        ],
     }
 
 
@@ -443,7 +547,7 @@ def _do_refresh_route_profile_tab(
     *,
     translate: Callable[..., str] = t,
 ) -> None:
-    """Update the Charts tab chart with altitude, pace, and heart-rate series."""
+    """Update the Charts tab route chart with altitude and pace series."""
     routes = _get_row_routes(row)
     has_route = bool(routes)
     no_route_label.set_visibility(not has_route)

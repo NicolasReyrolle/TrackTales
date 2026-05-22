@@ -576,11 +576,11 @@ class TestComputeSplitsLazy:
 
     def test_lazy_route_enrichment_uses_utc_workout_bounds(self) -> None:
         """Lazy modal enrichment should use UTC workout bounds when matching HR samples."""
+        import pandas as pd
+
         from app_state import state
         from logic.records_by_type import RecordsByType
         from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
-
-        import pandas as pd
 
         original_records = state.records_by_type
         route = WorkoutRoute(

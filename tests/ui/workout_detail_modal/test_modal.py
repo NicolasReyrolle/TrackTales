@@ -213,6 +213,49 @@ class TestCreateWorkoutDetailModal:
         prev_btn.click()  # Attempt to navigate before the first row
         assert nav_counter._text == "1 / 2"  # Still on row 0
 
+    def test_profile_tab_enabled_when_workout_has_hr_but_no_route(self) -> None:
+        """Charts tab should be enabled for non-GPS workouts when HR samples exist."""
+        import pandas as pd
+
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+
+        original_records = state.records_by_type
+        tabs_created: list[_DummyElement] = []
+
+        def make_tab(*_a: Any, **_kw: Any) -> _DummyElement:
+            tab = _DummyElement()
+            tabs_created.append(tab)
+            return tab
+
+        row = {
+            **_make_row(idx=0),
+            "route": None,
+            "workout_start_utc": pd.Timestamp("2025-01-02 10:00:00"),
+            "workout_end_utc": pd.Timestamp("2025-01-02 10:10:00"),
+        }
+        heart_rate_df = pd.DataFrame(
+            [
+                {"startDate": "2025-01-02 10:00:10+00:00", "value": 141},
+                {"startDate": "2025-01-02 10:04:50+00:00", "value": 149},
+            ]
+        )
+
+        try:
+            state.records_by_type = RecordsByType(data={"HeartRate": heart_rate_df})
+            with ExitStack() as stack:
+                for p in _all_patches(tab_side_effect=make_tab):
+                    stack.enter_context(p)
+                fn = wdm.create_workout_detail_modal([row])
+            fn(0)
+        finally:
+            state.records_by_type = original_records
+
+        route_tab = tabs_created[2]
+        profile_tab = tabs_created[3]
+        assert route_tab._enabled is False
+        assert profile_tab._enabled is True
+
     def test_route_tab_change_triggers_route_refresh(self) -> None:
         """Switching to the Route tab should trigger Route-tab refresh."""
         from datetime import timedelta
@@ -482,6 +525,129 @@ class TestCreateWorkoutDetailModal:
         assert profile_data[1][0] < 1
         assert profile_data[1][3] == pytest.approx(3.0 * 3.6 * km_to_miles)
 
+    def test_do_refresh_heart_rate_profile_tab_shows_chart_without_route(self) -> None:
+        """Standalone heart-rate chart should render even when the workout has no route."""
+        import pandas as pd
+
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+        from ui.workout_detail_modal import builder as wdm_builder
+
+        class _ReadOnlyChart:
+            def __init__(self) -> None:
+                self._visible = True
+                self._options_store: dict[str, Any] = {}
+
+            @property
+            def options(self) -> dict[str, Any]:
+                return self._options_store
+
+            def set_visibility(self, visible: bool) -> None:
+                self._visible = visible
+
+            def update(self) -> None:
+                return
+
+        original_records = state.records_by_type
+        no_hr_label = _DummyElement()
+        heart_rate_chart = _ReadOnlyChart()
+        row = {
+            **_make_row(idx=0),
+            "route": None,
+            "workout_start_utc": pd.Timestamp("2025-01-02 10:00:00"),
+            "workout_end_utc": pd.Timestamp("2025-01-02 10:10:00"),
+        }
+        heart_rate_df = pd.DataFrame(
+            [
+                {"startDate": "2025-01-02 10:00:10+00:00", "value": 141},
+                {"startDate": "2025-01-02 10:04:50+00:00", "value": 149},
+            ]
+        )
+
+        try:
+            state.records_by_type = RecordsByType(data={"HeartRate": heart_rate_df})
+            wdm_builder._do_refresh_heart_rate_profile_tab(no_hr_label, heart_rate_chart, row)
+        finally:
+            state.records_by_type = original_records
+
+        assert no_hr_label._visible is False
+        assert heart_rate_chart._visible is True
+        assert heart_rate_chart.options["backgroundColor"] == "transparent"
+        assert heart_rate_chart.options["xAxis"]["name"].endswith("(min)")
+        assert len(heart_rate_chart.options["series"][0]["data"]) == 2
+
+    def test_do_refresh_heart_rate_profile_tab_uses_distance_with_route(self) -> None:
+        """Standalone HR chart should use distance X-axis when route points exist."""
+        import pandas as pd
+
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+        from ui.workout_detail_modal import builder as wdm_builder
+
+        class _ReadOnlyChart:
+            def __init__(self) -> None:
+                self._visible = True
+                self._options_store: dict[str, Any] = {}
+
+            @property
+            def options(self) -> dict[str, Any]:
+                return self._options_store
+
+            def set_visibility(self, visible: bool) -> None:
+                self._visible = visible
+
+            def update(self) -> None:
+                return
+
+        base_time = pd.Timestamp("2025-01-02 10:00:00+00:00")
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=base_time.to_pydatetime(),
+                    latitude=48.85,
+                    longitude=2.35,
+                    altitude=100.0,
+                    speed=3.0,
+                ),
+                RoutePoint(
+                    time=(base_time + pd.Timedelta(seconds=60)).to_pydatetime(),
+                    latitude=48.851,
+                    longitude=2.351,
+                    altitude=101.0,
+                    speed=3.1,
+                ),
+            ]
+        )
+
+        original_records = state.records_by_type
+        no_hr_label = _DummyElement()
+        heart_rate_chart = _ReadOnlyChart()
+        row = {
+            **_make_row(idx=0),
+            "route": route,
+            "workout_start_utc": base_time,
+            "workout_end_utc": base_time + pd.Timedelta(minutes=10),
+            "distance_unit": "km",
+        }
+        heart_rate_df = pd.DataFrame(
+            [
+                {"startDate": "2025-01-02 10:00:10+00:00", "value": 141},
+                {"startDate": "2025-01-02 10:01:00+00:00", "value": 149},
+            ]
+        )
+
+        try:
+            state.records_by_type = RecordsByType(data={"HeartRate": heart_rate_df})
+            wdm_builder._do_refresh_heart_rate_profile_tab(no_hr_label, heart_rate_chart, row)
+        finally:
+            state.records_by_type = original_records
+
+        assert no_hr_label._visible is False
+        assert heart_rate_chart._visible is True
+        assert heart_rate_chart.options["xAxis"]["name"].endswith("(km)")
+        assert heart_rate_chart.options["series"][0]["type"] == "line"
+
 
 class TestRouteTabLocalizationAndCoverage:
     """Focused tests for route tab localization and route-parts behavior."""
@@ -635,8 +801,8 @@ class TestRouteTabLocalizationAndCoverage:
         assert pace_data[1][2] is not None  # pace min/km
         assert pace_data[1][3] is not None  # speed km/h
 
-    def test_build_route_profile_chart_config_includes_heart_rate_samples(self) -> None:
-        """Profile data should carry HR values for tooltip and chart rendering when present."""
+    def test_build_route_profile_chart_config_excludes_heart_rate_series(self) -> None:
+        """Route profile chart should not include HR axis/series after chart split."""
         from datetime import timedelta
 
         import pandas as pd
@@ -663,14 +829,13 @@ class TestRouteTabLocalizationAndCoverage:
 
         config = wdm._build_route_profile_chart_config([route])
         profile_data = config["series"][0]["data"]
-        heart_rate_series = config["series"][2]
 
         assert profile_data[0][4] is None
         assert profile_data[1][4] == pytest.approx(142.0)
-        assert heart_rate_series["encode"]["y"] == 4
-        assert config["legend"]["data"][-1] == "Heart Rate (bpm)"
-        assert config["yAxis"][2]["name"] == "Heart Rate (bpm)"
-        assert "Heart Rate" in config["tooltip"][":formatter"]
+        assert len(config["series"]) == 2
+        assert len(config["yAxis"]) == 2
+        assert all("Heart Rate" not in legend for legend in config["legend"]["data"])
+        assert "Heart Rate" not in config["tooltip"][":formatter"]
 
     def test_build_route_profile_chart_config_smooths_pause_spikes(self) -> None:
         """Pause-like segments should not inject extreme pace spikes into profile samples."""

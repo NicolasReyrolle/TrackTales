@@ -202,7 +202,8 @@ def _log_malformed_route_fragment(
     has_xml_fragment = isinstance(xml_fragment, str) and bool(xml_fragment)
     malformed_count = len(route_value) if isinstance(route_value, list) else 1
     _logger.debug(
-        "Skipping heart-rate route enrichment for malformed %s%s (type=%s, count=%d, has_xml_fragment=%s)",
+        "Skipping heart-rate route enrichment for malformed %s%s "
+        "(type=%s, count=%d, has_xml_fragment=%s)",
         field_name,
         workout_ref,
         type(route_value).__name__,

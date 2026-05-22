@@ -44,9 +44,7 @@ from ui.workout_detail_modal.comparisons import (
     _do_refresh_comparisons_tab,
     _get_row_routes,
 )
-from ui.workout_detail_modal.routes import (
-    _build_heart_rate_chart_config_from_routes_with_translate as _build_heart_rate_chart_config_from_routes_impl,
-)
+from ui.workout_detail_modal.routes import _build_heart_rate_chart_config_from_routes_with_translate
 from ui.workout_detail_modal.routes import (
     _build_heart_rate_chart_config_with_translate as _build_heart_rate_chart_config_impl,
 )
@@ -421,7 +419,7 @@ def _do_refresh_heart_rate_profile_tab(
     distance_unit = str(row.get("distance_unit", "km"))
     if routes:
         _ensure_row_heart_rate_enriched(row)
-        heart_rate_options = _build_heart_rate_chart_config_from_routes_impl(
+        heart_rate_options = _build_heart_rate_chart_config_from_routes_with_translate(
             routes,
             translate=t,
             distance_unit="mi" if distance_unit == "mi" else "km",

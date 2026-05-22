@@ -379,7 +379,8 @@ def _build_heart_rate_chart_config_from_routes_with_translate(
             _FORMATTER_KEY: (
                 "function(params) {"
                 "var point = params[0].data;"
-                f"return {distance_label} + point[0].toFixed(2) + ' ' + {distance_unit_label} + '\\n' + "
+                f"return {distance_label} + point[0].toFixed(2) + "
+                f"' ' + {distance_unit_label} + '\\n' + "
                 f"{heart_rate_label} + point[1].toFixed(0) + ' bpm';"
                 "}"
             ),

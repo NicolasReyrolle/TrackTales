@@ -574,14 +574,67 @@ class TestComputeSplitsLazy:
         assert splits_table._visible
         assert len(splits_table.rows) >= 3
 
-    def test_computed_splits_include_average_heart_rate_when_route_points_have_it(self) -> None:
-        """Lazy split computation should carry per-split average heart rate values."""
+    def test_lazy_route_enrichment_uses_utc_workout_bounds(self) -> None:
+        """Lazy modal enrichment should use UTC workout bounds when matching HR samples."""
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        import pandas as pd
+
+        original_records = state.records_by_type
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=pd.Timestamp("2025-01-02 10:00:00+00:00").to_pydatetime(),
+                    latitude=48.85,
+                    longitude=2.35,
+                    altitude=35.0,
+                    speed=3.0,
+                ),
+                RoutePoint(
+                    time=pd.Timestamp("2025-01-02 10:05:00+00:00").to_pydatetime(),
+                    latitude=48.86,
+                    longitude=2.36,
+                    altitude=36.0,
+                    speed=3.1,
+                ),
+            ]
+        )
+        heart_rate_df = pd.DataFrame(
+            [
+                {"startDate": "2025-01-02 10:00:10+00:00", "value": 141},
+                {"startDate": "2025-01-02 10:04:50+00:00", "value": 149},
+            ]
+        )
+        row: dict[str, Any] = {
+            "route": route,
+            "distance_unit": "km",
+            "distance_sort": 3000.0,
+            "workout_start_utc": pd.Timestamp("2025-01-02 10:00:00"),
+            "workout_end_utc": pd.Timestamp("2025-01-02 10:10:00"),
+        }
+
+        try:
+            state.records_by_type = RecordsByType(data={"HeartRate": heart_rate_df})
+            wdm._ensure_row_heart_rate_enriched(row)
+        finally:
+            state.records_by_type = original_records
+
+        assert row["route"].points[0].heart_rate == pytest.approx(141.0)
+        assert row["route"].points[1].heart_rate == pytest.approx(149.0)
+
+    def test_computed_splits_include_average_heart_rate_when_loaded_lazily(self) -> None:
+        """Lazy split computation should derive per-split average heart rate from records."""
         from datetime import timedelta
 
         import pandas as pd
 
+        from app_state import state
+        from logic.records_by_type import RecordsByType
         from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 
+        original_records = state.records_by_type
         base_time = pd.Timestamp("2024-01-01 10:00:00").to_pydatetime().replace(tzinfo=None)
         points = [
             RoutePoint(
@@ -590,14 +643,32 @@ class TestComputeSplitsLazy:
                 longitude=0.0,
                 altitude=0.0,
                 speed=3.0,
-                heart_rate=140.0 + (i % 2),
             )
             for i in range(1001)
         ]
         route = WorkoutRoute(points=points)
-        row: dict[str, Any] = {"route": route, "distance_unit": "km", "distance_sort": 3000.0}
+        heart_rate_df = pd.DataFrame(
+            [
+                {
+                    "startDate": (base_time + timedelta(seconds=i)).isoformat(),
+                    "value": 140.0 + (i % 2),
+                }
+                for i in range(1001)
+            ]
+        )
+        row: dict[str, Any] = {
+            "route": route,
+            "distance_unit": "km",
+            "distance_sort": 3000.0,
+            "workout_start_utc": pd.Timestamp(base_time),
+            "workout_end_utc": pd.Timestamp(base_time + timedelta(seconds=1000)),
+        }
 
-        result = wdm._compute_splits_lazy(row)
+        try:
+            state.records_by_type = RecordsByType(data={"HeartRate": heart_rate_df})
+            result = wdm._compute_splits_lazy(row)
+        finally:
+            state.records_by_type = original_records
 
         assert result
         assert result[0]["avg_heart_rate"] == pytest.approx(140.5, abs=0.6)

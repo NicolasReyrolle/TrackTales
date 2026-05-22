@@ -37,6 +37,7 @@ _ACTIVITY_FIELD_KEYS = _builder._ACTIVITY_FIELD_KEYS
 _build_swim_display_rows = _builder._build_swim_display_rows
 _format_split_rows = _builder._format_split_rows
 _compute_splits_lazy = _builder._compute_splits_lazy
+_ensure_row_heart_rate_enriched = _builder._ensure_row_heart_rate_enriched
 _get_row_routes = _builder._get_row_routes
 _row_has_activity_data = _builder._row_has_activity_data
 _row_has_swim_laps = _builder._row_has_swim_laps

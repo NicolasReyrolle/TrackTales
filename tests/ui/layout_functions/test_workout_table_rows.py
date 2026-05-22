@@ -272,8 +272,8 @@ class TestBuildWorkoutRows:
             assert "vo2_max" in row
             assert row["vo2_max"] != ""
 
-    def test_routes_are_enriched_with_workout_heart_rate_samples(self) -> None:
-        """Workout rows should attach nearby heart-rate samples onto route points for the modal."""
+    def test_routes_are_not_enriched_during_workout_row_building(self) -> None:
+        """Workout row construction should keep route heart rate lazy until modal rendering."""
         from app_state import state
         from logic.records_by_type import RecordsByType
         from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
@@ -325,11 +325,11 @@ class TestBuildWorkoutRows:
             state.workouts = original_workouts
             state.records_by_type = original_records
 
-        assert rows[0]["route"].points[0].heart_rate == pytest.approx(141.0)
-        assert rows[0]["route"].points[1].heart_rate == pytest.approx(149.0)
+        assert rows[0]["route"].points[0].heart_rate is None
+        assert rows[0]["route"].points[1].heart_rate is None
 
-    def test_routes_use_utc_workout_bounds_for_heart_rate_matching(self) -> None:
-        """UTC workout bounds should be used when display dates preserve local wall clock."""
+    def test_rows_preserve_utc_workout_bounds_for_lazy_heart_rate_matching(self) -> None:
+        """Workout rows should keep UTC bounds so lazy modal enrichment can match samples."""
         from app_state import state
         from logic.records_by_type import RecordsByType
         from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
@@ -383,8 +383,10 @@ class TestBuildWorkoutRows:
             state.workouts = original_workouts
             state.records_by_type = original_records
 
-        assert rows[0]["route"].points[0].heart_rate == pytest.approx(141.0)
-        assert rows[0]["route"].points[1].heart_rate == pytest.approx(149.0)
+        assert rows[0]["route"].points[0].heart_rate is None
+        assert rows[0]["route"].points[1].heart_rate is None
+        assert rows[0]["workout_start_utc"] == pd.Timestamp("2025-01-02 10:00:00")
+        assert rows[0]["workout_end_utc"] == pd.Timestamp("2025-01-02 10:10:00")
 
     def test_missing_route_values_do_not_log_malformed_debug(
         self,

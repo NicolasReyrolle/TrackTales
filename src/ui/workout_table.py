@@ -278,18 +278,6 @@ def _build_workout_rows(
     if not vo2_df.empty and "startDate" in vo2_df.columns:
         vo2_dates = pd.to_datetime(vo2_df["startDate"], errors="coerce").dt.tz_localize(None)
 
-    heart_rate_df = state.records_by_type.heart_rate()
-    heart_rate_samples = pd.DataFrame(columns=["startDate", "value"])
-    if not heart_rate_df.empty and {"startDate", "value"}.issubset(heart_rate_df.columns):
-        heart_rate_samples = heart_rate_df[["startDate", "value"]].copy()
-        heart_rate_samples["startDate"] = pd.to_datetime(
-            heart_rate_samples["startDate"], utc=True, errors="coerce"
-        ).dt.tz_localize(None)
-        heart_rate_samples["value"] = pd.to_numeric(heart_rate_samples["value"], errors="coerce")
-        heart_rate_samples = heart_rate_samples.dropna(subset=["startDate", "value"]).sort_values(
-            "startDate"
-        )
-
     for idx, (workout_index, row) in enumerate(df.iterrows()):
         row_data = _extract_row_data(
             row,
@@ -299,7 +287,6 @@ def _build_workout_rows(
             elevation_unit,
             vo2_dates,
             temperature_unit,
-            heart_rate_samples,
             workout_index=workout_index,
         )
         rows.append(row_data)
@@ -315,7 +302,6 @@ def _extract_row_data(
     elevation_unit: str = "m",
     vo2_dates: pd.Series | None = None,
     temperature_unit: str = "°C",
-    heart_rate_samples: pd.DataFrame | None = None,
     workout_index: object | None = None,
 ) -> dict[str, Any]:
     """Extract and format a single workout row.
@@ -389,9 +375,9 @@ def _extract_row_data(
         "route": row.get("route"),
         "route_parts": row.get("route_parts"),
         "distance_unit": distance_unit,
+        "workout_start_utc": row.get("startDateUtc", row.get("startDate")),
+        "workout_end_utc": row.get("endDateUtc", row.get("endDate")),
     }
-
-    _enrich_routes_with_heart_rate(result, row, heart_rate_samples, workout_index)
 
     # VO2 max is a generic field shown for all activity types (Apple Watch reports
     # VO2 max estimates for every workout type, not only running).  Compute it once

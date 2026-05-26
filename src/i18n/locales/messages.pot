@@ -902,3 +902,7 @@ msgstr ""
 msgid "Open Water"
 msgstr ""
 
+# Workout detail modal – heart-rate chart label
+msgid "No heart rate data available."
+msgstr ""
+

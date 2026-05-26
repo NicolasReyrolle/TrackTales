@@ -218,7 +218,7 @@ def _is_missing_route_placeholder(value: Any) -> bool:
         return True
     try:
         return bool(pd.isna(value))
-    except TypeError:
+    except (TypeError, ValueError):
         return False
 
 

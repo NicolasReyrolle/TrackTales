@@ -64,7 +64,6 @@ _LabelFn: TypeAlias = Callable[[], str]
 
 #: i18n key reused across GPS-dependent modal sections.
 _NO_GPS_ROUTE_MSG = "No GPS route available."
-_NO_HEART_RATE_MSG = "No heart rate data available."
 _HEART_RATE_SAMPLES_CACHE: tuple[Any, pd.DataFrame] | None = None
 
 # ---------------------------------------------------------------------------
@@ -813,9 +812,9 @@ def create_workout_detail_modal(
                                 "series": [{"type": "line", "data": []}],
                             }
                         ).classes(MODAL_ROUTE_PROFILE_CLASSES)
-                    no_heart_rate_profile_label = ui.label(t(_NO_HEART_RATE_MSG)).classes(
-                        LABEL_MUTED_CLASSES
-                    )
+                    no_heart_rate_profile_label = ui.label(
+                        t("No heart rate data available.")
+                    ).classes(LABEL_MUTED_CLASSES)
                     with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
                         heart_rate_profile_chart = ui.echart(
                             {

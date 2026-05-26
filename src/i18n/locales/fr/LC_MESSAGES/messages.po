@@ -907,3 +907,7 @@ msgstr "Piscine"
 msgid "Open Water"
 msgstr "Eau libre"
 
+# Workout detail modal – heart-rate chart label
+msgid "No heart rate data available."
+msgstr "Aucune donnée de fréquence cardiaque disponible."
+

@@ -120,7 +120,7 @@ Builds the NiceGUI dialog from the field display specs:
 - `_RUNNING_FIELD_DISPLAY`, `_WALKING_FIELD_DISPLAY`, `_HIKING_FIELD_DISPLAY`, `_SWIMMING_FIELD_DISPLAY`, `_CYCLING_FIELD_DISPLAY` — display specs for the Activity tab, one per supported type.
 - `_ACTIVITY_FIELD_KEYS` — **derived from `PER_TYPE_FIELDS`** by collecting `display_row_key` values for each activity type. This dict drives `_row_has_activity_data()` to decide whether to enable the Activity tab. It is computed at module load time so any new entry in `PER_TYPE_FIELDS` is picked up automatically.
 - `create_workout_detail_modal(rows)` — creates the dialog once in the current NiceGUI context and returns an `open_at(index)` callable.
-- Route-capable workouts expose dedicated **Route** (Leaflet map with one polyline per route part plus start/end markers), **Charts** (ECharts elevation+pace with a heart-rate series and speed/heart-rate hover metrics when available), and **Comparisons** (same-route historical ranking) tabs. Keep chart readability settings (`legend.top`, centered x/y axis names, and larger grid margins) when editing chart config.
+- Route-capable workouts expose dedicated **Route** (Leaflet map with one polyline per route part plus start/end markers), **Charts** (ECharts route-profile chart with altitude+pace and speed hover metrics, plus a separate heart-rate chart displayed below when heart-rate samples are available), and **Comparisons** (same-route historical ranking) tabs. Keep chart readability settings (`legend.top`, centered x/y axis names, and larger grid margins) when editing chart config.
 
 **Adding Activity-tab support for a new type** requires changes in both layers:
 

@@ -129,7 +129,9 @@ class _DummyElement:
         self.value = value
         event = _DummyEvent(value)
         for handler in self._value_change_handlers:
-            handler(event)
+            result = handler(event)
+            if asyncio.iscoroutine(result):
+                asyncio.run(result)
 
     def update(self) -> None:
         """Stub for the NiceGUI ``update()`` method (e.g. used by ui.table)."""

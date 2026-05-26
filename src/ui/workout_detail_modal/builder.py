@@ -1,5 +1,6 @@
 """Workout detail modal dialog for TrackTales."""
 
+import asyncio
 from collections.abc import Callable
 from typing import Any, TypeAlias, cast
 
@@ -883,6 +884,8 @@ def create_workout_detail_modal(
                     icon="chevron_left",
                     on_click=lambda: _navigate(-1),
                 ).props(BUTTON_DENSE_PROPS)
+                tab_loading_feedback = ui.label("…").classes(LABEL_MUTED_CLASSES)
+                tab_loading_feedback.set_visibility(False)
                 nav_counter = ui.label().classes(MODAL_NAV_COUNTER_CLASSES)
                 next_btn = ui.button(
                     icon="chevron_right",
@@ -973,7 +976,7 @@ def create_workout_detail_modal(
             modal_state["index"] = new_idx
             _refresh()
 
-    def _on_tab_change(e: Any) -> None:
+    async def _on_tab_change(e: Any) -> None:
         """Refresh route-dependent tabs when the user switches to them.
 
         Swim intervals are loaded on first open and GPS splits are computed
@@ -985,7 +988,14 @@ def create_workout_detail_modal(
         The Comparisons tab searches for similar routes and caches the result
         in ``row["similar_routes"]``.
         """
-        _refresh_lazy_tab(_lazy_tab_refresh, e.value, rows[modal_state["index"]])
+        if not isinstance(e.value, str) or e.value not in _lazy_tab_refresh:
+            return
+        tab_loading_feedback.set_visibility(True)
+        await asyncio.sleep(0)
+        try:
+            _refresh_lazy_tab(_lazy_tab_refresh, e.value, rows[modal_state["index"]])
+        finally:
+            tab_loading_feedback.set_visibility(False)
 
     detail_tabs.on_value_change(_on_tab_change)
 

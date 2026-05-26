@@ -22,6 +22,7 @@ _logger = logging.getLogger(__name__)
 
 # Configuration constants
 WORKOUT_PROGRESS_INTERVAL = 100  # Report progress every N workouts
+DATETIME64_NS_DTYPE = "datetime64[ns]"
 
 # Only parse record types that the application currently supports to limit memory usage.
 SUPPORTED_RECORD_TYPES = frozenset(
@@ -218,20 +219,22 @@ class ExportParser:
                 for raw_start_date in workouts_df["startDate"].tolist()
             ]
             workouts_df["startDateUtc"] = pd.Series(
-                normalized_start_dates_utc, dtype="datetime64[ns]"
+                normalized_start_dates_utc, dtype=DATETIME64_NS_DTYPE
             )
             normalized_end_dates_utc = [
                 self._normalize_health_datetime_to_utc_naive(raw_end_date)
                 for raw_end_date in workouts_df["endDate"].tolist()
             ]
-            workouts_df["endDateUtc"] = pd.Series(normalized_end_dates_utc, dtype="datetime64[ns]")
+            workouts_df["endDateUtc"] = pd.Series(
+                normalized_end_dates_utc, dtype=DATETIME64_NS_DTYPE
+            )
             # Parse each Apple Health datetime and drop timezone information while
             # preserving the local wall-clock timestamp.
             normalized_start_dates = [
                 self._normalize_workout_start_date(raw_start_date)
                 for raw_start_date in workouts_df["startDate"].tolist()
             ]
-            workouts_df["startDate"] = pd.Series(normalized_start_dates, dtype="datetime64[ns]")
+            workouts_df["startDate"] = pd.Series(normalized_start_dates, dtype=DATETIME64_NS_DTYPE)
 
         self._log(f"Loaded {len(workouts_df)} workouts total.")
         return ParsedHealthData(workouts=workouts_df, records_by_type=records_by_type_df)

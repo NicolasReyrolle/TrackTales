@@ -884,7 +884,7 @@ def create_workout_detail_modal(
                     icon="chevron_left",
                     on_click=lambda: _navigate(-1),
                 ).props(BUTTON_DENSE_PROPS)
-                tab_loading_feedback = ui.label("…").classes(LABEL_MUTED_CLASSES)
+                tab_loading_feedback = ui.spinner(size="1rem").classes("text-primary")
                 tab_loading_feedback.set_visibility(False)
                 nav_counter = ui.label().classes(MODAL_NAV_COUNTER_CLASSES)
                 next_btn = ui.button(
@@ -991,11 +991,13 @@ def create_workout_detail_modal(
         if not isinstance(e.value, str) or e.value not in _lazy_tab_refresh:
             return
         tab_loading_feedback.set_visibility(True)
+        tab_loading_feedback.update()
         await asyncio.sleep(0)
         try:
             _refresh_lazy_tab(_lazy_tab_refresh, e.value, rows[modal_state["index"]])
         finally:
             tab_loading_feedback.set_visibility(False)
+            tab_loading_feedback.update()
 
     detail_tabs.on_value_change(_on_tab_change)
 

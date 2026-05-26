@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "**"
+  pull_request:
 
 permissions:
   contents: read
@@ -33,9 +34,25 @@ jobs:
           set -euo pipefail
           before="${{ github.event.before }}"
           if [ "$before" = "0000000000000000000000000000000000000000" ]; then
-            cz check --rev-range HEAD~20..HEAD
+            rev_range="HEAD~20..HEAD"
           else
-            cz check --rev-range "$before..${{ github.sha }}"
+            rev_range="$before..${{ github.sha }}"
+          fi
+
+          checked=0
+          while IFS= read -r sha; do
+            [ -z "$sha" ] && continue
+            if [ -z "$(git diff-tree --no-commit-id --name-only -r "$sha")" ]; then
+              echo "Skipping empty commit: $sha"
+              continue
+            fi
+            msg="$(git log -1 --pretty=%B "$sha")"
+            cz check --message "$msg"
+            checked=$((checked + 1))
+          done < <(git rev-list --reverse "$rev_range")
+
+          if [ "$checked" -eq 0 ]; then
+            echo "No non-empty commits to validate in $rev_range"
           fi
 
       - name: Validate commit messages (pull request)
@@ -43,4 +60,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cz check --rev-range "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          rev_range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          checked=0
+          while IFS= read -r sha; do
+            [ -z "$sha" ] && continue
+            if [ -z "$(git diff-tree --no-commit-id --name-only -r "$sha")" ]; then
+              echo "Skipping empty commit: $sha"
+              continue
+            fi
+            msg="$(git log -1 --pretty=%B "$sha")"
+            cz check --message "$msg"
+            checked=$((checked + 1))
+          done < <(git rev-list --reverse "$rev_range")
+
+          if [ "$checked" -eq 0 ]; then
+            echo "No non-empty commits to validate in $rev_range"
+          fi

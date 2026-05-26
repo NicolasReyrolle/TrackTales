@@ -169,9 +169,10 @@ def t(message: str, **kwargs: str) -> str:
             return result.format(**kwargs)
         except (KeyError, ValueError) as exc:
             _logger.warning(
-                "Failed to format translation in language '%s' (%s)",
+                "Failed to format translation '%s' in language '%s': %r",
+                message,
                 lang,
-                type(exc).__name__,
+                exc,
             )
             return result
     return result
@@ -186,9 +187,10 @@ def translate(message: str, language: str, **kwargs: str) -> str:
             return result.format(**kwargs)
         except (KeyError, ValueError) as exc:
             _logger.warning(
-                "Failed to format translation in language '%s' (%s)",
+                "Failed to format translation '%s' in language '%s': %r",
+                message,
                 language,
-                type(exc).__name__,
+                exc,
             )
             return result
     return result

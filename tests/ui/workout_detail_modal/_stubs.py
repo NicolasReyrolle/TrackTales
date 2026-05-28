@@ -255,6 +255,7 @@ def _all_patches(
         patch("ui.workout_detail_modal.ui.leaflet", return_value=stub),
         patch("ui.workout_detail_modal.ui.echart", return_value=stub),
         patch("ui.workout_detail_modal.ui.html", return_value=stub),
+        patch("ui.workout_detail_modal.ui.spinner", return_value=stub),
         patch("ui.workout_detail_modal.ui.add_head_html", return_value=None),
         patch("ui.workout_detail_modal.ui.run_javascript", return_value=None),
     ]

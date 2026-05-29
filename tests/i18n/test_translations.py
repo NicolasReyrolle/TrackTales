@@ -175,11 +175,11 @@ msgstr "Salut"
 """
         (po_dir / "messages.po").write_text(po_content, encoding="utf-8")
 
-        get_translation = getattr(i18n_module, "_get_translation")
-        get_translation.cache_clear()
+        import i18n._core as _i18n_core
+        _i18n_core._get_translation.cache_clear()
 
         with (
-            patch("i18n._LOCALE_DIR", locale_dir),
+            patch("i18n._core._LOCALE_DIR", locale_dir),
             patch("i18n._core.get_language", return_value="zz"),
             patch("i18n._core.gettext.translation", side_effect=FileNotFoundError),
         ):
@@ -187,7 +187,7 @@ msgstr "Salut"
             # Unknown keys should pass through unchanged in _POTranslations.gettext.
             assert t("Unknown key") == "Unknown key"
 
-        get_translation.cache_clear()
+        _i18n_core._get_translation.cache_clear()
 
 
 class TestTranslationModuleBranchCoverage:
@@ -202,7 +202,7 @@ class TestTranslationModuleBranchCoverage:
         broken_po.write_text('msgid ""\nmsgstr ""\n', encoding="utf-8")
 
         with (
-            patch("i18n._LOCALE_DIR", tmp_path),
+            patch("i18n._core._LOCALE_DIR", tmp_path),
             patch("i18n._core._compile_po_catalog", side_effect=RuntimeError("boom")),
             caplog.at_level(logging.WARNING, logger="i18n"),
         ):

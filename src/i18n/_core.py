@@ -59,7 +59,9 @@ def compile_message_catalogs() -> int:
             if _compile_po_catalog(po_path):
                 compiled += 1
         except PermissionError:
-            _logger.debug("Cannot write compiled catalog for '%s': directory is not writable.", po_path)
+            _logger.debug(
+                "Cannot write compiled catalog for '%s': directory is not writable.", po_path
+            )
         except Exception as exc:
             _logger.warning("Failed to compile translation catalog '%s': %s", po_path, exc)
     _get_translation.cache_clear()
@@ -78,6 +80,7 @@ def _get_translation(lang: str) -> gettext.NullTranslations:
 def get_language() -> str:
     try:
         from nicegui import app
+
         return str(cast(dict[str, object], app.storage.user).get("language", DEFAULT_LANGUAGE))
     except Exception:
         return DEFAULT_LANGUAGE
@@ -89,7 +92,9 @@ def translate(message: str, language: str, **kwargs: str) -> str:
         try:
             return result.format(**kwargs)
         except (KeyError, ValueError) as exc:
-            _logger.warning("Failed to format translation '%s' in language '%s': %r", message, language, exc)
+            _logger.warning(
+                "Failed to format translation '%s' in language '%s': %r", message, language, exc
+            )
     return result
 
 
@@ -100,6 +105,8 @@ def t(message: str, **kwargs: str) -> str:
         try:
             return result.format(**kwargs)
         except (KeyError, ValueError) as exc:
-            _logger.warning("Failed to format translation '%s' in language '%s': %r", message, lang, exc)
+            _logger.warning(
+                "Failed to format translation '%s' in language '%s': %r", message, lang, exc
+            )
             return result
     return result

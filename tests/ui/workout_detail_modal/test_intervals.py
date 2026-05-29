@@ -1107,7 +1107,7 @@ class TestBuildSwimDisplayRowsStrokeTranslation:
         }
         for stroke, expected_fr in fr_expected.items():
             interval = self._make_interval(stroke)
-            with patch("i18n.get_language", return_value="fr"):
+            with patch("i18n._core.get_language", return_value="fr"):
                 rows = wdm._build_swim_display_rows([interval])
             assert rows[0]["stroke"] == expected_fr, (
                 f"Expected French translation for '{stroke}' to be '{expected_fr}'"

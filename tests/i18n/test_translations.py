@@ -97,19 +97,19 @@ class TestTranslationFunction:
 
     def test_t_returns_french_for_fr_language(self) -> None:
         """t() should return French text when 'fr' is the active language."""
-        with patch("i18n.get_language", return_value="fr"):
+        with patch("i18n._core.get_language", return_value="fr"):
             result = t("Language")
         assert result == "Langue"
 
     def test_t_french_format_kwargs_preserved(self) -> None:
         """t() should interpolate kwargs into French translated strings correctly."""
-        with patch("i18n.get_language", return_value="fr"):
+        with patch("i18n._core.get_language", return_value="fr"):
             result = t("Count by {period}", period="mois")
         assert result == "Nombre par mois"
 
     def test_t_falls_back_to_english_when_lang_has_no_mo(self) -> None:
         """t() falls back gracefully when no .mo file exists for the active language."""
-        with patch("i18n.get_language", return_value="xx"):  # non-existent language
+        with patch("i18n._core.get_language", return_value="xx"):  # non-existent language
             result = t("Language")
         assert result == "Language"
 
@@ -125,8 +125,8 @@ class TestTranslationFunction:
     ) -> None:
         """t() falls back to unformatted result when str.format raises, and logs a warning."""
         with (
-            patch("i18n.get_language", return_value="en"),
-            patch("i18n._get_translation") as mock_trans,
+            patch("i18n._core.get_language", return_value="en"),
+            patch("i18n._core._get_translation") as mock_trans,
         ):
             mock_trans.return_value.gettext.return_value = "Bad {missing_key}"
             with caplog.at_level(logging.WARNING, logger="i18n"):
@@ -139,7 +139,7 @@ class TestTranslationFunction:
     def test_t_never_returns_empty_string_for_known_msgids(self, lang: str) -> None:
         """t() must return a non-empty string for every msgid in every language."""
         msgids = _read_msgids_from_pot()
-        with patch("i18n.get_language", return_value=lang):
+        with patch("i18n._core.get_language", return_value=lang):
             for msgid in msgids:
                 result = t(msgid)
                 assert result, f"t({msgid!r}) returned empty string for language '{lang}'"

@@ -180,8 +180,8 @@ msgstr "Salut"
 
         with (
             patch("i18n._LOCALE_DIR", locale_dir),
-            patch("i18n.get_language", return_value="zz"),
-            patch("i18n.gettext.translation", side_effect=FileNotFoundError),
+            patch("i18n._core.get_language", return_value="zz"),
+            patch("i18n._core.gettext.translation", side_effect=FileNotFoundError),
         ):
             assert t("Hello") == "Salut"
             # Unknown keys should pass through unchanged in _POTranslations.gettext.
@@ -203,7 +203,7 @@ class TestTranslationModuleBranchCoverage:
 
         with (
             patch("i18n._LOCALE_DIR", tmp_path),
-            patch("i18n._compile_po_catalog", side_effect=RuntimeError("boom")),
+            patch("i18n._core._compile_po_catalog", side_effect=RuntimeError("boom")),
             caplog.at_level(logging.WARNING, logger="i18n"),
         ):
             compiled_count = i18n_module.compile_message_catalogs()
@@ -216,7 +216,7 @@ class TestTranslationModuleBranchCoverage:
     ) -> None:
         """translate() should return raw result and log warning when kwargs are invalid."""
         with (
-            patch("i18n._get_translation") as mock_get_translation,
+            patch("i18n._core._get_translation") as mock_get_translation,
             caplog.at_level(logging.WARNING, logger="i18n"),
         ):
             mock_get_translation.return_value.gettext.return_value = "Value: {missing}"

@@ -710,14 +710,13 @@ class TestRouteTabLocalizationAndCoverage:
             return asyncio.run(coro)
 
         with (
-            patch("ui.workout_detail_modal.t", side_effect=fake_t),
             patch.object(route_map, "run_layer_method", side_effect=capture_run_layer_method),
             patch(
-                "ui.workout_detail_modal.background_tasks.create",
+                "ui.workout_detail_modal.routes.background_tasks.create",
                 side_effect=run_coroutine_sync,
             ),
         ):
-            wdm._do_refresh_route_tab(no_route_label, route_map, row)
+            wdm._do_refresh_route_tab(no_route_label, route_map, row, translate=fake_t)
 
         assert ("Route {index}", {"index": "1"}) in t_calls
         assert ("Start", {}) in t_calls

@@ -176,6 +176,7 @@ msgstr "Salut"
         (po_dir / "messages.po").write_text(po_content, encoding="utf-8")
 
         import i18n._core as _i18n_core
+
         _i18n_core._get_translation.cache_clear()
 
         with (

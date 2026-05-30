@@ -1,6 +1,6 @@
 """Internationalization (i18n) support for TrackTales."""
 
-from i18n._core import (
+from i18n.core import (
     DEFAULT_LANGUAGE,
     LANGUAGES,
     compile_message_catalogs,

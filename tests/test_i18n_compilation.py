@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 import i18n
-import i18n._core as _i18n_core
+import i18n.core as _i18n_core
 
 _MINIMAL_PO = """msgid ""
 msgstr ""

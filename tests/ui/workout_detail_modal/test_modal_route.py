@@ -12,7 +12,7 @@ import pytest
 
 from ui import workout_detail_modal as wdm
 
-from ._stubs import _DummyElement, _make_row
+from ._stubs import _DummyElement
 
 
 class TestRouteTabLocalizationAndCoverage:

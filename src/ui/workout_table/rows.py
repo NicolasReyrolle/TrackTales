@@ -4,7 +4,6 @@ All functions here are pure data transformations with no NiceGUI UI calls.
 """
 
 import logging
-import math
 from datetime import datetime
 from typing import Any, cast
 

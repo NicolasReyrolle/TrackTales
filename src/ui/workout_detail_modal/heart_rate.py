@@ -6,7 +6,6 @@ from typing import Any, cast
 
 import pandas as pd
 
-
 _HEART_RATE_SAMPLES_CACHE: tuple[Any, pd.DataFrame] | None = None
 
 

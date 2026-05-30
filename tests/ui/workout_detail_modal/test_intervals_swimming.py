@@ -364,8 +364,20 @@ class TestBuildSwimDisplayRowsStrokeTranslation:
 
         interval = SwimInterval(
             laps=[
-                SwimLap(lap_number=1, distance_m=50.0, duration_s=60.0, stroke_style="Freestyle", swolf=None),
-                SwimLap(lap_number=2, distance_m=50.0, duration_s=60.0, stroke_style="Backstroke", swolf=None),
+                SwimLap(
+                    lap_number=1,
+                    distance_m=50.0,
+                    duration_s=60.0,
+                    stroke_style="Freestyle",
+                    swolf=None,
+                ),
+                SwimLap(
+                    lap_number=2,
+                    distance_m=50.0,
+                    duration_s=60.0,
+                    stroke_style="Backstroke",
+                    swolf=None,
+                ),
             ],
         )
         rows = wdm._build_swim_display_rows([interval])

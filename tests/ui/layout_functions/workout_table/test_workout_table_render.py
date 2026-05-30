@@ -11,7 +11,7 @@ import pytest
 from app_state import state
 from ui import workout_table as wt
 
-from ._helpers import DummyComponent, DummyTable
+from .._helpers import DummyComponent, DummyTable
 
 
 class TestRenderWorkoutTable:
@@ -24,7 +24,9 @@ class TestRenderWorkoutTable:
         try:
             state.file_loaded = False
 
-            with patch("ui.workout_table.ui.label", return_value=DummyComponent()) as label_mock:
+            with patch(
+                "ui.workout_table.render.ui.label", return_value=DummyComponent()
+            ) as label_mock:
                 wt.render_workout_table.func()
 
             label_mock.assert_called_once()
@@ -59,8 +61,11 @@ class TestRenderWorkoutTable:
             state.workouts = workouts_mock
 
             with (
-                patch("ui.workout_table.ui.table", return_value=table_stub) as table_mock,
-                patch("ui.workout_table.create_workout_detail_modal", return_value=lambda _: None),
+                patch("ui.workout_table.render.ui.table", return_value=table_stub) as table_mock,
+                patch(
+                    "ui.workout_table.render.create_workout_detail_modal",
+                    return_value=lambda _: None,
+                ),
             ):
                 wt.render_workout_table.func()
 
@@ -104,8 +109,11 @@ class TestRenderWorkoutTable:
             state.workouts = workouts_mock
 
             with (
-                patch("ui.workout_table.ui.table", return_value=DummyTable()) as table_mock,
-                patch("ui.workout_table.create_workout_detail_modal", return_value=lambda _: None),
+                patch("ui.workout_table.render.ui.table", return_value=DummyTable()) as table_mock,
+                patch(
+                    "ui.workout_table.render.create_workout_detail_modal",
+                    return_value=lambda _: None,
+                ),
             ):
                 wt.render_workout_table.func()
 
@@ -140,8 +148,11 @@ class TestRenderWorkoutTable:
             state.workouts = workouts_mock
 
             with (
-                patch("ui.workout_table.ui.table", return_value=table_stub),
-                patch("ui.workout_table.create_workout_detail_modal", return_value=lambda _: None),
+                patch("ui.workout_table.render.ui.table", return_value=table_stub),
+                patch(
+                    "ui.workout_table.render.create_workout_detail_modal",
+                    return_value=lambda _: None,
+                ),
             ):
                 wt.render_workout_table.func()
 
@@ -173,9 +184,12 @@ class TestRenderWorkoutTable:
             state.workouts = workouts_mock
 
             with (
-                patch("ui.workout_table.ui.table", return_value=table_stub),
-                patch("ui.workout_table.create_workout_detail_modal", return_value=lambda _: None),
-                patch("ui.workout_table.t", side_effect=lambda msg, **_kw: f"tr:{msg}"),
+                patch("ui.workout_table.render.ui.table", return_value=table_stub),
+                patch(
+                    "ui.workout_table.render.create_workout_detail_modal",
+                    return_value=lambda _: None,
+                ),
+                patch("ui.workout_table.render.t", side_effect=lambda msg, **_kw: f"tr:{msg}"),
             ):
                 wt.render_workout_table.func()
 
@@ -198,8 +212,8 @@ class TestRenderWorkoutTable:
             state.file_loaded = False
 
             with (
-                patch("ui.workout_table.ui.label", return_value=DummyComponent()),
-                patch("ui.workout_table.ui.table") as table_mock,
+                patch("ui.workout_table.render.ui.label", return_value=DummyComponent()),
+                patch("ui.workout_table.render.ui.table") as table_mock,
             ):
                 wt.render_workout_table.func()
 
@@ -231,9 +245,9 @@ class TestRenderWorkoutTable:
             state.workouts = workouts_mock
 
             with (
-                patch("ui.workout_table.ui.table", return_value=table_stub),
+                patch("ui.workout_table.render.ui.table", return_value=table_stub),
                 patch(
-                    "ui.workout_table.create_workout_detail_modal",
+                    "ui.workout_table.render.create_workout_detail_modal",
                     return_value=lambda idx: open_detail_calls.append(idx),
                 ),
             ):
@@ -276,9 +290,9 @@ class TestRenderWorkoutTable:
             state.workouts = workouts_mock
 
             with (
-                patch("ui.workout_table.ui.table", return_value=table_stub),
+                patch("ui.workout_table.render.ui.table", return_value=table_stub),
                 patch(
-                    "ui.workout_table.create_workout_detail_modal",
+                    "ui.workout_table.render.create_workout_detail_modal",
                     return_value=lambda idx: open_detail_calls.append(idx),
                 ),
             ):
@@ -321,9 +335,10 @@ class TestRenderWorkoutTable:
             state.workouts = workouts_mock
 
             with (
-                patch("ui.workout_table.ui.table", return_value=table_stub) as table_mock,
+                patch("ui.workout_table.render.ui.table", return_value=table_stub) as table_mock,
                 patch(
-                    "ui.workout_table.create_workout_detail_modal", side_effect=_capture_modal_rows
+                    "ui.workout_table.render.create_workout_detail_modal",
+                    side_effect=_capture_modal_rows,
                 ),
             ):
                 wt.render_workout_table.func()

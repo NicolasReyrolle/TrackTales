@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from app_state import state
-from ui import workout_table as wt
+from ui.workout_table import rows as wt
 
 
 class TestBuildWorkoutRows:
@@ -698,7 +698,7 @@ class TestBuildWorkoutRowsImperial:
 
         try:
             state.workouts = workouts_mock
-            with patch("ui.workout_table.get_elevation_unit", return_value="ft"):
+            with patch("ui.workout_table.rows.get_elevation_unit", return_value="ft"):
                 rows = wt._build_workout_rows()
         finally:
             state.workouts = original_workouts
@@ -725,7 +725,7 @@ class TestBuildWorkoutRowsImperial:
 
         try:
             state.workouts = workouts_mock
-            with patch("ui.workout_table.get_distance_unit", return_value="mi"):
+            with patch("ui.workout_table.rows.get_distance_unit", return_value="mi"):
                 rows = wt._build_workout_rows()
         finally:
             state.workouts = original_workouts

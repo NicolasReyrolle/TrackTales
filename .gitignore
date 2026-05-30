@@ -134,6 +134,7 @@ Thumbs.db
 #Ignore vscode AI rules
 .codacy
 .continue
+.amazonq
 
 output/
 mutants/

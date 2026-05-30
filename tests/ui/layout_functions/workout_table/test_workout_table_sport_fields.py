@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from app_state import state
-from ui import workout_table as wt
+from ui.workout_table import rows as wt
 
 
 class TestExtractRunningFields:

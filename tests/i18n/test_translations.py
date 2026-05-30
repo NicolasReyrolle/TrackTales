@@ -97,19 +97,19 @@ class TestTranslationFunction:
 
     def test_t_returns_french_for_fr_language(self) -> None:
         """t() should return French text when 'fr' is the active language."""
-        with patch("i18n.get_language", return_value="fr"):
+        with patch("i18n._core.get_language", return_value="fr"):
             result = t("Language")
         assert result == "Langue"
 
     def test_t_french_format_kwargs_preserved(self) -> None:
         """t() should interpolate kwargs into French translated strings correctly."""
-        with patch("i18n.get_language", return_value="fr"):
+        with patch("i18n._core.get_language", return_value="fr"):
             result = t("Count by {period}", period="mois")
         assert result == "Nombre par mois"
 
     def test_t_falls_back_to_english_when_lang_has_no_mo(self) -> None:
         """t() falls back gracefully when no .mo file exists for the active language."""
-        with patch("i18n.get_language", return_value="xx"):  # non-existent language
+        with patch("i18n._core.get_language", return_value="xx"):  # non-existent language
             result = t("Language")
         assert result == "Language"
 
@@ -125,8 +125,8 @@ class TestTranslationFunction:
     ) -> None:
         """t() falls back to unformatted result when str.format raises, and logs a warning."""
         with (
-            patch("i18n.get_language", return_value="en"),
-            patch("i18n._get_translation") as mock_trans,
+            patch("i18n._core.get_language", return_value="en"),
+            patch("i18n._core._get_translation") as mock_trans,
         ):
             mock_trans.return_value.gettext.return_value = "Bad {missing_key}"
             with caplog.at_level(logging.WARNING, logger="i18n"):
@@ -139,7 +139,7 @@ class TestTranslationFunction:
     def test_t_never_returns_empty_string_for_known_msgids(self, lang: str) -> None:
         """t() must return a non-empty string for every msgid in every language."""
         msgids = _read_msgids_from_pot()
-        with patch("i18n.get_language", return_value=lang):
+        with patch("i18n._core.get_language", return_value=lang):
             for msgid in msgids:
                 result = t(msgid)
                 assert result, f"t({msgid!r}) returned empty string for language '{lang}'"
@@ -175,19 +175,20 @@ msgstr "Salut"
 """
         (po_dir / "messages.po").write_text(po_content, encoding="utf-8")
 
-        get_translation = getattr(i18n_module, "_get_translation")
-        get_translation.cache_clear()
+        import i18n.core as _i18n_core
+
+        _i18n_core._get_translation.cache_clear()
 
         with (
-            patch("i18n._LOCALE_DIR", locale_dir),
-            patch("i18n.get_language", return_value="zz"),
-            patch("i18n.gettext.translation", side_effect=FileNotFoundError),
+            patch("i18n._core._LOCALE_DIR", locale_dir),
+            patch("i18n._core.get_language", return_value="zz"),
+            patch("i18n._core.gettext.translation", side_effect=FileNotFoundError),
         ):
             assert t("Hello") == "Salut"
             # Unknown keys should pass through unchanged in _POTranslations.gettext.
             assert t("Unknown key") == "Unknown key"
 
-        get_translation.cache_clear()
+        _i18n_core._get_translation.cache_clear()
 
 
 class TestTranslationModuleBranchCoverage:
@@ -202,8 +203,8 @@ class TestTranslationModuleBranchCoverage:
         broken_po.write_text('msgid ""\nmsgstr ""\n', encoding="utf-8")
 
         with (
-            patch("i18n._LOCALE_DIR", tmp_path),
-            patch("i18n._compile_po_catalog", side_effect=RuntimeError("boom")),
+            patch("i18n._core._LOCALE_DIR", tmp_path),
+            patch("i18n._core._compile_po_catalog", side_effect=RuntimeError("boom")),
             caplog.at_level(logging.WARNING, logger="i18n"),
         ):
             compiled_count = i18n_module.compile_message_catalogs()
@@ -216,7 +217,7 @@ class TestTranslationModuleBranchCoverage:
     ) -> None:
         """translate() should return raw result and log warning when kwargs are invalid."""
         with (
-            patch("i18n._get_translation") as mock_get_translation,
+            patch("i18n._core._get_translation") as mock_get_translation,
             caplog.at_level(logging.WARNING, logger="i18n"),
         ):
             mock_get_translation.return_value.gettext.return_value = "Value: {missing}"

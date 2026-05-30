@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-import i18n as i18n
+import i18n
+import i18n.core as _i18n_core
 
 _MINIMAL_PO = """msgid ""
 msgstr ""
@@ -31,7 +32,7 @@ def test_compile_message_catalogs_creates_missing_mo(
     """Compilation should generate .mo files when missing."""
     locales_root = tmp_path / "locales"
     po_path = _make_po_file(locales_root)
-    monkeypatch.setattr(i18n, "_LOCALE_DIR", locales_root)
+    monkeypatch.setattr(_i18n_core, "_LOCALE_DIR", locales_root)
 
     compiled_count = i18n.compile_message_catalogs()
 
@@ -45,7 +46,7 @@ def test_compile_message_catalogs_skips_up_to_date_mo(
     """Compilation should skip catalogs when .mo is already up to date."""
     locales_root = tmp_path / "locales"
     _make_po_file(locales_root)
-    monkeypatch.setattr(i18n, "_LOCALE_DIR", locales_root)
+    monkeypatch.setattr(_i18n_core, "_LOCALE_DIR", locales_root)
 
     first_count = i18n.compile_message_catalogs()
     second_count = i18n.compile_message_catalogs()

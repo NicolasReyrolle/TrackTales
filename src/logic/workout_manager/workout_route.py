@@ -19,6 +19,7 @@ class RoutePoint:
     longitude: float
     altitude: float = 0.0
     speed: float = 0.0  # GPS-measured speed in m/s; 0.0 means unknown/unavailable
+    heart_rate: float | None = None
 
 
 @dataclass
@@ -203,6 +204,38 @@ class WorkoutRoute:
             current_end += 1
         return current_end
 
+    def _build_split_data(
+        self,
+        split_num: int,
+        split_start_idx: int,
+        split_end_idx: int,
+        split_distance_m: float,
+    ) -> dict[str, float | int] | None:
+        """Build one split result when the indexed segment has a positive duration."""
+        duration_s = (
+            self.points[split_end_idx].time - self.points[split_start_idx].time
+        ).total_seconds()
+        if duration_s <= 0:
+            return None
+
+        split_data: dict[str, float | int] = {
+            "split": split_num,
+            "duration_s": duration_s,
+            "pace_min_per_km": (duration_s / 60.0) * (1000.0 / split_distance_m),
+            "elevation_change_m": (
+                self.points[split_end_idx].altitude - self.points[split_start_idx].altitude
+            ),
+        }
+        heart_rates = [
+            point.heart_rate
+            for point in self.points[split_start_idx : split_end_idx + 1]
+            if point.heart_rate is not None
+        ]
+        if heart_rates:
+            split_data["avg_heart_rate"] = sum(heart_rates) / len(heart_rates)
+
+        return split_data
+
     def find_fastest_segment(
         self, segment_length_m: float, distance_scale_factor: float = 1.0
     ) -> float | None:
@@ -314,6 +347,8 @@ class WorkoutRoute:
             - ``"pace_min_per_km"``:      float – pace in min/km for this split.
             - ``"elevation_change_m"``:   float – net altitude change from split
               start to split end (positive = uphill, negative = downhill).
+            - ``"avg_heart_rate"``:       float – average heart rate in bpm for the
+              split when route points carry heart-rate samples.
         """
         if len(self.points) < 2 or split_distance_m <= 0:
             return []
@@ -342,23 +377,14 @@ class WorkoutRoute:
             if split_end_idx >= len(self.points):
                 break
 
-            duration_s = (
-                self.points[split_end_idx].time - self.points[split_start_idx].time
-            ).total_seconds()
-
-            if duration_s > 0:
-                pace_min_per_km = (duration_s / 60.0) * (1000.0 / split_distance_m)
-                elevation_change_m = (
-                    self.points[split_end_idx].altitude - self.points[split_start_idx].altitude
-                )
-                splits.append(
-                    {
-                        "split": split_num,
-                        "duration_s": duration_s,
-                        "pace_min_per_km": pace_min_per_km,
-                        "elevation_change_m": elevation_change_m,
-                    }
-                )
+            split_data = self._build_split_data(
+                split_num=split_num,
+                split_start_idx=split_start_idx,
+                split_end_idx=split_end_idx,
+                split_distance_m=split_distance_m,
+            )
+            if split_data is not None:
+                splits.append(split_data)
 
             split_num += 1
             split_start_idx = split_end_idx

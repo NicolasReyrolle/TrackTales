@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -38,6 +39,12 @@ def test_render_header_adds_quit_menu_item_for_packaged_runs(
     monkeypatch.setattr(layout.sys, "frozen", True, raising=False)
 
     with (
+        patch(
+            "ui.layout.t",
+            side_effect=lambda message, **kwargs: message.format(**kwargs)
+            if kwargs
+            else message,
+        ),
         patch("ui.layout.ui.dark_mode", return_value=DummyDarkMode()),
         patch("ui.layout.ui.header", return_value=DummyContext()),
         patch("ui.layout.ui.image", return_value=DummyComponent()),
@@ -60,8 +67,15 @@ def test_render_header_adds_quit_menu_item_for_packaged_runs(
 @pytest.mark.asyncio
 async def test_quit_packaged_app_notifies_and_shutdowns() -> None:
     """Quit action should notify the user and request a graceful app shutdown."""
+    shutdown_mock = Mock()
     with (
-        patch.object(layout.app, "shutdown") as shutdown_mock,
+        patch(
+            "ui.layout.t",
+            side_effect=lambda message, **kwargs: message.format(**kwargs)
+            if kwargs
+            else message,
+        ),
+        patch("ui.layout.app", SimpleNamespace(is_stopping=False, shutdown=shutdown_mock)),
         patch("ui.layout.ui.notify") as notify_mock,
         patch("ui.layout.asyncio.sleep", new=AsyncMock()),
     ):
@@ -74,11 +88,9 @@ async def test_quit_packaged_app_notifies_and_shutdowns() -> None:
 @pytest.mark.asyncio
 async def test_quit_packaged_app_returns_while_stopping() -> None:
     """Quit action should be a no-op when shutdown is already in progress."""
-    stopping_state = type(layout.app._state).STOPPING
-
+    shutdown_mock = Mock()
     with (
-        patch.object(layout.app, "_state", stopping_state),
-        patch.object(layout.app, "shutdown") as shutdown_mock,
+        patch("ui.layout.app", SimpleNamespace(is_stopping=True, shutdown=shutdown_mock)),
         patch("ui.layout.ui.notify") as notify_mock,
         patch("ui.layout.asyncio.sleep", new=AsyncMock()) as sleep_mock,
     ):

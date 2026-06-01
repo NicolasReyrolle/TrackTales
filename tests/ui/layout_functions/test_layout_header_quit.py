@@ -41,9 +41,7 @@ def test_render_header_adds_quit_menu_item_for_packaged_runs(
     with (
         patch(
             "ui.layout.t",
-            side_effect=lambda message, **kwargs: message.format(**kwargs)
-            if kwargs
-            else message,
+            side_effect=lambda message, **kwargs: message.format(**kwargs) if kwargs else message,
         ),
         patch("ui.layout.ui.dark_mode", return_value=DummyDarkMode()),
         patch("ui.layout.ui.header", return_value=DummyContext()),
@@ -71,9 +69,7 @@ async def test_quit_packaged_app_notifies_and_shutdowns() -> None:
     with (
         patch(
             "ui.layout.t",
-            side_effect=lambda message, **kwargs: message.format(**kwargs)
-            if kwargs
-            else message,
+            side_effect=lambda message, **kwargs: message.format(**kwargs) if kwargs else message,
         ),
         patch("ui.layout.app", SimpleNamespace(is_stopping=False, shutdown=shutdown_mock)),
         patch("ui.layout.ui.notify") as notify_mock,

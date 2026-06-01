@@ -8,7 +8,7 @@ from contextlib import ExitStack
 from datetime import datetime
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pandas as pd
 import pytest
@@ -1102,3 +1102,19 @@ async def test_quit_packaged_app_notifies_and_shutdowns() -> None:
 
     notify_mock.assert_called_once_with("TrackTales is shutting down...")
     shutdown_mock.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_quit_packaged_app_returns_while_stopping() -> None:
+    """Quit action should be a no-op when shutdown is already in progress."""
+    with (
+        patch.object(type(layout.app), "is_stopping", new_callable=PropertyMock, return_value=True),
+        patch.object(layout.app, "shutdown") as shutdown_mock,
+        patch("ui.layout.ui.notify") as notify_mock,
+        patch("ui.layout.asyncio.sleep", new=AsyncMock()) as sleep_mock,
+    ):
+        await layout._quit_packaged_app()
+
+    notify_mock.assert_not_called()
+    sleep_mock.assert_not_awaited()
+    shutdown_mock.assert_not_called()

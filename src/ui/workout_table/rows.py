@@ -314,6 +314,7 @@ def _extract_row_data(
         "humidity": humidity_display,
         "route": row.get("route"),
         "route_parts": row.get("route_parts"),
+        "xmlFragment": row.get("xmlFragment"),
         "distance_unit": distance_unit,
         "workout_start_utc": row.get("startDateUtc", row.get("startDate")),
         "workout_end_utc": row.get("endDateUtc", row.get("endDate")),

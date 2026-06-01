@@ -811,7 +811,7 @@ def create_workout_detail_modal(
                     icon="chevron_left",
                     on_click=lambda: _navigate(-1),
                 ).props(BUTTON_DENSE_PROPS)
-                tab_loading_feedback = ui.spinner(size="1rem").classes("text-primary")
+                tab_loading_feedback = ui.spinner(size="1rem")
                 tab_loading_feedback.set_visibility(False)
                 nav_counter = ui.label().classes(MODAL_NAV_COUNTER_CLASSES)
                 next_btn = ui.button(

@@ -25,6 +25,12 @@ msgstr ""
 msgid "Imperial"
 msgstr ""
 
+msgid "Quit TrackTales"
+msgstr ""
+
+msgid "TrackTales is shutting down..."
+msgstr ""
+
 # Left drawer
 msgid "Activities"
 msgstr ""
@@ -905,4 +911,3 @@ msgstr ""
 # Workout detail modal – heart-rate chart label
 msgid "No heart rate data available."
 msgstr ""
-

@@ -134,10 +134,12 @@ Thumbs.db
 #Ignore vscode AI rules
 .codacy
 .continue
+.amazonq
 
 output/
 mutants/
 .nicegui/
+logs/
 
 # gettext compiled catalogs
 src/i18n/locales/**/*.mo

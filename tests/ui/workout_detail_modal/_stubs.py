@@ -129,7 +129,9 @@ class _DummyElement:
         self.value = value
         event = _DummyEvent(value)
         for handler in self._value_change_handlers:
-            handler(event)
+            result = handler(event)
+            if asyncio.iscoroutine(result):
+                asyncio.run(result)
 
     def update(self) -> None:
         """Stub for the NiceGUI ``update()`` method (e.g. used by ui.table)."""
@@ -253,6 +255,7 @@ def _all_patches(
         patch("ui.workout_detail_modal.ui.leaflet", return_value=stub),
         patch("ui.workout_detail_modal.ui.echart", return_value=stub),
         patch("ui.workout_detail_modal.ui.html", return_value=stub),
+        patch("ui.workout_detail_modal.ui.spinner", return_value=stub),
         patch("ui.workout_detail_modal.ui.add_head_html", return_value=None),
         patch("ui.workout_detail_modal.ui.run_javascript", return_value=None),
     ]

@@ -19,6 +19,7 @@ class WorkoutRecord(WorkoutRecordRequired, total=False):
     startDate: str | None
     endDate: str | None
     source: str | None
+    xmlFragment: str | None
     route: WorkoutRoute | None
     route_parts: list[WorkoutRoute]
     distance: int | None  # Total distance in meters

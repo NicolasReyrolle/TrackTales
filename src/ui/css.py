@@ -224,7 +224,7 @@ MODAL_ROUTE_MAP_CONTAINER_CLASSES = "w-full workout-route-map-container"
 #: Inner HTML map node for Leaflet to mount into (fills the container dimensions).
 MODAL_ROUTE_MAP_HTML_CLASSES = "w-full h-full workout-route-map"
 
-#: Fixed-height container for the route profile chart in the modal Profile tab.
+#: Fixed-height container for the route chart area in the modal Charts tab.
 MODAL_ROUTE_PROFILE_CONTAINER_CLASSES = "w-full workout-route-profile-container"
 
 #: ECharts node for the route profile chart (fills its container).

@@ -1,0 +1,28 @@
+name: Copilot Instructions Guard
+
+on:
+    pull_request:
+        types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+    contents: read
+
+jobs:
+    enforce-instruction-rules:
+        if: github.event.pull_request.draft == false
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0 # 0 indicates all history for all branches and tags
+
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.12"
+
+            - name: Enforce measurable copilot-instruction rules
+              run: |
+                  python .github/scripts/check_copilot_instructions.py \
+                    --diff-range "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"

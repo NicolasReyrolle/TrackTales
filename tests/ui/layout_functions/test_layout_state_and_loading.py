@@ -992,4 +992,3 @@ def test_render_body_record_card_click_no_matching_row_is_noop() -> None:
             create_modal_mock.assert_not_called()
     finally:
         state.metrics_workout_index = original_record_indexes
-

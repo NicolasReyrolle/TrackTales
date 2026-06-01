@@ -40,6 +40,7 @@ If a user request is ambiguous or incomplete, apply repository instructions that
 ## Commit message policy
 
 - Use Conventional Commits for every commit message.
+- Pull request titles should also follow Conventional Commits format to enable automated changelog generation.
 - Allowed format: `<type>(<optional-scope>): <description>`.
 - Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`.
 - Examples: `feat(ui): add trends period selector`, `fix(parser): guard empty route nodes`.

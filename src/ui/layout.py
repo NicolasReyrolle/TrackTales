@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import math
+import sys
 import time
 from collections.abc import Callable
 from typing import Any, cast
@@ -658,6 +659,16 @@ def _change_unit_system(system: str) -> None:
     ui.navigate.reload()
 
 
+async def _quit_packaged_app() -> None:
+    """Gracefully stop the packaged application server."""
+    if app.is_stopping:
+        return
+
+    ui.notify(t("TrackTales is shutting down..."))
+    await asyncio.sleep(0.2)
+    app.shutdown()
+
+
 def render_header() -> None:
     """Generate the application header with a dark mode toggle and preferences menu."""
     dark = ui.dark_mode()
@@ -708,6 +719,12 @@ def render_header() -> None:
                     ui.menu_item(
                         f"{'✓ ' if system_code == current_system else ''}{t(system_label)}",
                         on_click=lambda _event, s=system_code: _change_unit_system(s),
+                    ).classes(PREF_MENU_ITEM_CLASSES)
+                if getattr(sys, "frozen", False):
+                    ui.separator()
+                    ui.menu_item(
+                        t("Quit TrackTales"),
+                        on_click=_quit_packaged_app,
                     ).classes(PREF_MENU_ITEM_CLASSES)
 
 

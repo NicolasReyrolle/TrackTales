@@ -82,6 +82,45 @@ class DummyContext(DummyComponent):
         pass
 
 
+class DummyDarkMode:
+    """Minimal dark-mode stub mirroring NiceGUI toggle behavior."""
+
+    def __init__(self) -> None:
+        self.value = False
+
+    def enable(self) -> None:
+        """Simulate enabling dark mode."""
+        self.value = True
+
+    def disable(self) -> None:
+        """Simulate disabling dark mode."""
+        self.value = False
+
+
+class DummyButton(DummyComponent):
+    """Button stub that supports context-manager usage."""
+
+    def __init__(self, context: bool = False) -> None:
+        self._context = context
+
+    def __enter__(self) -> DummyButton:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        """Exit method that does nothing."""
+        pass
+
+
+def preferences_button_factory(*_args: Any, **kwargs: Any) -> DummyButton:
+    """Build a context-capable button for the preferences (tune) menu trigger."""
+    return DummyButton(context=kwargs.get("icon") == "tune")
+
+
 class DummyTab(DummyComponent):
     """Minimal tab object with a name attribute."""
 

@@ -82,6 +82,7 @@ python -m nicegui src.tracktales
 1. Use the **Date range picker** to analyze specific time periods.
 1. Use the **Aggregate by** selector in the left drawer to change the aggregation period.
 1. Use the **Preferences menu** (tune icon in the header) to switch language (EN/FR) or unit system (Metric/Imperial).
+1. When using the packaged Windows executable, use **Preferences → Quit TrackTales** to stop the app gracefully before closing the browser window/tab.
 1. Export your data using the **Export data** menu to download CSV or JSON files.
 
 > **Tip**: You can set a permanent storage secret for sessions by using an environment variable:

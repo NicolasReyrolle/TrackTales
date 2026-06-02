@@ -89,6 +89,7 @@ class TestRenderHealthDataTab:
             state.health_data_loaded = True
             state.health_data_graphs = {
                 "heart_rate": {"2025-01": 67.0},
+                "heart_rate_active_max": {"2025-01": 175.0},
                 "body_mass": {"2025-01": 70.5},
                 "vo2_max": {"2025-01": 51.2},
                 "critical_power": {"2025-01": None},

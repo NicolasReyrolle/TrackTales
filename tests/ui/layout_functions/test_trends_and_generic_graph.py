@@ -319,6 +319,101 @@ class TestRenderGenericGraph:
         assert "inside" in zoom_types
         assert "toolbox" in chart_options
 
+    def test_render_generic_graph_line_extra_series_appends_named_series(self) -> None:
+        """Each entry in extra_series should become a named line series."""
+        values = {"2024-01": 60, "2024-02": 58}
+        extra = {"HR Max (Active)": {"2024-01": 170, "2024-02": 180}}
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_generic_graph(
+                "Resting HR",
+                values,
+                "bpm",
+                graph_type="line",
+                show_trend=False,
+                extra_series=extra,
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        series = chart_options["series"]
+        # bridge + main + one extra series = 3
+        assert len(series) == 3
+        named_series = [s for s in series if s.get("name")]
+        assert len(named_series) == 1
+        assert named_series[0]["name"] == "HR Max (Active)"
+        assert named_series[0]["type"] == "line"
+
+    def test_render_generic_graph_line_extra_series_data_aligned_to_main_categories(
+        self,
+    ) -> None:
+        """Extra series data should be aligned to the main series' x-axis categories."""
+        # main has Jan + Feb + Mar; extra only has Jan and Mar
+        values = {"2024-01": 58, "2024-02": None, "2024-03": 60}
+        extra = {"HR Max (Active)": {"2024-01": 165, "2024-03": 172}}
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_generic_graph(
+                "Resting HR",
+                values,
+                "bpm",
+                graph_type="line",
+                show_trend=False,
+                extra_series=extra,
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        extra_s = next(s for s in chart_options["series"] if s.get("name") == "HR Max (Active)")
+        # Feb is absent from extra → should map to None (gap)
+        assert extra_s["data"] == [165, None, 172]
+
+    def test_render_generic_graph_line_extra_series_tooltip_is_multi_series_formatter(
+        self,
+    ) -> None:
+        """Line chart with extra_series must use a JS formatter that labels each series."""
+        values = {"2024-01": 60}
+        extra = {"HR Max (Active)": {"2024-01": 175}}
+
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart") as echart_mock,
+        ):
+            charts.render_generic_graph(
+                "Resting HR",
+                values,
+                "bpm",
+                graph_type="line",
+                show_trend=False,
+                extra_series=extra,
+            )
+
+        chart_options = echart_mock.call_args.args[0]
+        tooltip = chart_options["tooltip"]
+        assert ":formatter" in tooltip
+        formatter = tooltip[":formatter"]
+        # Must iterate params beyond index 0
+        assert "params.length" in formatter or "params[1]" in formatter or "for (" in formatter
+        assert "seriesName" in formatter
+        assert "n/a" in formatter
+        assert "bpm" in formatter
+
 
 class TestChartsModuleComponents:
     """Tests for chart helpers implemented in ui.charts."""

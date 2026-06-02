@@ -153,6 +153,7 @@ class AppState:
         self.best_segments_task: asyncio.Task[None] | None = None
         self.health_data_graphs: dict[str, dict[str, float | int | None]] = {
             "heart_rate": {},
+            "heart_rate_active_max": {},
             "body_mass": {},
             "vo2_max": {},
             "critical_power": {},

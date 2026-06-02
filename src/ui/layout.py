@@ -150,6 +150,11 @@ def _build_fast_health_graphs() -> dict[str, dict[str, float | int | None]]:
         start_date=state.start_date,
         end_date=state.end_date,
     )
+    active_hr_max_stats = state.records_by_type.active_heart_rate_max_stats(
+        period=state.trends_period,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
     body_mass_stats = state.records_by_type.weight_stats(
         period=state.trends_period,
         start_date=state.start_date,
@@ -172,6 +177,11 @@ def _build_fast_health_graphs() -> dict[str, dict[str, float | int | None]]:
         "heart_rate": _to_json_safe(
             resting_heart_rate_stats.assign(period=resting_heart_rate_stats["period"].astype(str))
             .set_index("period")["avg"]
+            .to_dict()
+        ),
+        "heart_rate_active_max": _to_json_safe(
+            active_hr_max_stats.assign(period=active_hr_max_stats["period"].astype(str))
+            .set_index("period")["max"]
             .to_dict()
         ),
         "body_mass": _to_json_safe(body_mass_series.set_index("period")["avg"].to_dict()),
@@ -467,6 +477,7 @@ def _reset_health_data_state() -> None:
     state.health_data_cp_loading = False
     state.health_data_graphs = {
         "heart_rate": {},
+        "heart_rate_active_max": {},
         "body_mass": {},
         "vo2_max": {},
         "critical_power": {},

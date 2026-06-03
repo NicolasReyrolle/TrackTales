@@ -213,17 +213,12 @@ class RecordsByType:
     def active_heart_rate_max_stats(
         self,
         period: str = "M",
-        percentile: int = 95,
         round_decimals: int = 0,
         fill_missing_periods: bool = True,
         start_date: datetime | pd.Timestamp | None = None,
         end_date: datetime | pd.Timestamp | None = None,
     ) -> pd.DataFrame:
-        """Return max heart rate for ACTIVE context per period with outlier elimination.
-
-        Outliers (e.g. sensor spikes) are suppressed by using the given percentile
-        instead of the raw maximum.  The default of 95 retains the physiological peak
-        while discarding the top 5 % of spurious readings.
+        """Return max heart rate for ACTIVE context per period.
 
         Returns a DataFrame with columns [period, max].
         """
@@ -276,10 +271,9 @@ class RecordsByType:
         if work.empty:
             return pd.DataFrame(columns=["period", "max"])
 
-        q = percentile / 100.0
         result: pd.DataFrame = (
             work.groupby(work[date_col].dt.to_period(period))[value_col]
-            .quantile(q)
+            .max()
             .reset_index()
             .rename(columns={date_col: "period", value_col: "max"})
             .sort_values("period")

@@ -82,18 +82,16 @@ def extract_bpm_from_record(elem) -> str | None:
     return None
 
 
-def _process_heart_rate_elem(elem, writer) -> tuple[int, int]:
-    """Returns (total_checked_delta, records_found_delta) for a single Record element."""
+def _process_heart_rate_elem(elem, writer) -> None:
+    """Writes an active heart rate Record element to writer, if applicable."""
     if elem.attrib.get("type") != "HKQuantityTypeIdentifierHeartRate":
-        return 0, 0
+        return
     if not check_record_for_active_motion(elem):
-        return 1, 0
+        return
     start_date = elem.attrib.get("startDate")
     bpm_str = extract_bpm_from_record(elem)
     if start_date and bpm_str:
         writer.writerow([start_date, elem.attrib.get("endDate") or "", bpm_str])
-        return 1, 1
-    return 1, 0
 
 
 def extract_active_heart_rate_to_csv(xml_path: str, csv_path: str) -> None:
@@ -105,9 +103,6 @@ def extract_active_heart_rate_to_csv(xml_path: str, csv_path: str) -> None:
         print(f"Error: XML file not found at {xml_path}", file=sys.stderr)
         sys.exit(1)
 
-    records_found = 0
-    total_checked = 0
-
     try:
         with open(csv_path, mode="w", newline="", encoding="utf-8") as csv_file:
             writer = csv.writer(csv_file, delimiter=";")
@@ -115,9 +110,7 @@ def extract_active_heart_rate_to_csv(xml_path: str, csv_path: str) -> None:
 
             for _event, elem in ET.iterparse(xml_path, events=("end",)):
                 if elem.tag == "Record":
-                    checked, found = _process_heart_rate_elem(elem, writer)
-                    total_checked += checked
-                    records_found += found
+                    _process_heart_rate_elem(elem, writer)
                 elem.clear()
 
     except ET.ParseError as e:
@@ -127,10 +120,7 @@ def extract_active_heart_rate_to_csv(xml_path: str, csv_path: str) -> None:
         print(f"Error reading/writing files: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print(
-        f"Extraction complete. Found {records_found} active heart rate records in "
-        f"{total_checked} checked heart rate records."
-    )
+    print("Extraction complete.", file=sys.stderr)
 
 
 if __name__ == "__main__":

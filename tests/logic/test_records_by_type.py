@@ -556,10 +556,10 @@ class TestActiveHeartRateMaxStats:
         )
         records = RecordsByType({"HeartRate": hr_df})
 
-        result = records.active_heart_rate_max_stats("M", percentile=100)
+        result = records.active_heart_rate_max_stats("M")
 
         assert len(result) == 1
-        # Only ACTIVE values 180 and 150 → 100th percentile = 180
+        # Only ACTIVE values 180 and 150 → max = 180
         assert float(result.iloc[0]["max"]) == pytest.approx(180.0, abs=1.0)  # type: ignore[arg-type]
 
     def test_falls_back_to_all_records_when_no_context_column(self) -> None:
@@ -572,31 +572,10 @@ class TestActiveHeartRateMaxStats:
         )
         records = RecordsByType({"HeartRate": hr_df})
 
-        result = records.active_heart_rate_max_stats("M", percentile=100)
+        result = records.active_heart_rate_max_stats("M")
 
         assert len(result) == 1
         assert float(result.iloc[0]["max"]) == pytest.approx(160.0, abs=1.0)  # type: ignore[arg-type]
-
-    def test_percentile_eliminates_outlier_spikes(self) -> None:
-        """The percentile parameter caps extreme sensor spikes instead of using raw max."""
-        # Simulate one unrealistic sensor spike (250 bpm) among otherwise normal values.
-        values = [120, 125, 130, 135, 250]  # 250 is a sensor outlier
-        hr_df = pd.DataFrame(
-            {
-                "startDate": [f"2024-01-0{i + 1}" for i in range(5)],
-                "value": values,
-                "HeartRateMotionContext": [2] * 5,
-            }
-        )
-        records = RecordsByType({"HeartRate": hr_df})
-
-        result_95 = records.active_heart_rate_max_stats("M", percentile=95)
-        result_100 = records.active_heart_rate_max_stats("M", percentile=100)
-
-        # 95th percentile should be lower than 250 (the outlier)
-        assert float(result_95.iloc[0]["max"]) < 250.0  # type: ignore[arg-type]
-        # Raw max (100th percentile) includes the spike
-        assert float(result_100.iloc[0]["max"]) == pytest.approx(250.0, abs=1.0)  # type: ignore[arg-type]
 
     def test_aggregates_by_period(self) -> None:
         """Values should be grouped by the requested period (monthly by default)."""
@@ -609,14 +588,14 @@ class TestActiveHeartRateMaxStats:
         )
         records = RecordsByType({"HeartRate": hr_df})
 
-        result = records.active_heart_rate_max_stats("M", percentile=100)
+        result = records.active_heart_rate_max_stats("M")
 
         periods = list(result["period"].astype(str))
         assert "2024-01" in periods
         assert "2024-02" in periods
-        # January: 95th percentile of [140, 160] ≤ 160
+        # January: max of [140, 160] = 160
         jan = result[result["period"].astype(str) == "2024-01"].iloc[0]
-        assert float(jan["max"]) <= 160.0  # type: ignore[arg-type]
+        assert float(jan["max"]) == pytest.approx(160.0, abs=1.0)  # type: ignore[arg-type]
         # February: single value
         feb = result[result["period"].astype(str) == "2024-02"].iloc[0]
         assert float(feb["max"]) == pytest.approx(175.0, abs=1.0)  # type: ignore[arg-type]

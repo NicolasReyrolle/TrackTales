@@ -241,8 +241,16 @@ def render_generic_graph(
     unit: str = "",
     graph_type: str = "bar",
     show_trend: bool = True,
+    extra_series: Mapping[str, Mapping[str, float | int | None]] | None = None,
 ) -> None:
-    """Render generic graphs for the given values."""
+    """Render generic graphs for the given values.
+
+    ``extra_series`` is only used when ``graph_type == "line"``.  Each key is a
+    human-readable series name and the value is a dict mapping x-axis category
+    labels to data points (same format as ``values``).  Extra series are aligned
+    to the same x-axis categories as the primary series and rendered as named
+    line series with distinct colours.
+    """
 
     # Transform dictionary data into ECharts format: [{'value': x, 'name': y}, ...]
     chart_data: list[dict[str, float | int | None | str]] = [
@@ -250,9 +258,11 @@ def render_generic_graph(
     ]
 
     # Extract raw lists for the axes and series
-    categories = [d["name"] for d in chart_data]
+    categories: list[str] = [str(d["name"]) for d in chart_data]
     data_points = list(values.values())
     value_suffix = f" {unit}" if unit else ""
+
+    _EXTRA_SERIES_COLORS = ["#ee6666", "#fac858", "#91cc75", "#73c0de"]
 
     if graph_type == "line":
         # Two-layer approach: a muted "bridge" series beneath (connectNulls=True) makes the
@@ -279,19 +289,59 @@ def render_generic_graph(
                 "z": 2,
             },
         ]
+
+        # Append named extra series, aligning their data to the main x-axis categories.
+        for color_idx, (series_name, series_values) in enumerate((extra_series or {}).items()):
+            extra_data_points: list[float | int | None] = [
+                series_values.get(cat) for cat in categories
+            ]
+            series.append(
+                {
+                    "name": series_name,
+                    "data": extra_data_points,
+                    "type": "line",
+                    "connectNulls": False,
+                    "symbol": "circle",
+                    "symbolSize": 4,
+                    "itemStyle": {
+                        "color": _EXTRA_SERIES_COLORS[color_idx % len(_EXTRA_SERIES_COLORS)]
+                    },
+                    "z": 3,
+                }
+            )
+
         # NiceGUI evaluates dict keys prefixed with ":" as JavaScript expressions.
         # ECharts excludes series with tooltip.show:false from the formatter params array,
         # so the bridge (series[0], hidden) is not counted and the actual data is params[0].
+        # Extra series (params[1+]) are shown with their series name as a label.
         # When the value is null (interpolated gap), show "n/a" with no unit suffix.
         tooltip_formatter_key = _JS_FORMATTER_KEY
-        tooltip_formatter: str = (
-            "function(params) {"
-            "var name = params[0].name;"
-            "var val = params[0].value;"
-            "if (val === null || val === undefined) { return name + '\\nn/a'; }"
-            f"return name + '\\n' + val + '{value_suffix}';"
-            "}"
-        )
+        if extra_series:
+            tooltip_formatter: str = (
+                "function(params) {"
+                "var name = params[0].name;"
+                "var val = params[0].value;"
+                "var result;"
+                "if (val === null || val === undefined) { result = name + '\\nn/a'; }"
+                f"else {{ result = name + '\\n' + val + '{value_suffix}'; }}"
+                "for (var i = 1; i < params.length; i++) {"
+                "var p = params[i]; var v = p.value;"
+                "if (v === null || v === undefined) "
+                "{ result += '\\n' + p.seriesName + ': n/a'; }"
+                f"else {{ result += '\\n' + p.seriesName + ': ' + v + '{value_suffix}'; }}"
+                "}"
+                "return result;"
+                "}"
+            )
+        else:
+            tooltip_formatter = (
+                "function(params) {"
+                "var name = params[0].name;"
+                "var val = params[0].value;"
+                "if (val === null || val === undefined) { return name + '\\nn/a'; }"
+                f"return name + '\\n' + val + '{value_suffix}';"
+                "}"
+            )
     else:
         series = [{"data": data_points, "type": graph_type}]
         # c0 = bar/area value
@@ -310,6 +360,7 @@ def render_generic_graph(
                     "type": "dashed",  # Dashed line for statistical trends
                 },
                 "itemStyle": {"color": "#e74c3c"},  # Red color to stand out
+                "tooltip": {"show": False},  # Exclude trend from tooltip params
             }
         )
 

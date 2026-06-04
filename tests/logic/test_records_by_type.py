@@ -523,3 +523,152 @@ class TestRecordsByTypeDateRangeFiltering:
         assert "2024-01" in periods
         assert "2024-02" in periods
         assert "2024-03" not in periods
+
+
+class TestActiveHeartRateMaxStats:
+    """Tests for RecordsByType.active_heart_rate_max_stats."""
+
+    def test_returns_empty_dataframe_when_no_heart_rate_data(self) -> None:
+        """Return empty DataFrame with expected columns when no HeartRate records exist."""
+        records = RecordsByType({})
+
+        result = records.active_heart_rate_max_stats("M")
+
+        assert list(result.columns) == ["period", "max"]
+        assert result.empty
+
+    def test_uses_only_active_context_records(self) -> None:
+        """Only records with HeartRateMotionContext == 2 (ACTIVE) should be included."""
+        hr_df = pd.DataFrame(
+            {
+                "startDate": [
+                    "2024-01-10",
+                    "2024-01-15",
+                    "2024-01-20",
+                ],
+                "value": [60, 180, 150],
+                "HeartRateMotionContext": [
+                    1,  # SEDENTARY – should be excluded
+                    2,  # ACTIVE – should be included
+                    2,  # ACTIVE – should be included
+                ],
+            }
+        )
+        records = RecordsByType({"HeartRate": hr_df})
+
+        result = records.active_heart_rate_max_stats("M")
+
+        assert len(result) == 1
+        # Only ACTIVE values 180 and 150 → max = 180
+        assert float(result.iloc[0]["max"]) == pytest.approx(180.0, abs=1.0)  # type: ignore[arg-type]
+
+    def test_falls_back_to_all_records_when_no_context_column(self) -> None:
+        """When HeartRateMotionContext column is absent, use all HR records."""
+        hr_df = pd.DataFrame(
+            {
+                "startDate": ["2024-01-10", "2024-01-20"],
+                "value": [100, 160],
+            }
+        )
+        records = RecordsByType({"HeartRate": hr_df})
+
+        result = records.active_heart_rate_max_stats("M")
+
+        assert len(result) == 1
+        assert float(result.iloc[0]["max"]) == pytest.approx(160.0, abs=1.0)  # type: ignore[arg-type]
+
+    def test_aggregates_by_period(self) -> None:
+        """Values should be grouped by the requested period (monthly by default)."""
+        hr_df = pd.DataFrame(
+            {
+                "startDate": ["2024-01-05", "2024-01-25", "2024-02-10"],
+                "value": [140, 160, 175],
+                "HeartRateMotionContext": [2, 2, 2],
+            }
+        )
+        records = RecordsByType({"HeartRate": hr_df})
+
+        result = records.active_heart_rate_max_stats("M")
+
+        periods = list(result["period"].astype(str))
+        assert "2024-01" in periods
+        assert "2024-02" in periods
+        # January: max of [140, 160] = 160
+        jan = result[result["period"].astype(str) == "2024-01"].iloc[0]
+        assert float(jan["max"]) == pytest.approx(160.0, abs=1.0)  # type: ignore[arg-type]
+        # February: single value
+        feb = result[result["period"].astype(str) == "2024-02"].iloc[0]
+        assert float(feb["max"]) == pytest.approx(175.0, abs=1.0)  # type: ignore[arg-type]
+
+    def test_fills_missing_periods_with_none(self) -> None:
+        """Periods with no data should be filled with None when fill_missing_periods=True."""
+        hr_df = pd.DataFrame(
+            {
+                "startDate": ["2024-01-05", "2024-03-10"],
+                "value": [150, 170],
+                "HeartRateMotionContext": [2, 2],
+            }
+        )
+        records = RecordsByType({"HeartRate": hr_df})
+
+        result = records.active_heart_rate_max_stats("M", fill_missing_periods=True)
+
+        assert list(result["period"].astype(str)) == ["2024-01", "2024-02", "2024-03"]
+        feb = result[result["period"].astype(str) == "2024-02"].iloc[0]
+        assert pd.isna(feb["max"])
+
+    def test_no_fill_skips_empty_periods(self) -> None:
+        """Periods with no data should be absent when fill_missing_periods=False."""
+        hr_df = pd.DataFrame(
+            {
+                "startDate": ["2024-01-05", "2024-03-10"],
+                "value": [150, 170],
+                "HeartRateMotionContext": [2, 2],
+            }
+        )
+        records = RecordsByType({"HeartRate": hr_df})
+
+        result = records.active_heart_rate_max_stats("M", fill_missing_periods=False)
+
+        assert list(result["period"].astype(str)) == ["2024-01", "2024-03"]
+
+    def test_respects_start_and_end_date(self) -> None:
+        """Date-range filters should apply to active HR max stats."""
+        hr_df = pd.DataFrame(
+            {
+                "startDate": ["2024-01-01", "2024-02-01", "2024-03-01"],
+                "value": [140, 160, 180],
+                "HeartRateMotionContext": [2, 2, 2],
+            }
+        )
+        records = RecordsByType({"HeartRate": hr_df})
+
+        result = records.active_heart_rate_max_stats(
+            "M", start_date=datetime(2024, 2, 1), end_date=datetime(2024, 2, 28)
+        )
+
+        periods = list(result["period"].astype(str))
+        assert periods == ["2024-02"]
+
+    def test_from_export_sample_zip(
+        self,
+        create_health_zip: Callable[..., str],
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """Compute active HR max from the record_heart_rate.xml fixture."""
+        xml_content = build_health_export_xml([load_export_fragment("record_heart_rate.xml")])
+        zip_path = create_health_zip(xml_content=xml_content)
+
+        with ExportParser() as parser:
+            parsed = parser.parse(str(zip_path))
+
+        records = RecordsByType(data=parsed.records_by_type)
+        result = records.active_heart_rate_max_stats("M")
+
+        assert list(result.columns) == ["period", "max"]
+        assert not result.empty
+        # The fixture has ACTIVE (context=2) HR records; max should be positive
+        active_rows = result.dropna(subset=["max"])
+        assert not active_rows.empty
+        assert (active_rows["max"] > 0).all()

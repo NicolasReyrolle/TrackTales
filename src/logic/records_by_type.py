@@ -209,3 +209,33 @@ class RecordsByType:
             start_date=start_date,
             end_date=end_date,
         )
+
+    def active_heart_rate_max_stats(
+        self,
+        period: str = "M",
+        round_decimals: int = 0,
+        fill_missing_periods: bool = True,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> pd.DataFrame:
+        """Return max heart rate for ACTIVE context per period.
+
+        Returns a DataFrame with columns [period, max].
+        """
+        heart_rate_df = self.heart_rate()
+        query_filter = None
+        if "HeartRateMotionContext" in heart_rate_df.columns:
+            query_filter = f"HeartRateMotionContext == {self.HeartRateMeasureContext.ACTIVE.value}"
+
+        result = self.stats_by_period(
+            self.HEART_RATE_TYPE,
+            period=period,
+            query_filter=query_filter,
+            round_decimals=round_decimals,
+            fill_missing_periods=fill_missing_periods,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        if result.empty:
+            return pd.DataFrame(columns=["period", "max"])
+        return result[["period", "max"]]

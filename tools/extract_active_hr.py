@@ -4,7 +4,7 @@ It writes the results directly to a CSV file to minimize memory usage."""
 import argparse
 import csv
 import sys
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from pathlib import Path
 
 

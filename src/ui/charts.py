@@ -293,8 +293,7 @@ def render_generic_graph(
         # Append named extra series, aligning their data to the main x-axis categories.
         for color_idx, (series_name, series_values) in enumerate((extra_series or {}).items()):
             extra_data_points: list[float | int | None] = [
-                series_values.get(cat)
-                for cat in categories  # type: ignore[assignment]
+                series_values.get(cat) for cat in categories
             ]
             series.append(
                 {

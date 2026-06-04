@@ -161,19 +161,19 @@ Runtime notes:
 
 ## Release Process
 
-TrackTales uses **Calendar Versioning (CalVer)** with the format `YYYY.MM.PATCH` (e.g., `2026.05.1`, `2026.05.2`).
+TrackTales uses **Calendar Versioning (CalVer)** with the format `YYYY.M.PATCH` (e.g., `2026.5.1`, `2026.5.2`).
 
 ### Versioning Scheme
 
 - **YYYY**: Current year (4 digits)
-- **MM**: Current month (2 digits, zero-padded)
+- **M**: Current month (non-zero-padded)
 - **PATCH**: Sequential patch number within the month, auto-incremented (starts at 1)
 
 Examples:
 
-- First release in May 2026: `v2026.05.1`
-- Second release in May 2026: `v2026.05.2`
-- First release in June 2026: `v2026.06.1`
+- First release in May 2026: `v2026.5.1`
+- Second release in May 2026: `v2026.5.2`
+- First release in June 2026: `v2026.6.1`
 
 ### How to Release
 
@@ -194,13 +194,13 @@ Examples:
    - Set **Dry run** if you want to build and validate without publishing
    - Click **Run workflow** button
 5. **Workflow automatically**:
-   - Calculates next version (YYYY.MM.PATCH with auto-incremented PATCH)
+   - Calculates next version (YYYY.M.PATCH with auto-incremented PATCH)
    - Updates and commits `pyproject.toml` with the new version before creating the release tag
    - Builds Windows executable (.exe) via PyInstaller
    - Builds macOS app bundle (.dmg) via PyInstaller
    - Builds Python distributions (.whl and .tar.gz) via setuptools
    - Runs full test suite
-   - Creates git tag (e.g., `v2026.05.2`)
+   - Creates git tag (e.g., `v2026.5.2`)
    - Creates GitHub Release with:
      - Installation instructions for each platform
      - Auto-generated changelog from commits since last release
@@ -235,7 +235,7 @@ python tools/release_dry_run.py --keep-temp
 
 The script:
 
-- Computes the next `YYYY.MM.PATCH` version from local git tags
+- Computes the next `YYYY.M.PATCH` version from local git tags
 - Copies the repo to a temporary workspace
 - Rewrites `pyproject.toml` there with the computed release version
 - Optionally builds Python distributions, runs tests, and builds PyInstaller artifacts
@@ -248,7 +248,7 @@ After release, end-users can install TrackTales:
 
 - **Windows**: Download `.exe` from GitHub Releases, double-click to run (no installation needed)
 - **macOS**: Download `.dmg` from GitHub Releases, double-click and drag app to Applications folder
-- **Python/pip**: `pip install tracktales==YYYY.MM.PATCH` (from PyPI)
+- **Python/pip**: `pip install tracktales==YYYY.M.PATCH` (from PyPI)
 
 ### Building Standalone Executables Locally
 
@@ -304,7 +304,7 @@ If this smoke test fails with a traceback, include the full stack trace in the i
 
    ```bash
    pip install create-dmg
-   create-dmg --volname "TrackTales" --app-drop-link 450 250 "dist/tracktales-YYYY.MM.PATCH.dmg" "dist/tracktales.app"
+   create-dmg --volname "TrackTales" --app-drop-link 450 250 "dist/tracktales-YYYY.M.PATCH.dmg" "dist/tracktales.app"
    ```
 
 ### PyInstaller Configuration
@@ -354,7 +354,7 @@ No API tokens need to be stored in GitHub secrets; the workflow uses OpenID Conn
 **Need to release a hotfix immediately**:
 
 - No manual version management needed; just push commits and trigger the workflow again
-- The workflow auto-increments PATCH (2026.05.1 → 2026.05.2 → etc.)
+- The workflow auto-increments PATCH (2026.5.1 → 2026.5.2 → etc.)
 
 **Rollback strategy**:
 

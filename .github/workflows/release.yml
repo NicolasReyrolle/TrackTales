@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          current_month=$(date +%Y.%m)
+          current_month=$(date +%Y.%-m)
           last_tag=$(git tag -l "v${current_month}.*" | sort -V | tail -n 1)
           if [ -z "$last_tag" ]; then
             last_patch=0

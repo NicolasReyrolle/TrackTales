@@ -41,26 +41,22 @@ def parse_args() -> argparse.Namespace:
 
 
 def is_active_motion_record(metadata_elem) -> bool:
+    """Return True when a MetadataEntry indicates ACTIVE motion context (value == 2).
+
+    Apple Health exports typically encode this as attributes:
+        <MetadataEntry key="HKMetadataKeyHeartRateMotionContext" value="2"/>
+
+    Some exports may nest values as child tags; those are handled as a fallback.
     """
-    Checks if a MetadataEntry element indicates active motion (context = 2).
-    Apple Health stores metadata as sibling elements <MetadataEntry>.
-    Structure:
-        <MetadataEntry>
-          <key>HKMetadataKeyHeartRateMotionContext</key>
-          <integer>2</integer>
-        </MetadataEntry>
-    """
-    key = get_element_text_value(metadata_elem)
+    key = metadata_elem.get("key") or metadata_elem.findtext("key")
     if key != "HKMetadataKeyHeartRateMotionContext":
         return False
 
-    # Look for value in <integer> or <real> children
-    val_elem = metadata_elem.find("integer") or metadata_elem.find("real")
-    if val_elem is not None:
-        val_text = get_element_text_value(val_elem)
-        return val_text == "2"
+    raw_val = metadata_elem.get("value")
+    if raw_val is None:
+        raw_val = metadata_elem.findtext("integer") or metadata_elem.findtext("real")
 
-    return False
+    return (raw_val or "").strip() == "2"
 
 
 def check_record_for_active_motion(elem) -> bool:

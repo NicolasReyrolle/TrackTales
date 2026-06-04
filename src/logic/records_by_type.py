@@ -223,72 +223,19 @@ class RecordsByType:
         Returns a DataFrame with columns [period, max].
         """
         heart_rate_df = self.heart_rate()
-        value_col = "value"
-        date_col = "startDate"
+        query_filter = None
+        if "HeartRateMotionContext" in heart_rate_df.columns:
+            query_filter = f"HeartRateMotionContext == {self.HeartRateMeasureContext.ACTIVE.value}"
 
-        if (
-            heart_rate_df.empty
-            or value_col not in heart_rate_df.columns
-            or date_col not in heart_rate_df.columns
-        ):
-            return pd.DataFrame(columns=["period", "max"])
-
-        df = heart_rate_df
-        if "HeartRateMotionContext" in df.columns:
-            df = df[df["HeartRateMotionContext"] == self.HeartRateMeasureContext.ACTIVE.value]
-
-        if df.empty:
-            return pd.DataFrame(columns=["period", "max"])
-
-        work = df[[date_col, value_col]].copy()
-        work[date_col] = pd.to_datetime(work[date_col], format="ISO8601", errors="coerce")
-        if isinstance(work[date_col].dtype, pd.DatetimeTZDtype):
-            work[date_col] = work[date_col].dt.tz_localize(None)
-        work[value_col] = pd.to_numeric(work[value_col], errors="coerce")
-        work = work.dropna(subset=[date_col, value_col])
-
-        if start_date is not None:
-            work = work[work[date_col] >= pd.Timestamp(start_date)]
-        if end_date is not None:
-            end_ts = pd.Timestamp(end_date)
-            has_time_component = False
-            if isinstance(end_date, pd.Timestamp):
-                has_time_component = any(
-                    getattr(end_date, attr) != 0
-                    for attr in ("hour", "minute", "second", "microsecond", "nanosecond")
-                )
-            else:
-                has_time_component = any(
-                    getattr(end_date, attr) != 0
-                    for attr in ("hour", "minute", "second", "microsecond")
-                )
-            if has_time_component:
-                work = work[work[date_col] <= end_ts]
-            else:
-                next_day = end_ts + pd.Timedelta(days=1)
-                work = work[work[date_col] < next_day]
-
-        if work.empty:
-            return pd.DataFrame(columns=["period", "max"])
-
-        result: pd.DataFrame = (
-            work.groupby(work[date_col].dt.to_period(period))[value_col]
-            .max()
-            .reset_index()
-            .rename(columns={date_col: "period", value_col: "max"})
-            .sort_values("period")
+        result = self.stats_by_period(
+            self.HEART_RATE_TYPE,
+            period=period,
+            query_filter=query_filter,
+            round_decimals=round_decimals,
+            fill_missing_periods=fill_missing_periods,
+            start_date=start_date,
+            end_date=end_date,
         )
-        result["max"] = result["max"].round(round_decimals)
-
-        if fill_missing_periods:
-            full_range = pd.period_range(
-                start=result["period"].min(),
-                end=result["period"].max(),
-                freq=period,
-            )
-            result = (
-                result.set_index("period").reindex(full_range).rename_axis("period").reset_index()
-            )
-            result = result.astype({"max": "Float64"})
-
-        return result
+        if result.empty:
+            return pd.DataFrame(columns=["period", "max"])
+        return result[["period", "max"]]

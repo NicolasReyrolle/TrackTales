@@ -25,6 +25,6 @@ updates:
     schedule:
       interval: "weekly"
     commit-message:
-      # Les actions GitHub ne vont pas dans le changelog
+      # GitHub Actions updates should be classified as non-user-facing changes
       prefix: "chore"
       include: "scope"

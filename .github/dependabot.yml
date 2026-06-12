@@ -16,7 +16,7 @@ updates:
     schedule:
       interval: "weekly"
     commit-message:
-      # L'outillage CI ne va pas dans le changelog
+      # CI tooling updates should be classified as non-user-facing changes
       prefix: "chore"
       include: "scope"
 

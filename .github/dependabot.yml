@@ -1,21 +1,30 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
   - package-ecosystem: "pip"
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    commit-message:
+      # requirements.txt -> Apparaîtra dans le changelog sous "Bug Fixes"
+      prefix: "fix" 
+      # requirements-dev.txt -> Sera ignoré par le changelog
+      prefix-development: "chore"
+      include: "scope"
 
   - package-ecosystem: "pip"
-    directory: "/.github/workflows" # CI pinned dependency manifests (requirements-release-*.txt)
+    directory: "/.github/workflows" # CI pinned dependency manifests
     schedule:
       interval: "weekly"
+    commit-message:
+      # L'outillage CI ne va pas dans le changelog
+      prefix: "chore"
+      include: "scope"
 
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    commit-message:
+      # Les actions GitHub ne vont pas dans le changelog
+      prefix: "chore"
+      include: "scope"

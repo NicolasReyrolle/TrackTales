@@ -5,9 +5,9 @@ updates:
     schedule:
       interval: "weekly"
     commit-message:
-      # requirements.txt -> Apparaîtra dans le changelog sous "Bug Fixes"
-      prefix: "fix" 
-      # requirements-dev.txt -> Sera ignoré par le changelog
+      # Prefixes are chosen to influence release-notes sections (conventional commits preset)
+      prefix: "fix"
+      # Development dependency updates should be classified as non-user-facing changes
       prefix-development: "chore"
       include: "scope"
 

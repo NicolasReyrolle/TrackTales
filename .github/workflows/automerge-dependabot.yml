@@ -1,6 +1,12 @@
 name: Auto-merge Dependabot PRs
 
-on: pull_request
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -9,14 +15,31 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' && !github.event.pull_request.draft }}
     steps:
       - name: Approve a PR
         run: gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Check whether PR is mergeable
+        id: mergeability
+        run: |
+          set -euo pipefail
+          state="$(gh pr view "$PR_URL" --json mergeStateStatus --jq '.mergeStateStatus')"
+          echo "merge_state=$state" >> "$GITHUB_OUTPUT"
+          if [ "$state" = "DIRTY" ]; then
+            echo "mergeable=false" >> "$GITHUB_OUTPUT"
+            echo "PR has merge conflicts (mergeStateStatus=DIRTY), skipping auto-merge."
+          else
+            echo "mergeable=true" >> "$GITHUB_OUTPUT"
+            echo "PR mergeStateStatus=$state, auto-merge can proceed."
+          fi
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Enable auto-merge for Dependabot PRs
+        if: ${{ steps.mergeability.outputs.mergeable == 'true' }}
         run: gh pr merge --auto --rebase "$PR_URL"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}

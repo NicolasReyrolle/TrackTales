@@ -60,3 +60,4 @@ jobs:
              echo "✅ Successfully validated commit messages for $checked commit(s) in $rev_range."
           elif [ "$checked" -eq 0 ]; then
             echo "⚠️ No non-empty commits found to validate in $rev_range."
+          fi

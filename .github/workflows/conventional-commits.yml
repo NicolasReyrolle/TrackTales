@@ -20,9 +20,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install Commitizen
+      - name: Setup and Install Dependencies
         run: |
-          python -m pip install -r requirements-dev.txt
+          # Install commit validation tools from development requirements
+          pip install -r requirements-dev.txt
 
       - name: Validate commit messages (pull request)
         shell: bash
@@ -35,20 +36,27 @@ jobs:
           checked=0
           while IFS= read -r sha; do
             [ -z "$sha" ] && continue
-            
+
             # Skip empty commits (e.g., merge commits if any sneaked in)
             if [ -z "$(git diff-tree --no-commit-id --name-only -r "$sha")" ]; then
               echo "Skipping empty commit: $sha"
               continue
             fi
-            
+
             # Extract and check the commit message
-            msg="$(git log -1 --pretty=%B "$sha")"
-            cz check --message "$msg"
+            message="$(git log -1 --pretty=%B "$sha")"
+            if ! cz check --message "$message"; then
+                echo "❌ Validation failed for commit $sha. Conventional Commit format violation."
+                exit 1 # Fail the workflow immediately upon finding a bad commit
+            fi
+
             checked=$((checked + 1))
-            
+
+
           done < <(git rev-list --reverse "$rev_range")
 
-          if [ "$checked" -eq 0 ]; then
-            echo "No non-empty commits to validate in $rev_range"
-          fi
+          # Final status output based on checks performed.
+          if [ "$checked" -gt 0 ]; then
+             echo "✅ Successfully validated commit messages for $checked commit(s) in $rev_range."
+          elif [ "$checked" -eq 0 ]; then
+            echo "⚠️ No non-empty commits found to validate in $rev_range."

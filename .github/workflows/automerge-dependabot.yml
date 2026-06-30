@@ -15,17 +15,20 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
+    # Only run for Dependabot PRs that are not drafts, ensuring security and relevance.
     if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' && !github.event.pull_request.draft }}
+    env:
+      PR_URL: ${{github.event.pull_request.html_url}}
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
     steps:
       - name: Approve a PR
         run: gh pr review --approve "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      # Check for merge conflicts to ensure the PR is in a stable state before merging.
       - name: Check whether PR is mergeable
         id: mergeability
         run: |
-          set -euo pipefail
+          set -euo pipefail # Exit immediately if a command fails, and treat unset variables as errors.
           state="$(gh pr view "$PR_URL" --json mergeStateStatus --jq '.mergeStateStatus')"
           echo "merge_state=$state" >> "$GITHUB_OUTPUT"
           if [ "$state" = "DIRTY" ]; then
@@ -35,12 +38,8 @@ jobs:
             echo "mergeable=true" >> "$GITHUB_OUTPUT"
             echo "PR mergeStateStatus=$state, auto-merge can proceed."
           fi
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      # Only attempt to merge if the previous step confirmed mergeability.
       - name: Enable auto-merge for Dependabot PRs
         if: ${{ steps.mergeability.outputs.mergeable == 'true' }}
         run: gh pr merge --auto --rebase "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

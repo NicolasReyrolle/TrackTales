@@ -37,7 +37,7 @@ jobs:
           while IFS= read -r sha; do
             [ -z "$sha" ] && continue
 
-            # Skip empty commits (e.g., merge commits if any sneaked in)
+            # Skip empty commits (commits with no file changes)
             if [ -z "$(git diff-tree --no-commit-id --name-only -r "$sha")" ]; then
               echo "Skipping empty commit: $sha"
               continue

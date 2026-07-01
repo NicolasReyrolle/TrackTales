@@ -56,8 +56,9 @@ class WorkoutManager(
         data_points: list[float],
         is_higher_better: bool = True,
         threshold: float = 0.05,
+        label_mode: str = "semantic",
     ) -> str:
-        """Classify a numeric trend as improving, declining, stable, or insufficient."""
+        """Classify a numeric trend as semantic or directional labels."""
         slope = calculate_trend_slope(data_points)
         if slope is None:
             return "Insufficient data"
@@ -65,6 +66,9 @@ class WorkoutManager(
         significance_threshold = abs(threshold)
         if abs(slope) < significance_threshold:
             return "Stable"
+
+        if label_mode == "directional":
+            return "Increasing" if slope > 0 else "Decreasing"
 
         is_improving = slope > 0 if is_higher_better else slope < 0
         return "Improving" if is_improving else "Declining"

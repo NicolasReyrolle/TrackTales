@@ -38,6 +38,14 @@ def render_health_data_tab() -> None:
             state.health_data_graphs.get("body_mass", {}),
             weight_unit,
             graph_type="line",
+            trend_label_mode="directional",
+        )
+        render_generic_graph(
+            t("HR Max (Active)"),
+            state.health_data_graphs.get("heart_rate_active_max", {}),
+            "bpm",
+            graph_type="line",
+            trend_label_mode="directional",
         )
         render_generic_graph(
             t("VO2 Max over time"),

@@ -108,8 +108,23 @@ class TestRenderHealthDataTab:
             heatmap_mock.assert_called_once()
             assert "Resting HR frequency over time" in rendered_titles
             assert "Body Mass over time" in rendered_titles
+            assert "HR Max (Active)" in rendered_titles
             assert "VO2 Max over time" in rendered_titles
             assert not any("Critical Power" in title for title in rendered_titles)
+
+            body_mass_call = next(
+                call
+                for call in render_generic_graph_mock.call_args_list
+                if call.args[0] == "Body Mass over time"
+            )
+            assert body_mass_call.kwargs["trend_label_mode"] == "directional"
+
+            active_hr_call = next(
+                call
+                for call in render_generic_graph_mock.call_args_list
+                if call.args[0] == "HR Max (Active)"
+            )
+            assert active_hr_call.kwargs["trend_label_mode"] == "directional"
         finally:
             state.health_data_loading = original_loading
             state.health_data_loaded = original_loaded

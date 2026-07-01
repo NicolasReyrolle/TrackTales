@@ -188,6 +188,7 @@ class TestRenderGenericGraph:
             [10.0, 20.0],
             is_higher_better=True,
             threshold=0.05,
+            label_mode="semantic",
         )
         assert any("Improving" in call.args[0] for call in label_mock.call_args_list)
         chart_options = echart_mock.call_args.args[0]
@@ -195,6 +196,37 @@ class TestRenderGenericGraph:
         assert len(series) == 2
         assert series[0]["type"] == "bar"
         assert series[1]["name"] == "Trend"
+
+    def test_render_generic_graph_can_use_directional_trend_labels(self) -> None:
+        """Directional chart labels should request increasing/decreasing wording."""
+        values = {"2024-01": 70, "2024-02": 71}
+
+        with (
+            patch.object(
+                state.workouts, "get_trend_analysis", return_value="Increasing"
+            ) as trend_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label") as label_mock,
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=DummyComponent()),
+        ):
+            charts.render_generic_graph(
+                "Body Mass over time",
+                values,
+                "kg",
+                graph_type="line",
+                trend_label_mode="directional",
+            )
+
+        trend_mock.assert_called_once_with(
+            [70.0, 71.0],
+            is_higher_better=True,
+            threshold=0.05,
+            label_mode="directional",
+        )
+        assert any("Increasing" in call.args[0] for call in label_mock.call_args_list if call.args)
 
     def test_render_generic_graph_excludes_trend_when_disabled(self) -> None:
         """Trend series is omitted when show_trend is False."""

@@ -47,6 +47,8 @@ _JS_FORMATTER_KEY = ":formatter"
 _TREND_TITLE_SUFFIXES = {
     "Improving": "↗ Improving",
     "Declining": "↘ Declining",
+    "Increasing": "↗ Increasing",
+    "Decreasing": "↘ Decreasing",
     "Stable": "→ Stable",
     "Insufficient data": "? Insufficient data",
 }
@@ -100,6 +102,7 @@ def _get_trend_analysis(
     *,
     is_higher_better: bool,
     threshold: float,
+    label_mode: str,
 ) -> str:
     numeric_points = [
         float(point)
@@ -110,6 +113,7 @@ def _get_trend_analysis(
         numeric_points,
         is_higher_better=is_higher_better,
         threshold=threshold,
+        label_mode=label_mode,
     )
 
 
@@ -272,6 +276,7 @@ def render_generic_graph(
     extra_series: Mapping[str, Mapping[str, float | int | None]] | None = None,
     is_higher_better: bool = True,
     trend_threshold: float = 0.05,
+    trend_label_mode: str = "semantic",
 ) -> None:
     """Render generic graphs for the given values.
 
@@ -295,6 +300,7 @@ def render_generic_graph(
         data_points,
         is_higher_better=is_higher_better,
         threshold=trend_threshold,
+        label_mode=trend_label_mode,
     )
     title_text = _build_chart_title(label, trend_analysis)
 

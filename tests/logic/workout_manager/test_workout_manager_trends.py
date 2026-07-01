@@ -55,3 +55,16 @@ class TestGetTrendAnalysis:
             )
             == "Improving"
         )
+
+    def test_returns_increasing_for_directional_labels(self) -> None:
+        """Directional labels should ignore desirability and follow slope sign."""
+        manager = WorkoutManager()
+        assert (
+            manager.get_trend_analysis(
+                [70.0, 71.0, 72.0],
+                is_higher_better=False,
+                threshold=0.05,
+                label_mode="directional",
+            )
+            == "Increasing"
+        )

@@ -10,6 +10,22 @@ from logic.workout_manager.helpers import convert_record_metric_value
 from units import METERS_TO_FEET, METERS_TO_MILES
 
 
+def calculate_trend_slope(values: list[float]) -> float | None:
+    """Return the OLS slope for equally spaced values or None when unavailable."""
+    if len(values) < 2:
+        return None
+
+    x_mean = (len(values) - 1) / 2
+    y_mean = sum(values) / len(values)
+    numerator = sum((index - x_mean) * (value - y_mean) for index, value in enumerate(values))
+    denominator = sum((index - x_mean) ** 2 for index in range(len(values)))
+
+    if denominator == 0:
+        return None
+
+    return numerator / denominator
+
+
 class WorkoutManagerAggregationsMixin:
     """Filtering, aggregation, and metric accessors for workout data."""
 

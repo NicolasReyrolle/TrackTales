@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from .aggregations import WorkoutManagerAggregationsMixin
+from .aggregations import WorkoutManagerAggregationsMixin, calculate_trend_slope
 from .export import WorkoutManagerExportMixin
 from .segments import WorkoutManagerSegmentsMixin
 
@@ -50,3 +50,21 @@ class WorkoutManager(
             )
         else:
             self.workouts = pd_workouts
+
+    def get_trend_analysis(
+        self,
+        data_points: list[float],
+        is_higher_better: bool = True,
+        threshold: float = 0.05,
+    ) -> str:
+        """Classify a numeric trend as improving, declining, stable, or insufficient."""
+        slope = calculate_trend_slope(data_points)
+        if slope is None:
+            return "Insufficient data"
+
+        significance_threshold = abs(threshold)
+        if abs(slope) < significance_threshold:
+            return "Stable"
+
+        is_improving = slope > 0 if is_higher_better else slope < 0
+        return "Improving" if is_improving else "Declining"

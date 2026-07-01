@@ -44,6 +44,12 @@ __all__ = [
 _SAVE_AS_IMAGE = "Save as Image"
 _RESTORE = "Restore"
 _JS_FORMATTER_KEY = ":formatter"
+_TREND_TITLE_SUFFIXES = {
+    "Improving": "↗ Improving",
+    "Declining": "↘ Declining",
+    "Stable": "→ Stable",
+    "Insufficient data": "? Insufficient data",
+}
 
 
 def _toolbox_config(*, restore: bool = False) -> dict[str, object]:
@@ -87,6 +93,28 @@ def _normalize_chart_data_index(raw_data_index: object) -> int | None:
     if isinstance(raw_data_index, float) and raw_data_index.is_integer():
         raw_data_index = int(raw_data_index)
     return raw_data_index if isinstance(raw_data_index, int) else None
+
+
+def _get_trend_analysis(
+    data_points: Sequence[float | int | None],
+    *,
+    is_higher_better: bool,
+    threshold: float,
+) -> str:
+    numeric_points = [
+        float(point)
+        for point in data_points
+        if isinstance(point, (int, float)) and not isinstance(point, bool)
+    ]
+    return state.workouts.get_trend_analysis(
+        numeric_points,
+        is_higher_better=is_higher_better,
+        threshold=threshold,
+    )
+
+
+def _build_chart_title(label: str, trend_analysis: str) -> str:
+    return f"{label} · {_TREND_TITLE_SUFFIXES.get(trend_analysis, trend_analysis)}"
 
 
 def stat_card(
@@ -242,6 +270,8 @@ def render_generic_graph(
     graph_type: str = "bar",
     show_trend: bool = True,
     extra_series: Mapping[str, Mapping[str, float | int | None]] | None = None,
+    is_higher_better: bool = True,
+    trend_threshold: float = 0.05,
 ) -> None:
     """Render generic graphs for the given values.
 
@@ -261,6 +291,12 @@ def render_generic_graph(
     categories: list[str] = [str(d["name"]) for d in chart_data]
     data_points = list(values.values())
     value_suffix = f" {unit}" if unit else ""
+    trend_analysis = _get_trend_analysis(
+        data_points,
+        is_higher_better=is_higher_better,
+        threshold=trend_threshold,
+    )
+    title_text = _build_chart_title(label, trend_analysis)
 
     _EXTRA_SERIES_COLORS = ["#ee6666", "#fac858", "#91cc75", "#73c0de"]
 
@@ -392,13 +428,13 @@ def render_generic_graph(
     with ui.dialog().props("maximized") as dialog:
         with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
             with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
                 ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
             ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
         ui.echart(card_config)
 

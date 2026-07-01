@@ -172,15 +172,24 @@ class TestRenderGenericGraph:
         values = {"2024-01": 10, "2024-02": 20}
 
         with (
+            patch.object(
+                state.workouts, "get_trend_analysis", return_value="Improving"
+            ) as trend_mock,
             patch("ui.charts.ui.dialog", return_value=MagicMock()),
             patch("ui.charts.ui.card", return_value=DummyRow()),
             patch("ui.charts.ui.row", return_value=DummyRow()),
-            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.label") as label_mock,
             patch("ui.charts.ui.button", return_value=DummyComponent()),
             patch("ui.charts.ui.echart") as echart_mock,
         ):
             charts.render_generic_graph("Distance by month", values, "km")
 
+        trend_mock.assert_called_once_with(
+            [10.0, 20.0],
+            is_higher_better=True,
+            threshold=0.05,
+        )
+        assert any("Improving" in call.args[0] for call in label_mock.call_args_list)
         chart_options = echart_mock.call_args.args[0]
         series = chart_options["series"]
         assert len(series) == 2

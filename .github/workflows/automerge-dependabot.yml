@@ -29,11 +29,19 @@ jobs:
         id: mergeability
         run: |
           set -euo pipefail # Exit immediately if a command fails, and treat unset variables as errors.
-          state="$(gh pr view "$PR_URL" --json mergeStateStatus --jq '.mergeStateStatus')"
+
+          # mergeStateStatus can be temporarily UNKNOWN right after PR events; retry briefly for a stable value.
+          for i in {1..10}; do
+            state="$(gh pr view "$PR_URL" --json mergeStateStatus --jq '.mergeStateStatus')"
+            [ "$state" != "UNKNOWN" ] && break
+            echo "mergeStateStatus=UNKNOWN, retrying ($i/10)..."
+            sleep 3
+          done
+
           echo "merge_state=$state" >> "$GITHUB_OUTPUT"
-          if [ "$state" = "DIRTY" ]; then
+          if [ "$state" = "DIRTY" ] || [ "$state" = "UNKNOWN" ]; then
             echo "mergeable=false" >> "$GITHUB_OUTPUT"
-            echo "PR has merge conflicts (mergeStateStatus=DIRTY), skipping auto-merge."
+            echo "PR mergeStateStatus=$state, skipping auto-merge."
           else
             echo "mergeable=true" >> "$GITHUB_OUTPUT"
             echo "PR mergeStateStatus=$state, auto-merge can proceed."

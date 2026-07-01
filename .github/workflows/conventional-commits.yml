@@ -23,7 +23,7 @@ jobs:
       - name: Setup and Install Dependencies
         run: |
           # Install commit validation tools from development requirements
-          pip install -r requirements-dev.txt
+          python -m pip install -r requirements-dev.txt
 
       - name: Validate commit messages (pull request)
         shell: bash

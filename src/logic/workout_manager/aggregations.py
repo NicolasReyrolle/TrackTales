@@ -27,10 +27,14 @@ def calculate_trend_slope(
         return None
 
     if x_values is not None:
+        if len(x_values) != len(values):
+            return None
         x_coords: list[int | float] = x_values
         x_mean: float = sum(x_coords) / len(x_coords)
         y_mean: float = sum(values) / len(values)
-        numerator = sum((xi - x_mean) * (yi - y_mean) for xi, yi in zip(x_coords, values))
+        numerator = sum(
+            (xi - x_mean) * (yi - y_mean) for xi, yi in zip(x_coords, values, strict=True)
+        )
         denominator = sum((xi - x_mean) ** 2 for xi in x_coords)
     else:
         x_mean = (len(values) - 1) / 2

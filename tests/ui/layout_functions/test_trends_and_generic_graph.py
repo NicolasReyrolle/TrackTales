@@ -253,8 +253,9 @@ class TestRenderGenericGraph:
             x_values=[0, 2],
         )
 
+    def test_render_generic_graph_excludes_trend_when_disabled(self) -> None:
         """Trend series is omitted when show_trend is False."""
-        values = {"2024-01": 10, "2024-02": 20}
+        values: dict[str, int | None] = {"2024-01": 10, "2024-02": 20}
 
         with (
             patch("ui.charts.ui.dialog", return_value=MagicMock()),

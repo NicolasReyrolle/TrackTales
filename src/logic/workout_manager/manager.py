@@ -58,7 +58,19 @@ class WorkoutManager(
         threshold: float = 0.05,
         label_mode: str = "semantic",
     ) -> str:
-        """Classify a numeric trend as semantic or directional labels."""
+        """Classify a numeric trend as semantic or directional labels.
+
+        Args:
+            data_points: Ordered metric values for consecutive periods.
+            is_higher_better: Whether rising values represent improvement for the
+                metric being analysed. Ignored when ``label_mode`` is
+                ``"directional"``.
+            threshold: Minimum absolute slope required before the series is
+                classified as changing instead of stable.
+            label_mode: ``"semantic"`` to return improvement-oriented labels
+                (for example ``"Improving"``), or ``"directional"`` to return
+                slope-only labels (for example ``"Increasing"``).
+        """
         slope = calculate_trend_slope(data_points)
         if slope is None:
             return "Insufficient data"

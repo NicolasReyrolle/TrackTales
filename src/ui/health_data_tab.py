@@ -27,9 +27,6 @@ def render_health_data_tab() -> None:
             state.health_data_graphs.get("heart_rate", {}),
             "bpm",
             graph_type="line",
-            extra_series={
-                t("HR Max (Active)"): state.health_data_graphs.get("heart_rate_active_max", {})
-            },
         )
 
     with ui.row().classes(ROW_CENTERED_CLASSES):

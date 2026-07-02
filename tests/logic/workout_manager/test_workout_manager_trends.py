@@ -1,5 +1,7 @@
 """Tests for workout trend slope and semantic analysis."""
 
+from unittest.mock import patch
+
 import pytest
 
 from logic.workout_manager import WorkoutManager
@@ -24,6 +26,11 @@ class TestCalculateTrendSlope:
     def test_returns_negative_slope_for_declining_values(self) -> None:
         """Decreasing values should produce a negative slope."""
         assert calculate_trend_slope([30.0, 20.0, 10.0]) == pytest.approx(-10.0)
+
+    def test_returns_none_when_denominator_is_zero(self) -> None:
+        """A zero x-variance fallback should return None instead of dividing by zero."""
+        with patch("logic.workout_manager.aggregations.sum", side_effect=[6.0, 0.0, 0.0]):
+            assert calculate_trend_slope([1.0, 2.0, 3.0]) is None
 
 
 class TestGetTrendAnalysis:

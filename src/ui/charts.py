@@ -44,13 +44,13 @@ __all__ = [
 _SAVE_AS_IMAGE = "Save as Image"
 _RESTORE = "Restore"
 _JS_FORMATTER_KEY = ":formatter"
-_TREND_TITLE_SUFFIXES = {
-    "Improving": "↗ Improving",
-    "Declining": "↘ Declining",
-    "Increasing": "↗ Increasing",
-    "Decreasing": "↘ Decreasing",
-    "Stable": "→ Stable",
-    "Insufficient data": "? Insufficient data",
+_TREND_TITLE_SYMBOLS = {
+    "Improving": "↗",
+    "Declining": "↘",
+    "Increasing": "↗",
+    "Decreasing": "↘",
+    "Stable": "→",
+    "Insufficient data": "?",
 }
 
 
@@ -118,7 +118,10 @@ def _get_trend_analysis(
 
 
 def _build_chart_title(label: str, trend_analysis: str) -> str:
-    return f"{label} · {_TREND_TITLE_SUFFIXES.get(trend_analysis, trend_analysis)}"
+    trend_symbol = _TREND_TITLE_SYMBOLS.get(trend_analysis)
+    trend_text = t(trend_analysis)
+    trend_suffix = f"{trend_symbol} {trend_text}" if trend_symbol is not None else trend_text
+    return f"{label} · {trend_suffix}"
 
 
 def stat_card(

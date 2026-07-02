@@ -1,5 +1,7 @@
 """Tests for core gettext catalog entries."""
 
+from unittest.mock import patch
+
 import i18n
 from i18n import translate
 
@@ -62,3 +64,15 @@ def test_non_physical_w_prime_warning_strings_are_translated_in_french() -> None
     assert translate("Non-physical W'", language="fr") == "W' non physique"
     assert translate(warning_message, language="fr") == warning_translation
     assert translate("Periods", language="fr") == "Périodes"
+
+
+def test_trend_labels_are_translated_in_french() -> None:
+    """Trend indicator labels should have French translations."""
+    i18n.compile_message_catalogs()
+    with patch("i18n.core.gettext.translation", side_effect=FileNotFoundError):
+        assert translate("Improving", language="fr") == "En amélioration"
+        assert translate("Declining", language="fr") == "En baisse"
+        assert translate("Increasing", language="fr") == "En hausse"
+        assert translate("Decreasing", language="fr") == "En diminution"
+        assert translate("Stable", language="fr") == "Stable"
+        assert translate("Insufficient data", language="fr") == "Données insuffisantes"

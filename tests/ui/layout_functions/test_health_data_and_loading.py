@@ -119,6 +119,13 @@ class TestRenderHealthDataTab:
             )
             assert body_mass_call.kwargs["trend_label_mode"] == "directional"
 
+            resting_hr_call = next(
+                call
+                for call in render_generic_graph_mock.call_args_list
+                if call.args[0] == "Resting HR frequency over time"
+            )
+            assert "extra_series" not in resting_hr_call.kwargs
+
             active_hr_call = next(
                 call
                 for call in render_generic_graph_mock.call_args_list

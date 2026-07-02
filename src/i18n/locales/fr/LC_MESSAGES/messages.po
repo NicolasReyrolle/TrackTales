@@ -419,6 +419,24 @@ msgstr "Enregistrer l'image"
 msgid "Restore"
 msgstr "Réinitialiser"
 
+msgid "Improving"
+msgstr "En amélioration"
+
+msgid "Declining"
+msgstr "En baisse"
+
+msgid "Increasing"
+msgstr "En hausse"
+
+msgid "Decreasing"
+msgstr "En diminution"
+
+msgid "Stable"
+msgstr "Stable"
+
+msgid "Insufficient data"
+msgstr "Données insuffisantes"
+
 # QDate locale labels
 msgid "Sunday"
 msgstr "dimanche"

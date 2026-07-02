@@ -10,6 +10,44 @@ from logic.workout_manager.helpers import convert_record_metric_value
 from units import METERS_TO_FEET, METERS_TO_MILES
 
 
+def calculate_trend_slope(
+    values: list[float],
+    x_values: list[int | float] | None = None,
+) -> float | None:
+    """Return the OLS slope or None when unavailable.
+
+    Args:
+        values: Numeric y-values to fit.
+        x_values: Optional x-positions for each value. When ``None``, equally-
+            spaced integer indices (0, 1, 2, …) are used.  Pass explicit
+            positions to preserve original period spacing when some periods are
+            missing (e.g. ``[0, 2, 3]`` for a series with a gap at index 1).
+    """
+    if len(values) < 2:
+        return None
+
+    if x_values is not None:
+        if len(x_values) != len(values):
+            return None
+        x_coords: list[int | float] = x_values
+        x_mean: float = sum(x_coords) / len(x_coords)
+        y_mean: float = sum(values) / len(values)
+        numerator = sum(
+            (xi - x_mean) * (yi - y_mean) for xi, yi in zip(x_coords, values, strict=True)
+        )
+        denominator = sum((xi - x_mean) ** 2 for xi in x_coords)
+    else:
+        x_mean = (len(values) - 1) / 2
+        y_mean = sum(values) / len(values)
+        numerator = sum((index - x_mean) * (value - y_mean) for index, value in enumerate(values))
+        denominator = sum((index - x_mean) ** 2 for index in range(len(values)))
+
+    if denominator == 0:
+        return None
+
+    return numerator / denominator
+
+
 class WorkoutManagerAggregationsMixin:
     """Filtering, aggregation, and metric accessors for workout data."""
 

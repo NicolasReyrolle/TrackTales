@@ -414,6 +414,24 @@ msgstr ""
 msgid "Restore"
 msgstr ""
 
+msgid "Improving"
+msgstr ""
+
+msgid "Declining"
+msgstr ""
+
+msgid "Increasing"
+msgstr ""
+
+msgid "Decreasing"
+msgstr ""
+
+msgid "Stable"
+msgstr ""
+
+msgid "Insufficient data"
+msgstr ""
+
 # QDate locale labels
 msgid "Sunday"
 msgstr ""

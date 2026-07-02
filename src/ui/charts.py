@@ -113,9 +113,7 @@ def _get_trend_analysis(
     numeric_points = [v for _, v in indexed]
     # When the series contains gaps (None values), pass original period indices so
     # the OLS regression preserves the true x-spacing instead of compressing gaps.
-    x_values: list[int | float] | None = (
-        x_positions if len(indexed) < len(data_points) else None
-    )
+    x_values: list[int | float] | None = x_positions if len(indexed) < len(data_points) else None
     return state.workouts.get_trend_analysis(
         numeric_points,
         is_higher_better=is_higher_better,

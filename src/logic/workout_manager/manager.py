@@ -57,6 +57,7 @@ class WorkoutManager(
         is_higher_better: bool = True,
         threshold: float = 0.05,
         label_mode: str = "semantic",
+        x_values: list[int | float] | None = None,
     ) -> str:
         """Classify a numeric trend as semantic or directional labels.
 
@@ -70,8 +71,13 @@ class WorkoutManager(
             label_mode: ``"semantic"`` to return improvement-oriented labels
                 (for example ``"Improving"``), or ``"directional"`` to return
                 slope-only labels (for example ``"Increasing"``).
+            x_values: Optional x-positions corresponding to each entry in
+                *data_points*.  When ``None``, equally-spaced integer indices
+                are assumed.  Pass explicit positions to preserve original period
+                spacing when some periods contain gaps (``None`` values) that
+                were removed by the caller before invoking this method.
         """
-        slope = calculate_trend_slope(data_points)
+        slope = calculate_trend_slope(data_points, x_values=x_values)
         if slope is None:
             return "Insufficient data"
 

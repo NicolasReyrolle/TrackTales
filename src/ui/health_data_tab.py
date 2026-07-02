@@ -27,6 +27,7 @@ def render_health_data_tab() -> None:
             state.health_data_graphs.get("heart_rate", {}),
             "bpm",
             graph_type="line",
+            is_higher_better=False,
         )
 
     with ui.row().classes(ROW_CENTERED_CLASSES):

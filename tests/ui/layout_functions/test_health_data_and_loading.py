@@ -125,6 +125,7 @@ class TestRenderHealthDataTab:
                 if call.args[0] == "Resting HR frequency over time"
             )
             assert "extra_series" not in resting_hr_call.kwargs
+            assert resting_hr_call.kwargs.get("is_higher_better") is False
 
             active_hr_call = next(
                 call

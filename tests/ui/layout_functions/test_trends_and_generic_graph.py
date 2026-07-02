@@ -189,6 +189,7 @@ class TestRenderGenericGraph:
             is_higher_better=True,
             threshold=0.05,
             label_mode="semantic",
+            x_values=None,
         )
         assert any("Improving" in call.args[0] for call in label_mock.call_args_list)
         chart_options = echart_mock.call_args.args[0]
@@ -225,10 +226,33 @@ class TestRenderGenericGraph:
             is_higher_better=True,
             threshold=0.05,
             label_mode="directional",
+            x_values=None,
         )
         assert any("Increasing" in call.args[0] for call in label_mock.call_args_list if call.args)
 
-    def test_render_generic_graph_excludes_trend_when_disabled(self) -> None:
+    def test_render_generic_graph_passes_x_values_when_series_has_gaps(self) -> None:
+        """Original period indices should be forwarded to get_trend_analysis when gaps exist."""
+        values: dict[str, int | None] = {"2024-01": 10, "2024-02": None, "2024-03": 30}
+
+        with (
+            patch.object(state.workouts, "get_trend_analysis", return_value="Stable") as trend_mock,
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=DummyComponent()),
+        ):
+            charts.render_generic_graph("Test metric", values, "unit", graph_type="line")
+
+        trend_mock.assert_called_once_with(
+            [10.0, 30.0],
+            is_higher_better=True,
+            threshold=0.05,
+            label_mode="semantic",
+            x_values=[0, 2],
+        )
+
         """Trend series is omitted when show_trend is False."""
         values = {"2024-01": 10, "2024-02": 20}
 

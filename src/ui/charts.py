@@ -104,16 +104,24 @@ def _get_trend_analysis(
     threshold: float,
     label_mode: str,
 ) -> str:
-    numeric_points = [
-        float(point)
-        for point in data_points
+    indexed = [
+        (i, float(point))
+        for i, point in enumerate(data_points)
         if isinstance(point, (int, float)) and not isinstance(point, bool)
     ]
+    x_positions: list[int | float] = [i for i, _ in indexed]
+    numeric_points = [v for _, v in indexed]
+    # When the series contains gaps (None values), pass original period indices so
+    # the OLS regression preserves the true x-spacing instead of compressing gaps.
+    x_values: list[int | float] | None = (
+        x_positions if len(indexed) < len(data_points) else None
+    )
     return state.workouts.get_trend_analysis(
         numeric_points,
         is_higher_better=is_higher_better,
         threshold=threshold,
         label_mode=label_mode,
+        x_values=x_values,
     )
 
 

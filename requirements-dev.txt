@@ -12,7 +12,7 @@ mypy==2.3.0
 
 # Development
 ipython>=8.39.0
-pre-commit>=4.6.0
+pre-commit>=4.6.1
 commitizen>=4.16.5
 
 # Type stubs

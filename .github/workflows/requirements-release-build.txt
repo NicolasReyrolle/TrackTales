@@ -10,7 +10,7 @@ jaraco.functools==4.5.0
 keyring==25.7.0
 markdown-it-py==4.2.0
 mdurl==0.1.2
-more-itertools==11.0.2
+more-itertools==11.1.0
 nh3==0.3.5
 readme_renderer==45.0
 requests-toolbelt==1.0.0

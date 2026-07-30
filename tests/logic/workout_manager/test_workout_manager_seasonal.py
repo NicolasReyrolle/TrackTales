@@ -611,3 +611,246 @@ class TestGetCaloriesByQuarterOfYear:
         result = manager.get_calories_by_quarter_of_year(activity_type="Cycling")
         assert result["Q3"] == pytest.approx(500.0)
         assert result["Q1"] == pytest.approx(0.0)
+
+
+# ---------------------------------------------------------------------------
+# KeyError guard: activity_type filter without activityType column
+# ---------------------------------------------------------------------------
+
+
+class TestSeasonalActivityTypeGuard:
+    """Ensure no KeyError is raised when activityType column is absent."""
+
+    def test_missing_activity_type_column_with_filter_returns_empty_dict(self) -> None:
+        """Return {} when filtering by activity type but activityType column is absent."""
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "distance": [5_000.0],
+                    "startDate": pd.to_datetime(["2024-01-01"]),
+                }
+            )
+        )
+        assert manager.get_distance_by_day_of_week(activity_type="Running") == {}
+
+    def test_missing_activity_type_column_with_filter_month(self) -> None:
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "distance": [5_000.0],
+                    "startDate": pd.to_datetime(["2024-01-01"]),
+                }
+            )
+        )
+        assert manager.get_distance_by_month_of_year(activity_type="Running") == {}
+
+    def test_missing_activity_type_column_with_filter_year(self) -> None:
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "distance": [5_000.0],
+                    "startDate": pd.to_datetime(["2024-01-01"]),
+                }
+            )
+        )
+        assert manager.get_distance_by_year(activity_type="Running") == {}
+
+
+# ---------------------------------------------------------------------------
+# get_count_by_year
+# ---------------------------------------------------------------------------
+
+
+class TestGetCountByYear:
+    """Tests for workout count aggregated by calendar year."""
+
+    def test_empty_manager_returns_empty_dict(self) -> None:
+        assert WorkoutManager().get_count_by_year() == {}
+
+    def test_single_year(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Cycling"],
+            startDate=pd.to_datetime(["2024-03-01", "2024-07-01"]),
+        )
+        result = manager.get_count_by_year()
+        assert result == {"2024": pytest.approx(2.0)}
+
+    def test_multiple_years(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Running", "Cycling"],
+            startDate=pd.to_datetime(["2023-01-10", "2024-06-15", "2024-11-01"]),
+        )
+        result = manager.get_count_by_year()
+        assert result["2023"] == pytest.approx(1.0)
+        assert result["2024"] == pytest.approx(2.0)
+
+    def test_activity_type_filter(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Cycling", "Running"],
+            startDate=pd.to_datetime(["2023-01-01", "2023-06-01", "2024-01-01"]),
+        )
+        result = manager.get_count_by_year(activity_type="Running")
+        assert result["2023"] == pytest.approx(1.0)
+        assert result["2024"] == pytest.approx(1.0)
+        assert "Cycling" not in result
+
+    def test_returns_floats(self) -> None:
+        manager = _make_manager(
+            activityType=["Running"],
+            startDate=pd.to_datetime(["2024-01-01"]),
+        )
+        result = manager.get_count_by_year()
+        assert all(isinstance(v, float) for v in result.values())
+
+
+# ---------------------------------------------------------------------------
+# get_distance_by_year
+# ---------------------------------------------------------------------------
+
+
+class TestGetDistanceByYear:
+    """Tests for total distance aggregated by calendar year."""
+
+    def test_returns_empty_dict_when_column_missing(self) -> None:
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running"],
+                    "startDate": pd.to_datetime(["2024-01-01"]),
+                }
+            )
+        )
+        assert manager.get_distance_by_year() == {}
+
+    def test_default_unit_is_km(self) -> None:
+        manager = _make_manager(
+            activityType=["Running"],
+            startDate=pd.to_datetime(["2024-06-01"]),
+            distance=[10_000.0],
+        )
+        result = manager.get_distance_by_year()
+        assert result["2024"] == pytest.approx(10.0)
+
+    def test_sums_across_multiple_workouts_same_year(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Cycling"],
+            startDate=pd.to_datetime(["2024-01-01", "2024-08-01"]),
+            distance=[5_000.0, 10_000.0],
+        )
+        result = manager.get_distance_by_year()
+        assert result["2024"] == pytest.approx(15.0)
+
+    def test_separate_totals_per_year(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Running"],
+            startDate=pd.to_datetime(["2023-03-01", "2024-03-01"]),
+            distance=[10_000.0, 20_000.0],
+        )
+        result = manager.get_distance_by_year()
+        assert result["2023"] == pytest.approx(10.0)
+        assert result["2024"] == pytest.approx(20.0)
+
+    def test_unit_conversion_to_miles(self) -> None:
+        manager = _make_manager(
+            activityType=["Running"],
+            startDate=pd.to_datetime(["2024-05-01"]),
+            distance=[1609.344],
+        )
+        result = manager.get_distance_by_year(unit="mi")
+        assert result["2024"] == pytest.approx(1.0, rel=1e-4)
+
+
+# ---------------------------------------------------------------------------
+# get_duration_by_year
+# ---------------------------------------------------------------------------
+
+
+class TestGetDurationByYear:
+    """Tests for total duration aggregated by calendar year."""
+
+    def test_returns_empty_dict_when_column_missing(self) -> None:
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running"],
+                    "startDate": pd.to_datetime(["2024-01-01"]),
+                }
+            )
+        )
+        assert manager.get_duration_by_year() == {}
+
+    def test_duration_converted_to_hours(self) -> None:
+        manager = _make_manager(
+            activityType=["Running"],
+            startDate=pd.to_datetime(["2024-01-01"]),
+            duration=[7_200.0],  # 2 hours in seconds
+        )
+        result = manager.get_duration_by_year()
+        assert result["2024"] == pytest.approx(2.0)
+
+    def test_sums_correctly_across_years(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Running"],
+            startDate=pd.to_datetime(["2023-06-01", "2024-06-01"]),
+            duration=[3_600.0, 7_200.0],
+        )
+        result = manager.get_duration_by_year()
+        assert result["2023"] == pytest.approx(1.0)
+        assert result["2024"] == pytest.approx(2.0)
+
+    def test_activity_type_filter(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Cycling"],
+            startDate=pd.to_datetime(["2024-01-01", "2024-06-01"]),
+            duration=[3_600.0, 7_200.0],
+        )
+        result = manager.get_duration_by_year(activity_type="Running")
+        assert result["2024"] == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# get_calories_by_year
+# ---------------------------------------------------------------------------
+
+
+class TestGetCaloriesByYear:
+    """Tests for total calories aggregated by calendar year."""
+
+    def test_returns_empty_dict_when_column_missing(self) -> None:
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running"],
+                    "startDate": pd.to_datetime(["2024-01-01"]),
+                }
+            )
+        )
+        assert manager.get_calories_by_year() == {}
+
+    def test_sums_calories_per_year(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Cycling"],
+            startDate=pd.to_datetime(["2024-03-01", "2024-09-01"]),
+            sumActiveEnergyBurned=[300.0, 500.0],
+        )
+        result = manager.get_calories_by_year()
+        assert result["2024"] == pytest.approx(800.0)
+
+    def test_separate_totals_per_year(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Running"],
+            startDate=pd.to_datetime(["2023-01-01", "2024-01-01"]),
+            sumActiveEnergyBurned=[200.0, 400.0],
+        )
+        result = manager.get_calories_by_year()
+        assert result["2023"] == pytest.approx(200.0)
+        assert result["2024"] == pytest.approx(400.0)
+
+    def test_activity_type_filter(self) -> None:
+        manager = _make_manager(
+            activityType=["Running", "Cycling"],
+            startDate=pd.to_datetime(["2024-01-01", "2024-01-01"]),
+            sumActiveEnergyBurned=[300.0, 500.0],
+        )
+        result = manager.get_calories_by_year(activity_type="Running")
+        assert result["2024"] == pytest.approx(300.0)

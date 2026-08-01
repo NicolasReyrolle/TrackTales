@@ -7,6 +7,7 @@ from typing import Any, cast
 import pandas as pd
 
 from logic.workout_manager.helpers import convert_record_metric_value
+from logic.workout_manager.seasonal_aggregations import WorkoutManagerSeasonalAggregationsMixin
 from units import METERS_TO_FEET, METERS_TO_MILES
 
 
@@ -48,7 +49,7 @@ def calculate_trend_slope(
     return numerator / denominator
 
 
-class WorkoutManagerAggregationsMixin:
+class WorkoutManagerAggregationsMixin(WorkoutManagerSeasonalAggregationsMixin):
     """Filtering, aggregation, and metric accessors for workout data."""
 
     workouts: pd.DataFrame

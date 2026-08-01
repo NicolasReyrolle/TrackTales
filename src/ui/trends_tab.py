@@ -5,13 +5,33 @@ from nicegui import ui
 from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import t
 from ui.charts import render_generic_graph
-from ui.css import ROW_CENTERED_CLASSES
+from ui.css import (
+    LABEL_MUTED_CLASSES,
+    RECOVERY_CARD_CLASSES,
+    RECOVERY_RECOMMENDATION_CLASSES,
+    ROW_CENTERED_CLASSES,
+)
 from ui.helpers import period_code_to_label
 
 
 def render_trends_tab() -> None:
-    """Render the trends tab with trend graphs."""
+    """Render the trends tab with recovery recommendation and trend graphs."""
+    render_recovery_recommendation()
     render_trends_graphs()
+
+
+@ui.refreshable
+def render_recovery_recommendation() -> None:
+    """Render the recovery recommendation card."""
+    recommendation = state.workouts.get_recovery_recommendation(
+        activity_type=state.selected_activity_type,
+        start_date=state.start_date,
+        end_date=state.end_date,
+    )
+    with ui.row().classes(ROW_CENTERED_CLASSES):
+        with ui.card().classes(RECOVERY_CARD_CLASSES):
+            ui.label(t("Recovery Recommendation")).classes(LABEL_MUTED_CLASSES)
+            ui.label(t(recommendation)).classes(RECOVERY_RECOMMENDATION_CLASSES)
 
 
 @ui.refreshable

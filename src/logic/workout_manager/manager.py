@@ -4,6 +4,7 @@ import pandas as pd
 
 from .aggregations import WorkoutManagerAggregationsMixin, calculate_trend_slope
 from .export import WorkoutManagerExportMixin
+from .recovery import WorkoutManagerRecoveryMixin
 from .segments import WorkoutManagerSegmentsMixin
 
 STANDARD_SEGMENT_DISTANCES: list[int] = [
@@ -29,6 +30,7 @@ class WorkoutManager(
     WorkoutManagerAggregationsMixin,
     WorkoutManagerExportMixin,
     WorkoutManagerSegmentsMixin,
+    WorkoutManagerRecoveryMixin,
 ):
     """Class to manage workout data and metrics."""
 

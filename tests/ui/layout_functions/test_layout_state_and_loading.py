@@ -524,7 +524,9 @@ def test_refresh_data_schedules_load_for_selected_tab() -> None:
                                 with patch("ui.layout.render_trends_graphs.refresh"):
                                     with patch("ui.layout.render_running_tab.refresh"):
                                         with patch("ui.layout.render_health_data_tab.refresh"):
-                                            with patch("ui.layout.render_best_segments_tab.refresh"):
+                                            with patch(
+                                                "ui.layout.render_best_segments_tab.refresh"
+                                            ):
                                                 with patch(
                                                     "ui.layout.render_distance_range_selector.refresh"
                                                 ):
@@ -540,7 +542,9 @@ def test_refresh_data_schedules_load_for_selected_tab() -> None:
                                                                 with patch(
                                                                     "ui.layout.schedule_health_data_load"
                                                                 ) as health_mock:
-                                                                    state.selected_main_tab = "running"
+                                                                    state.selected_main_tab = (
+                                                                        "running"
+                                                                    )
                                                                     layout.refresh_data()
                                                                     best_mock.assert_called_once()
                                                                     health_mock.assert_called_once()

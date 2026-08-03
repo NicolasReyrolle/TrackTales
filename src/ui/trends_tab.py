@@ -14,10 +14,8 @@ from ui.css import (
 from ui.helpers import period_code_to_label
 
 
-# Register dynamic recovery status strings for Babel extraction.
-# These literals are returned at runtime by ``get_recovery_recommendation()``
-# and passed to ``t()`` as variables, so they must appear here as literals.
-if False:  # pragma: no cover
+def _register_recovery_translations() -> None:
+    """Expose dynamic recovery status strings to Babel extraction."""
     t("Rest")
     t("Active Recovery")
     t("Maintain")

@@ -14,6 +14,22 @@ from ui.css import (
 from ui.helpers import period_code_to_label
 
 
+def _register_recovery_translations() -> None:
+    """Register dynamic recovery status strings for Babel extraction.
+
+    These literals are returned at runtime by ``get_recovery_recommendation()``
+    and passed to ``t()`` as variables, so they must appear here as literals.
+    """
+    t("Rest")
+    t("Active Recovery")
+    t("Maintain")
+    t("Build")
+    t("Insufficient data")
+
+
+_register_recovery_translations()
+
+
 def render_trends_tab() -> None:
     """Render the trends tab with recovery recommendation and trend graphs."""
     render_recovery_recommendation()

@@ -381,6 +381,19 @@ msgstr ""
 msgid "Elevation by activity"
 msgstr ""
 
+# Recovery recommendation card (Trends tab)
+msgid "Recovery Recommendation"
+msgstr ""
+
+msgid "Active Recovery"
+msgstr ""
+
+msgid "Maintain"
+msgstr ""
+
+msgid "Build"
+msgstr ""
+
 # Trends charts ({period} is replaced at runtime with the translated period label)
 msgid "Count by {period}"
 msgstr ""

@@ -62,7 +62,7 @@ from ui.helpers import (
 from ui.local_file_picker import LocalFilePicker
 from ui.running_tab import render_running_health_graphs, render_running_tab
 from ui.summary_tab import render_summary_tab
-from ui.trends_tab import render_trends_graphs, render_trends_tab
+from ui.trends_tab import render_recovery_recommendation, render_trends_graphs, render_trends_tab
 from ui.workout_detail_modal import create_workout_detail_modal
 from ui.workout_table import (
     _build_workout_rows,
@@ -519,6 +519,7 @@ def refresh_data() -> None:
     state.duration_range_min = {"min": math.floor(dur_min), "max": math.ceil(dur_max)}
 
     render_activity_graphs.refresh()
+    render_recovery_recommendation.refresh()
     render_trends_graphs.refresh()
     render_health_data_tab.refresh()
     if state.selected_main_tab == "running":

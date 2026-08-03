@@ -30,26 +30,16 @@ class WorkoutManagerRecoveryMixin:
 
     # --- Stubs for methods supplied by WorkoutManagerAggregationsMixin -----------
 
-    def get_duration_by_period(
+    def _filter_workouts(
         self,
-        period: str,
         activity_type: str = "All",
-        fill_missing_periods: bool = True,
         start_date: datetime | pd.Timestamp | None = None,
         end_date: datetime | pd.Timestamp | None = None,
-    ) -> dict[str, int]:
+    ) -> pd.DataFrame:
         """Provided by WorkoutManagerAggregationsMixin."""
         raise NotImplementedError  # pragma: no cover
 
-    def get_distance_by_period(
-        self,
-        period: str,
-        activity_type: str = "All",
-        unit: str = "km",
-        fill_missing_periods: bool = True,
-        start_date: datetime | pd.Timestamp | None = None,
-        end_date: datetime | pd.Timestamp | None = None,
-    ) -> dict[str, int]:
+    def _get_length_unit_divisor(self, unit: str) -> float:
         """Provided by WorkoutManagerAggregationsMixin."""
         raise NotImplementedError  # pragma: no cover
 
@@ -63,6 +53,9 @@ class WorkoutManagerRecoveryMixin:
         end_date: datetime | pd.Timestamp | None = None,
     ) -> list[float]:
         """Return chronologically ordered weekly load totals (oldest → most recent).
+
+        Aggregates directly from raw workout data without rounding, so that
+        ACWR calculations near thresholds are not skewed by integer truncation.
 
         Args:
             load_metric: ``"duration"`` uses total hours per week;
@@ -79,26 +72,40 @@ class WorkoutManagerRecoveryMixin:
             ValueError: When *load_metric* is not ``"duration"`` or ``"distance"``.
         """
         if load_metric == "duration":
-            weekly_data = self.get_duration_by_period(
-                period="W",
-                activity_type=activity_type,
-                fill_missing_periods=True,
-                start_date=start_date,
-                end_date=end_date,
-            )
+            column: str = "duration"
+            divisor: float = 3600.0
         elif load_metric == "distance":
-            weekly_data = self.get_distance_by_period(
-                period="W",
-                activity_type=activity_type,
-                fill_missing_periods=True,
-                start_date=start_date,
-                end_date=end_date,
-            )
+            column = "distance"
+            divisor = self._get_length_unit_divisor("km")
         else:
             raise ValueError(
                 f"Unsupported load_metric {load_metric!r}. Use 'duration' or 'distance'."
             )
-        return [float(v) for v in weekly_data.values()]
+
+        if (
+            "activityType" not in self.workouts.columns
+            or column not in self.workouts.columns
+            or "startDate" not in self.workouts.columns
+        ):
+            return []
+
+        if not pd.api.types.is_datetime64_any_dtype(self.workouts["startDate"]):
+            return []
+
+        workouts = self._filter_workouts(activity_type, start_date, end_date)
+
+        if workouts.empty:
+            return []
+
+        grouped = workouts.groupby(workouts["startDate"].dt.to_period("W"))[column].sum()
+
+        if grouped.empty:
+            return []
+
+        full_range = pd.period_range(start=grouped.index.min(), end=grouped.index.max(), freq="W")
+        grouped = grouped.reindex(full_range, fill_value=0)
+
+        return list(grouped.div(divisor).astype(float))
 
     # --- Public API --------------------------------------------------------------
 

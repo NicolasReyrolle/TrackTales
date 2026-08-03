@@ -128,11 +128,8 @@ class TestGetRecoveryRecommendation:
     def test_returns_active_recovery_when_acwr_between_thresholds(self) -> None:
         """ACWR between 1.3 and 1.5 should recommend Active Recovery.
 
-        ``get_duration_by_period`` rounds to integer hours, so durations must
-        be chosen to round unambiguously.
-
         With 4 weeks [36000, 36000, 36000, 54000] seconds = [10, 10, 10, 15] hours:
-        - Last 4 weeks = [10, 10, 10, 15] hours (all round cleanly)
+        - Last 4 weeks = [10, 10, 10, 15] hours
         - Chronic = (10 + 10 + 10 + 15) / 4 = 11.25 h
         - Acute = 15 h
         - ACWR = 15 / 11.25 ≈ 1.333 → Active Recovery (1.3 < 1.333 ≤ 1.5).
@@ -261,9 +258,7 @@ class TestGetRecoveryRecommendation:
     def test_exact_rest_boundary_at_1_5(self) -> None:
         """Exactly ACWR = 1.5 should NOT be 'Rest' (boundary is strict >).
 
-        ``get_duration_by_period`` rounds to integer hours, so durations must
-        round cleanly.  With 4 weeks [36000, 36000, 36000, 64800] seconds
-        = [10, 10, 10, 18] hours:
+        With 4 weeks [36000, 36000, 36000, 64800] seconds = [10, 10, 10, 18] hours:
         - Chronic = (10 + 10 + 10 + 18) / 4 = 12 h
         - Acute = 18 h
         - ACWR = 18 / 12 = 1.5 exactly → Active Recovery (not Rest).

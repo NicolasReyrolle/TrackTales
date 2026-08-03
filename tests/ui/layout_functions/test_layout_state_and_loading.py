@@ -510,16 +510,14 @@ async def test_reset_state_helpers_cancel_inflight_tasks() -> None:
         state.health_data_graphs = original_health_graphs
 
 
-def test_refresh_data_schedules_load_for_selected_tab() -> None:
+def test_refresh_data_schedules_load_for_selected_tab(monkeypatch: pytest.MonkeyPatch) -> None:
     """refresh_data should only schedule deferred loading for the active tab."""
-    original_selected_tab = state.selected_main_tab
-
-    try:
-        with patch("ui.layout._refresh_summary_metrics"):
-            with patch("ui.layout._refresh_longest_workout_metrics"):
-                with patch("ui.layout._reset_best_segments_state"):
-                    with patch("ui.layout._reset_health_data_state"):
-                        with patch("ui.layout.render_activity_graphs.refresh"):
+    with patch("ui.layout._refresh_summary_metrics"):
+        with patch("ui.layout._refresh_longest_workout_metrics"):
+            with patch("ui.layout._reset_best_segments_state"):
+                with patch("ui.layout._reset_health_data_state"):
+                    with patch("ui.layout.render_activity_graphs.refresh"):
+                        with patch("ui.layout.render_recovery_recommendation.refresh"):
                             with patch("ui.layout.render_trends_graphs.refresh"):
                                 with patch("ui.layout.render_running_tab.refresh"):
                                     with patch("ui.layout.render_health_data_tab.refresh"):
@@ -539,21 +537,25 @@ def test_refresh_data_schedules_load_for_selected_tab() -> None:
                                                             with patch(
                                                                 "ui.layout.schedule_health_data_load"
                                                             ) as health_mock:
-                                                                state.selected_main_tab = "running"
+                                                                monkeypatch.setattr(
+                                                                    state,
+                                                                    "selected_main_tab",
+                                                                    "running",
+                                                                )
                                                                 layout.refresh_data()
                                                                 best_mock.assert_called_once()
                                                                 health_mock.assert_called_once()
 
                                                                 best_mock.reset_mock()
                                                                 health_mock.reset_mock()
-                                                                state.selected_main_tab = (
-                                                                    "health_data"
+                                                                monkeypatch.setattr(
+                                                                    state,
+                                                                    "selected_main_tab",
+                                                                    "health_data",
                                                                 )
                                                                 layout.refresh_data()
                                                                 health_mock.assert_called_once()
                                                                 best_mock.assert_not_called()
-    finally:
-        state.selected_main_tab = original_selected_tab
 
 
 def test_render_left_drawer_renders_export_actions() -> None:

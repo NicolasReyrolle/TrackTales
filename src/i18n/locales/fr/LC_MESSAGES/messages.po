@@ -386,6 +386,19 @@ msgstr "Durée par activité"
 msgid "Elevation by activity"
 msgstr "Dénivelé par activité"
 
+# Recovery recommendation card (Trends tab)
+msgid "Recovery Recommendation"
+msgstr "Recommandation de récupération"
+
+msgid "Active Recovery"
+msgstr "Récupération active"
+
+msgid "Maintain"
+msgstr "Maintenir"
+
+msgid "Build"
+msgstr "Développer"
+
 # Trends charts ({period} is replaced at runtime with the translated period label)
 msgid "Count by {period}"
 msgstr "Nombre par {period}"

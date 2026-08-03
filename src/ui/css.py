@@ -128,6 +128,17 @@ STAT_CARD_VALUE_CLASSES = "text-xl font-bold"
 STAT_CARD_UNIT_CLASSES = "text-xs text-gray-400"
 
 # ---------------------------------------------------------------------------
+# Recovery recommendation card
+# ---------------------------------------------------------------------------
+
+#: Recovery recommendation card: wider than a stat card to accommodate the
+#: recommendation text (e.g. "Active Recovery") without wrapping.
+RECOVERY_CARD_CLASSES = "w-64 items-center justify-center shadow-sm"
+
+#: Large bold label used to display the recovery recommendation value.
+RECOVERY_RECOMMENDATION_CLASSES = "text-xl font-bold"
+
+# ---------------------------------------------------------------------------
 # Chart cards
 # ---------------------------------------------------------------------------
 

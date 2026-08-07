@@ -13,10 +13,11 @@ on:
 jobs:
   sonarqube:
     runs-on: ubuntu-latest
-    # For pull_request_target (used by Dependabot), restrict to Dependabot only.
-if: |
-  github.event_name != 'pull_request_target' ||
-  github.event.pull_request.user.login == 'dependabot[bot]'
+    # Skip Sonar for Dependabot PRs.
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.user.login != 'dependabot[bot]')
     permissions:
       contents: read
     steps:

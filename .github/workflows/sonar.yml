@@ -8,9 +8,15 @@ on:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 jobs:
   sonarqube:
     runs-on: ubuntu-latest
+    # For pull_request_target (used by Dependabot), restrict to Dependabot only.
+    if: |
+      github.event_name != 'pull_request_target' ||
+      github.actor == 'dependabot[bot]'
     permissions:
       contents: read
     steps:
@@ -18,6 +24,8 @@ jobs:
         with:
           # Disabling shallow clone is recommended for improving relevancy of reporting.
           fetch-depth: 0
+          # For pull_request_target events (Dependabot), check out the PR head.
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
 
       # Triggering SonarQube analysis as results of it are required by Quality Gate check.
       - name: SonarQube Scan

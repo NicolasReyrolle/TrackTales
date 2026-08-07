@@ -16,6 +16,9 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  pull_request_target:
+    branches: [ "main" ]
+    types: [opened, synchronize, reopened]
   schedule:
     - cron: '36 11 * * 6'
 
@@ -28,6 +31,10 @@ jobs:
     #   - https://gh.io/using-larger-runners (GitHub.com only)
     # Consider using larger runners or machines with greater resources for possible analysis time improvements.
     runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    # For pull_request_target (used by Dependabot), restrict to Dependabot only.
+    if: |
+      github.event_name != 'pull_request_target' ||
+      github.actor == 'dependabot[bot]'
     permissions:
       # required for all workflows
       security-events: write
@@ -58,6 +65,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v7
+      with:
+        # For pull_request_target events (Dependabot), check out the PR head.
+        # For push, pull_request, and schedule events, fall back to the default (github.sha).
+        ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
 
     # Add any setup steps before running the `github/codeql-action/init` action.
     # This includes steps like installing compilers or runtimes (`actions/setup-node`

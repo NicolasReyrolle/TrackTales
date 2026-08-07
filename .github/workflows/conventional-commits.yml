@@ -5,6 +5,8 @@ on:
     branches:
       - "**"
   pull_request:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -12,11 +14,17 @@ permissions:
 jobs:
   check-commit-messages:
     runs-on: ubuntu-latest
+    # For pull_request_target (used by Dependabot), restrict to Dependabot only.
+    if: |
+      github.event_name != 'pull_request_target' ||
+      github.actor == 'dependabot[bot]'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          # For pull_request_target events (Dependabot), check out the PR head.
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -58,7 +66,7 @@ jobs:
           fi
 
       - name: Validate commit messages (pull request)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         shell: bash
         run: |
           set -euo pipefail

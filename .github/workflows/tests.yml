@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     # For pull_request_target (used by Dependabot), restrict to Dependabot only to avoid
     # running untrusted fork code with elevated permissions.
-    if: |
-      github.event_name != 'pull_request_target' ||
-      github.actor == 'dependabot[bot]'
+if: |
+  github.event_name != 'pull_request_target' ||
+  github.event.pull_request.user.login == 'dependabot[bot]'
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]

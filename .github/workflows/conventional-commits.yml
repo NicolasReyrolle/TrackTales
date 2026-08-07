@@ -34,7 +34,9 @@ jobs:
           set -euo pipefail
           before="${{ github.event.before }}"
           if [ "$before" = "0000000000000000000000000000000000000000" ]; then
-            rev_range="HEAD~20..HEAD"
+            default_branch="${{ github.event.repository.default_branch }}"
+            git fetch origin "${default_branch}:refs/remotes/origin/${default_branch}"
+            rev_range="refs/remotes/origin/${default_branch}..${{ github.sha }}"
           else
             rev_range="$before..${{ github.sha }}"
           fi

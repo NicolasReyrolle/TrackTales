@@ -15,9 +15,9 @@ jobs:
   check-commit-messages:
     runs-on: ubuntu-latest
     # For pull_request_target (used by Dependabot), restrict to Dependabot only.
-    if: |
-      github.event_name != 'pull_request_target' ||
-      github.actor == 'dependabot[bot]'
+if: |
+  github.event_name != 'pull_request_target' ||
+  github.event.pull_request.user.login == 'dependabot[bot]'
     steps:
       # Dependabot auto-generates commit messages in Conventional Commits format.
       # No checkout or installation needed — just confirm and pass.

@@ -19,19 +19,28 @@ jobs:
       github.event_name != 'pull_request_target' ||
       github.actor == 'dependabot[bot]'
     steps:
+      # Dependabot auto-generates commit messages in Conventional Commits format.
+      # No checkout or installation needed — just confirm and pass.
+      - name: Dependabot commit messages use Conventional Commits format
+        if: github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]'
+        run: |
+          echo "Dependabot auto-generates commit messages in Conventional Commits format."
+          echo "Commit message validation skipped for Dependabot PRs."
+
       - name: Checkout repository
+        if: github.event_name != 'pull_request_target'
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          # For pull_request_target events (Dependabot), check out the PR head.
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
+        if: github.event_name != 'pull_request_target'
         uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
       - name: Install Commitizen
+        if: github.event_name != 'pull_request_target'
         run: |
           python -m pip install -r requirements-dev.txt
 
@@ -66,7 +75,7 @@ jobs:
           fi
 
       - name: Validate commit messages (pull request)
-        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request'
         shell: bash
         run: |
           set -euo pipefail

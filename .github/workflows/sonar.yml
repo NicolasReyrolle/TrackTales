@@ -24,8 +24,9 @@ jobs:
         with:
           # Disabling shallow clone is recommended for improving relevancy of reporting.
           fetch-depth: 0
-          # For pull_request_target events (Dependabot), check out the PR head.
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
+          # For pull_request_target events (Dependabot), default checkout is the base branch
+          # (safe — no untrusted code is executed).
+          ref: ${{ github.sha }}
 
       # Triggering SonarQube analysis as results of it are required by Quality Gate check.
       - name: SonarQube Scan

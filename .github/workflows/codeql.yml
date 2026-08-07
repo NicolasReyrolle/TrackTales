@@ -66,9 +66,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v7
       with:
-        # For pull_request_target events (Dependabot), check out the PR head.
-        # For push, pull_request, and schedule events, fall back to the default (github.sha).
-        ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.sha }}
+        # For pull_request_target events (Dependabot), default checkout is the base branch
+        # (safe — no untrusted code is executed).
+        ref: ${{ github.sha }}
 
     # Add any setup steps before running the `github/codeql-action/init` action.
     # This includes steps like installing compilers or runtimes (`actions/setup-node`

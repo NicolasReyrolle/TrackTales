@@ -131,9 +131,9 @@ jobs:
           path.write_text(text, encoding="utf-8")
           PY
 
-      - name: Install build tooling
+      - name: Install dependencies
         run: |
-          pip install --only-binary :all: --constraint .github/workflows/requirements-release-build.txt build==1.5.0 twine==6.2.0
+          pip install --only-binary :all: -r requirements-dev.txt
 
       - name: Build distributions
         run: python -m build
@@ -174,11 +174,11 @@ jobs:
         run: |
           set -euo pipefail
           wheel=$(ls dist/*.whl | head -n 1)
-          pip install --only-binary :all: --constraint .github/workflows/requirements-release-test.txt "$wheel"
+          pip install --only-binary :all: --constraint requirements-dev.txt "$wheel"
 
-      - name: Install test tooling
+      - name: Install dependencies
         run: |
-          pip install --only-binary :all: --constraint .github/workflows/requirements-release-test.txt -r requirements.txt pytest==9.0.3 pytest-asyncio==1.3.0 pytest-cov==7.1.0
+          pip install --only-binary :all: -r requirements-dev.txt
 
       - name: Verify tests use installed wheel
         shell: bash
@@ -236,7 +236,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --only-binary :all: --constraint .github/workflows/requirements-release-pyinstaller.txt -r requirements.txt pyinstaller==6.20.0
+          pip install --only-binary :all: -r requirements-dev.txt
 
       - name: Build executable
         run: pyinstaller tracktales.spec
@@ -313,7 +313,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --only-binary :all: --constraint .github/workflows/requirements-release-pyinstaller.txt -r requirements.txt pyinstaller==6.20.0
+          pip install --only-binary :all: -r requirements-dev.txt
 
       - name: Build app bundle
         run: pyinstaller tracktales.spec

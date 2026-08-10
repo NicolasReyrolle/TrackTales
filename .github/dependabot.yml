@@ -11,15 +11,6 @@ updates:
       prefix-development: "chore"
       include: "scope"
 
-  - package-ecosystem: "pip"
-    directory: "/.github/workflows" # CI pinned dependency manifests
-    schedule:
-      interval: "weekly"
-    commit-message:
-      # CI tooling updates should be classified as non-user-facing changes
-      prefix: "chore"
-      include: "scope"
-
   - package-ecosystem: "github-actions"
     directory: "/" # Location of package manifests
     schedule:

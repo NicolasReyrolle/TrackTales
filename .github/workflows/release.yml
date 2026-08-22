@@ -284,6 +284,21 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Free disk space
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Remove large pre-installed tools that are not needed for this build.
+          sudo rm -rf /Library/Developer/CoreSimulator/Profiles/Runtimes || true
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform || true
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform || true
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVOS.platform || true
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/XRSimulator.platform || true
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform || true
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/WatchSimulator.platform || true
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVSimulator.platform || true
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v7
 

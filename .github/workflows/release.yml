@@ -329,6 +329,10 @@ jobs:
           volume_name="TrackTales-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}"
           volume_path="/Volumes/${volume_name}"
 
+          # Free up disk space before staging the app into a new DMG.
+          rm -rf build
+          python -m pip cache purge || rm -rf "${HOME}/Library/Caches/pip" "${HOME}/.cache/pip"
+
           # Clean up potential leftovers from previous attempts on shared runners.
           if [ -d "${volume_path}" ]; then
             hdiutil detach "${volume_path}" -force || true

@@ -343,6 +343,8 @@ jobs:
           dmg_path="dist/${dmg_name}"
           volume_name="TrackTales-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-0}"
           volume_path="/Volumes/${volume_name}"
+          app_size_kb="$(du -sk "dist/tracktales.app" | awk '{print $1}')"
+          dmg_size_kb=$((app_size_kb + app_size_kb / 2 + 1024 * 512))
 
           # Free up disk space before staging the app into a new DMG.
           rm -rf build
@@ -358,6 +360,7 @@ jobs:
             if hdiutil create \
               -volname "${volume_name}" \
               -srcfolder "dist/tracktales.app" \
+              -size "${dmg_size_kb}k" \
               -ov \
               -format UDZO \
               "${dmg_path}"; then

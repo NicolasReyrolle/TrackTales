@@ -339,11 +339,20 @@ jobs:
           fi
           rm -f "${dmg_path}"
 
+          app_size_kb="$(du -sk "dist/tracktales.app" | awk '{print $1}')"
+          dmg_size_kb=$((app_size_kb + (app_size_kb / 4) + (256 * 1024)))
+          min_size_kb=$((2 * 1024 * 1024))
+          if [ "${dmg_size_kb}" -lt "${min_size_kb}" ]; then
+            dmg_size_kb="${min_size_kb}"
+          fi
+          dmg_size="${dmg_size_kb}k"
+
           for attempt in 1 2 3; do
             if hdiutil create \
               -volname "${volume_name}" \
               -srcfolder "dist/tracktales.app" \
               -ov \
+              -size "${dmg_size}" \
               -format UDZO \
               "${dmg_path}"; then
               echo "DMG created on attempt ${attempt}"

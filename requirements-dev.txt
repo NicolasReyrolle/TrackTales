@@ -7,20 +7,20 @@ pytest-cov==7.1.0
 pywin32==312; platform_system == "Windows"
 
 # Code quality
-ruff==0.16.3
+ruff==0.16.4
 mypy==2.3.1
 
 # Development
 ipython==8.39.0
 pre-commit==4.6.2
-commitizen==4.17.1
+commitizen==4.18.0
 
 # Type stubs
 pandas-stubs==2.3.3.260113
 types-defusedxml==0.7.0.20260504
-types-pywin32==312.0.0.20260818
+types-pywin32==312.0.0.20260820
 
 # Building
 build==1.5.0
 twine==7.0.0
-pyinstaller==6.22.0
+pyinstaller==6.22.2

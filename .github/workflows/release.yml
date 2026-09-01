@@ -295,7 +295,7 @@ jobs:
           if [ -n "${developer_dir}" ]; then
             platforms_dir="${developer_dir%/}/Platforms"
             if [ -d "${platforms_dir}" ]; then
-              for platform in iPhoneOS WatchOS AppleTVOS XRSimulator iPhoneSimulator WatchSimulator AppleTVSimulator; do
+              for platform in iPhoneOS WatchOS AppleTVOS XROS XRSimulator iPhoneSimulator WatchSimulator AppleTVSimulator; do
                 sudo rm -rf "${platforms_dir:?}/${platform}.platform" || true
               done
             fi

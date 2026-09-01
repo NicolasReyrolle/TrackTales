@@ -290,13 +290,15 @@ jobs:
           set -euo pipefail
           # Remove large pre-installed tools that are not needed for this build.
           sudo rm -rf /Library/Developer/CoreSimulator/Profiles/Runtimes || true
-          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform || true
-          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform || true
-          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVOS.platform || true
-          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/XRSimulator.platform || true
-          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform || true
-          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/WatchSimulator.platform || true
-          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVSimulator.platform || true
+
+          developer_dir="$(xcode-select -p || true)"
+          platforms_dir="${developer_dir%/}/Platforms"
+          if [ -d "${platforms_dir}" ]; then
+            for platform in iPhoneOS WatchOS AppleTVOS XRSimulator iPhoneSimulator WatchSimulator AppleTVSimulator; do
+              sudo rm -rf "${platforms_dir}/${platform}.platform" || true
+            done
+          fi
+
           df -h
 
       - name: Checkout repository

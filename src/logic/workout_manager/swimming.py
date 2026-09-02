@@ -77,7 +77,8 @@ def _parse_event_date(raw: Any) -> datetime | None:
         raw: Raw value from the event dict ``"start_date"`` field.
 
     Returns:
-        A timezone-aware :class:`datetime`, or ``None`` if parsing fails.
+        A parsed :class:`datetime` (which may be naive), or ``None`` if parsing
+        fails.
     """
     if isinstance(raw, datetime):
         return raw

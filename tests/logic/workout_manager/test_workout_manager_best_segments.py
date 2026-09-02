@@ -1,7 +1,7 @@
 """Tests for WorkoutManager.get_best_segments and date-filtering."""
 
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -19,7 +19,7 @@ def _two_point_route(
     altitude_change: float = 1.0,
 ) -> WorkoutRoute:
     """Build a minimal route with one segment over ~1km for deterministic best-segment tests."""
-    start_time = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    start_time = datetime(2025, 1, 1, tzinfo=UTC)
     end_time = start_time + pd.Timedelta(seconds=duration_s)
     return WorkoutRoute(
         points=[
@@ -148,7 +148,7 @@ class TestGetBestSegments:
 
     def test_considers_each_route_part_separately(self) -> None:
         """Best-segment search should not bridge disjoint route parts."""
-        start_time = datetime(2025, 9, 26, tzinfo=timezone.utc)
+        start_time = datetime(2025, 9, 26, tzinfo=UTC)
         first_part = WorkoutRoute(
             points=[
                 RoutePoint(time=start_time, latitude=0.0, longitude=0.0, altitude=0.0),
@@ -198,7 +198,7 @@ class TestGetBestSegments:
 
     def test_route_fallback_splits_timestamp_reversals_into_monotonic_traces(self) -> None:
         """Route fallback should split on timestamp reversals and avoid bridge artifacts."""
-        start_time = datetime(2025, 9, 26, tzinfo=timezone.utc)
+        start_time = datetime(2025, 9, 26, tzinfo=UTC)
         route_with_reversal = WorkoutRoute(
             points=[
                 RoutePoint(time=start_time, latitude=0.0, longitude=0.0, altitude=0.0),
@@ -258,8 +258,8 @@ class TestGetBestSegments:
         """
         # WorkoutRoute window: 14:30:02Z – 15:50:31Z (+0100 = UTC-1h)
         # Last MotionPaused in fixture: 2021-12-26 16:46:13 +0100 = 15:46:13Z
-        t_run_start = datetime(2021, 12, 26, 14, 30, 2, tzinfo=timezone.utc)
-        t_car_start = datetime(2021, 12, 26, 15, 46, 14, tzinfo=timezone.utc)  # 1s after pause
+        t_run_start = datetime(2021, 12, 26, 14, 30, 2, tzinfo=UTC)
+        t_car_start = datetime(2021, 12, 26, 15, 46, 14, tzinfo=UTC)  # 1s after pause
 
         step_deg = 0.000009  # ≈ 1 m at the equator (one degree latitude ≈ 111 139 m)
         running_points = "\n".join(
@@ -382,7 +382,7 @@ class TestGetBestSegments:
         route = WorkoutRoute(
             points=[
                 RoutePoint(
-                    time=datetime(2025, 1, 1, tzinfo=timezone.utc),
+                    time=datetime(2025, 1, 1, tzinfo=UTC),
                     latitude=0.0,
                     longitude=0.0,
                     altitude=0.0,
@@ -406,7 +406,7 @@ class TestGetBestSegments:
 
     def test_get_best_segments_handles_time_reversal_by_splitting_trace(self) -> None:
         """Timestamp reversals should split traces and still allow valid segment computation."""
-        t0 = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        t0 = datetime(2025, 1, 1, tzinfo=UTC)
         route = WorkoutRoute(
             points=[
                 RoutePoint(time=t0, latitude=0.0, longitude=0.0, altitude=0.0),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import datetime
 
 import pytest
 
@@ -86,6 +87,18 @@ class TestBuildSwimIntervalsEmpty:
 
 class TestBuildSwimIntervalsGrouping:
     """Test that consecutive laps are correctly grouped into intervals."""
+
+    def test_naive_datetimes_are_treated_as_utc(self) -> None:
+        start = datetime(2025, 1, 1, 10, 0, 0)
+        events = [
+            {"type": "Segment", "start_date": start, "duration_s": 65.0},
+            {"type": "Lap", "start_date": start, "duration_s": 65.0},
+        ]
+
+        intervals = build_swim_intervals(events, 50.0)
+
+        assert len(intervals) == 1
+        assert intervals[0].laps[0].duration_s == pytest.approx(65.0)
 
     def test_two_consecutive_laps_form_one_interval(self) -> None:
         events = [

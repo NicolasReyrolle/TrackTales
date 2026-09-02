@@ -65,10 +65,10 @@ are excluded from the enablement check automatically.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class FieldType(str, Enum):
+class FieldType(StrEnum):
     """Data type for rendering and processing a field value.
 
     Values:
@@ -86,7 +86,7 @@ class FieldType(str, Enum):
     BOOLEAN = "boolean"
 
 
-class FieldPresence(str, Enum):
+class FieldPresence(StrEnum):
     """Whether a field is guaranteed to be populated for a given workout type.
 
     Values:

@@ -37,39 +37,13 @@ If a user request is ambiguous or incomplete, apply repository instructions that
 - Tests: `pytest --cov=src tests/`
 - Quality: `ruff format src tests`, `ruff check src tests`, `mypy src tests`
 
-## Commit message policy
+## Topic-specific instructions
 
-- Use Conventional Commits for every commit message.
-- Pull request titles should also follow Conventional Commits format to enable automated changelog generation.
-- Allowed format: `<type>(<optional-scope>): <description>`.
-- Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `build`, `perf`, `revert`.
-- Examples: `feat(ui): add trends period selector`, `fix(parser): guard empty route nodes`.
-- Do not create commits with non-conventional messages.
-- Local enforcement is done with a `pre-commit` `commit-msg` hook (`commitizen`), and CI validates commit messages on every push and pull request.
-
-## Mandatory engineering constraints
-
-### Parsing and security
-- Keep XML parsing on `defusedxml` (never switch to stdlib `ElementTree` for untrusted XML parsing).
-- Preserve streaming parsing patterns (`iterparse` + `elem.clear()`) for large files.
-- `ExportParser` remains a context manager and should be used with `with ExportParser() as ep:`.
-- If an Apple Health export is invalid or corrupted and cannot be parsed, display an error message and log the issue.
-
-### CSS and styling
-- All Tailwind/Quasar class strings and NiceGUI `.props()` strings live in `src/ui/css.py` as named constants (`*_CLASSES` / `*_PROPS`).  Import and use them instead of writing inline string literals.
-- `resources/style.css` is the single global stylesheet.  Add new CSS classes there rather than using `.style(...)` inline styles.  Every class added must be documented with a comment explaining its purpose.
-- Inline styles (`style="..."` in Vue templates or `.style(...)` in Python) are forbidden unless strictly unavoidable; document any surviving inline styles with a comment in both the template and `style.css`.
-- ECharts (`ui.echart`) must include `"backgroundColor": "transparent"` in every chart config so the card background (which adapts to dark mode via CSS) shows through correctly.
-
-### Test fixtures and mocking
-- Never modify existing files under `tests/fixtures/exports`.
-- For new scenarios, add new fixture files or construct data in tests.
-- Prefer centralized fixtures/helpers in `tests/conftest.py` instead of ad-hoc inline mocks.
-- For patching NiceGUI objects, patch module-level lookups to support runtime patching.
-
-### Data and numeric handling
-- Convert numeric XML attributes/values to `int`/`float` at parse time.
-- In tests, never compare floating-point values with `==`; use `pytest.approx`.
+More detailed, path-scoped rules live under `.github/instructions/` and are auto-attached when editing matching files:
+- [parsing-security.instructions.md](.github/instructions/parsing-security.instructions.md) - `src/logic/**` (XML parsing, security, numeric handling)
+- [ui-styling.instructions.md](.github/instructions/ui-styling.instructions.md) - `src/ui/**` (CSS/Tailwind/Quasar conventions)
+- [testing.instructions.md](.github/instructions/testing.instructions.md) - `tests/**` (fixtures, mocking, TDD, float comparisons)
+- [commit-messages.instructions.md](.github/instructions/commit-messages.instructions.md) - Conventional Commits policy
 
 ## Coding workflow
 
@@ -96,11 +70,6 @@ If a user request is ambiguous or incomplete, apply repository instructions that
 - Run wider suites (`tests/`, full lint, full type-check) only when:
   - requested by the user, or
   - risk is high (cross-cutting parser/model/UI changes).
-
-### TDD policy
-- Use TDD for bug fixes and new logic where practical.
-- For trivial refactors/renames/doc-only changes, add or update tests only if behavior meaningfully changes.
-- Do not perform equality checks with floating point values. Use `pytest.approx` for comparisons in tests.
 
 ## Definition of done
 

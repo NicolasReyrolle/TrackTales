@@ -1,7 +1,7 @@
 """Tests for WorkoutManager.annotate_segments_with_power."""
 
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -44,7 +44,7 @@ class TestAnnotateSegmentsWithPower:
     def _make_manager(
         self, duration_s: float, workout_duration_s: float, avg_power: float | None = None
     ) -> WorkoutManager:
-        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        start = datetime(2025, 1, 1, tzinfo=UTC)
         cols: dict[str, Any] = {
             "activityType": ["Running"],
             "startDate": [pd.Timestamp("2025-01-01")],

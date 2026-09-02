@@ -24,7 +24,7 @@ Usage::
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from logic.workout_detail_schema import SWIMMING_STROKE_STYLES
@@ -92,8 +92,8 @@ def _parse_event_date(raw: Any) -> datetime | None:
 def _to_utc(dt: datetime) -> datetime:
     """Normalise *dt* to UTC for arithmetic comparisons."""
     if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
+        return dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def _parse_laps(

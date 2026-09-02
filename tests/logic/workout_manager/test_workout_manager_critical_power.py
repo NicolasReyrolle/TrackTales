@@ -1,6 +1,6 @@
 """Tests for WorkoutManager.get_critical_power and get_critical_power_evolution."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -48,8 +48,8 @@ class TestGetCriticalPower:
 
     def test_returns_none_when_no_power_data(self) -> None:
         """Return None when neither individual records nor workout stats are available."""
-        t800 = datetime(2025, 1, 1, tzinfo=timezone.utc)
-        t5000 = datetime(2025, 2, 1, tzinfo=timezone.utc)
+        t800 = datetime(2025, 1, 1, tzinfo=UTC)
+        t5000 = datetime(2025, 2, 1, tzinfo=UTC)
         manager = WorkoutManager(
             pd.DataFrame(
                 {
@@ -68,7 +68,7 @@ class TestGetCriticalPower:
 
     def test_returns_none_when_short_distance_missing(self) -> None:
         """Return None when no best segment exists for the short distance."""
-        t = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        t = datetime(2025, 1, 1, tzinfo=UTC)
         route = self._make_route(t, 5000.0, 1500.0, 0.045)
         rp_df = self._rp_df(t, 1500.0, 250.0)
         manager = WorkoutManager(
@@ -101,8 +101,8 @@ class TestGetCriticalPower:
         power_800 = 350.0
         time_5000 = 1250
         power_5000 = 250.0
-        t800 = datetime(2025, 1, 1, tzinfo=timezone.utc)
-        t5000 = datetime(2025, 2, 1, tzinfo=timezone.utc)
+        t800 = datetime(2025, 1, 1, tzinfo=UTC)
+        t5000 = datetime(2025, 2, 1, tzinfo=UTC)
 
         manager = WorkoutManager(
             pd.DataFrame(
@@ -151,8 +151,8 @@ class TestGetCriticalPower:
         """Workout-level avg power is used when workout duration ≈ segment duration."""
         time_800 = 160
         time_5000 = 1250
-        t800 = datetime(2025, 1, 1, tzinfo=timezone.utc)
-        t5000 = datetime(2025, 2, 1, tzinfo=timezone.utc)
+        t800 = datetime(2025, 1, 1, tzinfo=UTC)
+        t5000 = datetime(2025, 2, 1, tzinfo=UTC)
 
         manager = WorkoutManager(
             pd.DataFrame(
@@ -182,7 +182,7 @@ class TestGetCriticalPower:
 
     def test_critical_power_uses_average_work_not_product_of_means(self) -> None:
         """Average work should be computed from per-segment work to avoid false invalid W'."""
-        month = datetime(2026, 4, 1, tzinfo=timezone.utc)
+        month = datetime(2026, 4, 1, tzinfo=UTC)
         short_data = [
             (198.3270856480831, 370.7915258375548),
             (161.7296540939797, 278.27940586367725),
@@ -250,7 +250,7 @@ class TestGetCriticalPower:
             (3000.0, 700.0, 280.0, 0.027),
             (5000.0, 1300.0, 255.0, 0.045),
         ]
-        start = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        start = datetime(2025, 1, 1, tzinfo=UTC)
 
         rows: list[dict[str, Any]] = []
         rp_dfs: list[pd.DataFrame] = []
@@ -288,7 +288,7 @@ class TestGetCriticalPower:
             (3000.0, 700.0, 120.0, 0.027),
             (5000.0, 1300.0, 255.0, 0.045),
         ]
-        start = datetime(2025, 2, 1, tzinfo=timezone.utc)
+        start = datetime(2025, 2, 1, tzinfo=UTC)
 
         rows: list[dict[str, Any]] = []
         rp_dfs: list[pd.DataFrame] = []
@@ -316,8 +316,8 @@ class TestGetCriticalPower:
 
     def test_critical_power_skips_missing_intermediate_distances(self) -> None:
         """Missing 1500/3000 rows should be skipped while keeping a valid CP from anchors."""
-        t800 = datetime(2025, 3, 1, tzinfo=timezone.utc)
-        t5000 = datetime(2025, 3, 2, tzinfo=timezone.utc)
+        t800 = datetime(2025, 3, 1, tzinfo=UTC)
+        t5000 = datetime(2025, 3, 2, tzinfo=UTC)
         manager = WorkoutManager(
             pd.DataFrame(
                 {
@@ -349,8 +349,8 @@ class TestGetCriticalPower:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Non-physical W' should be rejected and logged as a warning."""
-        t800 = datetime(2025, 4, 1, tzinfo=timezone.utc)
-        t5000 = datetime(2025, 4, 2, tzinfo=timezone.utc)
+        t800 = datetime(2025, 4, 1, tzinfo=UTC)
+        t5000 = datetime(2025, 4, 2, tzinfo=UTC)
         manager = WorkoutManager(
             pd.DataFrame(
                 {
@@ -560,9 +560,9 @@ class TestSegmentsHelperCoverage:
         for _, row in segments.iterrows():
             segment_start = pd.Timestamp(row["segment_start"])
             segment_start_utc = (
-                segment_start.tz_convert(timezone.utc)
+                segment_start.tz_convert(UTC)
                 if segment_start.tzinfo is not None
-                else segment_start.tz_localize(timezone.utc)
+                else segment_start.tz_localize(UTC)
             )
             midpoint = segment_start_utc + timedelta(seconds=float(row["duration_s"]) / 2)
             power_records.append(
@@ -613,7 +613,7 @@ class TestSegmentsHelperCoverage:
         assert WorkoutManager._get_run_distance_m(row_nan) is None
 
     def test_extract_route_traces_prefers_valid_route_parts(self) -> None:
-        route = self._make_route(datetime(2025, 1, 1, tzinfo=timezone.utc), 800.0, 160.0)
+        route = self._make_route(datetime(2025, 1, 1, tzinfo=UTC), 800.0, 160.0)
         run_record = type(
             "RunRecord",
             (),
@@ -693,7 +693,7 @@ class TestGetCriticalPowerEvolution:
 
     def test_returns_empty_when_no_power_data(self) -> None:
         """Periods with insufficient data to compute CP produce no output rows."""
-        t = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        t = datetime(2025, 1, 1, tzinfo=UTC)
         route = self._make_route(t, 800.0, 160.0, 0.007)
         manager = WorkoutManager(
             pd.DataFrame(
@@ -713,10 +713,10 @@ class TestGetCriticalPowerEvolution:
     def test_evolution_groups_by_period(self) -> None:
         """Each calendar period with both distances produces one CP/W' row."""
         data = [
-            (datetime(2025, 1, 5, tzinfo=timezone.utc), 800.0, 160.0, 0.007, 350.0),
-            (datetime(2025, 1, 20, tzinfo=timezone.utc), 5000.0, 1250.0, 0.045, 250.0),
-            (datetime(2025, 2, 5, tzinfo=timezone.utc), 800.0, 155.0, 0.007, 360.0),
-            (datetime(2025, 2, 20, tzinfo=timezone.utc), 5000.0, 1200.0, 0.045, 260.0),
+            (datetime(2025, 1, 5, tzinfo=UTC), 800.0, 160.0, 0.007, 350.0),
+            (datetime(2025, 1, 20, tzinfo=UTC), 5000.0, 1250.0, 0.045, 250.0),
+            (datetime(2025, 2, 5, tzinfo=UTC), 800.0, 155.0, 0.007, 360.0),
+            (datetime(2025, 2, 20, tzinfo=UTC), 5000.0, 1200.0, 0.045, 260.0),
         ]
         manager = WorkoutManager(
             pd.DataFrame(
@@ -741,7 +741,7 @@ class TestGetCriticalPowerEvolution:
 
     def test_period_with_only_one_distance_is_skipped(self) -> None:
         """A period with only one distance produces no output row (CP requires both distances)."""
-        t = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        t = datetime(2025, 1, 1, tzinfo=UTC)
         manager = WorkoutManager(
             pd.DataFrame(
                 {
@@ -762,11 +762,11 @@ class TestGetCriticalPowerEvolution:
         """topn should be applied independently per period, not globally before grouping."""
         data = [
             # January
-            (datetime(2025, 1, 5, tzinfo=timezone.utc), 800.0, 170.0, 0.007, 300.0),
-            (datetime(2025, 1, 20, tzinfo=timezone.utc), 5000.0, 1300.0, 0.045, 220.0),
+            (datetime(2025, 1, 5, tzinfo=UTC), 800.0, 170.0, 0.007, 300.0),
+            (datetime(2025, 1, 20, tzinfo=UTC), 5000.0, 1300.0, 0.045, 220.0),
             # February (globally faster for both distances)
-            (datetime(2025, 2, 5, tzinfo=timezone.utc), 800.0, 160.0, 0.007, 350.0),
-            (datetime(2025, 2, 20, tzinfo=timezone.utc), 5000.0, 1200.0, 0.045, 260.0),
+            (datetime(2025, 2, 5, tzinfo=UTC), 800.0, 160.0, 0.007, 350.0),
+            (datetime(2025, 2, 20, tzinfo=UTC), 5000.0, 1200.0, 0.045, 260.0),
         ]
         manager = WorkoutManager(
             pd.DataFrame(
@@ -801,12 +801,12 @@ class TestGetCriticalPowerEvolution:
         """
         data = [
             # September: 800m and 5000m → valid CP
-            (datetime(2025, 9, 5, tzinfo=timezone.utc), 800.0, 160.0, 0.007, 350.0),
-            (datetime(2025, 9, 20, tzinfo=timezone.utc), 5000.0, 1250.0, 0.045, 250.0),
+            (datetime(2025, 9, 5, tzinfo=UTC), 800.0, 160.0, 0.007, 350.0),
+            (datetime(2025, 9, 20, tzinfo=UTC), 5000.0, 1250.0, 0.045, 250.0),
             # October: intentionally absent — simulates a month with zero workouts
             # November: 800m and 5000m → valid CP
-            (datetime(2025, 11, 5, tzinfo=timezone.utc), 800.0, 158.0, 0.007, 355.0),
-            (datetime(2025, 11, 25, tzinfo=timezone.utc), 5000.0, 1200.0, 0.045, 255.0),
+            (datetime(2025, 11, 5, tzinfo=UTC), 800.0, 158.0, 0.007, 355.0),
+            (datetime(2025, 11, 25, tzinfo=UTC), 5000.0, 1200.0, 0.045, 255.0),
         ]
         manager = WorkoutManager(
             pd.DataFrame(
@@ -838,7 +838,7 @@ class TestGetCriticalPowerEvolution:
 
     def test_month_with_valid_segments_is_not_dropped_due_to_work_averaging(self) -> None:
         """A month with valid 800m/5000m power data should produce CP/W' values."""
-        month = datetime(2026, 4, 1, tzinfo=timezone.utc)
+        month = datetime(2026, 4, 1, tzinfo=UTC)
         short_data = [
             (198.3270856480831, 370.7915258375548),
             (161.7296540939797, 278.27940586367725),

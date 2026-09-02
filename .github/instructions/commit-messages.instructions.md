@@ -1,5 +1,6 @@
 ---
 description: "Use when creating a git commit or writing a pull request title. Covers the Conventional Commits policy enforced by commitizen and CI."
+applyTo: "**"
 ---
 
 # Commit Message Policy

@@ -288,6 +288,56 @@ class WorkoutManagerAggregationsMixin(WorkoutManagerSeasonalAggregationsMixin):
             activity_type, "sumActiveEnergyBurned", start_date=start_date, end_date=end_date
         )
 
+    def _get_training_load_workouts(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> pd.DataFrame:
+        """Return workouts with training load calculated as heart-rate minutes."""
+        required_columns = {"activityType", "duration", "averageHeartRate", "startDate"}
+        if not required_columns.issubset(self.workouts.columns):
+            return pd.DataFrame()
+
+        workouts = self._filter_workouts(activity_type, start_date, end_date).copy()
+        duration = pd.to_numeric(workouts["duration"], errors="coerce")
+        heart_rate = pd.to_numeric(workouts["averageHeartRate"], errors="coerce")
+        workouts["trainingLoad"] = (duration / 60.0 * heart_rate).clip(lower=0)
+        return workouts.dropna(subset=["trainingLoad"])
+
+    def get_training_load(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> int:
+        """Return total training load as duration in minutes multiplied by average heart rate."""
+        workouts = self._get_training_load_workouts(activity_type, start_date, end_date)
+        if workouts.empty:
+            return 0
+        return int(round(workouts["trainingLoad"].sum()))
+
+    def get_training_load_by_period(
+        self,
+        period: str,
+        activity_type: str = "All",
+        fill_missing_periods: bool = True,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
+        """Return training load totals grouped by period."""
+        workouts = self._get_training_load_workouts(activity_type, start_date, end_date)
+        if workouts.empty or not pd.api.types.is_datetime64_any_dtype(workouts["startDate"]):
+            return {}
+
+        grouped = workouts.groupby(workouts["startDate"].dt.to_period(period))["trainingLoad"].sum()
+        if grouped.empty:
+            return {}
+        if fill_missing_periods:
+            full_range = pd.period_range(grouped.index.min(), grouped.index.max(), freq=period)
+            grouped = grouped.reindex(full_range, fill_value=0)
+        return {str(period_key): int(round(value)) for period_key, value in grouped.items()}
+
     def get_calories_by_activity(
         self,
         combination_threshold: float = 10.0,

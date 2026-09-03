@@ -211,7 +211,7 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
         state.selected_main_tab = original_tab
 
 
-def test_render_trends_tab_only_renders_graphs() -> None:
+def test_render_trends_tab_renders_dashboard_heading_and_content() -> None:
     """Test that render_trends_tab renders the dashboard heading and content."""
 
     with patch("ui.trends_tab.render_trends_graphs") as render_graphs_mock:

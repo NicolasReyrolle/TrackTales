@@ -312,10 +312,20 @@ class WorkoutManagerAggregationsMixin(WorkoutManagerSeasonalAggregationsMixin):
         end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return total training load as duration in minutes multiplied by average heart rate."""
-        workouts = self._get_training_load_workouts(activity_type, start_date, end_date)
+        required_columns = {"duration", "averageHeartRate"}
+        if activity_type != "All":
+            required_columns.add("activityType")
+        if not required_columns.issubset(self.workouts.columns):
+            return 0
+
+        workouts = self._filter_workouts(activity_type, start_date, end_date)
         if workouts.empty:
             return 0
-        return int(round(workouts["trainingLoad"].sum()))
+
+        duration = pd.to_numeric(workouts["duration"], errors="coerce")
+        heart_rate = pd.to_numeric(workouts["averageHeartRate"], errors="coerce")
+        training_load = (duration / 60.0 * heart_rate).clip(lower=0).dropna()
+        return int(round(float(training_load.sum()))) if not training_load.empty else 0
 
     def get_training_load_by_period(
         self,

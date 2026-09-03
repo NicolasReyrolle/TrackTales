@@ -94,3 +94,22 @@ def test_get_training_load_ignores_workouts_with_missing_metric_values() -> None
 
     assert manager.get_training_load() == 9000
     assert manager.get_training_load_by_period("M", fill_missing_periods=False) == {"2024-01": 9000}
+
+
+def test_get_training_load_by_period_filters_activity_type() -> None:
+    result = _manager().get_training_load_by_period(
+        "M",
+        activity_type="Running",
+        fill_missing_periods=False,
+    )
+    assert result == {"2024-01": 9000, "2024-02": 4200}
+
+
+def test_get_training_load_by_period_filters_date_range() -> None:
+    result = _manager().get_training_load_by_period(
+        "M",
+        fill_missing_periods=False,
+        start_date=pd.Timestamp("2024-02-01"),
+        end_date=pd.Timestamp("2024-02-28"),
+    )
+    assert result == {"2024-02": 4200}

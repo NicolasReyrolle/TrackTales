@@ -536,7 +536,6 @@ def refresh_data() -> None:
 
     # If user is already on the tab, load asynchronously after invalidation.
     if state.selected_main_tab == "running":
-        schedule_best_segments_load()
         schedule_health_data_load()
     if state.selected_main_tab == "best_segments":
         schedule_best_segments_load()

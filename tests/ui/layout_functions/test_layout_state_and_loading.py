@@ -543,7 +543,7 @@ def test_refresh_data_schedules_load_for_selected_tab(monkeypatch: pytest.Monkey
                                                                     "running",
                                                                 )
                                                                 layout.refresh_data()
-                                                                best_mock.assert_called_once()
+                                                                best_mock.assert_not_called()
                                                                 health_mock.assert_called_once()
 
                                                                 best_mock.reset_mock()

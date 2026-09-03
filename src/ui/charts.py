@@ -300,6 +300,7 @@ def render_generic_graph(
     is_higher_better: bool = True,
     trend_threshold: float = 0.05,
     trend_label_mode: str = "semantic",
+    tooltip: str = "",
 ) -> None:
     """Render generic graphs for the given values.
 
@@ -457,13 +458,21 @@ def render_generic_graph(
     with ui.dialog().props("maximized") as dialog:
         with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
             with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+                if tooltip:
+                    with ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES):
+                        ui.tooltip(tooltip)
+                else:
+                    ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
                 ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
             ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+            if tooltip:
+                with ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES):
+                    ui.tooltip(tooltip)
+            else:
+                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
         ui.echart(card_config)
 

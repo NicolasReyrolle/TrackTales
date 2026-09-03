@@ -37,12 +37,17 @@ class TestRenderTrendsGraphs:
                     layout.render_trends_graphs.func()
 
             assert render_graph_mock.call_count == 6
-            render_graph_mock.assert_any_call("Count by month", {"2024-01": 5})
-            render_graph_mock.assert_any_call("Distance by month", {"2024-01": 10}, "km")
-            render_graph_mock.assert_any_call("Calories by month", {"2024-01": 500}, "kcal")
-            render_graph_mock.assert_any_call("Duration by month", {"2024-01": 120}, "h")
-            render_graph_mock.assert_any_call("Elevation by month", {"2024-01": 50}, "m")
-            render_graph_mock.assert_any_call("Training Load (month)", {"2024-01": 100}, "bpm·min")
+            render_graph_mock.assert_any_call("Count", {"2024-01": 5})
+            render_graph_mock.assert_any_call("Distance", {"2024-01": 10}, "km")
+            render_graph_mock.assert_any_call("Calories", {"2024-01": 500}, "kcal")
+            render_graph_mock.assert_any_call("Duration", {"2024-01": 120}, "h")
+            render_graph_mock.assert_any_call("Elevation", {"2024-01": 50}, "m")
+            render_graph_mock.assert_any_call(
+                "Training Load",
+                {"2024-01": 100},
+                "bpm·min",
+                tooltip="Training load is duration in minutes multiplied by average heart rate.",
+            )
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "M", activity_type="Running", start_date=None, end_date=None
@@ -96,7 +101,7 @@ class TestRenderTrendsGraphs:
             )
 
             called_labels = [call[0][0] for call in render_graph_mock.call_args_list]
-            assert any("week" in label.lower() for label in called_labels)
+            assert all("week" not in label.lower() for label in called_labels)
         finally:
             state.workouts = original_workouts
             state.selected_activity_type = original_activity
@@ -129,7 +134,7 @@ class TestRenderTrendsGraphs:
             )
 
             called_labels = [call[0][0] for call in render_graph_mock.call_args_list]
-            assert any("quarter" in label.lower() for label in called_labels)
+            assert all("quarter" not in label.lower() for label in called_labels)
         finally:
             state.workouts = original_workouts
             state.selected_activity_type = original_activity
@@ -162,7 +167,7 @@ class TestRenderTrendsGraphs:
             )
 
             called_labels = [call[0][0] for call in render_graph_mock.call_args_list]
-            assert any("year" in label.lower() for label in called_labels)
+            assert all("year" not in label.lower() for label in called_labels)
         finally:
             state.workouts = original_workouts
             state.selected_activity_type = original_activity

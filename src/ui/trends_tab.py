@@ -12,7 +12,6 @@ from ui.css import (
     RECOVERY_RECOMMENDATION_CLASSES,
     ROW_CENTERED_CLASSES,
 )
-from ui.helpers import period_code_to_label
 
 
 def _register_recovery_translations() -> None:
@@ -50,10 +49,9 @@ def render_trends_graphs() -> None:
     """Render trend graphs."""
     dist_unit = get_distance_unit()
     elev_unit = get_elevation_unit()
-    period_label = t(period_code_to_label(state.trends_period))
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
-            t("Count by {period}", period=period_label),
+            t("Count"),
             state.workouts.get_count_by_period(
                 state.trends_period,
                 activity_type=state.selected_activity_type,
@@ -62,7 +60,7 @@ def render_trends_graphs() -> None:
             ),
         )
         render_generic_graph(
-            t("Distance by {period}", period=period_label),
+            t("Distance"),
             state.workouts.get_distance_by_period(
                 state.trends_period,
                 unit=dist_unit,
@@ -74,7 +72,7 @@ def render_trends_graphs() -> None:
         )
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
-            t("Calories by {period}", period=period_label),
+            t("Calories"),
             state.workouts.get_calories_by_period(
                 state.trends_period,
                 activity_type=state.selected_activity_type,
@@ -84,7 +82,7 @@ def render_trends_graphs() -> None:
             "kcal",
         )
         render_generic_graph(
-            t("Duration by {period}", period=period_label),
+            t("Duration"),
             state.workouts.get_duration_by_period(
                 state.trends_period,
                 activity_type=state.selected_activity_type,
@@ -95,7 +93,7 @@ def render_trends_graphs() -> None:
         )
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
-            t("Elevation by {period}", period=period_label),
+            t("Elevation"),
             state.workouts.get_elevation_by_period(
                 state.trends_period,
                 activity_type=state.selected_activity_type,
@@ -110,7 +108,7 @@ def render_trends_graphs() -> None:
     )
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
-            t("Training Load ({period})", period=period_label),
+            t("Training Load"),
             state.workouts.get_training_load_by_period(
                 state.trends_period,
                 activity_type=state.selected_activity_type,
@@ -118,4 +116,5 @@ def render_trends_graphs() -> None:
                 end_date=state.end_date,
             ),
             "bpm·min",
+            tooltip=t("Training load is duration in minutes multiplied by average heart rate."),
         )

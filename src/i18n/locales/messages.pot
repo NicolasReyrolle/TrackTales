@@ -419,6 +419,24 @@ msgstr ""
 msgid "Training load is duration in minutes multiplied by average heart rate."
 msgstr ""
 
+msgid "Count"
+msgstr ""
+
+msgid "Distance"
+msgstr ""
+
+msgid "Calories"
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Elevation"
+msgstr ""
+
+msgid "Training Load"
+msgstr ""
+
 # Health data charts
 msgid "Resting HR frequency over time"
 msgstr ""

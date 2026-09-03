@@ -744,7 +744,9 @@ class TestBestSegmentsHelpers:
             state.best_segments_loaded = original_loaded
 
 
-def test_render_body_tab_change_to_running_schedules_async_load() -> None:
+def test_render_body_tab_change_to_running_schedules_async_load(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Selecting the running tab should schedule async loading."""
     tabs_created: list[DummyTabs] = []
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={"input_file_path": ""}))
@@ -758,6 +760,7 @@ def test_render_body_tab_change_to_running_schedules_async_load() -> None:
         return DummyTab(name)
 
     with ExitStack() as stack:
+        monkeypatch.setattr(layout, "render_best_segments_tab", MagicMock())
         stack.enter_context(patch("ui.layout.ui.row", return_value=DummyContext()))
         stack.enter_context(patch("ui.layout.ui.input", return_value=DummyComponent()))
         stack.enter_context(patch("ui.layout.ui.button", return_value=DummyComponent()))

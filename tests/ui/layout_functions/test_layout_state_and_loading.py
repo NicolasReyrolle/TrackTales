@@ -738,7 +738,9 @@ def test_render_period_selector_period_change_schedules_health_load_on_health_ta
         state.selected_main_tab = original_tab
 
 
-def test_render_body_health_data_tab_change_schedules_load() -> None:
+def test_render_body_health_data_tab_change_schedules_load(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Switching to the health_data tab should schedule health-data loading."""
     tabs_created: list[DummyTabs] = []
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={"input_file_path": ""}))
@@ -748,6 +750,7 @@ def test_render_body_health_data_tab_change_schedules_load() -> None:
         tabs_created.append(tabs)
         return tabs
 
+    monkeypatch.setattr(layout, "render_best_segments_tab", MagicMock())
     with (
         patch("ui.layout.ui.row", return_value=DummyContext()),
         patch("ui.layout.ui.input", return_value=DummyComponent()),
@@ -780,7 +783,9 @@ def test_render_body_health_data_tab_change_schedules_load() -> None:
     health_load_mock.assert_called_once()
 
 
-def test_render_body_health_data_tab_change_does_not_schedule_refresh() -> None:
+def test_render_body_health_data_tab_change_does_not_schedule_refresh(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Switching to the health-data tab should not schedule selected-tab refresh."""
     tabs_created: list[DummyTabs] = []
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={"input_file_path": ""}))
@@ -790,6 +795,7 @@ def test_render_body_health_data_tab_change_does_not_schedule_refresh() -> None:
         tabs_created.append(tabs)
         return tabs
 
+    monkeypatch.setattr(layout, "render_best_segments_tab", MagicMock())
     with (
         patch("ui.layout.ui.row", return_value=DummyContext()),
         patch("ui.layout.ui.input", return_value=DummyComponent()),
@@ -822,7 +828,9 @@ def test_render_body_health_data_tab_change_does_not_schedule_refresh() -> None:
     refresh_mock.assert_not_called()
 
 
-def test_render_body_record_card_click_opens_detail_modal() -> None:
+def test_render_body_record_card_click_opens_detail_modal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Clicking a record card should open the workout detail modal at that workout."""
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={"input_file_path": ""}))
     stat_card_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
@@ -833,6 +841,7 @@ def test_render_body_record_card_click_opens_detail_modal() -> None:
 
     try:
         state.metrics_workout_index["longest_run"] = 42
+        monkeypatch.setattr(layout, "render_best_segments_tab", MagicMock())
         with ExitStack() as stack:
             stack.enter_context(patch("ui.layout.ui.row", return_value=DummyContext()))
             stack.enter_context(patch("ui.layout.ui.input", return_value=DummyComponent()))
@@ -882,7 +891,9 @@ def test_render_body_record_card_click_opens_detail_modal() -> None:
         state.metrics_workout_index = original_record_indexes
 
 
-def test_render_body_record_card_click_no_workout_index_is_noop() -> None:
+def test_render_body_record_card_click_no_workout_index_is_noop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Record-card click should no-op when no workout index is available."""
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={"input_file_path": ""}))
     stat_card_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
@@ -893,6 +904,7 @@ def test_render_body_record_card_click_no_workout_index_is_noop() -> None:
 
     try:
         state.metrics_workout_index["longest_run"] = None
+        monkeypatch.setattr(layout, "render_best_segments_tab", MagicMock())
         with ExitStack() as stack:
             stack.enter_context(patch("ui.layout.ui.row", return_value=DummyContext()))
             stack.enter_context(patch("ui.layout.ui.input", return_value=DummyComponent()))
@@ -935,7 +947,9 @@ def test_render_body_record_card_click_no_workout_index_is_noop() -> None:
         state.metrics_workout_index = original_record_indexes
 
 
-def test_render_body_record_card_click_no_matching_row_is_noop() -> None:
+def test_render_body_record_card_click_no_matching_row_is_noop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Record-card click should no-op when workout index is not found in built rows."""
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={"input_file_path": ""}))
     stat_card_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
@@ -946,6 +960,7 @@ def test_render_body_record_card_click_no_matching_row_is_noop() -> None:
 
     try:
         state.metrics_workout_index["longest_run"] = 42
+        monkeypatch.setattr(layout, "render_best_segments_tab", MagicMock())
         with ExitStack() as stack:
             stack.enter_context(patch("ui.layout.ui.row", return_value=DummyContext()))
             stack.enter_context(patch("ui.layout.ui.input", return_value=DummyComponent()))

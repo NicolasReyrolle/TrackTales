@@ -76,6 +76,9 @@ msgstr ""
 msgid "Trends"
 msgstr ""
 
+msgid "Analytics Dashboard"
+msgstr ""
+
 msgid "Running"
 msgstr ""
 
@@ -408,6 +411,9 @@ msgid "Duration by {period}"
 msgstr ""
 
 msgid "Elevation by {period}"
+msgstr ""
+
+msgid "Training Load by {period}"
 msgstr ""
 
 # Health data charts

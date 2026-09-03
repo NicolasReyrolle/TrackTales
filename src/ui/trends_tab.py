@@ -7,6 +7,7 @@ from i18n import t
 from ui.charts import render_generic_graph
 from ui.css import (
     LABEL_MUTED_CLASSES,
+    LABEL_SECTION_CLASSES,
     RECOVERY_CARD_CLASSES,
     RECOVERY_RECOMMENDATION_CLASSES,
     ROW_CENTERED_CLASSES,
@@ -24,7 +25,8 @@ def _register_recovery_translations() -> None:
 
 
 def render_trends_tab() -> None:
-    """Render the trends tab with recovery recommendation and trend graphs."""
+    """Render the analytics dashboard with trends and recommendations."""
+    ui.label(t("Analytics Dashboard")).classes(LABEL_SECTION_CLASSES)
     render_recovery_recommendation()
     render_trends_graphs()
 
@@ -102,4 +104,14 @@ def render_trends_graphs() -> None:
                 end_date=state.end_date,
             ),
             elev_unit,
+        )
+        render_generic_graph(
+            t("Training Load by {period}", period=period_label),
+            state.workouts.get_training_load_by_period(
+                state.trends_period,
+                activity_type=state.selected_activity_type,
+                start_date=state.start_date,
+                end_date=state.end_date,
+            ),
+            "load",
         )

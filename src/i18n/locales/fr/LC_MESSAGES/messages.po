@@ -81,6 +81,9 @@ msgstr "Vue d'ensemble"
 msgid "Trends"
 msgstr "Tendances"
 
+msgid "Analytics Dashboard"
+msgstr "Tableau de bord analytique"
+
 msgid "Running"
 msgstr "Course à pied"
 
@@ -414,6 +417,9 @@ msgstr "Durée par {period}"
 
 msgid "Elevation by {period}"
 msgstr "Dénivelé par {period}"
+
+msgid "Training Load by {period}"
+msgstr "Charge d'entraînement par {period}"
 
 # Health data charts
 msgid "Resting HR frequency over time"

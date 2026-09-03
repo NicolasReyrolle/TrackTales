@@ -26,6 +26,7 @@ class TestRenderTrendsGraphs:
         workouts_mock.get_calories_by_period.return_value = {"2024-01": 500}
         workouts_mock.get_duration_by_period.return_value = {"2024-01": 120}
         workouts_mock.get_elevation_by_period.return_value = {"2024-01": 50}
+        workouts_mock.get_training_load_by_period.return_value = {"2024-01": 100}
 
         try:
             state.workouts = workouts_mock
@@ -35,12 +36,13 @@ class TestRenderTrendsGraphs:
                 with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
                     layout.render_trends_graphs.func()
 
-            assert render_graph_mock.call_count == 5
+            assert render_graph_mock.call_count == 6
             render_graph_mock.assert_any_call("Count by month", {"2024-01": 5})
             render_graph_mock.assert_any_call("Distance by month", {"2024-01": 10}, "km")
             render_graph_mock.assert_any_call("Calories by month", {"2024-01": 500}, "kcal")
             render_graph_mock.assert_any_call("Duration by month", {"2024-01": 120}, "h")
             render_graph_mock.assert_any_call("Elevation by month", {"2024-01": 50}, "m")
+            render_graph_mock.assert_any_call("Training Load by month", {"2024-01": 100}, "load")
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "M", activity_type="Running", start_date=None, end_date=None
@@ -56,6 +58,9 @@ class TestRenderTrendsGraphs:
             )
             workouts_mock.get_elevation_by_period.assert_called_once_with(
                 "M", activity_type="Running", unit="m", start_date=None, end_date=None
+            )
+            workouts_mock.get_training_load_by_period.assert_called_once_with(
+                "M", activity_type="Running", start_date=None, end_date=None
             )
         finally:
             state.workouts = original_workouts
@@ -197,6 +202,19 @@ class TestRenderGenericGraph:
         assert len(series) == 2
         assert series[0]["type"] == "bar"
         assert series[1]["name"] == "Trend"
+
+    def test_render_zone_distribution_chart_uses_shared_rose_chart(self) -> None:
+        """Training-zone charts should use the standard fullscreen/card rendering."""
+        values = {"Zone 1": 10, "Zone 2": 20}
+
+        with patch("ui.charts.render_pie_rose_graph") as render_pie_mock:
+            charts.render_zone_distribution_chart("Training Zones", values)
+
+        render_pie_mock.assert_called_once_with(
+            "Training Zones",
+            values,
+            fullscreen_values=None,
+        )
 
     def test_render_generic_graph_can_use_directional_trend_labels(self) -> None:
         """Directional chart labels should request increasing/decreasing wording."""

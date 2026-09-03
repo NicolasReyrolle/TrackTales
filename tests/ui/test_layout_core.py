@@ -212,7 +212,7 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
 
 
 def test_render_trends_tab_only_renders_graphs() -> None:
-    """Test that render_trends_tab delegates to recovery card and trend graphs only."""
+    """Test that render_trends_tab renders the dashboard heading and content."""
 
     with patch("ui.trends_tab.render_trends_graphs") as render_graphs_mock:
         with patch("ui.trends_tab.render_recovery_recommendation") as render_recovery_mock:
@@ -220,10 +220,10 @@ def test_render_trends_tab_only_renders_graphs() -> None:
                 with patch("ui.layout.ui.radio") as radio_mock:
                     layout.render_trends_tab()
 
-    # Both graph and recovery functions should be called; no direct label or radio
+    # The dashboard heading and both content sections should be rendered.
     render_graphs_mock.assert_called_once()
     render_recovery_mock.assert_called_once()
-    label_mock.assert_not_called()
+    label_mock.assert_called_once_with("Analytics Dashboard")
     radio_mock.assert_not_called()
 
 

@@ -57,3 +57,19 @@ def test_get_training_load_by_period_fills_missing_periods() -> None:
 def test_get_training_load_by_period_can_omit_empty_periods() -> None:
     result = _manager().get_training_load_by_period("M", fill_missing_periods=False)
     assert result == {"2024-01": 12600, "2024-02": 4200}
+
+
+def test_get_training_load_ignores_workouts_with_missing_metric_values() -> None:
+    manager = WorkoutManager(
+        pd.DataFrame(
+            {
+                "activityType": ["Running", "Running"],
+                "startDate": pd.to_datetime(["2024-01-01", "2024-02-01"]),
+                "duration": [3600, 3600],
+                "averageHeartRate": [150, None],
+            }
+        )
+    )
+
+    assert manager.get_training_load() == 9000
+    assert manager.get_training_load_by_period("M", fill_missing_periods=False) == {"2024-01": 9000}

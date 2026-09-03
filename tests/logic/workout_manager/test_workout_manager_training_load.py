@@ -39,6 +39,10 @@ def test_get_training_load_returns_zero_without_required_metrics() -> None:
     assert manager.get_training_load() == 0
 
 
+def test_get_training_load_returns_zero_when_filters_match_no_workouts() -> None:
+    assert _manager().get_training_load("Swimming") == 0
+
+
 def test_get_training_load_by_period_fills_missing_periods() -> None:
     manager = WorkoutManager(
         pd.DataFrame(
@@ -57,6 +61,23 @@ def test_get_training_load_by_period_fills_missing_periods() -> None:
 def test_get_training_load_by_period_can_omit_empty_periods() -> None:
     result = _manager().get_training_load_by_period("M", fill_missing_periods=False)
     assert result == {"2024-01": 12600, "2024-02": 4200}
+
+
+def test_get_training_load_by_period_returns_empty_without_required_columns() -> None:
+    manager = WorkoutManager(pd.DataFrame({"duration": [3600], "averageHeartRate": [150]}))
+    assert manager.get_training_load_by_period("M") == {}
+
+
+def test_get_training_load_by_period_returns_empty_for_non_datetime_dates() -> None:
+    manager = _manager()
+    manager.workouts["startDate"] = "2024-01-01"
+    assert manager.get_training_load_by_period("M") == {}
+
+
+def test_get_training_load_by_period_returns_empty_when_all_dates_are_missing() -> None:
+    manager = _manager()
+    manager.workouts["startDate"] = pd.NaT
+    assert manager.get_training_load_by_period("M") == {}
 
 
 def test_get_training_load_ignores_workouts_with_missing_metric_values() -> None:

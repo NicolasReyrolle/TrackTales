@@ -103,7 +103,6 @@ def render_trends_graphs() -> None:
             ),
             elev_unit,
         )
-    with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
             t("Training Load"),
             state.workouts.get_training_load_by_period(

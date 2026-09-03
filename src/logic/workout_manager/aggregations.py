@@ -346,6 +346,10 @@ class WorkoutManagerAggregationsMixin(WorkoutManagerSeasonalAggregationsMixin):
         if fill_missing_periods:
             full_range = pd.period_range(grouped.index.min(), grouped.index.max(), freq=period)
             grouped = grouped.reindex(full_range, fill_value=0)
+        else:
+            grouped = grouped[grouped > 0]
+            if grouped.empty:
+                return {}
         return {str(period_key): int(round(value)) for period_key, value in grouped.items()}
 
     def get_calories_by_activity(

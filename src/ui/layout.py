@@ -85,6 +85,7 @@ _MAIN_TABS = {
     "running",
     "workouts",
     "health_data",
+    "best_segments",
 }
 
 
@@ -535,8 +536,9 @@ def refresh_data() -> None:
 
     # If user is already on the tab, load asynchronously after invalidation.
     if state.selected_main_tab == "running":
-        schedule_best_segments_load()
         schedule_health_data_load()
+    if state.selected_main_tab == "best_segments":
+        schedule_best_segments_load()
     if state.selected_main_tab == "health_data":
         schedule_health_data_load()
 
@@ -865,11 +867,12 @@ def _handle_main_tab_change(tab_name: str) -> None:
     state.selected_main_tab = tab_name
     if tab_name == "running":
         schedule_selected_tab_refresh("running")
-        schedule_best_segments_load()
         schedule_health_data_load()
     elif tab_name == "health_data":
         render_health_data_tab.refresh()
         schedule_health_data_load()
+    elif tab_name == "best_segments":
+        schedule_best_segments_load()
 
 
 def render_body() -> None:
@@ -907,6 +910,7 @@ def render_body() -> None:
         ui.tab("running", t("Running")).bind_enabled_from(state, "file_loaded")
         ui.tab("workouts", t("Workouts")).bind_enabled_from(state, "file_loaded")
         ui.tab("health_data", t("Health Data")).bind_enabled_from(state, "file_loaded")
+        ui.tab("best_segments", t("Best Segments")).bind_enabled_from(state, "file_loaded")
     selected_tab = state.selected_main_tab if state.selected_main_tab in _MAIN_TABS else "summary"
     state.selected_main_tab = selected_tab
 
@@ -943,3 +947,5 @@ def render_body() -> None:
 
         with ui.tab_panel("health_data"):
             render_health_data_tab()
+        with ui.tab_panel("best_segments"):
+            render_best_segments_tab()

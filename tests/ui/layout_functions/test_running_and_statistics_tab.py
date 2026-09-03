@@ -63,7 +63,6 @@ def test_render_running_tab_builds_scatter_data_from_workouts() -> None:
             patch("ui.running_tab.ui.row", return_value=DummyRow()),
             patch("ui.running_tab.render_scatter_graph") as scatter_mock,
             patch("ui.running_tab.render_running_health_graphs"),
-            patch("ui.running_tab.render_best_segments_tab"),
         ):
             running_tab.render_running_tab.func()
 
@@ -146,7 +145,6 @@ def test_render_running_tab_shows_health_loading_before_cp_graphs() -> None:
             patch("ui.running_tab.ui.label") as label_mock,
             patch("ui.running_tab.render_scatter_graph"),
             patch("ui.running_tab.render_running_health_graphs"),
-            patch("ui.running_tab.render_best_segments_tab"),
         ):
             running_tab.render_running_tab.func()
 
@@ -181,7 +179,6 @@ def test_running_tab_scatter_points_are_not_clickable() -> None:
             patch("ui.running_tab.ui.row", return_value=DummyRow()),
             patch("ui.running_tab.render_scatter_graph", side_effect=_capture_scatter),
             patch("ui.running_tab.render_running_health_graphs"),
-            patch("ui.running_tab.render_best_segments_tab"),
         ):
             running_tab.render_running_tab.func()
             assert len(captured_scatter_kwargs) == 2

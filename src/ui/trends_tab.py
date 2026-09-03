@@ -103,9 +103,6 @@ def render_trends_graphs() -> None:
             ),
             elev_unit,
         )
-    ui.label(t("Training load is duration in minutes multiplied by average heart rate.")).classes(
-        LABEL_MUTED_CLASSES
-    )
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
             t("Training Load"),

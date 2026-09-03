@@ -32,9 +32,12 @@ class TestRenderTrendsGraphs:
             state.workouts = workouts_mock
             state.selected_activity_type = "Running"
 
-            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
-                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
-                    layout.render_trends_graphs.func()
+            with (
+                patch("ui.trends_tab.ui.row", return_value=DummyRow()),
+                patch("ui.trends_tab.ui.label"),
+                patch("ui.trends_tab.render_generic_graph") as render_graph_mock,
+            ):
+                layout.render_trends_graphs.func()
 
             assert render_graph_mock.call_count == 6
             render_graph_mock.assert_any_call("Count", {"2024-01": 5})
@@ -89,9 +92,12 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "W"
 
-            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
-                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
-                    layout.render_trends_graphs.func()
+            with (
+                patch("ui.trends_tab.ui.row", return_value=DummyRow()),
+                patch("ui.trends_tab.ui.label"),
+                patch("ui.trends_tab.render_generic_graph") as render_graph_mock,
+            ):
+                layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "W", activity_type="Running", start_date=None, end_date=None
@@ -125,9 +131,12 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "Q"
 
-            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
-                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
-                    layout.render_trends_graphs.func()
+            with (
+                patch("ui.trends_tab.ui.row", return_value=DummyRow()),
+                patch("ui.trends_tab.ui.label"),
+                patch("ui.trends_tab.render_generic_graph") as render_graph_mock,
+            ):
+                layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "Q", activity_type="Running", start_date=None, end_date=None
@@ -158,9 +167,12 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "Y"
 
-            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
-                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
-                    layout.render_trends_graphs.func()
+            with (
+                patch("ui.trends_tab.ui.row", return_value=DummyRow()),
+                patch("ui.trends_tab.ui.label"),
+                patch("ui.trends_tab.render_generic_graph") as render_graph_mock,
+            ):
+                layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "Y", activity_type="Running", start_date=None, end_date=None

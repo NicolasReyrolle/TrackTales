@@ -413,9 +413,6 @@ msgstr ""
 msgid "Elevation by {period}"
 msgstr ""
 
-msgid "Training Load ({period})"
-msgstr ""
-
 msgid "Training load is duration in minutes multiplied by average heart rate."
 msgstr ""
 

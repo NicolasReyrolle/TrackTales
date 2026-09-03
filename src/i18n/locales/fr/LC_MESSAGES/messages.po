@@ -418,8 +418,11 @@ msgstr "Durée par {period}"
 msgid "Elevation by {period}"
 msgstr "Dénivelé par {period}"
 
-msgid "Training Load by {period}"
-msgstr "Charge d'entraînement par {period}"
+msgid "Training Load ({period})"
+msgstr "Charge d'entraînement ({period})"
+
+msgid "Training load is duration in minutes multiplied by average heart rate."
+msgstr "La charge d'entraînement correspond à la durée en minutes multipliée par la fréquence cardiaque moyenne."
 
 # Health data charts
 msgid "Resting HR frequency over time"

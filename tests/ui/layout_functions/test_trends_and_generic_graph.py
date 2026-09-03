@@ -42,7 +42,7 @@ class TestRenderTrendsGraphs:
             render_graph_mock.assert_any_call("Calories by month", {"2024-01": 500}, "kcal")
             render_graph_mock.assert_any_call("Duration by month", {"2024-01": 120}, "h")
             render_graph_mock.assert_any_call("Elevation by month", {"2024-01": 50}, "m")
-            render_graph_mock.assert_any_call("Training Load by month", {"2024-01": 100}, "load")
+            render_graph_mock.assert_any_call("Training Load (month)", {"2024-01": 100}, "bpm·min")
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "M", activity_type="Running", start_date=None, end_date=None

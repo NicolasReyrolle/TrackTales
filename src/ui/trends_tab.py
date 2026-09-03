@@ -105,13 +105,17 @@ def render_trends_graphs() -> None:
             ),
             elev_unit,
         )
+    ui.label(t("Training load is duration in minutes multiplied by average heart rate.")).classes(
+        LABEL_MUTED_CLASSES
+    )
+    with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
-            t("Training Load by {period}", period=period_label),
+            t("Training Load ({period})", period=period_label),
             state.workouts.get_training_load_by_period(
                 state.trends_period,
                 activity_type=state.selected_activity_type,
                 start_date=state.start_date,
                 end_date=state.end_date,
             ),
-            "load",
+            "bpm·min",
         )

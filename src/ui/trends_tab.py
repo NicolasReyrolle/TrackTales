@@ -6,7 +6,6 @@ from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import t
 from ui.charts import render_generic_graph
 from ui.css import (
-    LABEL_MUTED_CLASSES,
     LABEL_SECTION_CLASSES,
     RECOVERY_CARD_CLASSES,
     RECOVERY_RECOMMENDATION_CLASSES,
@@ -106,7 +105,6 @@ def render_trends_graphs() -> None:
     training_load_tooltip = t(
         "Training load is duration in minutes multiplied by average heart rate."
     )
-    ui.label(training_load_tooltip).classes(LABEL_MUTED_CLASSES)
     with ui.row().classes(ROW_CENTERED_CLASSES):
         render_generic_graph(
             t("Training Load"),

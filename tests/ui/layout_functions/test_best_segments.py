@@ -9,6 +9,7 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
+import pytest
 
 import ui.best_segments as best_segments_module
 from app_state import state
@@ -791,8 +792,19 @@ def test_render_body_tab_change_to_running_schedules_async_load() -> None:
         assert on_change is not None
         on_change(SimpleNamespace(value=SimpleNamespace(name="running")))
 
-    # Running tab schedules tab refresh plus best-segments and CP/W' loaders.
-    assert create_task_mock.call_count == 3
+    # Running tab schedules tab refresh plus the CP/W' loader.
+    assert create_task_mock.call_count == 2
+
+
+def test_best_segments_tab_change_schedules_async_load(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Selecting the dedicated best-segments tab should schedule its loader."""
+    monkeypatch.setattr(state, "selected_main_tab", "summary")
+    with patch("ui.layout.schedule_best_segments_load") as load_mock:
+        layout._handle_main_tab_change("best_segments")
+
+    load_mock.assert_called_once_with()
 
 
 def _make_render_body_stubs() -> tuple[list[DummyTabs], list[dict[str, Any]], SimpleNamespace]:
@@ -855,6 +867,7 @@ def test_render_body_initializes_tabs_from_state() -> None:
             patch("ui.layout.render_health_data_tab"),
             patch("ui.layout.render_running_tab"),
             patch("ui.layout.render_workout_table"),
+            patch("ui.layout.render_best_segments_tab"),
             patch("ui.layout.render_distance_range_selector"),
             patch("ui.layout.render_duration_range_selector"),
         ):
@@ -862,6 +875,7 @@ def test_render_body_initializes_tabs_from_state() -> None:
 
         assert tabs_created
         assert tabs_created[0].value == "activities"
+        assert "best_segments" in layout._MAIN_TABS
         assert tab_panels_calls
         assert tab_panels_calls[0]["kwargs"].get("value") == "activities"
     finally:
@@ -894,6 +908,7 @@ def test_render_body_defaults_tabs_to_summary_when_state_empty() -> None:
             patch("ui.layout.render_health_data_tab"),
             patch("ui.layout.render_running_tab"),
             patch("ui.layout.render_workout_table"),
+            patch("ui.layout.render_best_segments_tab"),
             patch("ui.layout.render_distance_range_selector"),
             patch("ui.layout.render_duration_range_selector"),
         ):
@@ -901,6 +916,7 @@ def test_render_body_defaults_tabs_to_summary_when_state_empty() -> None:
 
         assert tabs_created
         assert tabs_created[0].value == "summary"
+        assert "best_segments" in layout._MAIN_TABS
         assert tab_panels_calls
         assert tab_panels_calls[0]["kwargs"].get("value") == "summary"
     finally:

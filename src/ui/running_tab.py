@@ -9,7 +9,6 @@ from nicegui import ui
 
 from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import get_language, t
-from ui.best_segments import render_best_segments_tab
 from ui.charts import render_generic_graph, render_scatter_graph
 from ui.css import (
     LABEL_MUTED_CLASSES,
@@ -146,8 +145,6 @@ def render_running_tab() -> None:
         )
 
     render_running_health_graphs()
-
-    render_best_segments_tab()
 
 
 @ui.refreshable

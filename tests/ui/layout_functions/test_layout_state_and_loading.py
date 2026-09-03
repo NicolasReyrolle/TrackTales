@@ -557,6 +557,17 @@ def test_refresh_data_schedules_load_for_selected_tab(monkeypatch: pytest.Monkey
                                                                 health_mock.assert_called_once()
                                                                 best_mock.assert_not_called()
 
+                                                                best_mock.reset_mock()
+                                                                health_mock.reset_mock()
+                                                                monkeypatch.setattr(
+                                                                    state,
+                                                                    "selected_main_tab",
+                                                                    "best_segments",
+                                                                )
+                                                                layout.refresh_data()
+                                                                best_mock.assert_called_once()
+                                                                health_mock.assert_not_called()
+
 
 def test_render_left_drawer_renders_export_actions() -> None:
     """Left drawer should include both JSON and CSV export actions."""

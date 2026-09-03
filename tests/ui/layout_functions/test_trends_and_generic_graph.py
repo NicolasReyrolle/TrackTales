@@ -208,6 +208,27 @@ class TestRenderGenericGraph:
         assert series[0]["type"] == "bar"
         assert series[1]["name"] == "Trend"
 
+    def test_render_generic_graph_shows_explanation_in_tooltip(self) -> None:
+        """Chart explanations should be attached to a visible help icon."""
+        explanation = "Training load explanation"
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.icon", return_value=DummyRow()) as icon_mock,
+            patch("ui.charts.ui.tooltip") as tooltip_mock,
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=DummyComponent()),
+        ):
+            charts.render_generic_graph(
+                "Training Load", {"2024-01": 100}, "bpm·min", tooltip=explanation
+            )
+
+        assert icon_mock.call_count == 2
+        assert tooltip_mock.call_count == 2
+        tooltip_mock.assert_any_call(explanation)
+
     def test_render_zone_distribution_chart_uses_shared_rose_chart(self) -> None:
         """Training-zone charts should use the standard fullscreen/card rendering."""
         values = {"Zone 1": 10, "Zone 2": 20}

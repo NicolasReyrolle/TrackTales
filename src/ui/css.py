@@ -151,6 +151,9 @@ CHART_HEADER_ROW_CLASSES = "w-full justify-between items-center"
 #: Dense flat round button for compact icon actions inside chart cards.
 BUTTON_DENSE_PROPS = "flat round dense"
 
+#: Small help icon used to expose chart explanations without adding header text.
+CHART_TOOLTIP_ICON_CLASSES = "text-gray-500 cursor-help"
+
 #: Dense flat table props for compact read-only tables (e.g. the splits table in the modal).
 TABLE_DENSE_FLAT_PROPS = "dense flat"
 

@@ -216,7 +216,7 @@ def test_render_trends_tab_renders_dashboard_heading_and_content() -> None:
 
     with patch("ui.trends_tab.render_trends_graphs") as render_graphs_mock:
         with patch("ui.trends_tab.render_recovery_recommendation") as render_recovery_mock:
-            with patch("ui.layout.ui.label") as label_mock:
+            with patch("ui.trends_tab.ui.label") as label_mock:
                 with patch("ui.layout.ui.radio") as radio_mock:
                     layout.render_trends_tab()
 

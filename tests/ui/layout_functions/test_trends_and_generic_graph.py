@@ -33,6 +33,7 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
 
             with (
+                patch("i18n.core.get_language", return_value="en"),
                 patch("ui.trends_tab.ui.row", return_value=DummyRow()),
                 patch("ui.trends_tab.ui.label"),
                 patch("ui.trends_tab.render_generic_graph") as render_graph_mock,

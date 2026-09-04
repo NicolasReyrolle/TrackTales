@@ -104,8 +104,8 @@ class TestTranslationFunction:
     def test_t_french_format_kwargs_preserved(self) -> None:
         """t() should interpolate kwargs into French translated strings correctly."""
         with patch("i18n.core.get_language", return_value="fr"):
-            result = t("Count by {period}", period="mois")
-        assert result == "Nombre par mois"
+            result = t("Distance: {lo} – {hi} {unit}", lo="10", hi="20", unit="km")
+        assert result == "Distance : 10 – 20 km"
 
     def test_t_falls_back_to_english_when_lang_has_no_mo(self) -> None:
         """t() falls back gracefully when no .mo file exists for the active language."""

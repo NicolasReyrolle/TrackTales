@@ -78,6 +78,34 @@ class TestExportHandlers:
             state.selected_activity_type = original_activity
             state.date_range_text = original_date_range
 
+    def test_handle_markdown_export_calls_export_and_download(self) -> None:
+        original_workouts: Any = state.workouts
+        original_activity = state.selected_activity_type
+        original_date_range = state.date_range_text
+
+        workouts_mock = MagicMock()
+        workouts_mock.export_to_markdown.return_value = "# report"
+
+        try:
+            state.workouts = workouts_mock
+            state.selected_activity_type = "Running"
+            state.date_range_text = "2024-03-01 - 2024-03-31"
+
+            with patch("ui.layout.ui.download") as download_mock:
+                layout.handle_markdown_export()
+
+            workouts_mock.export_to_markdown.assert_called_once_with(
+                activity_type="Running",
+                start_date=datetime(2024, 3, 1),
+                end_date=datetime(2024, 3, 31),
+                distance_unit="km",
+            )
+            download_mock.assert_called_once_with(b"# report", "tracktales_analytics_report.md")
+        finally:
+            state.workouts = original_workouts
+            state.selected_activity_type = original_activity
+            state.date_range_text = original_date_range
+
 
 class TestCalculateMovingAverage:
     """Tests for calculate_moving_average function."""

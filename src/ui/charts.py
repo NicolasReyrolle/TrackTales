@@ -14,6 +14,8 @@ from ui.css import (
     CHART_CARD_CLASSES,
     CHART_FULLSCREEN_CARD_CLASSES,
     CHART_HEADER_ROW_CLASSES,
+    CHART_TITLE_ROW_CLASSES,
+    CHART_TOOLTIP_ICON_CLASSES,
     ECHART_FULLSCREEN_CLASSES,
     LABEL_MUTED_CLASSES,
     LABEL_UPPERCASE_CLASSES,
@@ -286,6 +288,7 @@ def render_generic_graph(
     is_higher_better: bool = True,
     trend_threshold: float = 0.05,
     trend_label_mode: str = "semantic",
+    tooltip: str = "",
 ) -> None:
     """Render generic graphs for the given values.
 
@@ -440,16 +443,23 @@ def render_generic_graph(
 
     card_config, fullscreen_config = _build_chart_configs(base_config)
 
+    def _render_title() -> None:
+        with ui.row().classes(CHART_TITLE_ROW_CLASSES):
+            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+            if tooltip:
+                with ui.icon("info").classes(CHART_TOOLTIP_ICON_CLASSES):
+                    ui.tooltip(tooltip)
+
     with ui.dialog().props("maximized") as dialog:
         with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
             with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+                _render_title()
                 ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
             ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+            _render_title()
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
         ui.echart(card_config)
 

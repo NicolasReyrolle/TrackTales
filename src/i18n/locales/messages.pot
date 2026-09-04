@@ -76,6 +76,9 @@ msgstr ""
 msgid "Trends"
 msgstr ""
 
+msgid "Analytics Dashboard"
+msgstr ""
+
 msgid "Running"
 msgstr ""
 
@@ -408,6 +411,27 @@ msgid "Duration by {period}"
 msgstr ""
 
 msgid "Elevation by {period}"
+msgstr ""
+
+msgid "Training load is duration in minutes multiplied by average heart rate."
+msgstr ""
+
+msgid "Count"
+msgstr ""
+
+msgid "Distance"
+msgstr ""
+
+msgid "Calories"
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Elevation"
+msgstr ""
+
+msgid "Training Load"
 msgstr ""
 
 # Health data charts

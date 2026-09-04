@@ -26,21 +26,32 @@ class TestRenderTrendsGraphs:
         workouts_mock.get_calories_by_period.return_value = {"2024-01": 500}
         workouts_mock.get_duration_by_period.return_value = {"2024-01": 120}
         workouts_mock.get_elevation_by_period.return_value = {"2024-01": 50}
+        workouts_mock.get_training_load_by_period.return_value = {"2024-01": 100}
 
         try:
             state.workouts = workouts_mock
             state.selected_activity_type = "Running"
 
-            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
-                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
-                    layout.render_trends_graphs.func()
+            with (
+                patch("i18n.core.get_language", return_value="en"),
+                patch("ui.trends_tab.ui.row", return_value=DummyRow()),
+                patch("ui.trends_tab.ui.label"),
+                patch("ui.trends_tab.render_generic_graph") as render_graph_mock,
+            ):
+                layout.render_trends_graphs.func()
 
-            assert render_graph_mock.call_count == 5
-            render_graph_mock.assert_any_call("Count by month", {"2024-01": 5})
-            render_graph_mock.assert_any_call("Distance by month", {"2024-01": 10}, "km")
-            render_graph_mock.assert_any_call("Calories by month", {"2024-01": 500}, "kcal")
-            render_graph_mock.assert_any_call("Duration by month", {"2024-01": 120}, "h")
-            render_graph_mock.assert_any_call("Elevation by month", {"2024-01": 50}, "m")
+            assert render_graph_mock.call_count == 6
+            render_graph_mock.assert_any_call("Count", {"2024-01": 5})
+            render_graph_mock.assert_any_call("Distance", {"2024-01": 10}, "km")
+            render_graph_mock.assert_any_call("Calories", {"2024-01": 500}, "kcal")
+            render_graph_mock.assert_any_call("Duration", {"2024-01": 120}, "h")
+            render_graph_mock.assert_any_call("Elevation", {"2024-01": 50}, "m")
+            render_graph_mock.assert_any_call(
+                "Training Load",
+                {"2024-01": 100},
+                "bpm·min",
+                tooltip="Training load is duration in minutes multiplied by average heart rate.",
+            )
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "M", activity_type="Running", start_date=None, end_date=None
@@ -56,6 +67,9 @@ class TestRenderTrendsGraphs:
             )
             workouts_mock.get_elevation_by_period.assert_called_once_with(
                 "M", activity_type="Running", unit="m", start_date=None, end_date=None
+            )
+            workouts_mock.get_training_load_by_period.assert_called_once_with(
+                "M", activity_type="Running", start_date=None, end_date=None
             )
         finally:
             state.workouts = original_workouts
@@ -79,9 +93,12 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "W"
 
-            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
-                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
-                    layout.render_trends_graphs.func()
+            with (
+                patch("ui.trends_tab.ui.row", return_value=DummyRow()),
+                patch("ui.trends_tab.ui.label"),
+                patch("ui.trends_tab.render_generic_graph") as render_graph_mock,
+            ):
+                layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "W", activity_type="Running", start_date=None, end_date=None
@@ -91,7 +108,7 @@ class TestRenderTrendsGraphs:
             )
 
             called_labels = [call[0][0] for call in render_graph_mock.call_args_list]
-            assert any("week" in label.lower() for label in called_labels)
+            assert all("week" not in label.lower() for label in called_labels)
         finally:
             state.workouts = original_workouts
             state.selected_activity_type = original_activity
@@ -115,16 +132,19 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "Q"
 
-            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
-                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
-                    layout.render_trends_graphs.func()
+            with (
+                patch("ui.trends_tab.ui.row", return_value=DummyRow()),
+                patch("ui.trends_tab.ui.label"),
+                patch("ui.trends_tab.render_generic_graph") as render_graph_mock,
+            ):
+                layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "Q", activity_type="Running", start_date=None, end_date=None
             )
 
             called_labels = [call[0][0] for call in render_graph_mock.call_args_list]
-            assert any("quarter" in label.lower() for label in called_labels)
+            assert all("quarter" not in label.lower() for label in called_labels)
         finally:
             state.workouts = original_workouts
             state.selected_activity_type = original_activity
@@ -148,16 +168,19 @@ class TestRenderTrendsGraphs:
             state.selected_activity_type = "Running"
             state.trends_period = "Y"
 
-            with patch("ui.trends_tab.ui.row", return_value=DummyRow()):
-                with patch("ui.trends_tab.render_generic_graph") as render_graph_mock:
-                    layout.render_trends_graphs.func()
+            with (
+                patch("ui.trends_tab.ui.row", return_value=DummyRow()),
+                patch("ui.trends_tab.ui.label"),
+                patch("ui.trends_tab.render_generic_graph") as render_graph_mock,
+            ):
+                layout.render_trends_graphs.func()
 
             workouts_mock.get_count_by_period.assert_called_once_with(
                 "Y", activity_type="Running", start_date=None, end_date=None
             )
 
             called_labels = [call[0][0] for call in render_graph_mock.call_args_list]
-            assert any("year" in label.lower() for label in called_labels)
+            assert all("year" not in label.lower() for label in called_labels)
         finally:
             state.workouts = original_workouts
             state.selected_activity_type = original_activity
@@ -197,6 +220,27 @@ class TestRenderGenericGraph:
         assert len(series) == 2
         assert series[0]["type"] == "bar"
         assert series[1]["name"] == "Trend"
+
+    def test_render_generic_graph_shows_explanation_in_tooltip(self) -> None:
+        """Chart explanations should be attached to a visible help icon."""
+        explanation = "Training load explanation"
+        with (
+            patch("ui.charts.ui.dialog", return_value=MagicMock()),
+            patch("ui.charts.ui.card", return_value=DummyRow()),
+            patch("ui.charts.ui.row", return_value=DummyRow()),
+            patch("ui.charts.ui.label"),
+            patch("ui.charts.ui.icon", return_value=DummyRow()) as icon_mock,
+            patch("ui.charts.ui.tooltip") as tooltip_mock,
+            patch("ui.charts.ui.button", return_value=DummyComponent()),
+            patch("ui.charts.ui.echart", return_value=DummyComponent()),
+        ):
+            charts.render_generic_graph(
+                "Training Load", {"2024-01": 100}, "bpm·min", tooltip=explanation
+            )
+
+        assert icon_mock.call_count == 2
+        assert tooltip_mock.call_count == 2
+        tooltip_mock.assert_any_call(explanation)
 
     def test_render_generic_graph_can_use_directional_trend_labels(self) -> None:
         """Directional chart labels should request increasing/decreasing wording."""

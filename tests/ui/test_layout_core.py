@@ -211,19 +211,20 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
         state.selected_main_tab = original_tab
 
 
-def test_render_trends_tab_only_renders_graphs() -> None:
-    """Test that render_trends_tab delegates to recovery card and trend graphs only."""
+def test_render_trends_tab_renders_dashboard_heading_and_content() -> None:
+    """Test that render_trends_tab renders the dashboard heading and content."""
 
-    with patch("ui.trends_tab.render_trends_graphs") as render_graphs_mock:
-        with patch("ui.trends_tab.render_recovery_recommendation") as render_recovery_mock:
-            with patch("ui.layout.ui.label") as label_mock:
-                with patch("ui.layout.ui.radio") as radio_mock:
-                    layout.render_trends_tab()
+    with patch("i18n.core.get_language", return_value="en"):
+        with patch("ui.trends_tab.render_trends_graphs") as render_graphs_mock:
+            with patch("ui.trends_tab.render_recovery_recommendation") as render_recovery_mock:
+                with patch("ui.trends_tab.ui.label") as label_mock:
+                    with patch("ui.trends_tab.ui.radio") as radio_mock:
+                        layout.render_trends_tab()
 
-    # Both graph and recovery functions should be called; no direct label or radio
+    # The dashboard heading and both content sections should be rendered.
     render_graphs_mock.assert_called_once()
     render_recovery_mock.assert_called_once()
-    label_mock.assert_not_called()
+    label_mock.assert_called_once_with("Analytics Dashboard")
     radio_mock.assert_not_called()
 
 

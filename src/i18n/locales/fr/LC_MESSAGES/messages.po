@@ -81,6 +81,9 @@ msgstr "Vue d'ensemble"
 msgid "Trends"
 msgstr "Tendances"
 
+msgid "Analytics Dashboard"
+msgstr "Tableau de bord analytique"
+
 msgid "Running"
 msgstr "Course à pied"
 
@@ -414,6 +417,27 @@ msgstr "Durée par {period}"
 
 msgid "Elevation by {period}"
 msgstr "Dénivelé par {period}"
+
+msgid "Training load is duration in minutes multiplied by average heart rate."
+msgstr "La charge d'entraînement correspond à la durée en minutes multipliée par la fréquence cardiaque moyenne."
+
+msgid "Count"
+msgstr "Nombre"
+
+msgid "Distance"
+msgstr "Distance"
+
+msgid "Calories"
+msgstr "Calories"
+
+msgid "Duration"
+msgstr "Durée"
+
+msgid "Elevation"
+msgstr "Dénivelé"
+
+msgid "Training Load"
+msgstr "Charge d'entraînement"
 
 # Health data charts
 msgid "Resting HR frequency over time"

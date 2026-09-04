@@ -2,6 +2,11 @@
 
 Utility scripts and tools for development, profiling, and testing.
 
+The application analytics covered by the main project README include period trends,
+seasonal patterns, training load, recovery recommendations, and Markdown summary
+reports. The profiling tool below is focused specifically on the best-segments
+calculation.
+
 ## Profile Best Segments
 
 Performance profiling tool for the `get_best_segments()` method using [pyinstrument](https://github.com/jorenham/pyinstrument).

@@ -6,6 +6,7 @@ from app_state import get_distance_unit, get_elevation_unit, state
 from i18n import t
 from ui.charts import render_generic_graph
 from ui.css import (
+    LABEL_MUTED_CLASSES,
     LABEL_SECTION_CLASSES,
     RECOVERY_CARD_CLASSES,
     RECOVERY_RECOMMENDATION_CLASSES,

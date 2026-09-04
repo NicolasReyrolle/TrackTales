@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -13,6 +13,16 @@ class WorkoutManagerExportMixin:
     workouts: pd.DataFrame
     DATE_FORMAT: str
     DEFAULT_EXCLUDED_COLUMNS: set[str]
+
+    if TYPE_CHECKING:
+
+        def get_recovery_recommendation(
+            self,
+            activity_type: str = "All",
+            load_metric: str = "duration",
+            start_date: datetime | pd.Timestamp | None = None,
+            end_date: datetime | pd.Timestamp | None = None,
+        ) -> str: ...
 
     def _filter_workouts(
         self,
@@ -33,6 +43,59 @@ class WorkoutManagerExportMixin:
         end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total distance in the specified unit."""
+        raise NotImplementedError
+
+    def get_total_duration(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> int:
+        raise NotImplementedError
+
+    def get_total_calories(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> int:
+        raise NotImplementedError
+
+    def get_distance_by_period(
+        self,
+        period: str,
+        activity_type: str = "All",
+        unit: str = "km",
+        fill_missing_periods: bool = True,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
+        raise NotImplementedError
+
+    def get_trend_analysis(
+        self,
+        data_points: list[float],
+        is_higher_better: bool = True,
+        threshold: float = 0.05,
+        label_mode: str = "semantic",
+        x_values: list[int | float] | None = None,
+    ) -> str:
+        raise NotImplementedError
+
+    def get_count_by_day_of_week(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, float]:
+        raise NotImplementedError
+
+    def get_training_load(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> int:
         raise NotImplementedError
 
     def get_statistics(self) -> str:
@@ -114,6 +177,88 @@ class WorkoutManagerExportMixin:
 
         result: str = filtered_workouts[cols_to_keep].to_csv(index=False)
         return result
+
+    def export_to_markdown(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+        distance_unit: str = "km",
+    ) -> str:
+        """Export a human-readable analytics summary as Markdown."""
+        filtered_workouts = self._filter_workouts(activity_type, start_date, end_date)
+        count = len(filtered_workouts)
+        distance = self.get_total_distance(
+            activity_type=activity_type,
+            unit=distance_unit,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        duration = self.get_total_duration(
+            activity_type=activity_type,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        calories = self.get_total_calories(
+            activity_type=activity_type,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        monthly_distance = self.get_distance_by_period(
+            "M",
+            activity_type=activity_type,
+            unit=distance_unit,
+            start_date=start_date,
+            end_date=end_date,
+            fill_missing_periods=False,
+        )
+        trend = self.get_trend_analysis(list(monthly_distance.values()), label_mode="directional")
+        seasonal_counts = self.get_count_by_day_of_week(
+            activity_type=activity_type,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        busiest_day = (
+            max(seasonal_counts, key=lambda day: seasonal_counts[day]) if seasonal_counts else "N/A"
+        )
+        activity_label = activity_type.replace("|", "\\|")
+        date_label = (
+            f"{start_date:%Y-%m-%d} to {end_date:%Y-%m-%d}"
+            if start_date is not None and end_date is not None
+            else "All available dates"
+        )
+        training_load = self.get_training_load(activity_type, start_date, end_date)
+        recovery = self.get_recovery_recommendation(
+            activity_type,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        return "\n".join(
+            [
+                "# TrackTales Analytics Report",
+                "",
+                f"- **Activity:** {activity_label}",
+                f"- **Date range:** {date_label}",
+                "",
+                "## Summary",
+                "",
+                "| Metric | Value |",
+                "| --- | ---: |",
+                f"| Workouts | {count} |",
+                f"| Distance | {distance} {distance_unit} |",
+                f"| Duration | {duration}h |",
+                f"| Calories | {calories} kcal |",
+                "",
+                "## Insights",
+                "",
+                f"- **Distance trend:** {trend}",
+                f"- **Busiest workout day:** {busiest_day}",
+                f"- **Training load:** {training_load} bpm·min",
+                f"- **Recovery recommendation:** {recovery}",
+                "",
+            ]
+        )
 
     def get_date_bounds(self) -> tuple[str, str]:
         """Return the minimum and maximum start dates as strings in YYYY/MM/DD."""

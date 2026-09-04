@@ -26,7 +26,8 @@ If you are contributing or maintaining the project, see [MAINTAINERS.md](MAINTAI
 - **Route Parts Handling**: Workouts with multiple GPX route files are preserved as independent route parts for segment analysis and also exposed as a merged compatibility route.
 - **Multilingual UI (EN/FR)**: gettext-based translations for labels, tabs, date picker locale labels, notifications, and loading/progress status messages.
 - **Unit System Preference**: Switch between Metric (km, kg, m) and Imperial (mi, lbs, ft) from the preferences menu; all stats, charts, and tables update accordingly.
-- **Data Export**: Convert your data into clean **CSV** or **JSON** formats for further analysis in Excel, Python, or other tools.
+- **Advanced Analytics Dashboard**: The Trends tab surfaces period-based performance trends, seasonal workout patterns, training load, and ACWR-based recovery recommendations.
+- **Data Export**: Convert your data into clean **CSV** or **JSON** formats, or download a filtered **Markdown analytics report** with summary metrics and actionable insights.
 - All processing happens locally on your machine.
 - **Modern UI**: Dark/Light mode support with a responsive layout.
 
@@ -76,14 +77,14 @@ python -m nicegui src.tracktales
 1. Click **Browse** to select your Apple Health `export.zip`.
 1. Click **Load** to parse the data.
 1. View the statistics in the **Overview** tab.
-1. Explore your data in the **Activities** tab (pie/rose charts grouped by activity type), **Trends** tab (weekly/monthly/quarterly/yearly bar charts with moving average trend lines), **Health Data** tab (workout heat map plus line charts for resting heart rate, body mass, VO2 max, CP, and W'), and **Running** tab (distance/elevation pace analysis with best segments).
+1. Explore your data in the **Activities** tab (pie/rose charts grouped by activity type), **Trends** tab (period-based charts, seasonal patterns, training load, and recovery recommendations), **Health Data** tab (workout heat map plus line charts for resting heart rate, body mass, VO2 max, CP, and W'), and **Running** tab (distance/elevation pace analysis with best segments).
 1. In the **Activities** table, click the **Details** action to open the workout modal (Overview, Activity, Route map, Charts, Intervals, and Comparisons).
 1. Use the **Activity filter** in the left drawer to focus on specific workout types.
 1. Use the **Date range picker** to analyze specific time periods.
 1. Use the **Aggregate by** selector in the left drawer to change the aggregation period.
 1. Use the **Preferences menu** (tune icon in the header) to switch language (EN/FR) or unit system (Metric/Imperial).
 1. When using the packaged Windows executable, use **Preferences → Quit TrackTales** to stop the app gracefully before closing the browser window/tab.
-1. Export your data using the **Export data** menu to download CSV or JSON files.
+1. Export your data using the **Export data** menu to download CSV, JSON, or a Markdown analytics report. The selected activity, date range, and unit system are applied to the report.
 
 > **Tip**: You can set a permanent storage secret for sessions by using an environment variable:
 > `set STORAGE_SECRET=your_custom_secret` (Windows)

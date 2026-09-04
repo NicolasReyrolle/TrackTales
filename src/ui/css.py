@@ -154,6 +154,8 @@ BUTTON_DENSE_PROPS = "flat round dense"
 #: Small help icon used to expose chart explanations without adding header text.
 CHART_TOOLTIP_ICON_CLASSES = "text-gray-500 cursor-help"
 
+#: Row that groups a chart title label and its optional help icon.
+CHART_TITLE_ROW_CLASSES = "items-center gap-1"
 #: Dense flat table props for compact read-only tables (e.g. the splits table in the modal).
 TABLE_DENSE_FLAT_PROPS = "dense flat"
 

@@ -242,19 +242,6 @@ class TestRenderGenericGraph:
         assert tooltip_mock.call_count == 2
         tooltip_mock.assert_any_call(explanation)
 
-    def test_render_zone_distribution_chart_uses_shared_rose_chart(self) -> None:
-        """Training-zone charts should use the standard fullscreen/card rendering."""
-        values = {"Zone 1": 10, "Zone 2": 20}
-
-        with patch("ui.charts.render_pie_rose_graph") as render_pie_mock:
-            charts.render_zone_distribution_chart("Training Zones", values)
-
-        render_pie_mock.assert_called_once_with(
-            "Training Zones",
-            values,
-            fullscreen_values=None,
-        )
-
     def test_render_generic_graph_can_use_directional_trend_labels(self) -> None:
         """Directional chart labels should request increasing/decreasing wording."""
         values = {"2024-01": 70, "2024-02": 71}

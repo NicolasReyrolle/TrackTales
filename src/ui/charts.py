@@ -39,7 +39,6 @@ __all__ = [
     "render_box_plot_graph",
     "render_heat_map_graph",
     "render_pie_rose_graph",
-    "render_zone_distribution_chart",
     "render_scatter_graph",
     "stat_card",
 ]
@@ -277,19 +276,6 @@ def render_pie_rose_graph(
             ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
             ui.button(icon="fullscreen", on_click=dialog.open).props(BUTTON_DENSE_PROPS)
         ui.echart(card_chart_config)
-
-
-def render_zone_distribution_chart(
-    label: str,
-    values: Mapping[str, float | int],
-    fullscreen_values: Mapping[str, float | int] | None = None,
-) -> None:
-    """Render time spent in training zones using the shared rose chart."""
-    render_pie_rose_graph(
-        label,
-        values,
-        fullscreen_values=fullscreen_values,
-    )
 
 
 def render_generic_graph(

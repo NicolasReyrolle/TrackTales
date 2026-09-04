@@ -43,6 +43,7 @@ More detailed, path-scoped rules live under `.github/instructions/` and are auto
 - [parsing-security.instructions.md](instructions/parsing-security.instructions.md) - `src/logic/**` (XML parsing, security, numeric handling)
 - [ui-styling.instructions.md](instructions/ui-styling.instructions.md) - `src/ui/**` (CSS/Tailwind/Quasar conventions)
 - [testing.instructions.md](instructions/testing.instructions.md) - `tests/**` (fixtures, mocking, TDD, float comparisons)
+- [translating.instructions.md](instructions/translating.instructions.md) - `src/i18n/**` and any new/changed translatable strings (gettext catalog workflow)
 - [commit-messages.instructions.md](instructions/commit-messages.instructions.md) - Conventional Commits policy
 
 ## Coding workflow

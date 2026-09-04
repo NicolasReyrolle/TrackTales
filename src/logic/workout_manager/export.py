@@ -2,7 +2,7 @@
 
 import json
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -13,6 +13,16 @@ class WorkoutManagerExportMixin:
     workouts: pd.DataFrame
     DATE_FORMAT: str
     DEFAULT_EXCLUDED_COLUMNS: set[str]
+
+    if TYPE_CHECKING:
+
+        def get_recovery_recommendation(
+            self,
+            activity_type: str = "All",
+            load_metric: str = "duration",
+            start_date: datetime | pd.Timestamp | None = None,
+            end_date: datetime | pd.Timestamp | None = None,
+        ) -> str: ...
 
     def _filter_workouts(
         self,
@@ -33,6 +43,59 @@ class WorkoutManagerExportMixin:
         end_date: datetime | pd.Timestamp | None = None,
     ) -> int:
         """Return the total distance in the specified unit."""
+        raise NotImplementedError
+
+    def get_total_duration(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> int:
+        raise NotImplementedError
+
+    def get_total_calories(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> int:
+        raise NotImplementedError
+
+    def get_distance_by_period(
+        self,
+        period: str,
+        activity_type: str = "All",
+        unit: str = "km",
+        fill_missing_periods: bool = True,
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, int]:
+        raise NotImplementedError
+
+    def get_trend_analysis(
+        self,
+        data_points: list[float],
+        is_higher_better: bool = True,
+        threshold: float = 0.05,
+        label_mode: str = "semantic",
+        x_values: list[int | float] | None = None,
+    ) -> str:
+        raise NotImplementedError
+
+    def get_count_by_day_of_week(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> dict[str, float]:
+        raise NotImplementedError
+
+    def get_training_load(
+        self,
+        activity_type: str = "All",
+        start_date: datetime | pd.Timestamp | None = None,
+        end_date: datetime | pd.Timestamp | None = None,
+    ) -> int:
         raise NotImplementedError
 
     def get_statistics(self) -> str:
@@ -155,7 +218,9 @@ class WorkoutManagerExportMixin:
             start_date=start_date,
             end_date=end_date,
         )
-        busiest_day = max(seasonal_counts, key=seasonal_counts.get) if seasonal_counts else "N/A"
+        busiest_day = (
+            max(seasonal_counts, key=lambda day: seasonal_counts[day]) if seasonal_counts else "N/A"
+        )
         activity_label = activity_type.replace("|", "\\|")
         date_label = (
             f"{start_date:%Y-%m-%d} to {end_date:%Y-%m-%d}"

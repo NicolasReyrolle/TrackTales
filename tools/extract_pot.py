@@ -52,7 +52,7 @@ def load_project_metadata() -> dict[str, str]:
 
 
 def clean_pot_header(pot_path: Path) -> None:
-    """Remove FIRST AUTHOR placeholder and fuzzy flag from the POT header using str.replace."""
+    """Remove placeholder and fuzzy/obsolete markers from the generated POT header."""
     if not pot_path.exists():
         return
 

@@ -26,10 +26,10 @@ pip install -r requirements.txt
 
 When you add or change calls like `t("...")` or `translate("...", language=...)` in Python code:
 
-1. Rebuild the POT template from source:
+1. Rebuild the POT template from source using the helper script:
 
 ```bash
-pybabel extract -k t -k translate -o src/i18n/locales/messages.pot src
+python tools/extract_pot.py
 ```
 
 Notes:
@@ -40,7 +40,7 @@ Notes:
 1. Update existing language files from the new template (example for French):
 
 ```bash
-pybabel update -i src/i18n/locales/messages.pot -d src/i18n/locales -D messages -l fr
+pybabel update --ignore-obsolete -i src/i18n/locales/messages.pot -d src/i18n/locales -D messages -l fr
 ```
 
 1. Open `src/i18n/locales/fr/LC_MESSAGES/messages.po` and translate any new/changed entries.

@@ -112,6 +112,8 @@ def _format_segment_entry(
     workout_ts: float | None = (
         float(start_date.timestamp()) if isinstance(start_date, pd.Timestamp) else None
     )
+    msgid = str(confidence_cfg["tooltip_key"])
+
     return {
         "distance": format_distance_label(
             distance_m,
@@ -125,7 +127,7 @@ def _format_segment_entry(
         "average_speed": _format_speed(distance_m, duration_s, distance_unit),
         "avg_power": avg_power_str,
         "avg_power_confidence_icon": str(confidence_cfg["icon"]),
-        "avg_power_confidence_tooltip": t(confidence_cfg["tooltip_key"]),
+        "avg_power_confidence_tooltip": t(msgid),
         "start_date": format_date_label(start_date, language_code),
         "workout_ts": workout_ts,
     }

@@ -44,7 +44,7 @@ def load_project_metadata() -> dict[str, str]:
         version = project_data.get("version", "dev")
 
     return {
-        "project": project_data.get("name", "").title(),
+        "project": project_data.get("name", ""),
         "version": version,
         "author": first_author.get("name", ""),
         "email": first_author.get("email", ""),

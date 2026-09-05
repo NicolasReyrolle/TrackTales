@@ -1,6 +1,6 @@
 ---
 description: "Use when adding, changing, or removing translatable strings (t(...) / translate(...)) in src/, or touching src/i18n/**. Covers the gettext catalog workflow documented in src/i18n/locales/README.md."
-applyTo: "src/i18n/**"
+applyTo: "src/**"
 ---
 
 # Translation Workflow Policy

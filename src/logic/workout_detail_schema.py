@@ -67,8 +67,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from i18n import t
-
 
 class FieldType(StrEnum):
     """Data type for rendering and processing a field value.
@@ -126,6 +124,11 @@ class FieldDefinition:
     Overview tab rather than the Activity tab, or for fields not yet wired to the UI."""
 
 
+def n_(message: str) -> str:
+    """Dummy marker for Babel extraction. Returns the raw string."""
+    return message
+
+
 # ---------------------------------------------------------------------------
 # Display-value mappings for integer-coded metadata fields
 # ---------------------------------------------------------------------------
@@ -134,8 +137,8 @@ class FieldDefinition:
 #: Source: ``HKWorkoutSwimmingLocationType`` enum in Apple HealthKit.
 #: 1 = pool (indoors), 2 = open water (outdoors).
 SWIMMING_LOCATION_TYPES: dict[int, str] = {
-    1: t("Pool"),
-    2: t("Open Water"),
+    1: n_("Pool"),
+    2: n_("Open Water"),
 }
 
 #: Maps the integer codes stored in ``SwimmingStrokeStyle`` (per-lap metadata) to labels.
@@ -143,13 +146,13 @@ SWIMMING_LOCATION_TYPES: dict[int, str] = {
 #: 0 = unknown, 1 = mixed, 2 = freestyle, 3 = backstroke,
 #: 4 = breaststroke, 5 = butterfly, 6 = kickboard.
 SWIMMING_STROKE_STYLES: dict[int, str] = {
-    0: t("Unknown"),
-    1: t("Mixed"),
-    2: t("Freestyle"),
-    3: t("Backstroke"),
-    4: t("Breaststroke"),
-    5: t("Butterfly"),
-    6: t("Kickboard"),
+    0: n_("Unknown"),
+    1: n_("Mixed"),
+    2: n_("Freestyle"),
+    3: n_("Backstroke"),
+    4: n_("Breaststroke"),
+    5: n_("Butterfly"),
+    6: n_("Kickboard"),
 }
 
 #: Collects all enum display-value mappings keyed by ``field_name`` for easy lookup.

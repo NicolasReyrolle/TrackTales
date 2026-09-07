@@ -30,6 +30,12 @@ from ui.css import (
 )
 from ui.helpers import calculate_moving_average
 
+
+def n_(message: str) -> str:
+    """Dummy marker for Babel extraction. Returns the raw string."""
+    return message
+
+
 # Re-export constants that other modules import from this module for compatibility.
 __all__ = [
     "BUTTON_FLAT_ROUND_PROPS",
@@ -47,12 +53,12 @@ _SAVE_AS_IMAGE = "Save as Image"
 _RESTORE = "Restore"
 _JS_FORMATTER_KEY = ":formatter"
 _TREND_TITLE_SYMBOLS = {
-    t("Improving"): "↗",
-    t("Declining"): "↘",
-    t("Increasing"): "↗",
-    t("Decreasing"): "↘",
-    t("Stable"): "→",
-    t("Insufficient data"): "?",
+    n_("Improving"): "↗",
+    n_("Declining"): "↘",
+    n_("Increasing"): "↗",
+    n_("Decreasing"): "↘",
+    n_("Stable"): "→",
+    n_("Insufficient data"): "?",
 }
 
 

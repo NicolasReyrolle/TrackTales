@@ -47,12 +47,12 @@ _SAVE_AS_IMAGE = "Save as Image"
 _RESTORE = "Restore"
 _JS_FORMATTER_KEY = ":formatter"
 _TREND_TITLE_SYMBOLS = {
-    "Improving": "↗",
-    "Declining": "↘",
-    "Increasing": "↗",
-    "Decreasing": "↘",
-    "Stable": "→",
-    "Insufficient data": "?",
+    t("Improving"): "↗",
+    t("Declining"): "↘",
+    t("Increasing"): "↗",
+    t("Decreasing"): "↘",
+    t("Stable"): "→",
+    t("Insufficient data"): "?",
 }
 
 

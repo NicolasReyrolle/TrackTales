@@ -1,4 +1,4 @@
-# Translations template for tracktales.
+# English translations for tracktales.
 # Copyright (C) 2026 Nicolas Reyrolle
 # This file is distributed under the same license as the tracktales project.
 #
@@ -7,797 +7,807 @@ msgstr ""
 "Project-Id-Version: tracktales v2026.8.1\n"
 "Report-Msgid-Bugs-To: 405928+NicolasReyrolle@users.noreply.github.com\n"
 "POT-Creation-Date: 2026-09-07 17:07+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2026-09-05 16:10+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
 msgid "Active Recovery"
-msgstr ""
+msgstr "Active Recovery"
 
 msgid "Activities"
-msgstr ""
+msgstr "Activities"
 
 msgid "Activity"
-msgstr ""
+msgstr "Activity"
 
 msgid "Activity Type"
-msgstr ""
+msgstr "Activity Type"
 
 msgid "Activity heat map (day/time)"
-msgstr ""
+msgstr "Activity heat map (day/time)"
 
 msgid "Aggregate by:"
-msgstr ""
+msgstr "Aggregate by:"
 
 msgid "All"
-msgstr ""
+msgstr "All"
 
 msgid "Altitude"
-msgstr ""
+msgstr "Altitude"
 
 msgid "AmericanFootball"
-msgstr ""
+msgstr "American Football"
 
 msgid "Analytics Dashboard"
-msgstr ""
+msgstr "Analytics Dashboard"
 
 msgid "Apple Health export file"
-msgstr ""
+msgstr "Apple Health export file"
 
 msgid "Archery"
-msgstr ""
+msgstr "Archery"
 
 msgid "AustralianFootball"
-msgstr ""
+msgstr "Australian Football"
 
 msgid "Average Speed"
-msgstr ""
+msgstr "Average Speed"
 
 msgid "Avg Cadence"
-msgstr ""
+msgstr "Avg Cadence"
 
 msgid "Avg Ground Contact Time"
-msgstr ""
+msgstr "Avg Ground Contact Time"
 
 msgid "Avg HR"
-msgstr ""
+msgstr "Avg HR"
 
 msgid "Avg Pace"
-msgstr ""
+msgstr "Avg Pace"
 
 msgid "Avg Power"
-msgstr ""
+msgstr "Avg Power"
 
 msgid "Avg Speed"
-msgstr ""
+msgstr "Avg Speed"
 
 msgid "Avg Step Length"
-msgstr ""
+msgstr "Avg Step Length"
 
 msgid "Avg Stride Length"
-msgstr ""
+msgstr "Avg Stride Length"
 
 msgid "Avg Vertical Oscillation"
-msgstr ""
+msgstr "Avg Vertical Oscillation"
 
 msgid "Backstroke"
-msgstr ""
+msgstr "Backstroke"
 
 msgid "Badminton"
-msgstr ""
+msgstr "Badminton"
 
 msgid "Barre"
-msgstr ""
+msgstr "Barre"
 
 msgid "Baseball"
-msgstr ""
+msgstr "Baseball"
 
 msgid "Basketball"
-msgstr ""
+msgstr "Basketball"
 
 msgid "Best Segments"
-msgstr ""
+msgstr "Best Segments"
 
 msgid "Best segments for standard running distances"
-msgstr ""
+msgstr "Best segments for standard running distances"
 
 msgid "Body Mass over time"
-msgstr ""
+msgstr "Body Mass over time"
 
 msgid "Bowling"
-msgstr ""
+msgstr "Bowling"
 
 msgid "Boxing"
-msgstr ""
+msgstr "Boxing"
 
 msgid "Breaststroke"
-msgstr ""
+msgstr "Breaststroke"
 
 msgid "Browse"
-msgstr ""
+msgstr "Browse"
 
 msgid "Build"
-msgstr ""
+msgstr "Build"
 
 msgid "Building workout index..."
-msgstr ""
+msgstr "Building workout index..."
 
 msgid "Butterfly"
-msgstr ""
+msgstr "Butterfly"
 
 msgid "Calories"
-msgstr ""
+msgstr "Calories"
 
 msgid "Calories by activity"
-msgstr ""
+msgstr "Calories by activity"
 
 msgid "CardioDance"
-msgstr ""
+msgstr "CardioDance"
 
 msgid "Charts"
-msgstr ""
+msgstr "Charts"
 
 msgid "Climbing"
-msgstr ""
+msgstr "Climbing"
 
 msgid "Comparisons"
-msgstr ""
+msgstr "Comparisons"
 
 msgid "Cooldown"
-msgstr ""
+msgstr "Cooldown"
 
 msgid "CoreTraining"
-msgstr ""
+msgstr "Core Training"
 
 msgid "Count"
-msgstr ""
+msgstr "Count"
 
 msgid "Count by activity"
-msgstr ""
+msgstr "Count by activity"
 
 msgid "Cricket"
-msgstr ""
+msgstr "Cricket"
 
 msgid "Critical Power (CP) over time"
-msgstr ""
+msgstr "Critical Power (CP) over time"
 
 msgid "CrossCountrySkiing"
-msgstr ""
+msgstr "Cross Country Skiing"
 
 msgid "CrossTraining"
-msgstr ""
+msgstr "Cross Training"
 
 msgid "Curling"
-msgstr ""
+msgstr "Curling"
 
 msgid "Cycling"
-msgstr ""
+msgstr "Cycling"
 
 msgid "Dance"
-msgstr ""
+msgstr "Dance"
 
 msgid "DanceInspiredTraining"
-msgstr ""
+msgstr "Dance Inspired Training"
 
 msgid "Date"
-msgstr ""
+msgstr "Date"
 
 msgid "Date range"
-msgstr ""
+msgstr "Date range"
 
 msgid "Day of week"
-msgstr ""
+msgstr "Day of week"
 
+#, fuzzy
 msgid "Declining"
-msgstr ""
+msgstr "Climbing"
 
+#, fuzzy
 msgid "Decreasing"
-msgstr ""
+msgstr "Core Training"
 
 msgid "Details"
-msgstr ""
+msgstr "Details"
 
 msgid "Diff"
-msgstr ""
+msgstr "Diff"
 
 msgid "DiscSports"
-msgstr ""
+msgstr "Disc Sports"
 
 msgid "Dist"
-msgstr ""
+msgstr "Dist"
 
 msgid "Distance"
-msgstr ""
+msgstr "Distance"
 
 msgid "Distance by activity"
-msgstr ""
+msgstr "Distance by activity"
 
 msgid "Distance vs Pace"
-msgstr ""
+msgstr "Distance vs Pace"
 
 #, python-brace-format
 msgid "Distance: {lo} – {hi} {unit}"
-msgstr ""
+msgstr "Distance: {lo} – {hi} {unit}"
 
 msgid "DownhillSkiing"
-msgstr ""
+msgstr "Downhill Skiing"
 
 msgid "Duration"
-msgstr ""
+msgstr "Duration"
 
 msgid "Duration by activity"
-msgstr ""
+msgstr "Duration by activity"
 
 #, python-brace-format
 msgid "Duration: {lo} – {hi} min"
-msgstr ""
+msgstr "Duration: {lo} – {hi} min"
 
 msgid "Elev"
-msgstr ""
+msgstr "Elev"
 
 msgid "Elevation"
-msgstr ""
+msgstr "Elevation"
 
 msgid "Elevation Change"
-msgstr ""
+msgstr "Elevation Change"
 
 msgid "Elevation Gain"
-msgstr ""
+msgstr "Elevation Gain"
 
 msgid "Elevation by activity"
-msgstr ""
+msgstr "Elevation by activity"
 
 msgid "Elevation vs Pace"
-msgstr ""
+msgstr "Elevation vs Pace"
 
 msgid "Elliptical"
-msgstr ""
+msgstr "Elliptical"
 
 msgid "End"
-msgstr ""
+msgstr "End"
 
 msgid "EquestrianSports"
-msgstr ""
+msgstr "Equestrian Sports"
 
 #, python-brace-format
 msgid "Error parsing file: {error}"
-msgstr ""
+msgstr "Error parsing file: {error}"
 
 msgid "Estimated from overlapping power intervals"
-msgstr ""
+msgstr "Estimated from overlapping power intervals"
 
 msgid "Export data"
-msgstr ""
+msgstr "Export data"
 
 msgid "Fencing"
-msgstr ""
+msgstr "Fencing"
 
 msgid "Fewer workouts"
-msgstr ""
+msgstr "Fewer workouts"
 
 msgid "File parsed successfully."
-msgstr ""
+msgstr "File parsed successfully."
 
 msgid "Fishing"
-msgstr ""
+msgstr "Fishing"
 
 msgid "FitnessGaming"
-msgstr ""
+msgstr "Fitness Gaming"
 
 msgid "Flexibility"
-msgstr ""
+msgstr "Flexibility"
 
 msgid "Freestyle"
-msgstr ""
+msgstr "Freestyle"
 
 msgid "Fri"
-msgstr ""
+msgstr "Fri"
 
 msgid "Friday"
-msgstr ""
+msgstr "Friday"
 
 msgid "Functional Threshold Power"
-msgstr ""
+msgstr "Functional Threshold Power"
 
 msgid "FunctionalStrengthTraining"
-msgstr ""
+msgstr "Functional Strength Training"
 
 msgid "Golf"
-msgstr ""
+msgstr "Golf"
 
 msgid "Gymnastics"
-msgstr ""
+msgstr "Gymnastics"
 
 msgid "HR Max (Active)"
-msgstr ""
+msgstr "HR Max (Active)"
 
 msgid "Half-marathon"
-msgstr ""
+msgstr "Half-marathon"
 
 msgid "HandCycling"
-msgstr ""
+msgstr "Hand Cycling"
 
 msgid "Handball"
-msgstr ""
+msgstr "Handball"
 
 msgid "Health Data"
-msgstr ""
+msgstr "Health Data"
 
 msgid "Heart Rate"
-msgstr ""
+msgstr "Heart Rate"
 
 msgid "HighIntensityIntervalTraining"
-msgstr ""
+msgstr "High Intensity Interval Training"
 
 msgid "Hiking"
-msgstr ""
+msgstr "Hiking"
 
 msgid "Hockey"
-msgstr ""
+msgstr "Hockey"
 
 msgid "Hour of day"
-msgstr ""
+msgstr "Hour of day"
 
 msgid "Humidity"
-msgstr ""
+msgstr "Humidity"
 
 msgid "Hunting"
-msgstr ""
+msgstr "Hunting"
 
 msgid "Imperial"
-msgstr ""
+msgstr "Imperial"
 
+#, fuzzy
 msgid "Improving"
-msgstr ""
+msgstr "Rowing"
 
+#, fuzzy
 msgid "Increasing"
-msgstr ""
+msgstr "Core Training"
 
 msgid "Initializing..."
-msgstr ""
+msgstr "Initializing..."
 
 msgid "Insufficient data"
-msgstr ""
+msgstr "Insufficient data"
 
 msgid "Intervals"
-msgstr ""
+msgstr "Intervals"
 
 msgid "JumpRope"
-msgstr ""
+msgstr "Jump Rope"
 
 msgid "Kickboard"
-msgstr ""
+msgstr "Kickboard"
 
 msgid "Kickboxing"
-msgstr ""
+msgstr "Kickboxing"
 
 msgid "Lacrosse"
-msgstr ""
+msgstr "Lacrosse"
 
 msgid "Language"
-msgstr ""
+msgstr "Language"
 
 msgid "Lap Length"
-msgstr ""
+msgstr "Lap Length"
 
 msgid "Load"
-msgstr ""
+msgstr "Load"
 
 msgid "Load a file to see workout details."
-msgstr ""
+msgstr "Load a file to see workout details."
 
 msgid "Loading Critical Power data..."
-msgstr ""
+msgstr "Loading Critical Power data..."
 
 msgid "Loading best segments..."
-msgstr ""
+msgstr "Loading best segments..."
 
 msgid "Loading health data..."
-msgstr ""
+msgstr "Loading health data..."
 
 msgid "Location"
-msgstr ""
+msgstr "Location"
 
 msgid "Longest Cycling"
-msgstr ""
+msgstr "Longest Cycling"
 
 msgid "Longest Duration Workout"
-msgstr ""
+msgstr "Longest Duration Workout"
 
 msgid "Longest Run"
-msgstr ""
+msgstr "Longest Run"
 
 msgid "Longest Swim"
-msgstr ""
+msgstr "Longest Swim"
 
 msgid "Longest Walk/Hike"
-msgstr ""
+msgstr "Longest Walk/Hike"
 
 msgid "Maintain"
-msgstr ""
+msgstr "Maintain"
 
 msgid "Marathon"
-msgstr ""
+msgstr "Marathon"
 
 msgid "MartialArts"
-msgstr ""
+msgstr "Martial Arts"
 
 msgid "Measured from segment samples"
-msgstr ""
+msgstr "Measured from segment samples"
 
 msgid "Metric"
-msgstr ""
+msgstr "Metric"
 
 msgid "MindAndBody"
-msgstr ""
+msgstr "Mind And Body"
 
 msgid "Mixed"
-msgstr ""
+msgstr "Mixed"
 
 msgid "MixedCardio"
-msgstr ""
+msgstr "MixedCardio"
 
 msgid "MixedMetabolicCardioTraining"
-msgstr ""
+msgstr "Mixed Metabolic Cardio Training"
 
 msgid "Mon"
-msgstr ""
+msgstr "Mon"
 
 msgid "Monday"
-msgstr ""
+msgstr "Monday"
 
 msgid "Month"
-msgstr ""
+msgstr "Month"
 
 msgid "More workouts"
-msgstr ""
+msgstr "More workouts"
 
 msgid "Most Calories Workout"
-msgstr ""
+msgstr "Most Calories Workout"
 
 msgid "Most Elevation (Run)"
-msgstr ""
+msgstr "Most Elevation (Run)"
 
 msgid "Most Elevation (Walk/Hike)"
-msgstr ""
+msgstr "Most Elevation (Walk/Hike)"
 
 msgid "No activity-specific data available."
-msgstr ""
+msgstr "No activity-specific data available."
 
 msgid "No data"
-msgstr ""
+msgstr "No data"
 
 msgid "No file selected"
-msgstr ""
+msgstr "No file selected"
 
 msgid "No heart rate data available."
-msgstr ""
+msgstr "No heart rate data available."
 
 msgid "No lap data available."
-msgstr ""
+msgstr "No lap data available."
 
 msgid "No matching power data"
-msgstr ""
+msgstr "No matching power data"
 
 msgid "No similar routes found."
-msgstr ""
+msgstr "No similar routes found."
 
 msgid "Non-physical W'"
-msgstr ""
+msgstr "Non-physical W'"
 
 msgid "Open Water"
-msgstr ""
+msgstr "Open Water"
 
 msgid "Open this tab to load best segments."
-msgstr ""
+msgstr "Open this tab to load best segments."
 
 msgid "Open this tab to load health data."
-msgstr ""
+msgstr "Open this tab to load health data."
 
 msgid "Other"
-msgstr ""
+msgstr "Other"
 
 msgid "Others"
-msgstr ""
+msgstr "Others"
 
 msgid "Overview"
-msgstr ""
+msgstr "Overview"
 
 msgid "Pace"
-msgstr ""
+msgstr "Pace"
 
 msgid "PaddleSports"
-msgstr ""
+msgstr "Paddle Sports"
 
 msgid "Periods"
-msgstr ""
+msgstr "Periods"
 
 msgid "Pickleball"
-msgstr ""
+msgstr "Pickleball"
 
 msgid "Pilates"
-msgstr ""
+msgstr "Pilates"
 
 msgid "Play"
-msgstr ""
+msgstr "Play"
 
 msgid "Please select an Apple Health export file first."
-msgstr ""
+msgstr "Please select an Apple Health export file first."
 
 msgid "Pool"
-msgstr ""
+msgstr "Pool"
 
 msgid "PreparationAndRecovery"
-msgstr ""
+msgstr "Preparation And Recovery"
 
 msgid "Preparing dashboard update..."
-msgstr ""
+msgstr "Preparing dashboard update..."
 
 msgid "Preparing file load..."
-msgstr ""
+msgstr "Preparing file load..."
 
 msgid "Quarter"
-msgstr ""
+msgstr "Quarter"
 
 msgid "Quit TrackTales"
-msgstr ""
+msgstr "Quit TrackTales"
 
 msgid "Racquetball"
-msgstr ""
+msgstr "Racquetball"
 
 #, python-brace-format
 msgid "Rank: {rank} of {total}"
-msgstr ""
+msgstr "Rank: {rank} of {total}"
 
 msgid "Records per page:"
-msgstr ""
+msgstr "Records per page:"
 
 msgid "Recovery Recommendation"
-msgstr ""
+msgstr "Recovery Recommendation"
 
 msgid "Rest"
-msgstr ""
+msgstr "Rest"
 
 msgid "Resting HR frequency over time"
-msgstr ""
+msgstr "Resting HR frequency over time"
 
 msgid "Route"
-msgstr ""
+msgstr "Route"
 
 #, python-brace-format
 msgid "Route {index}"
-msgstr ""
+msgstr "Route {index}"
 
 msgid "Rowing"
-msgstr ""
+msgstr "Rowing"
 
 msgid "Rugby"
-msgstr ""
+msgstr "Rugby"
 
 msgid "Running"
-msgstr ""
+msgstr "Running"
 
 msgid "Sailing"
-msgstr ""
+msgstr "Sailing"
 
 msgid "Sat"
-msgstr ""
+msgstr "Sat"
 
 msgid "Saturday"
-msgstr ""
+msgstr "Saturday"
 
 msgid "Select an Apple Health export file..."
-msgstr ""
+msgstr "Select an Apple Health export file..."
 
 msgid "SkatingSports"
-msgstr ""
+msgstr "Skating Sports"
 
 msgid "SnowSports"
-msgstr ""
+msgstr "Snow Sports"
 
 msgid "Snowboarding"
-msgstr ""
+msgstr "Snowboarding"
 
 msgid "Soccer"
-msgstr ""
+msgstr "Soccer"
 
 msgid "SocialDance"
-msgstr ""
+msgstr "Social Dance"
 
 msgid "Softball"
-msgstr ""
+msgstr "Softball"
 
 msgid "Speed"
-msgstr ""
+msgstr "Speed"
 
 msgid "Squash"
-msgstr ""
+msgstr "Squash"
 
 msgid "Stable"
 msgstr ""
 
 msgid "StairClimbing"
-msgstr ""
+msgstr "Stair Climbing"
 
 msgid "Stairs"
-msgstr ""
+msgstr "Stairs"
 
 msgid "Start"
-msgstr ""
+msgstr "Start"
 
 msgid "Step Count"
-msgstr ""
+msgstr "Step Count"
 
 msgid "StepTraining"
-msgstr ""
+msgstr "Step Training"
 
 msgid "Stroke"
-msgstr ""
+msgstr "Stroke"
 
 msgid "Sun"
-msgstr ""
+msgstr "Sun"
 
 msgid "Sunday"
-msgstr ""
+msgstr "Sunday"
 
 msgid "SurfingSports"
-msgstr ""
+msgstr "Surfing Sports"
 
 msgid "SwimBikeRun"
-msgstr ""
+msgstr "Swim Bike Run"
 
 msgid "Swimming"
-msgstr ""
+msgstr "Swimming"
 
 msgid "TableTennis"
-msgstr ""
+msgstr "Table Tennis"
 
 msgid "TaiChi"
-msgstr ""
+msgstr "Tai Chi"
 
 msgid "Temperature"
-msgstr ""
+msgstr "Temperature"
 
 msgid "Tennis"
-msgstr ""
+msgstr "Tennis"
 
 msgid ""
 "This heat map shows when workouts happen. X axis is hour of day, Y axis "
 "is day of week, and color intensity represents workout count."
 msgstr ""
+"This heat map shows when workouts happen. X axis is hour of day, Y axis "
+"is day of week, and color intensity represents workout count."
 
 msgid "Thu"
-msgstr ""
+msgstr "Thu"
 
 msgid "Thursday"
-msgstr ""
+msgstr "Thursday"
 
 msgid "Time"
-msgstr ""
+msgstr "Time"
 
 msgid "Total Strokes"
-msgstr ""
+msgstr "Total Strokes"
 
 msgid "TrackAndField"
-msgstr ""
+msgstr "Track And Field"
 
 msgid "TrackTales is shutting down..."
-msgstr ""
+msgstr "TrackTales is shutting down..."
 
 msgid "TraditionalStrengthTraining"
-msgstr ""
+msgstr "Traditional Strength Training"
 
 msgid "Training Load"
-msgstr ""
+msgstr "Training Load"
 
 msgid "Training load is duration in minutes multiplied by average heart rate."
-msgstr ""
+msgstr "Training load is duration in minutes multiplied by average heart rate."
 
 msgid "Transition"
-msgstr ""
+msgstr "Transition"
 
 msgid "Trends"
-msgstr ""
+msgstr "Trends"
 
 msgid "Tue"
-msgstr ""
+msgstr "Tue"
 
 msgid "Tuesday"
-msgstr ""
+msgstr "Tuesday"
 
 msgid "UnderwaterDiving"
-msgstr ""
+msgstr "UnderwaterDiving"
 
 msgid "Units"
-msgstr ""
+msgstr "Units"
 
 msgid "Unknown"
-msgstr ""
+msgstr "Unknown"
 
 msgid "Using workout average power fallback"
-msgstr ""
+msgstr "Using workout average power fallback"
 
 msgid "VO2 Max over time"
-msgstr ""
+msgstr "VO2 Max over time"
 
 msgid "VO₂ Max"
-msgstr ""
+msgstr "VO₂ Max"
 
 msgid "Volleyball"
-msgstr ""
+msgstr "Volleyball"
 
 msgid ""
 "W' <= 0 is non-physical in the CP model. This usually means sparse data "
 "or inconsistent pace/power estimates for those periods."
 msgstr ""
+"W' <= 0 is non-physical in the CP model. This usually means sparse data "
+"or inconsistent pace/power estimates for those periods."
 
 msgid "W' over time"
-msgstr ""
+msgstr "W' over time"
 
 msgid "Walking"
-msgstr ""
+msgstr "Walking"
 
 msgid "WaterFitness"
-msgstr ""
+msgstr "Water Fitness"
 
 msgid "WaterPolo"
-msgstr ""
+msgstr "Water Polo"
 
 msgid "WaterSports"
-msgstr ""
+msgstr "Water Sports"
 
 msgid "Wed"
-msgstr ""
+msgstr "Wed"
 
 msgid "Wednesday"
-msgstr ""
+msgstr "Wednesday"
 
 msgid "Week"
-msgstr ""
+msgstr "Week"
 
 msgid "WheelchairRunPace"
-msgstr ""
+msgstr "Wheelchair Run Pace"
 
 msgid "WheelchairWalkPace"
-msgstr ""
+msgstr "Wheelchair Walk Pace"
 
 msgid "Workouts"
-msgstr ""
+msgstr "Workouts"
 
 msgid "Wrestling"
-msgstr ""
+msgstr "Wrestling"
 
 msgid "Year"
-msgstr ""
+msgstr "Year"
 
 msgid "Yoga"
-msgstr ""
+msgstr "Yoga"
 
 msgid "from"
-msgstr ""
+msgstr "from"
 
 msgid "of"
-msgstr ""
+msgstr "of"
 
 msgid "stroke"
-msgstr ""
+msgstr "stroke"
 
 msgid "to"
-msgstr ""
+msgstr "to"
 
 msgid "to CSV"
-msgstr ""
+msgstr "to CSV"
 
 msgid "to JSON"
-msgstr ""
+msgstr "to JSON"
 
 msgid "workout"
-msgstr ""
+msgstr "workout"
 
 msgid "workouts"
-msgstr ""
+msgstr "workouts"
 

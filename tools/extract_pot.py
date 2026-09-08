@@ -89,6 +89,8 @@ def main() -> None:
         "translate",
         "-k",
         "n_",
+        "-k",
+        "tr",
         "--sort-output",
         "--no-location",
         f"--project={metadata['project']}",

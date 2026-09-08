@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tracktales v2026.8.1\n"
 "Report-Msgid-Bugs-To: 405928+NicolasReyrolle@users.noreply.github.com\n"
-"POT-Creation-Date: 2026-09-07 17:07+0200\n"
+"POT-Creation-Date: 2026-09-08 09:16+0200\n"
 "PO-Revision-Date: 2026-09-05 16:10+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -50,8 +50,20 @@ msgstr "Analytics Dashboard"
 msgid "Apple Health export file"
 msgstr "Apple Health export file"
 
+msgid "Apr"
+msgstr "Apr"
+
+msgid "April"
+msgstr "April"
+
 msgid "Archery"
 msgstr "Archery"
+
+msgid "Aug"
+msgstr "Aug"
+
+msgid "August"
+msgstr "August"
 
 msgid "AustralianFootball"
 msgstr "Australian Football"
@@ -194,6 +206,12 @@ msgstr "Date range"
 msgid "Day of week"
 msgstr "Day of week"
 
+msgid "Dec"
+msgstr "Dec"
+
+msgid "December"
+msgstr "December"
+
 #, fuzzy
 msgid "Declining"
 msgstr "Climbing"
@@ -276,6 +294,12 @@ msgstr "Estimated from overlapping power intervals"
 
 msgid "Export data"
 msgstr "Export data"
+
+msgid "Feb"
+msgstr "Feb"
+
+msgid "February"
+msgstr "February"
 
 msgid "Fencing"
 msgstr "Fencing"
@@ -372,8 +396,26 @@ msgstr "Insufficient data"
 msgid "Intervals"
 msgstr "Intervals"
 
+msgid "Jan"
+msgstr "Jan"
+
+msgid "January"
+msgstr "January"
+
+msgid "Jul"
+msgstr "Jul"
+
+msgid "July"
+msgstr "July"
+
 msgid "JumpRope"
 msgstr "Jump Rope"
+
+msgid "Jun"
+msgstr "Jun"
+
+msgid "June"
+msgstr "June"
 
 msgid "Kickboard"
 msgstr "Kickboard"
@@ -426,11 +468,20 @@ msgstr "Longest Walk/Hike"
 msgid "Maintain"
 msgstr "Maintain"
 
+msgid "Mar"
+msgstr "Mar"
+
 msgid "Marathon"
 msgstr "Marathon"
 
+msgid "March"
+msgstr "March"
+
 msgid "MartialArts"
 msgstr "Martial Arts"
+
+msgid "May"
+msgstr "May"
 
 msgid "Measured from segment samples"
 msgstr "Measured from segment samples"
@@ -494,6 +545,18 @@ msgstr "No similar routes found."
 
 msgid "Non-physical W'"
 msgstr "Non-physical W'"
+
+msgid "Nov"
+msgstr "Nov"
+
+msgid "November"
+msgstr "November"
+
+msgid "Oct"
+msgstr "Oct"
+
+msgid "October"
+msgstr "October"
 
 msgid "Open Water"
 msgstr "Open Water"
@@ -598,6 +661,12 @@ msgstr "Saturday"
 
 msgid "Select an Apple Health export file..."
 msgstr "Select an Apple Health export file..."
+
+msgid "Sep"
+msgstr "Sep"
+
+msgid "September"
+msgstr "September"
 
 msgid "SkatingSports"
 msgstr "Skating Sports"

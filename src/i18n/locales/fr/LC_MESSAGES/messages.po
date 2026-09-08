@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TrackTales 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-07 17:07+0200\n"
+"POT-Creation-Date: 2026-09-08 09:16+0200\n"
 "PO-Revision-Date: 2026-03-05 13:00+0000\n"
 "Last-Translator: \n"
 "Language: fr\n"
@@ -53,8 +53,20 @@ msgstr "Tableau de bord analytique"
 msgid "Apple Health export file"
 msgstr "Fichier d'export Apple Health"
 
+msgid "Apr"
+msgstr "avr."
+
+msgid "April"
+msgstr "avril"
+
 msgid "Archery"
 msgstr "Tir à l'arc"
+
+msgid "Aug"
+msgstr "aoû."
+
+msgid "August"
+msgstr "août"
 
 msgid "AustralianFootball"
 msgstr "Football australien"
@@ -201,11 +213,17 @@ msgstr "Plage de dates"
 msgid "Day of week"
 msgstr "Jour de la semaine"
 
+msgid "Dec"
+msgstr "déc."
+
+msgid "December"
+msgstr "décembre"
+
 msgid "Declining"
-msgstr "Dégradation"
+msgstr "En baisse"
 
 msgid "Decreasing"
-msgstr "Diminuant"
+msgstr "En diminution"
 
 msgid "Details"
 msgstr "Détails"
@@ -282,6 +300,12 @@ msgstr "Estimé à partir des intervalles de puissance du segment"
 
 msgid "Export data"
 msgstr "Exporter les données"
+
+msgid "Feb"
+msgstr "fév.""
+
+msgid "February"
+msgstr "février"
 
 msgid "Fencing"
 msgstr "Escrime"
@@ -363,10 +387,10 @@ msgid "Imperial"
 msgstr "Impérial"
 
 msgid "Improving"
-msgstr "Amélioration"
+msgstr "En amélioration"
 
 msgid "Increasing"
-msgstr "Augmentation"
+msgstr "En hausse"
 
 msgid "Initializing..."
 msgstr "Initialisation..."
@@ -378,8 +402,26 @@ msgstr "Données insuffisantes"
 msgid "Intervals"
 msgstr "Intervalles"
 
+msgid "Jan"
+msgstr "jan."
+
+msgid "January"
+msgstr "janvier"
+
+msgid "Jul"
+msgstr "juil."
+
+msgid "July"
+msgstr "juillet"
+
 msgid "JumpRope"
 msgstr "Corde à sauter"
+
+msgid "Jun"
+msgstr "jui."
+
+msgid "June"
+msgstr "juin"
 
 msgid "Kickboard"
 msgstr "Planche"
@@ -435,11 +477,20 @@ msgstr "Marche/Randonnée la plus longue"
 msgid "Maintain"
 msgstr "Maintenir"
 
+msgid "Mar"
+msgstr "mar."
+
 msgid "Marathon"
 msgstr "Marathon"
 
+msgid "March"
+msgstr "mars"
+
 msgid "MartialArts"
 msgstr "Arts martiaux"
+
+msgid "May"
+msgstr "mai"
 
 msgid "Measured from segment samples"
 msgstr "Mesuré à partir des échantillons du segment"
@@ -505,6 +556,18 @@ msgstr "Aucun parcours similaire trouvé."
 
 msgid "Non-physical W'"
 msgstr "W' non physique"
+
+msgid "Nov"
+msgstr "nov."
+
+msgid "November"
+msgstr "novembre"
+
+msgid "Oct"
+msgstr "oct."
+
+msgid "October"
+msgstr "octobre"
 
 msgid "Open Water"
 msgstr "Eau libre"
@@ -615,6 +678,12 @@ msgstr "samedi"
 
 msgid "Select an Apple Health export file..."
 msgstr "Sélectionner un fichier d'export Apple Health..."
+
+msgid "Sep"
+msgstr "sep."
+
+msgid "September"
+msgstr "septembre"
 
 msgid "SkatingSports"
 msgstr "Sports de glisse"

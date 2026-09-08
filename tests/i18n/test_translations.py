@@ -99,8 +99,7 @@ class TestPoFiles:
         )
 
     def test_all_po_files_on_disk_are_registered_languages(self) -> None:
-        """Every .po file on disk must belong to a registered non-default language."""
-        po_files = list(_LOCALE_DIR.glob("*/LC_MESSAGES/messages.po"))
+        """Every .po file on disk must belong to a registered language."""
         disk_langs = {p.parent.parent.name for p in po_files}
         expected_langs = set(_TRANSLATED_LANGUAGES)
         unexpected = disk_langs - expected_langs

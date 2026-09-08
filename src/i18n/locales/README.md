@@ -2,96 +2,103 @@
 
 This folder contains gettext catalogs used by the app:
 
-- `messages.pot`: source template (all translatable English msgids)
+- `messages.pot`: source template (all translatable msgids extracted from Python source)
 - `<lang>/LC_MESSAGES/messages.po`: editable translations for each language
 - `<lang>/LC_MESSAGES/messages.mo`: compiled binary catalogs used at runtime (generated automatically at startup)
 
-Current language example:
+Current supported languages:
 
-- `fr/LC_MESSAGES/messages.po`
+- `en/LC_MESSAGES/messages.po` (English)
+- `fr/LC_MESSAGES/messages.po` (French)
 
-Note: `.mo` files are intentionally gitignored in this repository. The app compiles them on startup when missing or outdated.
+> [!NOTE]
+> `.mo` files are intentionally gitignored. The application compiles them on startup when missing or outdated.
 
 ## Prerequisites
 
-Activate your virtual environment, then ensure dependencies are installed:
+Activate your virtual environment and ensure dependencies are installed:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-`Babel` is required and already pinned in `requirements.txt`.
+`Babel` is required and pinned in `requirements.txt`.
+
+## Translation Functions in Python Code
+
+- `t("...")`: Active-language translation (used for almost all UI text).
+- `translate("...", language=...)`: Explicit-language translation (used where the language is parameterized, e.g. calendar locale generation).
+- `n_("...")`: Translation marker for module-level constants, dictionaries, or classes. Does not translate at import time, allowing `t()` to evaluate it dynamically later.
 
 ## Update Translations After UI/Text Changes
 
-When you add or change calls like `t("...")` or `translate("...", language=...)` in Python code:
+When you add or modify `t(...)`, `translate(...)`, or `n_(...)` calls in Python code:
 
-1. Rebuild the POT template from source using the helper script:
+1. **Rebuild the POT template** from source:
 
-```bash
-python tools/extract_pot.py
-```
+   ```bash
+   python tools/extract_pot.py
+   ```
 
-Notes:
+2. **Update all language catalogs** from the new template:
 
-- Keep translatable user-facing strings in gettext catalogs (`.po`/`.mo`), not hardcoded translated literals in `.py` files.
-- `translate(...)` is used in a few places that require an explicit language code (for example locale payload generation), so `-k translate` must be included during extraction.
+   ```bash
+   pybabel update --ignore-obsolete -N -i src/i18n/locales/messages.pot -d src/i18n/locales -D messages
+   ```
 
-1. Update existing language files from the new template (example for French):
+   - `-N / --no-fuzzy-matching`: Prevents Babel from inserting fuzzy guesses that fail the test suite.
+   - `--ignore-obsolete`: Automatically removes strings that no longer exist in the code.
 
-```bash
-pybabel update --ignore-obsolete -i src/i18n/locales/messages.pot -d src/i18n/locales -D messages -l fr
-```
+3. **Translate new or changed entries** in each `messages.po` file:
+   - `src/i18n/locales/en/LC_MESSAGES/messages.po`
+   - `src/i18n/locales/fr/LC_MESSAGES/messages.po`
 
-1. Open `src/i18n/locales/fr/LC_MESSAGES/messages.po` and translate any new/changed entries.
+4. _(Optional)_ **Compile `.po` into `.mo` manually** (the app does this automatically on start):
 
-1. (Optional) Compile the `.po` into `.mo` manually:
-
-```bash
-pybabel compile -d src/i18n/locales -D messages -l fr
-```
+   ```bash
+   pybabel compile -d src/i18n/locales -D messages
+   ```
 
 ## Add a New Language
 
 Example: Spanish (`es`).
 
-1. Initialize the new language from the template:
+1. **Initialize the new language** from the template:
 
-```bash
-pybabel init -i src/i18n/locales/messages.pot -d src/i18n/locales -D messages -l es
-```
+   ```bash
+   pybabel init -i src/i18n/locales/messages.pot -d src/i18n/locales -D messages -l es
+   ```
 
-1. Translate entries in:
+2. **Translate entries** in `src/i18n/locales/es/LC_MESSAGES/messages.po`.
 
-- `src/i18n/locales/es/LC_MESSAGES/messages.po`
+3. **Register the new language** in `src/i18n/core.py`:
+   - Add it to the `LANGUAGES` dictionary:
 
-1. Compile the catalog:
+````python
+     LANGUAGES: dict[str, str] = {
+         "en": "English",
+         "fr": "Français",
+         "es": "Español",
+     }
+     ```
 
-```bash
-pybabel compile -d src/i18n/locales -D messages -l es
-```
+4. _(Optional)_ **Compile the new catalog**:
 
-1. Register the new language in `src/i18n/__init__.py`:
-
-- Add it to the `LANGUAGES` dict, for example: `"es": "Espanol"`
-
-## Compile All Languages
-
-```bash
-pybabel compile -d src/i18n/locales -D messages
-```
+   ```bash
+   pybabel compile -d src/i18n/locales -D messages -l es
+````
 
 ## Verify Before Commit
 
-Run translation consistency tests:
+Run translation consistency and quality tests:
 
 ```bash
-pytest tests/i18n/test_translations.py
+pytest tests/i18n/test_translations.py tests/test_i18n_translations.py
 ```
 
-Make sure these files are committed:
+Ensure the following files are staged and committed:
 
 - `src/i18n/locales/messages.pot`
 - `src/i18n/locales/<lang>/LC_MESSAGES/messages.po`
 
-Do not commit compiled `.mo` files; they are generated at runtime.
+Do not commit `.mo` files.

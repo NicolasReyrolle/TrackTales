@@ -104,7 +104,7 @@ class TestPoFiles:
         expected_langs = set(_TRANSLATED_LANGUAGES)
         unexpected = disk_langs - expected_langs
         assert not unexpected, (
-            f"Found .po files on disk for unexpected or default languages: {sorted(unexpected)}. "
+            f"Found .po files on disk for unexpected languages: {sorted(unexpected)}. "
             f"Expected only: {sorted(expected_langs)}"
         )
 

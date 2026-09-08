@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from nicegui import ui
 
 from app_state import state
-from i18n import t
+from i18n import n_, t
 from ui.css import (
     BUTTON_DENSE_PROPS,
     BUTTON_FLAT_ROUND_PROPS,
@@ -47,12 +47,12 @@ _SAVE_AS_IMAGE = "Save as Image"
 _RESTORE = "Restore"
 _JS_FORMATTER_KEY = ":formatter"
 _TREND_TITLE_SYMBOLS = {
-    "Improving": "↗",
-    "Declining": "↘",
-    "Increasing": "↗",
-    "Decreasing": "↘",
-    "Stable": "→",
-    "Insufficient data": "?",
+    n_("Improving"): "↗",
+    n_("Declining"): "↘",
+    n_("Increasing"): "↗",
+    n_("Decreasing"): "↘",
+    n_("Stable"): "→",
+    n_("Insufficient data"): "?",
 }
 
 

@@ -7,7 +7,7 @@ from collections.abc import Callable, Mapping, Sequence
 from nicegui import ui
 
 from app_state import state
-from i18n import t
+from i18n import n_, t
 from ui.css import (
     BUTTON_DENSE_PROPS,
     BUTTON_FLAT_ROUND_PROPS,
@@ -29,12 +29,6 @@ from ui.css import (
     STAT_CARD_VALUE_ROW_CLASSES,
 )
 from ui.helpers import calculate_moving_average
-
-
-def n_(message: str) -> str:
-    """Dummy marker for Babel extraction. Returns the raw string."""
-    return message
-
 
 # Re-export constants that other modules import from this module for compatibility.
 __all__ = [

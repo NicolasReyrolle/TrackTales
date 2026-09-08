@@ -67,6 +67,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+from i18n import n_
+
 
 class FieldType(StrEnum):
     """Data type for rendering and processing a field value.
@@ -122,11 +124,6 @@ class FieldDefinition:
     this field.  Used by :mod:`ui.workout_detail_modal` to derive ``_ACTIVITY_FIELD_KEYS``
     for the Activity tab enablement check.  ``None`` for fields that are shown in the
     Overview tab rather than the Activity tab, or for fields not yet wired to the UI."""
-
-
-def n_(message: str) -> str:
-    """Dummy marker for Babel extraction. Returns the raw string."""
-    return message
 
 
 # ---------------------------------------------------------------------------

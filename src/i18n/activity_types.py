@@ -10,14 +10,9 @@ import logging
 import re
 from collections.abc import Mapping
 
-from i18n import t
+from i18n import n_, t
 
 _logger = logging.getLogger(__name__)
-
-
-def n_(message: str) -> str:
-    """Dummy marker for Babel extraction. Returns the raw string."""
-    return message
 
 
 # Complete public HKWorkoutActivityType set (including deprecated legacy values)

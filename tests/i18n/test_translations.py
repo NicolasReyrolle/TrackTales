@@ -32,7 +32,7 @@ def _read_po_for_lang(lang: str) -> dict[str, str]:
 
 
 # Languages that have a .po file (all except the default/English base)
-_TRANSLATED_LANGUAGES = [code for code in LANGUAGES if code != DEFAULT_LANGUAGE]
+_TRANSLATED_LANGUAGES = [code for code in LANGUAGES]
 
 
 class TestPoFiles:

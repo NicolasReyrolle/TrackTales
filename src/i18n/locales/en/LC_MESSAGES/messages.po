@@ -212,13 +212,11 @@ msgstr "Dec"
 msgid "December"
 msgstr "December"
 
-#, fuzzy
 msgid "Declining"
-msgstr "Climbing"
+msgstr "Declining"
 
-#, fuzzy
 msgid "Decreasing"
-msgstr "Core Training"
+msgstr "Decreasing"
 
 msgid "Details"
 msgstr "Details"
@@ -379,13 +377,11 @@ msgstr "Hunting"
 msgid "Imperial"
 msgstr "Imperial"
 
-#, fuzzy
 msgid "Improving"
-msgstr "Rowing"
+msgstr "Improving"
 
-#, fuzzy
 msgid "Increasing"
-msgstr "Core Training"
+msgstr "Increasing"
 
 msgid "Initializing..."
 msgstr "Initializing..."

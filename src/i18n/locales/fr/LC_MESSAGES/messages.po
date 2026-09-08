@@ -63,7 +63,7 @@ msgid "Archery"
 msgstr "Tir à l'arc"
 
 msgid "Aug"
-msgstr "aoû."
+msgstr "août"
 
 msgid "August"
 msgstr "août"
@@ -302,7 +302,7 @@ msgid "Export data"
 msgstr "Exporter les données"
 
 msgid "Feb"
-msgstr "fév.""
+msgstr "fév."
 
 msgid "February"
 msgstr "février"
@@ -403,7 +403,7 @@ msgid "Intervals"
 msgstr "Intervalles"
 
 msgid "Jan"
-msgstr "jan."
+msgstr "janv."
 
 msgid "January"
 msgstr "janvier"
@@ -418,7 +418,7 @@ msgid "JumpRope"
 msgstr "Corde à sauter"
 
 msgid "Jun"
-msgstr "jui."
+msgstr "juin"
 
 msgid "June"
 msgstr "juin"
@@ -680,7 +680,7 @@ msgid "Select an Apple Health export file..."
 msgstr "Sélectionner un fichier d'export Apple Health..."
 
 msgid "Sep"
-msgstr "sep."
+msgstr "sept."
 
 msgid "September"
 msgstr "septembre"

@@ -5,6 +5,7 @@ from i18n.core import (
     LANGUAGES,
     compile_message_catalogs,
     get_language,
+    n_,
     t,
     translate,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "LANGUAGES",
     "compile_message_catalogs",
     "get_language",
+    "n_",
     "t",
     "translate",
 ]

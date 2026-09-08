@@ -27,6 +27,11 @@ class _POTranslations(gettext.NullTranslations):
         return self._messages.get(message) or message
 
 
+def n_(message: str) -> str:
+    """Dummy marker for Babel extraction. Returns the raw string."""
+    return message
+
+
 def _load_po_translation(lang: str) -> gettext.NullTranslations:
     po_path = _LOCALE_DIR / lang / "LC_MESSAGES" / f"{_DOMAIN}.po"
     if not po_path.exists():

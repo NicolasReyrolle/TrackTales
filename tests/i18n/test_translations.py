@@ -31,8 +31,8 @@ def _read_po_for_lang(lang: str) -> dict[str, str]:
     return {str(msg.id): str(msg.string) for msg in catalog if msg.id}
 
 
-# Languages that have a .po file (all except the default/English base)
-_TRANSLATED_LANGUAGES = [code for code in LANGUAGES if code != DEFAULT_LANGUAGE]
+# Languages that have a .po file
+_TRANSLATED_LANGUAGES = [code for code in LANGUAGES]
 
 
 class TestPoFiles:
@@ -76,6 +76,39 @@ class TestPoFiles:
         extra = set(po_translations.keys()) - pot_msgids
         assert not extra, f"Language '{lang}' has msgids not in .pot template: {sorted(extra)}"
 
+    @pytest.mark.parametrize("lang", _TRANSLATED_LANGUAGES)
+    def test_no_fuzzy_translations_in_po(self, lang: str) -> None:
+        """No translation in any .po file should be marked as fuzzy."""
+        po_path = _LOCALE_DIR / lang / "LC_MESSAGES" / "messages.po"
+        with po_path.open("rb") as f:
+            catalog = read_po(f)
+        fuzzy_ids = [str(m.id) for m in catalog if m.id and m.fuzzy]
+        assert not fuzzy_ids, (
+            f"Language '{lang}' has unverified fuzzy translations for: {sorted(fuzzy_ids)}"
+        )
+
+    @pytest.mark.parametrize("lang", _TRANSLATED_LANGUAGES)
+    def test_no_obsolete_messages_in_po(self, lang: str) -> None:
+        """A .po file must not contain obsolete translations (#~)."""
+        po_path = _LOCALE_DIR / lang / "LC_MESSAGES" / "messages.po"
+        with po_path.open("rb") as f:
+            catalog = read_po(f)
+        assert not catalog.obsolete, (
+            f"Language '{lang}' has obsolete translations: {sorted(catalog.obsolete.keys())}. "
+            "Run 'pybabel update --ignore-obsolete' to clean them up."
+        )
+
+    def test_all_po_files_on_disk_are_registered_languages(self) -> None:
+        """Every .po file on disk must belong to a registered language."""
+        po_files = list(_LOCALE_DIR.glob("*/LC_MESSAGES/messages.po"))
+        disk_langs = {p.parent.parent.name for p in po_files}
+        expected_langs = set(_TRANSLATED_LANGUAGES)
+        unexpected = disk_langs - expected_langs
+        assert not unexpected, (
+            f"Found .po files on disk for unexpected languages: {sorted(unexpected)}. "
+            f"Expected only: {sorted(expected_langs)}"
+        )
+
 
 class TestTranslationFunction:
     """Tests for the t() helper function."""
@@ -104,8 +137,8 @@ class TestTranslationFunction:
     def test_t_french_format_kwargs_preserved(self) -> None:
         """t() should interpolate kwargs into French translated strings correctly."""
         with patch("i18n.core.get_language", return_value="fr"):
-            result = t("Count by {period}", period="mois")
-        assert result == "Nombre par mois"
+            result = t("Distance: {lo} – {hi} {unit}", lo="10", hi="20", unit="km")
+        assert result == "Distance : 10 – 20 km"
 
     def test_t_falls_back_to_english_when_lang_has_no_mo(self) -> None:
         """t() falls back gracefully when no .mo file exists for the active language."""

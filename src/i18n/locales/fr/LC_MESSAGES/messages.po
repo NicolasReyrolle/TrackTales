@@ -6,614 +6,126 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TrackTales 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-05 13:00+0000\n"
+"POT-Creation-Date: 2026-09-08 09:16+0200\n"
 "PO-Revision-Date: 2026-03-05 13:00+0000\n"
 "Last-Translator: \n"
-"Language-Team: French\n"
 "Language: fr\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+"Language-Team: French\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
 
-# Header
-msgid "Language"
-msgstr "Langue"
-
-# Preferences menu: unit system section header and options
-msgid "Units"
-msgstr "Unités"
-
-msgid "Metric"
-msgstr "Métrique"
-
-msgid "Imperial"
-msgstr "Impérial"
-
-msgid "Quit TrackTales"
-msgstr "Quitter TrackTales"
-
-msgid "TrackTales is shutting down..."
-msgstr "Fermeture de TrackTales..."
+msgid "Active Recovery"
+msgstr "Récupération active"
 
 # Left drawer
 msgid "Activities"
 msgstr "Activités"
 
-msgid "Activity Type"
-msgstr "Type d'activité"
-
-msgid "Date range"
-msgstr "Plage de dates"
-
-msgid "Distance: {lo} – {hi} {unit}"
-msgstr "Distance : {lo} – {hi} {unit}"
-
-msgid "Duration: {lo} – {hi} min"
-msgstr "Durée : {lo} – {hi} min"
-
-msgid "Export data"
-msgstr "Exporter les données"
-
-msgid "to JSON"
-msgstr "en JSON"
-
-msgid "to CSV"
-msgstr "en CSV"
-
-# Main body
-msgid "Apple Health export file"
-msgstr "Fichier d'export Apple Health"
-
-msgid "Select an Apple Health export file..."
-msgstr "Sélectionner un fichier d'export Apple Health..."
-
-msgid "Browse"
-msgstr "Parcourir"
-
-msgid "Load"
-msgstr "Charger"
-
-# Tabs
-msgid "Overview"
-msgstr "Vue d'ensemble"
-
-msgid "Trends"
-msgstr "Tendances"
-
-msgid "Analytics Dashboard"
-msgstr "Tableau de bord analytique"
-
-msgid "Running"
-msgstr "Course à pied"
-
-msgid "Workouts"
-msgstr "Séances"
-
-msgid "Health Data"
-msgstr "Données de santé"
-
-msgid "Best Segments"
-msgstr "Meilleurs segments"
-
-msgid "Route"
-msgstr "Parcours"
-
-msgid "Route {index}"
-msgstr "Parcours {index}"
-
-msgid "Start"
-msgstr "Départ"
-
-msgid "End"
-msgstr "Arrivée"
-
-# Stat cards
-msgid "Count"
-msgstr "Nombre"
-
-msgid "Distance"
-msgstr "Distance"
-
-msgid "Duration"
-msgstr "Durée"
-
-msgid "Elevation"
-msgstr "Dénivelé"
-
-msgid "Calories"
-msgstr "Calories"
-
-msgid "Longest Run"
-msgstr "Course la plus longue"
-
-msgid "Longest Walk/Hike"
-msgstr "Marche/Randonnée la plus longue"
-
-msgid "Longest Cycling"
-msgstr "Sortie à vélo la plus longue"
-
-msgid "Longest Swim"
-msgstr "Nage la plus longue"
-
-msgid "Most Elevation (Run)"
-msgstr "Dénivelé max (course)"
-
-msgid "Most Elevation (Walk/Hike)"
-msgstr "Dénivelé max (marche/randonnée)"
-
-msgid "Longest Duration Workout"
-msgstr "Séance la plus longue"
-
-msgid "Most Calories Workout"
-msgstr "Séance la plus calorique"
-
-msgid "No data"
-msgstr "Aucune donnée"
-
-msgid "Date"
-msgstr "Date"
-
-msgid "Average Speed"
-msgstr "Vitesse moyenne"
-
-msgid "Best segments for standard running distances"
-msgstr "Meilleurs segments pour les distances standards en course à pied"
-
-msgid "Loading best segments..."
-msgstr "Chargement des meilleurs segments..."
-
-msgid "Open this tab to load best segments."
-msgstr "Ouvrez cet onglet pour charger les meilleurs segments."
-
-# Workout table
-msgid "Load a file to see workout details."
-msgstr "Chargez un fichier pour voir les détails des séances."
-
-# Workout table pagination
-msgid "Records per page:"
-msgstr "Lignes par page :"
-
-msgid "of"
-msgstr "sur"
-
 msgid "Activity"
 msgstr "Activité"
 
-msgid "Avg HR"
-msgstr "FC moy."
-
-msgid "Charts"
-msgstr "Graphiques"
-
-msgid "Details"
-msgstr "Détails"
-
-msgid "Elevation Gain"
-msgstr "Dénivelé positif"
-
-msgid "Loading health data..."
-msgstr "Chargement des données de santé..."
-
-msgid "Loading Critical Power data..."
-msgstr "Chargement des données de Puissance Critique..."
-
-msgid "Open this tab to load health data."
-msgstr "Ouvrez cet onglet pour charger les données de santé."
-
-msgid "Critical Power & W' estimate"
-msgstr "Estimation de la Puissance Critique & W'"
-
-msgid "Avg. best {distance}"
-msgstr "Meilleur moy. {distance}"
-
-msgid "({count} segments)"
-msgstr "({count} segments)"
-
-msgid "Critical Power (CP)"
-msgstr "Puissance Critique (PC)"
-
-msgid "W'"
-msgstr "W'"
-
-msgid "Avg Power"
-msgstr "Puiss. moy."
-
-msgid "Temperature"
-msgstr "Température"
-
-msgid "Humidity"
-msgstr "Humidité"
-
-msgid "Heart Rate"
-msgstr "Fréquence cardiaque"
-
-msgid "Measured from segment samples"
-msgstr "Mesuré à partir des échantillons du segment"
-
-msgid "Estimated from overlapping power intervals"
-msgstr "Estimé à partir des intervalles de puissance du segment"
-
-msgid "Using workout average power fallback"
-msgstr "Valeur de secours : puissance moyenne de l'entraînement"
-
-msgid "No matching power data"
-msgstr "Aucune donnée de puissance disponible"
-
-msgid "Critical Power (CP) over time"
-msgstr "Puissance Critique (PC) au fil du temps"
-
-msgid "W' over time"
-msgstr "W' au fil du temps"
-
-msgid "Non-physical W'"
-msgstr "W' non physique"
-
-msgid "W' <= 0 is non-physical in the CP model. This usually means sparse data or inconsistent pace/power estimates for those periods."
-msgstr "W' <= 0 est non physique dans le modèle de PC. Cela indique généralement des données clairsemées ou des estimations d'allure/puissance incohérentes pour ces périodes."
-
-msgid "Periods"
-msgstr "Périodes"
-
-msgid "Distance vs Pace"
-msgstr "Distance vs allure"
-
-msgid "Pace"
-msgstr "Allure"
-
-msgid "Elevation vs Pace"
-msgstr "Dénivelé vs allure"
+msgid "Activity Type"
+msgstr "Type d'activité"
 
 msgid "Activity heat map (day/time)"
 msgstr "Carte de chaleur des activités (jour/heure)"
-
-msgid "More workouts"
-msgstr "Plus d'entraînements"
-
-msgid "Fewer workouts"
-msgstr "Moins d'entraînements"
-
-msgid "Hour of day"
-msgstr "Heure de la journée"
-
-msgid "Day of week"
-msgstr "Jour de la semaine"
-
-msgid "workout"
-msgstr "entraînement"
-
-msgid "workouts"
-msgstr "entraînements"
-
-msgid "from"
-msgstr "de"
-
-msgid "to"
-msgstr "à"
-
-msgid "This heat map shows when workouts happen. X axis is hour of day, Y axis is day of week, and color intensity represents workout count."
-msgstr "Cette carte de chaleur montre quand les séances ont lieu. L'axe X représente l'heure de la journée, l'axe Y le jour de la semaine, et l'intensité de la couleur représente le nombre de séances."
-
-msgid "Half-marathon"
-msgstr "Semi-marathon"
-
-msgid "Marathon"
-msgstr "Marathon"
-
-# Notifications
-msgid "No file selected"
-msgstr "Aucun fichier sélectionné"
-
-msgid "Please select an Apple Health export file first."
-msgstr "Veuillez d'abord sélectionner un fichier d'export Apple Health."
-
-msgid "File parsed successfully."
-msgstr "Fichier analysé avec succès."
-
-msgid "Error parsing file: {error}"
-msgstr "Erreur lors de l'analyse : {error}"
-
-# File loading progress
-msgid "Preparing file load..."
-msgstr "Préparation du chargement du fichier..."
-
-msgid "Starting to parse the Apple Health export file..."
-msgstr "Début de l'analyse du fichier d'export Apple Health..."
-
-msgid "Loading the workouts..."
-msgstr "Chargement des entraînements..."
-
-msgid "Processed {count} workouts..."
-msgstr "{count} entraînements traités..."
-
-msgid "Loaded {count} workouts total."
-msgstr "{count} entraînements chargés au total."
-
-msgid "Building workout index..."
-msgstr "Construction de l'index des entraînements..."
-
-msgid "Preparing dashboard update..."
-msgstr "Préparation de la mise à jour du tableau de bord..."
-
-msgid "Finished parsing the Apple Health export file."
-msgstr "Analyse du fichier d'export Apple Health terminée."
-
-msgid "Error during parsing: {error}"
-msgstr "Erreur pendant l'analyse : {error}"
-
-msgid "Initializing..."
-msgstr "Initialisation..."
 
 # Trends period selector
 msgid "Aggregate by:"
 msgstr "Agréger par :"
 
-msgid "Week"
-msgstr "Semaine"
+msgid "All"
+msgstr "Toutes"
 
-msgid "Month"
-msgstr "Mois"
+msgid "Altitude"
+msgstr "Altitude"
 
-msgid "Quarter"
-msgstr "Trimestre"
+msgid "AmericanFootball"
+msgstr "Football américain"
 
-msgid "Year"
-msgstr "Année"
+msgid "Analytics Dashboard"
+msgstr "Tableau de bord analytique"
 
-# Period labels used in chart titles (lowercase)
-msgid "week"
-msgstr "semaine"
-
-msgid "month"
-msgstr "mois"
-
-msgid "quarter"
-msgstr "trimestre"
-
-msgid "year"
-msgstr "année"
-
-# Activity charts
-msgid "Count by activity"
-msgstr "Nombre par activité"
-
-msgid "Distance by activity"
-msgstr "Distance par activité"
-
-msgid "Calories by activity"
-msgstr "Calories par activité"
-
-msgid "Duration by activity"
-msgstr "Durée par activité"
-
-msgid "Elevation by activity"
-msgstr "Dénivelé par activité"
-
-# Recovery recommendation card (Trends tab)
-msgid "Recovery Recommendation"
-msgstr "Recommandation de récupération"
-
-msgid "Active Recovery"
-msgstr "Récupération active"
-
-msgid "Maintain"
-msgstr "Maintenir"
-
-msgid "Build"
-msgstr "Développer"
-
-# Trends charts ({period} is replaced at runtime with the translated period label)
-msgid "Count by {period}"
-msgstr "Nombre par {period}"
-
-msgid "Distance by {period}"
-msgstr "Distance par {period}"
-
-msgid "Calories by {period}"
-msgstr "Calories par {period}"
-
-msgid "Duration by {period}"
-msgstr "Durée par {period}"
-
-msgid "Elevation by {period}"
-msgstr "Dénivelé par {period}"
-
-msgid "Training load is duration in minutes multiplied by average heart rate."
-msgstr "La charge d'entraînement correspond à la durée en minutes multipliée par la fréquence cardiaque moyenne."
-
-msgid "Count"
-msgstr "Nombre"
-
-msgid "Distance"
-msgstr "Distance"
-
-msgid "Calories"
-msgstr "Calories"
-
-msgid "Duration"
-msgstr "Durée"
-
-msgid "Elevation"
-msgstr "Dénivelé"
-
-msgid "Training Load"
-msgstr "Charge d'entraînement"
-
-# Health data charts
-msgid "Resting HR frequency over time"
-msgstr "Fréquence cardiaque au repos au fil du temps"
-
-msgid "Body Mass over time"
-msgstr "Masse corporelle au fil du temps"
-
-msgid "VO2 Max over time"
-msgstr "VO2 Max au fil du temps"
-
-# Chart toolbox action labels
-msgid "Save as Image"
-msgstr "Enregistrer l'image"
-
-msgid "Restore"
-msgstr "Réinitialiser"
-
-msgid "Improving"
-msgstr "En amélioration"
-
-msgid "Declining"
-msgstr "En baisse"
-
-msgid "Increasing"
-msgstr "En hausse"
-
-msgid "Decreasing"
-msgstr "En diminution"
-
-msgid "Stable"
-msgstr "Stable"
-
-msgid "Insufficient data"
-msgstr "Données insuffisantes"
-
-# QDate locale labels
-msgid "Sunday"
-msgstr "dimanche"
-
-msgid "Monday"
-msgstr "lundi"
-
-msgid "Tuesday"
-msgstr "mardi"
-
-msgid "Wednesday"
-msgstr "mercredi"
-
-msgid "Thursday"
-msgstr "jeudi"
-
-msgid "Friday"
-msgstr "vendredi"
-
-msgid "Saturday"
-msgstr "samedi"
-
-msgid "Sun"
-msgstr "dim."
-
-msgid "Mon"
-msgstr "lun."
-
-msgid "Tue"
-msgstr "mar."
-
-msgid "Wed"
-msgstr "mer."
-
-msgid "Thu"
-msgstr "jeu."
-
-msgid "Fri"
-msgstr "ven."
-
-msgid "Sat"
-msgstr "sam."
-
-msgid "January"
-msgstr "janvier"
-
-msgid "February"
-msgstr "février"
-
-msgid "March"
-msgstr "mars"
-
-msgid "April"
-msgstr "avril"
-
-msgid "May"
-msgstr "mai"
-
-msgid "June"
-msgstr "juin"
-
-msgid "July"
-msgstr "juillet"
-
-msgid "August"
-msgstr "août"
-
-msgid "September"
-msgstr "septembre"
-
-msgid "October"
-msgstr "octobre"
-
-msgid "November"
-msgstr "novembre"
-
-msgid "December"
-msgstr "décembre"
-
-msgid "Jan"
-msgstr "janv."
-
-msgid "Feb"
-msgstr "févr."
-
-msgid "Mar"
-msgstr "mars"
+# Main body
+msgid "Apple Health export file"
+msgstr "Fichier d'export Apple Health"
 
 msgid "Apr"
 msgstr "avr."
 
-msgid "Jun"
-msgstr "juin"
-
-msgid "Jul"
-msgstr "juil."
-
-msgid "Aug"
-msgstr "août"
-
-msgid "Sep"
-msgstr "sept."
-
-msgid "Oct"
-msgstr "oct."
-
-msgid "Nov"
-msgstr "nov."
-
-msgid "Dec"
-msgstr "déc."
-
-# Generic activity labels
-msgid "All"
-msgstr "Tout"
-
-msgid "Others"
-msgstr "Autres"
-
-# HKWorkoutActivityType labels
-msgid "American Football"
-msgstr "Football américain"
+msgid "April"
+msgstr "avril"
 
 msgid "Archery"
 msgstr "Tir à l'arc"
 
-msgid "Australian Football"
+msgid "Aug"
+msgstr "août"
+
+msgid "August"
+msgstr "août"
+
+msgid "AustralianFootball"
 msgstr "Football australien"
+
+msgid "Average Speed"
+msgstr "Vitesse moyenne"
+
+msgid "Avg Cadence"
+msgstr "Cadence moyenne"
+
+msgid "Avg Ground Contact Time"
+msgstr "Temps de contact au sol moyen"
+
+msgid "Avg HR"
+msgstr "FC moy."
+
+# Workout detail modal – running-specific fields
+msgid "Avg Pace"
+msgstr "Allure moyenne"
+
+msgid "Avg Power"
+msgstr "Puiss. moy."
+
+# Workout detail modal – cycling-specific fields
+msgid "Avg Speed"
+msgstr "Vitesse moyenne"
+
+msgid "Avg Step Length"
+msgstr "Longueur de pas moyenne"
+
+msgid "Avg Stride Length"
+msgstr "Longueur de foulée moyenne"
+
+msgid "Avg Vertical Oscillation"
+msgstr "Oscillation verticale moyenne"
+
+msgid "Backstroke"
+msgstr "Dos crawlé"
 
 msgid "Badminton"
 msgstr "Badminton"
+
+msgid "Barre"
+msgstr "Barre"
 
 msgid "Baseball"
 msgstr "Baseball"
 
 msgid "Basketball"
-msgstr "Basket-ball"
+msgstr "Basketball"
 
-msgid "Barre"
-msgstr "Barre"
+msgid "Best Segments"
+msgstr "Meilleurs segments"
+
+msgid "Best segments for standard running distances"
+msgstr "Meilleurs segments pour les distances standards en course à pied"
+
+msgid "Body Mass over time"
+msgstr "Masse corporelle au fil du temps"
 
 msgid "Bowling"
 msgstr "Bowling"
@@ -621,25 +133,63 @@ msgstr "Bowling"
 msgid "Boxing"
 msgstr "Boxe"
 
-msgid "Cardio Dance"
+msgid "Breaststroke"
+msgstr "Brasse"
+
+msgid "Browse"
+msgstr "Parcourir"
+
+msgid "Build"
+msgstr "Développer"
+
+msgid "Building workout index..."
+msgstr "Construction de l'index des entraînements..."
+
+msgid "Butterfly"
+msgstr "Papillon"
+
+msgid "Calories"
+msgstr "Calories"
+
+msgid "Calories by activity"
+msgstr "Calories par activité"
+
+msgid "CardioDance"
 msgstr "Danse cardio"
+
+msgid "Charts"
+msgstr "Graphiques"
 
 msgid "Climbing"
 msgstr "Escalade"
 
+msgid "Comparisons"
+msgstr "Comparaisons"
+
 msgid "Cooldown"
 msgstr "Retour au calme"
 
-msgid "Core Training"
+msgid "CoreTraining"
 msgstr "Gainage"
+
+# Stat cards
+msgid "Count"
+msgstr "Nombre"
+
+# Activity charts
+msgid "Count by activity"
+msgstr "Nombre par activité"
 
 msgid "Cricket"
 msgstr "Cricket"
 
-msgid "Cross Country Skiing"
+msgid "Critical Power (CP) over time"
+msgstr "Puissance Critique (PC) au fil du temps"
+
+msgid "CrossCountrySkiing"
 msgstr "Ski de fond"
 
-msgid "Cross Training"
+msgid "CrossTraining"
 msgstr "Entraînement croisé"
 
 msgid "Curling"
@@ -651,34 +201,143 @@ msgstr "Cyclisme"
 msgid "Dance"
 msgstr "Danse"
 
-msgid "Dance Inspired Training"
+msgid "DanceInspiredTraining"
 msgstr "Entraînement inspiré de la danse"
 
-msgid "Disc Sports"
+msgid "Date"
+msgstr "Date"
+
+msgid "Date range"
+msgstr "Plage de dates"
+
+msgid "Day of week"
+msgstr "Jour de la semaine"
+
+msgid "Dec"
+msgstr "déc."
+
+msgid "December"
+msgstr "décembre"
+
+msgid "Declining"
+msgstr "En baisse"
+
+msgid "Decreasing"
+msgstr "En diminution"
+
+msgid "Details"
+msgstr "Détails"
+
+msgid "Diff"
+msgstr "Écart"
+
+msgid "DiscSports"
 msgstr "Sports de disque"
 
-msgid "Downhill Skiing"
+# Workout detail modal – swim interval table column headers (Intervals tab)
+msgid "Dist"
+msgstr "Dist"
+
+msgid "Distance"
+msgstr "Distance"
+
+msgid "Distance by activity"
+msgstr "Distance par activité"
+
+msgid "Distance vs Pace"
+msgstr "Distance vs allure"
+
+#, python-brace-format
+msgid "Distance: {lo} – {hi} {unit}"
+msgstr "Distance : {lo} – {hi} {unit}"
+
+msgid "DownhillSkiing"
 msgstr "Ski alpin"
+
+msgid "Duration"
+msgstr "Durée"
+
+msgid "Duration by activity"
+msgstr "Durée par activité"
+
+#, python-brace-format
+msgid "Duration: {lo} – {hi} min"
+msgstr "Durée : {lo} – {hi} min"
+
+msgid "Elev"
+msgstr "Dénivelé"
+
+msgid "Elevation"
+msgstr "Dénivelé"
+
+msgid "Elevation Change"
+msgstr "Dénivelé"
+
+msgid "Elevation Gain"
+msgstr "Dénivelé positif"
+
+msgid "Elevation by activity"
+msgstr "Dénivelé par activité"
+
+msgid "Elevation vs Pace"
+msgstr "Dénivelé vs allure"
 
 msgid "Elliptical"
 msgstr "Elliptique"
 
-msgid "Equestrian Sports"
+msgid "End"
+msgstr "Arrivée"
+
+msgid "EquestrianSports"
 msgstr "Sports équestres"
+
+#, python-brace-format
+msgid "Error parsing file: {error}"
+msgstr "Erreur lors de l'analyse : {error}"
+
+msgid "Estimated from overlapping power intervals"
+msgstr "Estimé à partir des intervalles de puissance du segment"
+
+msgid "Export data"
+msgstr "Exporter les données"
+
+msgid "Feb"
+msgstr "fév."
+
+msgid "February"
+msgstr "février"
 
 msgid "Fencing"
 msgstr "Escrime"
 
+msgid "Fewer workouts"
+msgstr "Moins d'entraînements"
+
+msgid "File parsed successfully."
+msgstr "Fichier analysé avec succès."
+
 msgid "Fishing"
 msgstr "Pêche"
 
-msgid "Fitness Gaming"
+msgid "FitnessGaming"
 msgstr "Jeux de fitness"
 
 msgid "Flexibility"
-msgstr "Souplesse"
+msgstr "Assouplissement"
 
-msgid "Functional Strength Training"
+msgid "Freestyle"
+msgstr "Nage libre"
+
+msgid "Fri"
+msgstr "ven."
+
+msgid "Friday"
+msgstr "vendredi"
+
+msgid "Functional Threshold Power"
+msgstr "Puissance seuil fonctionnel"
+
+msgid "FunctionalStrengthTraining"
 msgstr "Renforcement fonctionnel"
 
 msgid "Golf"
@@ -687,13 +346,26 @@ msgstr "Golf"
 msgid "Gymnastics"
 msgstr "Gymnastique"
 
-msgid "Hand Cycling"
-msgstr "Handbike"
+# Health data tab – active HR max series label
+msgid "HR Max (Active)"
+msgstr "FC Max (Active)"
+
+msgid "Half-marathon"
+msgstr "Semi-marathon"
+
+msgid "HandCycling"
+msgstr "Vélo à main"
 
 msgid "Handball"
 msgstr "Handball"
 
-msgid "High Intensity Interval Training"
+msgid "Health Data"
+msgstr "Données de santé"
+
+msgid "Heart Rate"
+msgstr "Fréquence cardiaque"
+
+msgid "HighIntensityIntervalTraining"
 msgstr "Entraînement fractionné à haute intensité"
 
 msgid "Hiking"
@@ -702,11 +374,57 @@ msgstr "Randonnée"
 msgid "Hockey"
 msgstr "Hockey"
 
+msgid "Hour of day"
+msgstr "Heure de la journée"
+
+msgid "Humidity"
+msgstr "Humidité"
+
 msgid "Hunting"
 msgstr "Chasse"
 
-msgid "Jump Rope"
+msgid "Imperial"
+msgstr "Impérial"
+
+msgid "Improving"
+msgstr "En amélioration"
+
+msgid "Increasing"
+msgstr "En hausse"
+
+msgid "Initializing..."
+msgstr "Initialisation..."
+
+msgid "Insufficient data"
+msgstr "Données insuffisantes"
+
+# Workout detail modal – tab labels and empty-state messages
+msgid "Intervals"
+msgstr "Intervalles"
+
+msgid "Jan"
+msgstr "janv."
+
+msgid "January"
+msgstr "janvier"
+
+msgid "Jul"
+msgstr "juil."
+
+msgid "July"
+msgstr "juillet"
+
+msgid "JumpRope"
 msgstr "Corde à sauter"
+
+msgid "Jun"
+msgstr "juin"
+
+msgid "June"
+msgstr "juin"
+
+msgid "Kickboard"
+msgstr "Planche"
 
 msgid "Kickboxing"
 msgstr "Kick-boxing"
@@ -714,23 +432,171 @@ msgstr "Kick-boxing"
 msgid "Lacrosse"
 msgstr "Lacrosse"
 
-msgid "Martial Arts"
+# Header
+msgid "Language"
+msgstr "Langue"
+
+msgid "Lap Length"
+msgstr "Longueur de bassin"
+
+msgid "Load"
+msgstr "Charger"
+
+# Workout table
+msgid "Load a file to see workout details."
+msgstr "Chargez un fichier pour voir les détails des séances."
+
+msgid "Loading Critical Power data..."
+msgstr "Chargement des données de Puissance Critique..."
+
+msgid "Loading best segments..."
+msgstr "Chargement des meilleurs segments..."
+
+msgid "Loading health data..."
+msgstr "Chargement des données de santé..."
+
+# Workout detail modal – swimming summary fields (Activity tab)
+msgid "Location"
+msgstr "Lieu"
+
+msgid "Longest Cycling"
+msgstr "Sortie à vélo la plus longue"
+
+msgid "Longest Duration Workout"
+msgstr "Séance la plus longue"
+
+msgid "Longest Run"
+msgstr "Course la plus longue"
+
+msgid "Longest Swim"
+msgstr "Nage la plus longue"
+
+msgid "Longest Walk/Hike"
+msgstr "Marche/Randonnée la plus longue"
+
+msgid "Maintain"
+msgstr "Maintenir"
+
+msgid "Mar"
+msgstr "mar."
+
+msgid "Marathon"
+msgstr "Marathon"
+
+msgid "March"
+msgstr "mars"
+
+msgid "MartialArts"
 msgstr "Arts martiaux"
 
-msgid "Mind And Body"
+msgid "May"
+msgstr "mai"
+
+msgid "Measured from segment samples"
+msgstr "Mesuré à partir des échantillons du segment"
+
+msgid "Metric"
+msgstr "Métrique"
+
+msgid "MindAndBody"
 msgstr "Corps et esprit"
 
-msgid "Mixed Cardio"
+msgid "Mixed"
+msgstr "Mixte"
+
+msgid "MixedCardio"
 msgstr "Cardio mixte"
 
-msgid "Mixed Metabolic Cardio Training"
+msgid "MixedMetabolicCardioTraining"
 msgstr "Cardio métabolique mixte"
+
+msgid "Mon"
+msgstr "lun."
+
+msgid "Monday"
+msgstr "lundi"
+
+msgid "Month"
+msgstr "Mois"
+
+msgid "More workouts"
+msgstr "Plus d'entraînements"
+
+msgid "Most Calories Workout"
+msgstr "Séance la plus calorique"
+
+msgid "Most Elevation (Run)"
+msgstr "Dénivelé max (course)"
+
+msgid "Most Elevation (Walk/Hike)"
+msgstr "Dénivelé max (marche/randonnée)"
+
+msgid "No activity-specific data available."
+msgstr "Aucune donnée spécifique à cette activité."
+
+msgid "No data"
+msgstr "Aucune donnée"
+
+# Notifications
+msgid "No file selected"
+msgstr "Aucun fichier sélectionné"
+
+# Workout detail modal – heart-rate chart label
+msgid "No heart rate data available."
+msgstr "Aucune donnée de fréquence cardiaque disponible."
+
+msgid "No lap data available."
+msgstr "Aucune donnée de distance disponible."
+
+msgid "No matching power data"
+msgstr "Aucune donnée de puissance disponible"
+
+msgid "No similar routes found."
+msgstr "Aucun parcours similaire trouvé."
+
+msgid "Non-physical W'"
+msgstr "W' non physique"
+
+msgid "Nov"
+msgstr "nov."
+
+msgid "November"
+msgstr "novembre"
+
+msgid "Oct"
+msgstr "oct."
+
+msgid "October"
+msgstr "octobre"
+
+msgid "Open Water"
+msgstr "Eau libre"
+
+msgid "Open this tab to load best segments."
+msgstr "Ouvrez cet onglet pour charger les meilleurs segments."
+
+msgid "Open this tab to load health data."
+msgstr "Ouvrez cet onglet pour charger les données de santé."
 
 msgid "Other"
 msgstr "Autre"
 
-msgid "Paddle Sports"
+msgid "Others"
+msgstr "Autres"
+
+# Tabs
+msgid "Overview"
+msgstr "Vue d'ensemble"
+
+# Workout detail modal – splits table column headers
+msgid "Pace"
+msgstr "Allure"
+
+msgid "PaddleSports"
 msgstr "Sports de pagaie"
+
+msgid "Periods"
+msgstr "Périodes"
 
 msgid "Pickleball"
 msgstr "Pickleball"
@@ -741,11 +607,56 @@ msgstr "Pilates"
 msgid "Play"
 msgstr "Jeu"
 
-msgid "Preparation And Recovery"
+msgid "Please select an Apple Health export file first."
+msgstr "Veuillez d'abord sélectionner un fichier d'export Apple Health."
+
+msgid "Pool"
+msgstr "Piscine"
+
+msgid "PreparationAndRecovery"
 msgstr "Préparation et récupération"
+
+msgid "Preparing dashboard update..."
+msgstr "Préparation de la mise à jour du tableau de bord..."
+
+# File loading progress
+msgid "Preparing file load..."
+msgstr "Préparation du chargement du fichier..."
+
+msgid "Quarter"
+msgstr "Trimestre"
+
+msgid "Quit TrackTales"
+msgstr "Quitter TrackTales"
 
 msgid "Racquetball"
 msgstr "Racquetball"
+
+#, python-brace-format
+msgid "Rank: {rank} of {total}"
+msgstr "Rang : {rank} sur {total}"
+
+# Workout table pagination
+msgid "Records per page:"
+msgstr "Lignes par page :"
+
+# Recovery recommendation card (Trends tab)
+msgid "Recovery Recommendation"
+msgstr "Recommandation de récupération"
+
+msgid "Rest"
+msgstr "Repos"
+
+# Health data charts
+msgid "Resting HR frequency over time"
+msgstr "FC au repos au fil du temps"
+
+msgid "Route"
+msgstr "Parcours"
+
+#, python-brace-format
+msgid "Route {index}"
+msgstr "Parcours {index}"
 
 msgid "Rowing"
 msgstr "Aviron"
@@ -759,219 +670,236 @@ msgstr "Course à pied"
 msgid "Sailing"
 msgstr "Voile"
 
-msgid "Skating Sports"
+msgid "Sat"
+msgstr "sam."
+
+msgid "Saturday"
+msgstr "samedi"
+
+msgid "Select an Apple Health export file..."
+msgstr "Sélectionner un fichier d'export Apple Health..."
+
+msgid "Sep"
+msgstr "sept."
+
+msgid "September"
+msgstr "septembre"
+
+msgid "SkatingSports"
 msgstr "Sports de glisse"
+
+msgid "SnowSports"
+msgstr "Sports d'hiver"
 
 msgid "Snowboarding"
 msgstr "Snowboard"
 
-msgid "Snow Sports"
-msgstr "Sports de neige"
-
 msgid "Soccer"
 msgstr "Football"
 
-msgid "Social Dance"
+msgid "SocialDance"
 msgstr "Danse sociale"
 
 msgid "Softball"
 msgstr "Softball"
 
+msgid "Speed"
+msgstr "Vitesse"
+
 msgid "Squash"
 msgstr "Squash"
 
-msgid "Stair Climbing"
+msgid "Stable"
+msgstr "Stable"
+
+msgid "StairClimbing"
 msgstr "Montée d'escaliers"
 
 msgid "Stairs"
 msgstr "Escaliers"
 
-msgid "Step Training"
-msgstr "Step"
-
-msgid "Surfing Sports"
-msgstr "Sports de glisse sur vagues"
-
-msgid "Swim Bike Run"
-msgstr "Natation Vélo Course"
-
-msgid "Swimming"
-msgstr "Natation"
-
-msgid "Table Tennis"
-msgstr "Tennis de table"
-
-msgid "Tai Chi"
-msgstr "Tai-chi"
-
-msgid "Tennis"
-msgstr "Tennis"
-
-msgid "Track And Field"
-msgstr "Athlétisme"
-
-msgid "Traditional Strength Training"
-msgstr "Musculation traditionnelle"
-
-msgid "Transition"
-msgstr "Transition"
-
-msgid "Underwater Diving"
-msgstr "Plongée sous-marine"
-
-msgid "Volleyball"
-msgstr "Volley-ball"
-
-msgid "Walking"
-msgstr "Marche"
-
-msgid "Water Fitness"
-msgstr "Aquagym"
-
-msgid "Water Polo"
-msgstr "Water-polo"
-
-msgid "Water Sports"
-msgstr "Sports nautiques"
-
-msgid "Wheelchair Run Pace"
-msgstr "Fauteuil roulant allure course"
-
-msgid "Wheelchair Walk Pace"
-msgstr "Fauteuil roulant allure marche"
-
-msgid "Wrestling"
-msgstr "Lutte"
-
-msgid "Yoga"
-msgstr "Yoga"
-
-msgid "Elevation Change"
-msgstr "Dénivelé"
-
-# Workout detail modal – running-specific fields
-msgid "Avg Pace"
-msgstr "Allure moyenne"
-
-msgid "Avg Cadence"
-msgstr "Cadence moyenne"
-
-msgid "Avg Stride Length"
-msgstr "Longueur de foulée moyenne"
-
-msgid "Avg Step Length"
-msgstr "Longueur de pas moyenne"
-
-msgid "Avg Vertical Oscillation"
-msgstr "Oscillation verticale moyenne"
-
-msgid "Avg Ground Contact Time"
-msgstr "Temps de contact au sol moyen"
+msgid "Start"
+msgstr "Départ"
 
 msgid "Step Count"
 msgstr "Nombre de pas"
 
-msgid "VO₂ Max"
-msgstr "VO₂ Max"
-
-# Workout detail modal – cycling-specific fields
-msgid "Avg Speed"
-msgstr "Vitesse moyenne"
-
-msgid "Functional Threshold Power"
-msgstr "Puissance seuil fonctionnel"
-
-# Workout detail modal – tab labels and empty-state messages
-msgid "Intervals"
-msgstr "Intervalles"
-
-msgid "Comparisons"
-msgstr "Comparaisons"
-
-msgid "No activity-specific data available."
-msgstr "Aucune donnée spécifique à cette activité."
-
-msgid "No GPS route available."
-msgstr "Aucun tracé GPS disponible."
-
-msgid "No similar routes found."
-msgstr "Aucun parcours similaire trouvé."
-
-msgid "Rank: {rank} of {total}"
-msgstr "Rang : {rank} sur {total}"
-
-msgid "Diff"
-msgstr "Écart"
-
-msgid "No lap data available."
-msgstr "Aucune donnée de distance disponible."
-
-# Workout detail modal – splits table column headers
-msgid "Pace"
-msgstr "Allure"
-
-msgid "Speed"
-msgstr "Vitesse"
-
-msgid "Elev"
-msgstr "Dénivelé"
-
-# Workout detail modal – swimming summary fields (Activity tab)
-msgid "Location"
-msgstr "Lieu"
-
-msgid "Lap Length"
-msgstr "Longueur de bassin"
-
-msgid "Total Strokes"
-msgstr "Nombre de coups"
-
-# Workout detail modal – swim interval table column headers (Intervals tab)
-msgid "Dist"
-msgstr "Dist"
-
-msgid "Time"
-msgstr "Temps"
+msgid "StepTraining"
+msgstr "Step"
 
 msgid "Stroke"
 msgstr "Nage"
 
-msgid "Rest"
-msgstr "Repos"
+msgid "Sun"
+msgstr "dim."
 
-# Workout detail modal – swim interval stroke style labels (displayed directly in UI)
-msgid "Mixed"
-msgstr "Mixte"
+# QDate locale labels
+msgid "Sunday"
+msgstr "dimanche"
+
+msgid "SurfingSports"
+msgstr "Sports de glisse sur vagues"
+
+msgid "SwimBikeRun"
+msgstr "Triathlon"
+
+msgid "Swimming"
+msgstr "Natation"
+
+msgid "TableTennis"
+msgstr "Tennis de table"
+
+msgid "TaiChi"
+msgstr "Tai-chi"
+
+msgid "Temperature"
+msgstr "Température"
+
+msgid "Tennis"
+msgstr "Tennis"
+
+msgid ""
+"This heat map shows when workouts happen. X axis is hour of day, Y axis "
+"is day of week, and color intensity represents workout count."
+msgstr ""
+"Cette carte de chaleur montre quand les séances ont lieu. L'axe X "
+"représente l'heure de la journée, l'axe Y le jour de la semaine, et "
+"l'intensité de la couleur représente le nombre de séances."
+
+msgid "Thu"
+msgstr "jeu."
+
+msgid "Thursday"
+msgstr "jeudi"
+
+msgid "Time"
+msgstr "Temps"
+
+msgid "Total Strokes"
+msgstr "Nombre de coups"
+
+msgid "TrackAndField"
+msgstr "Athlétisme"
+
+msgid "TrackTales is shutting down..."
+msgstr "Fermeture de TrackTales..."
+
+msgid "TraditionalStrengthTraining"
+msgstr "Musculation"
+
+msgid "Training Load"
+msgstr "Charge d'entraînement"
+
+msgid "Training load is duration in minutes multiplied by average heart rate."
+msgstr ""
+"La charge d'entraînement correspond à la durée en minutes multipliée par "
+"la fréquence cardiaque moyenne."
+
+msgid "Transition"
+msgstr "Transition"
+
+msgid "Trends"
+msgstr "Tendances"
+
+msgid "Tue"
+msgstr "mar."
+
+msgid "Tuesday"
+msgstr "mardi"
+
+msgid "UnderwaterDiving"
+msgstr "Plongée sous-marine"
+
+# Preferences menu: unit system section header and options
+msgid "Units"
+msgstr "Unités"
 
 msgid "Unknown"
 msgstr "Inconnu"
 
-msgid "Freestyle"
-msgstr "Nage libre"
+msgid "Using workout average power fallback"
+msgstr "Valeur de secours : puissance moyenne de l'entraînement"
 
-msgid "Backstroke"
-msgstr "Dos crawlé"
+msgid "VO2 Max over time"
+msgstr "VO2 Max au fil du temps"
 
-msgid "Breaststroke"
-msgstr "Brasse"
+msgid "VO₂ Max"
+msgstr "VO₂ Max"
 
-msgid "Butterfly"
-msgstr "Papillon"
+msgid "Volleyball"
+msgstr "Volley-ball"
 
-msgid "Kickboard"
-msgstr "Planche"
+msgid ""
+"W' <= 0 is non-physical in the CP model. This usually means sparse data "
+"or inconsistent pace/power estimates for those periods."
+msgstr ""
+"W' <= 0 est non physique dans le modèle de PC. Cela indique généralement "
+"des données clairsemées ou des estimations d'allure/puissance "
+"incohérentes pour ces périodes."
 
-# Workout detail modal – swimming location type labels
-msgid "Pool"
-msgstr "Piscine"
+msgid "W' over time"
+msgstr "W' au fil du temps"
 
-msgid "Open Water"
-msgstr "Eau libre"
+msgid "Walking"
+msgstr "Marche"
 
-# Workout detail modal – heart-rate chart label
-msgid "No heart rate data available."
-msgstr "Aucune donnée de fréquence cardiaque disponible."
+msgid "WaterFitness"
+msgstr "Aquagym"
 
-# Health data tab – active HR max series label
-msgid "HR Max (Active)"
-msgstr "FC Max (Active)"
+msgid "WaterPolo"
+msgstr "Water-polo"
+
+msgid "WaterSports"
+msgstr "Sports nautiques"
+
+msgid "Wed"
+msgstr "mer."
+
+msgid "Wednesday"
+msgstr "mercredi"
+
+msgid "Week"
+msgstr "Semaine"
+
+msgid "WheelchairRunPace"
+msgstr "Fauteuil roulant allure course"
+
+msgid "WheelchairWalkPace"
+msgstr "Fauteuil roulant allure marche"
+
+msgid "Workouts"
+msgstr "Séances"
+
+msgid "Wrestling"
+msgstr "Lutte"
+
+msgid "Year"
+msgstr "Année"
+
+msgid "Yoga"
+msgstr "Yoga"
+
+msgid "from"
+msgstr "de"
+
+msgid "of"
+msgstr "sur"
+
+msgid "stroke"
+msgstr "nage"
+
+msgid "to"
+msgstr "à"
+
+msgid "to CSV"
+msgstr "en CSV"
+
+msgid "to JSON"
+msgstr "en JSON"
+
+msgid "workout"
+msgstr "entraînement"
+
+msgid "workouts"
+msgstr "entraînements"
+

@@ -67,6 +67,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
+from i18n import n_
+
 
 class FieldType(StrEnum):
     """Data type for rendering and processing a field value.
@@ -132,8 +134,8 @@ class FieldDefinition:
 #: Source: ``HKWorkoutSwimmingLocationType`` enum in Apple HealthKit.
 #: 1 = pool (indoors), 2 = open water (outdoors).
 SWIMMING_LOCATION_TYPES: dict[int, str] = {
-    1: "Pool",
-    2: "Open Water",
+    1: n_("Pool"),
+    2: n_("Open Water"),
 }
 
 #: Maps the integer codes stored in ``SwimmingStrokeStyle`` (per-lap metadata) to labels.
@@ -141,13 +143,13 @@ SWIMMING_LOCATION_TYPES: dict[int, str] = {
 #: 0 = unknown, 1 = mixed, 2 = freestyle, 3 = backstroke,
 #: 4 = breaststroke, 5 = butterfly, 6 = kickboard.
 SWIMMING_STROKE_STYLES: dict[int, str] = {
-    0: "Unknown",
-    1: "Mixed",
-    2: "Freestyle",
-    3: "Backstroke",
-    4: "Breaststroke",
-    5: "Butterfly",
-    6: "Kickboard",
+    0: n_("Unknown"),
+    1: n_("Mixed"),
+    2: n_("Freestyle"),
+    3: n_("Backstroke"),
+    4: n_("Breaststroke"),
+    5: n_("Butterfly"),
+    6: n_("Kickboard"),
 }
 
 #: Collects all enum display-value mappings keyed by ``field_name`` for easy lookup.

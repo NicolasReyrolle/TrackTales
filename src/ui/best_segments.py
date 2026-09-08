@@ -8,7 +8,7 @@ import pandas as pd
 from nicegui import ui
 
 from app_state import get_distance_unit, get_elevation_unit, state
-from i18n import get_language, t
+from i18n import get_language, n_, t
 from logic.workout_manager import (
     HALF_MARATHON_DISTANCE_M,
     MARATHON_DISTANCE_M,
@@ -32,36 +32,21 @@ _logger = logging.getLogger(__name__)
 _CONFIDENCE_META: dict[str, dict[str, str]] = {
     "measured": {
         "icon": "sensors",
-        "tooltip_key": "Measured from segment samples",
+        "tooltip_key": n_("Measured from segment samples"),
     },
     "overlap_estimated": {
         "icon": "insights",
-        "tooltip_key": "Estimated from overlapping power intervals",
+        "tooltip_key": n_("Estimated from overlapping power intervals"),
     },
     "workout_fallback": {
         "icon": "directions_run",
-        "tooltip_key": "Using workout average power fallback",
+        "tooltip_key": n_("Using workout average power fallback"),
     },
     "missing": {
         "icon": "help_outline",
-        "tooltip_key": "No matching power data",
+        "tooltip_key": n_("No matching power data"),
     },
 }
-
-
-def _register_confidence_translations() -> None:
-    """Register confidence tooltip strings for Babel extraction.
-
-    These msgids are referenced via ``_CONFIDENCE_META[...]["tooltip_key"]``
-    and would otherwise be missed by ``pybabel extract``.
-    """
-    t("Measured from segment samples")
-    t("Estimated from overlapping power intervals")
-    t("Using workout average power fallback")
-    t("No matching power data")
-
-
-_register_confidence_translations()
 
 
 def _resolve_confidence_key(power_w: Any, power_confidence: Any) -> str:
@@ -112,6 +97,8 @@ def _format_segment_entry(
     workout_ts: float | None = (
         float(start_date.timestamp()) if isinstance(start_date, pd.Timestamp) else None
     )
+    msgid = str(confidence_cfg["tooltip_key"])
+
     return {
         "distance": format_distance_label(
             distance_m,
@@ -125,7 +112,7 @@ def _format_segment_entry(
         "average_speed": _format_speed(distance_m, duration_s, distance_unit),
         "avg_power": avg_power_str,
         "avg_power_confidence_icon": str(confidence_cfg["icon"]),
-        "avg_power_confidence_tooltip": t(confidence_cfg["tooltip_key"]),
+        "avg_power_confidence_tooltip": t(msgid),
         "start_date": format_date_label(start_date, language_code),
         "workout_ts": workout_ts,
     }

@@ -74,19 +74,19 @@ Example: Spanish (`es`).
 3. **Register the new language** in `src/i18n/core.py`:
    - Add it to the `LANGUAGES` dictionary:
 
-````python
-     LANGUAGES: dict[str, str] = {
-         "en": "English",
-         "fr": "Français",
-         "es": "Español",
-     }
-     ```
+   ```python
+    LANGUAGES: dict[str, str] = {
+        "en": "English",
+        "fr": "Français",
+        "es": "Español",
+    }
+   ```
 
 4. _(Optional)_ **Compile the new catalog**:
 
    ```bash
    pybabel compile -d src/i18n/locales -D messages -l es
-````
+   ```
 
 ## Verify Before Commit
 

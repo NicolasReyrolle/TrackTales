@@ -31,7 +31,7 @@ def _read_po_for_lang(lang: str) -> dict[str, str]:
     return {str(msg.id): str(msg.string) for msg in catalog if msg.id}
 
 
-# Languages that have a .po file (all except the default/English base)
+# Languages that have a .po file
 _TRANSLATED_LANGUAGES = [code for code in LANGUAGES]
 
 

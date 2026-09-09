@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tracktales v2026.8.1\n"
 "Report-Msgid-Bugs-To: 405928+NicolasReyrolle@users.noreply.github.com\n"
-"POT-Creation-Date: 2026-09-08 09:16+0200\n"
+"POT-Creation-Date: 2026-09-09 10:37+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,6 +30,9 @@ msgstr ""
 msgid "Activity heat map (day/time)"
 msgstr ""
 
+msgid "Activity:"
+msgstr ""
+
 msgid "Aggregate by:"
 msgstr ""
 
@@ -43,6 +46,9 @@ msgid "AmericanFootball"
 msgstr ""
 
 msgid "Analytics Dashboard"
+msgstr ""
+
+msgid "Analytics report (Markdown)"
 msgstr ""
 
 msgid "Apple Health export file"
@@ -138,6 +144,9 @@ msgstr ""
 msgid "Building workout index..."
 msgstr ""
 
+msgid "Busiest workout day:"
+msgstr ""
+
 msgid "Butterfly"
 msgstr ""
 
@@ -201,6 +210,9 @@ msgstr ""
 msgid "Date range"
 msgstr ""
 
+msgid "Date range:"
+msgstr ""
+
 msgid "Day of week"
 msgstr ""
 
@@ -232,6 +244,9 @@ msgid "Distance"
 msgstr ""
 
 msgid "Distance by activity"
+msgstr ""
+
+msgid "Distance trend:"
 msgstr ""
 
 msgid "Distance vs Pace"
@@ -382,6 +397,9 @@ msgid "Increasing"
 msgstr ""
 
 msgid "Initializing..."
+msgstr ""
+
+msgid "Insights"
 msgstr ""
 
 msgid "Insufficient data"
@@ -622,6 +640,9 @@ msgstr ""
 msgid "Recovery Recommendation"
 msgstr ""
 
+msgid "Recovery recommendation:"
+msgstr ""
+
 msgid "Rest"
 msgstr ""
 
@@ -707,6 +728,9 @@ msgstr ""
 msgid "Stroke"
 msgstr ""
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sun"
 msgstr ""
 
@@ -754,6 +778,9 @@ msgstr ""
 msgid "TrackAndField"
 msgstr ""
 
+msgid "TrackTales Analytics Report"
+msgstr ""
+
 msgid "TrackTales is shutting down..."
 msgstr ""
 
@@ -764,6 +791,9 @@ msgid "Training Load"
 msgstr ""
 
 msgid "Training load is duration in minutes multiplied by average heart rate."
+msgstr ""
+
+msgid "Training load:"
 msgstr ""
 
 msgid "Transition"
@@ -794,6 +824,9 @@ msgid "VO2 Max over time"
 msgstr ""
 
 msgid "VO₂ Max"
+msgstr ""
+
+msgid "Value"
 msgstr ""
 
 msgid "Volleyball"

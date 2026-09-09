@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
+from i18n import t
+
 
 class WorkoutManagerExportMixin:
     """Statistics and export methods for workout data."""
@@ -236,26 +238,26 @@ class WorkoutManagerExportMixin:
 
         return "\n".join(
             [
-                "# TrackTales Analytics Report",
+                f"# {t('TrackTales Analytics Report')}",
                 "",
-                f"- **Activity:** {activity_label}",
-                f"- **Date range:** {date_label}",
+                f"- **{t('Activity:')}** {activity_label}",
+                f"- **{t('Date range:')}** {date_label}",
                 "",
-                "## Summary",
+                f"## {t('Summary')}",
                 "",
-                "| Metric | Value |",
+                f"| {t('Metric')} | {t('Value')} |",
                 "| --- | ---: |",
-                f"| Workouts | {count} |",
-                f"| Distance | {distance} {distance_unit} |",
-                f"| Duration | {duration}h |",
-                f"| Calories | {calories} kcal |",
+                f"| {t('Workouts')} | {count} |",
+                f"| {t('Distance')} | {distance} {distance_unit} |",
+                f"| {t('Duration')} | {duration}h |",
+                f"| {t('Calories')} | {calories} kcal |",
                 "",
-                "## Insights",
+                f"## {t('Insights')}",
                 "",
-                f"- **Distance trend:** {trend}",
-                f"- **Busiest workout day:** {busiest_day}",
-                f"- **Training load:** {training_load} bpm·min",
-                f"- **Recovery recommendation:** {recovery}",
+                f"- **{t('Distance trend:')}** {trend}",
+                f"- **{t('Busiest workout day:')}** {busiest_day}",
+                f"- **{t('Training load:')}** {training_load} bpm·min",
+                f"- **{t('Recovery recommendation:')}** {recovery}",
                 "",
             ]
         )

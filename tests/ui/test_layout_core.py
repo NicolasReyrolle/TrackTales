@@ -270,8 +270,8 @@ def test_render_date_range_selector_applies_french_calendar_locale() -> None:
 
         assert "firstDayOfWeek" in dummy_date.props_arg
         assert '"firstDayOfWeek": 1' in dummy_date.props_arg
-        assert "janvier" in dummy_date.props_arg
-        assert "dimanche" in dummy_date.props_arg
+        assert "Janvier" in dummy_date.props_arg
+        assert "Dimanche" in dummy_date.props_arg
     finally:
         state.workouts = original_workouts
 

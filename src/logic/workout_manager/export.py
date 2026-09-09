@@ -227,7 +227,7 @@ class WorkoutManagerExportMixin:
         date_label = (
             f"{start_date:%Y-%m-%d} to {end_date:%Y-%m-%d}"
             if start_date is not None and end_date is not None
-            else "All available dates"
+            else t("All available dates")
         )
         training_load = self.get_training_load(activity_type, start_date, end_date)
         recovery = self.get_recovery_recommendation(
@@ -240,8 +240,8 @@ class WorkoutManagerExportMixin:
             [
                 f"# {t('TrackTales Analytics Report')}",
                 "",
-                f"- **{t('Activity:')}** {activity_label}",
-                f"- **{t('Date range:')}** {date_label}",
+                f"- **{t('Activity:')}** {t(activity_label)}",
+                f"- **{t('Date range:')}** {t(date_label)}",
                 "",
                 f"## {t('Summary')}",
                 "",
@@ -254,10 +254,10 @@ class WorkoutManagerExportMixin:
                 "",
                 f"## {t('Insights')}",
                 "",
-                f"- **{t('Distance trend:')}** {trend}",
-                f"- **{t('Busiest workout day:')}** {busiest_day}",
-                f"- **{t('Training load:')}** {training_load} bpm·min",
-                f"- **{t('Recovery recommendation:')}** {recovery}",
+                f"- **{t('Distance trend:')}** {t(trend)}",
+                f"- **{t('Busiest workout day:')}** {t(busiest_day)}",
+                f"- **{t('Training load:')}** {training_load} {t('bpm·min')}",
+                f"- **{t('Recovery recommendation:')}** {t(recovery)}",
                 "",
             ]
         )

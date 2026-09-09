@@ -473,7 +473,10 @@ def _nearest_vo2_max(
         return "–"
 
     if vo2_dates is None:
-        vo2_dates = pd.to_datetime(vo2_df["startDate"], errors="coerce").dt.tz_localize(None)
+        # Use explicit ISO8601 parser for Apple Health timestamps
+        vo2_dates = pd.to_datetime(
+            vo2_df["startDate"], format="ISO8601", errors="coerce"
+        ).dt.tz_localize(None)
     if not vo2_dates.notna().any():
         return "–"
     deltas = (vo2_dates - workout_date).abs()

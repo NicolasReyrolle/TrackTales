@@ -78,3 +78,9 @@ line-ending = "auto"
 [tool.pyright]
 extraPaths = ["src"]
 reportPrivateUsage = false
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+]

@@ -3,7 +3,7 @@
 import json
 import re
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Protocol
 
 import pandas as pd
@@ -238,7 +238,9 @@ def parse_float(value: Any) -> float | None:
         return None
 
 
-def format_date_label(date_obj: datetime | pd.Timestamp, language_code: str | None = None) -> str:
+def format_date_label(
+    date_obj: datetime | pd.Timestamp | date, language_code: str | None = None
+) -> str:
     """Format a date label according to the requested language.
     Args:
         date_obj: Date to format.

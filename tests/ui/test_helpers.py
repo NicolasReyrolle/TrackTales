@@ -1,6 +1,6 @@
 """Tests for UI helper formatting utilities."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 import pandas as pd
 import pytest
@@ -199,6 +199,11 @@ class TestBestSegmentLabelFormatters:
         assert helpers.format_duration_label(5000.0) == "1 h 23 min 20 s"
 
     def test_format_date_label(self) -> None:
+        """Date labels should follow language-specific ordering."""
+        value = date(2025, 9, 16)
+        assert helpers.format_date_label(value, language_code="en") == "9/16/25"
+
+    def test_format_datetime_label(self) -> None:
         """Date labels should follow language-specific ordering."""
         value = datetime(2025, 9, 16)
         assert helpers.format_date_label(value, language_code="fr") == "16/09/2025"

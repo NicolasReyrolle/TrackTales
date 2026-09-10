@@ -223,7 +223,7 @@ class WorkoutManagerExportMixin:
         busiest_day = (
             max(seasonal_counts, key=lambda day: seasonal_counts[day]) if seasonal_counts else "N/A"
         )
-        activity_label = activity_type.replace("|", "\\|")
+        activity_label = t(activity_type).replace("|", "\\|")
         date_label = (
             f"{start_date:%Y-%m-%d} {t('to')} {end_date:%Y-%m-%d}"
             if start_date is not None and end_date is not None
@@ -240,7 +240,7 @@ class WorkoutManagerExportMixin:
             [
                 f"# {t('TrackTales Analytics Report')}",
                 "",
-                f"- **{t('Activity:')}** {t(activity_label)}",
+                f"- **{t('Activity:')}** {activity_label}",
                 f"- **{t('Date range:')}** {t(date_label)}",
                 "",
                 f"## {t('Summary')}",

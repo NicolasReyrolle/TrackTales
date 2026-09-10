@@ -83,4 +83,7 @@ reportPrivateUsage = false
 exclude_lines = [
     "pragma: no cover",
     "raise NotImplementedError",
+    "\\.\\.\\.",
+    "@abstractmethod",
+    "@overload",
 ]

@@ -225,7 +225,7 @@ class WorkoutManagerExportMixin:
         )
         activity_label = activity_type.replace("|", "\\|")
         date_label = (
-            f"{start_date:%Y-%m-%d} to {end_date:%Y-%m-%d}"
+            f"{start_date:%Y-%m-%d} {t('to')} {end_date:%Y-%m-%d}"
             if start_date is not None and end_date is not None
             else t("All available dates")
         )

@@ -72,7 +72,7 @@ def test_render_running_tab_builds_scatter_data_from_workouts() -> None:
         assert len(distance_points) == 2
         assert distance_points[0][:2] == (5.0, 5.0)
         assert elevation_points[0][:2] == (120.0, 5.0)
-        assert distance_points[0][2] == "01/06/2025"
+        assert distance_points[0][2] == "1/6/25"
         assert distance_points[0][3] == 0
     finally:
         state.workouts = original_workouts

@@ -166,6 +166,34 @@ class TestExportToCsv:
             pass
 
 
+class TestExportToMarkdown:
+    """Test the analytics Markdown report export."""
+
+    def test_export_to_markdown_contains_summary_and_insights(self) -> None:
+        manager = wm.WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running", "Running"],
+                    "startDate": pd.to_datetime(["2024-01-01", "2024-02-01"]),
+                    "duration": [3600, 1800],
+                    "distance": [3000, 5000],
+                    "sumActiveEnergyBurned": [400, 250],
+                    "averageHeartRate": [150, 140],
+                }
+            )
+        )
+
+        report = manager.export_to_markdown()
+
+        assert "# TrackTales Analytics Report" in report
+        assert "| Workouts | 2 |" in report
+        assert "| Distance | 8 km |" in report
+        assert "| Duration | 2h |" in report
+        assert "- **Distance trend:** Increasing" in report
+        assert "- **Busiest workout day:** Monday" in report
+        assert "- **Recovery recommendation:** Rest" in report
+
+
 class TestColumnExclusion:
     """Test column exclusion behavior in export methods."""
 

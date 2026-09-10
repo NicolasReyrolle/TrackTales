@@ -296,6 +296,17 @@ def handle_csv_export() -> None:
     ui.download(csv_data.encode("utf-8"), "apple_health_export.csv")
 
 
+def handle_markdown_export() -> None:
+    """Handle exporting an analytics summary as Markdown."""
+    markdown_data = state.workouts.export_to_markdown(
+        activity_type=state.selected_activity_type,
+        start_date=state.start_date,
+        end_date=state.end_date,
+        distance_unit=get_distance_unit(),
+    )
+    ui.download(markdown_data.encode("utf-8"), "tracktales_analytics_report.md")
+
+
 def _refresh_summary_metrics() -> None:
     """Refresh global summary metrics and their display values."""
     dist_unit = get_distance_unit()
@@ -614,6 +625,9 @@ def render_left_drawer() -> None:
         ):
             ui.button(t("to JSON"), on_click=handle_json_export).props("flat").classes("w-full")
             ui.button(t("to CSV"), on_click=handle_csv_export).props("flat").classes("w-full")
+            ui.button(t("Analytics report (Markdown)"), on_click=handle_markdown_export).props(
+                "flat"
+            ).classes("w-full")
 
 
 @ui.refreshable

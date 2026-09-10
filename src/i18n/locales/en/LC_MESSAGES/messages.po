@@ -6,9 +6,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tracktales v2026.8.1\n"
 "Report-Msgid-Bugs-To: 405928+NicolasReyrolle@users.noreply.github.com\n"
-"POT-Creation-Date: 2026-09-08 09:16+0200\n"
-"PO-Revision-Date: 2026-09-08 11:35+0200\n"
-"Last-Translator: Nicolas Reyrolle <405928+NicolasReyrolle@users.noreply.github.com>\n"
+"POT-Creation-Date: 2026-09-10 11:49+0200\n"
+"PO-Revision-Date: 2026-09-09 12:03+0200\n"
+"Last-Translator: Nicolas Reyrolle "
+"<405928+NicolasReyrolle@users.noreply.github.com>\n"
 "Language: en\n"
 "Language-Team: en <LL@li.org>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -32,11 +33,17 @@ msgstr "Activity Type"
 msgid "Activity heat map (day/time)"
 msgstr "Activity heat map (day/time)"
 
+msgid "Activity:"
+msgstr "Activity:"
+
 msgid "Aggregate by:"
 msgstr "Aggregate by:"
 
 msgid "All"
 msgstr "All"
+
+msgid "All available dates"
+msgstr "All available dates"
 
 msgid "Altitude"
 msgstr "Altitude"
@@ -46,6 +53,9 @@ msgstr "American Football"
 
 msgid "Analytics Dashboard"
 msgstr "Analytics Dashboard"
+
+msgid "Analytics report (Markdown)"
+msgstr "Analytics report (Markdown)"
 
 msgid "Apple Health export file"
 msgstr "Apple Health export file"
@@ -140,6 +150,9 @@ msgstr "Build"
 msgid "Building workout index..."
 msgstr "Building workout index..."
 
+msgid "Busiest workout day:"
+msgstr "Busiest workout day:"
+
 msgid "Butterfly"
 msgstr "Butterfly"
 
@@ -203,6 +216,9 @@ msgstr "Date"
 msgid "Date range"
 msgstr "Date range"
 
+msgid "Date range:"
+msgstr "Date range:"
+
 msgid "Day of week"
 msgstr "Day of week"
 
@@ -235,6 +251,9 @@ msgstr "Distance"
 
 msgid "Distance by activity"
 msgstr "Distance by activity"
+
+msgid "Distance trend:"
+msgstr "Distance trend:"
 
 msgid "Distance vs Pace"
 msgstr "Distance vs Pace"
@@ -385,6 +404,9 @@ msgstr "Increasing"
 
 msgid "Initializing..."
 msgstr "Initializing..."
+
+msgid "Insights"
+msgstr "Insights"
 
 msgid "Insufficient data"
 msgstr "Insufficient data"
@@ -624,6 +646,9 @@ msgstr "Records per page:"
 msgid "Recovery Recommendation"
 msgstr "Recovery Recommendation"
 
+msgid "Recovery recommendation:"
+msgstr "Recovery recommendation:"
+
 msgid "Rest"
 msgstr "Rest"
 
@@ -709,6 +734,9 @@ msgstr "Step Training"
 msgid "Stroke"
 msgstr "Stroke"
 
+msgid "Summary"
+msgstr "Summary"
+
 msgid "Sun"
 msgstr "Sun"
 
@@ -758,6 +786,9 @@ msgstr "Total Strokes"
 msgid "TrackAndField"
 msgstr "Track And Field"
 
+msgid "TrackTales Analytics Report"
+msgstr "TrackTales Analytics Report"
+
 msgid "TrackTales is shutting down..."
 msgstr "TrackTales is shutting down..."
 
@@ -769,6 +800,9 @@ msgstr "Training Load"
 
 msgid "Training load is duration in minutes multiplied by average heart rate."
 msgstr "Training load is duration in minutes multiplied by average heart rate."
+
+msgid "Training load:"
+msgstr "Training load:"
 
 msgid "Transition"
 msgstr "Transition"
@@ -799,6 +833,9 @@ msgstr "VO2 Max over time"
 
 msgid "VO₂ Max"
 msgstr "VO₂ Max"
+
+msgid "Value"
+msgstr "Value"
 
 msgid "Volleyball"
 msgstr "Volleyball"
@@ -852,6 +889,9 @@ msgstr "Year"
 msgid "Yoga"
 msgstr "Yoga"
 
+msgid "bpm·min"
+msgstr "bpm·min"
+
 msgid "from"
 msgstr "from"
 
@@ -875,3 +915,4 @@ msgstr "workout"
 
 msgid "workouts"
 msgstr "workouts"
+

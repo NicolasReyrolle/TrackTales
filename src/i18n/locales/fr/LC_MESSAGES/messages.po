@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TrackTales 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-08 09:16+0200\n"
-"PO-Revision-Date: 2026-03-05 13:00+0000\n"
+"POT-Creation-Date: 2026-09-10 11:49+0200\n"
+"PO-Revision-Date: 2026-09-09 12:01+0200\n"
 "Last-Translator: \n"
 "Language: fr\n"
 "Language-Team: French\n"
@@ -33,12 +33,18 @@ msgstr "Type d'activité"
 msgid "Activity heat map (day/time)"
 msgstr "Carte de chaleur des activités (jour/heure)"
 
+msgid "Activity:"
+msgstr "Activité :"
+
 # Trends period selector
 msgid "Aggregate by:"
 msgstr "Agréger par :"
 
 msgid "All"
 msgstr "Toutes"
+
+msgid "All available dates"
+msgstr "Toutes dates"
 
 msgid "Altitude"
 msgstr "Altitude"
@@ -49,24 +55,27 @@ msgstr "Football américain"
 msgid "Analytics Dashboard"
 msgstr "Tableau de bord analytique"
 
+msgid "Analytics report (Markdown)"
+msgstr "Rapport analytique (Markdown)"
+
 # Main body
 msgid "Apple Health export file"
 msgstr "Fichier d'export Apple Health"
 
 msgid "Apr"
-msgstr "avr."
+msgstr "Avr"
 
 msgid "April"
-msgstr "avril"
+msgstr "Avril"
 
 msgid "Archery"
 msgstr "Tir à l'arc"
 
 msgid "Aug"
-msgstr "août"
+msgstr "Août"
 
 msgid "August"
-msgstr "août"
+msgstr "Août"
 
 msgid "AustralianFootball"
 msgstr "Football australien"
@@ -145,6 +154,9 @@ msgstr "Développer"
 msgid "Building workout index..."
 msgstr "Construction de l'index des entraînements..."
 
+msgid "Busiest workout day:"
+msgstr "Journée la plus chargée :"
+
 msgid "Butterfly"
 msgstr "Papillon"
 
@@ -210,14 +222,17 @@ msgstr "Date"
 msgid "Date range"
 msgstr "Plage de dates"
 
+msgid "Date range:"
+msgstr "Plage de dates :"
+
 msgid "Day of week"
 msgstr "Jour de la semaine"
 
 msgid "Dec"
-msgstr "déc."
+msgstr "Déc."
 
 msgid "December"
-msgstr "décembre"
+msgstr "Décembre"
 
 msgid "Declining"
 msgstr "En baisse"
@@ -243,6 +258,9 @@ msgstr "Distance"
 
 msgid "Distance by activity"
 msgstr "Distance par activité"
+
+msgid "Distance trend:"
+msgstr "Tendance de distance :"
 
 msgid "Distance vs Pace"
 msgstr "Distance vs allure"
@@ -302,10 +320,10 @@ msgid "Export data"
 msgstr "Exporter les données"
 
 msgid "Feb"
-msgstr "fév."
+msgstr "Fév."
 
 msgid "February"
-msgstr "février"
+msgstr "Février"
 
 msgid "Fencing"
 msgstr "Escrime"
@@ -329,10 +347,10 @@ msgid "Freestyle"
 msgstr "Nage libre"
 
 msgid "Fri"
-msgstr "ven."
+msgstr "Ven."
 
 msgid "Friday"
-msgstr "vendredi"
+msgstr "Vendredi"
 
 msgid "Functional Threshold Power"
 msgstr "Puissance seuil fonctionnel"
@@ -395,6 +413,10 @@ msgstr "En hausse"
 msgid "Initializing..."
 msgstr "Initialisation..."
 
+# Preferences menu: unit system section header and options
+msgid "Insights"
+msgstr "Perspectives"
+
 msgid "Insufficient data"
 msgstr "Données insuffisantes"
 
@@ -403,25 +425,25 @@ msgid "Intervals"
 msgstr "Intervalles"
 
 msgid "Jan"
-msgstr "janv."
+msgstr "Janv."
 
 msgid "January"
-msgstr "janvier"
+msgstr "Janvier"
 
 msgid "Jul"
-msgstr "juil."
+msgstr "Juil."
 
 msgid "July"
-msgstr "juillet"
+msgstr "Juillet"
 
 msgid "JumpRope"
 msgstr "Corde à sauter"
 
 msgid "Jun"
-msgstr "juin"
+msgstr "Juin"
 
 msgid "June"
-msgstr "juin"
+msgstr "Juin"
 
 msgid "Kickboard"
 msgstr "Planche"
@@ -478,19 +500,19 @@ msgid "Maintain"
 msgstr "Maintenir"
 
 msgid "Mar"
-msgstr "mar."
+msgstr "Mar."
 
 msgid "Marathon"
 msgstr "Marathon"
 
 msgid "March"
-msgstr "mars"
+msgstr "Mars"
 
 msgid "MartialArts"
 msgstr "Arts martiaux"
 
 msgid "May"
-msgstr "mai"
+msgstr "Mai"
 
 msgid "Measured from segment samples"
 msgstr "Mesuré à partir des échantillons du segment"
@@ -511,10 +533,10 @@ msgid "MixedMetabolicCardioTraining"
 msgstr "Cardio métabolique mixte"
 
 msgid "Mon"
-msgstr "lun."
+msgstr "Lun."
 
 msgid "Monday"
-msgstr "lundi"
+msgstr "Lundi"
 
 msgid "Month"
 msgstr "Mois"
@@ -558,16 +580,16 @@ msgid "Non-physical W'"
 msgstr "W' non physique"
 
 msgid "Nov"
-msgstr "nov."
+msgstr "Nov."
 
 msgid "November"
-msgstr "novembre"
+msgstr "Novembre"
 
 msgid "Oct"
-msgstr "oct."
+msgstr "Oct."
 
 msgid "October"
-msgstr "octobre"
+msgstr "Octobre"
 
 msgid "Open Water"
 msgstr "Eau libre"
@@ -644,6 +666,10 @@ msgstr "Lignes par page :"
 msgid "Recovery Recommendation"
 msgstr "Recommandation de récupération"
 
+# Recovery recommendation card (Trends tab)
+msgid "Recovery recommendation:"
+msgstr "Recommandation de récupération :"
+
 msgid "Rest"
 msgstr "Repos"
 
@@ -671,19 +697,19 @@ msgid "Sailing"
 msgstr "Voile"
 
 msgid "Sat"
-msgstr "sam."
+msgstr "Sam."
 
 msgid "Saturday"
-msgstr "samedi"
+msgstr "Samedi"
 
 msgid "Select an Apple Health export file..."
 msgstr "Sélectionner un fichier d'export Apple Health..."
 
 msgid "Sep"
-msgstr "sept."
+msgstr "Sept."
 
 msgid "September"
-msgstr "septembre"
+msgstr "Septembre"
 
 msgid "SkatingSports"
 msgstr "Sports de glisse"
@@ -730,12 +756,16 @@ msgstr "Step"
 msgid "Stroke"
 msgstr "Nage"
 
+# QDate locale labels
+msgid "Summary"
+msgstr "Résumé"
+
 msgid "Sun"
-msgstr "dim."
+msgstr "Dim."
 
 # QDate locale labels
 msgid "Sunday"
-msgstr "dimanche"
+msgstr "Dimanche"
 
 msgid "SurfingSports"
 msgstr "Sports de glisse sur vagues"
@@ -767,10 +797,10 @@ msgstr ""
 "l'intensité de la couleur représente le nombre de séances."
 
 msgid "Thu"
-msgstr "jeu."
+msgstr "Jeu."
 
 msgid "Thursday"
-msgstr "jeudi"
+msgstr "Jeudi"
 
 msgid "Time"
 msgstr "Temps"
@@ -780,6 +810,9 @@ msgstr "Nombre de coups"
 
 msgid "TrackAndField"
 msgstr "Athlétisme"
+
+msgid "TrackTales Analytics Report"
+msgstr "Rapport analytique TrackTales"
 
 msgid "TrackTales is shutting down..."
 msgstr "Fermeture de TrackTales..."
@@ -795,6 +828,9 @@ msgstr ""
 "La charge d'entraînement correspond à la durée en minutes multipliée par "
 "la fréquence cardiaque moyenne."
 
+msgid "Training load:"
+msgstr "Charge d'entraînement:"
+
 msgid "Transition"
 msgstr "Transition"
 
@@ -802,10 +838,10 @@ msgid "Trends"
 msgstr "Tendances"
 
 msgid "Tue"
-msgstr "mar."
+msgstr "Mar."
 
 msgid "Tuesday"
-msgstr "mardi"
+msgstr "Mardi"
 
 msgid "UnderwaterDiving"
 msgstr "Plongée sous-marine"
@@ -825,6 +861,9 @@ msgstr "VO2 Max au fil du temps"
 
 msgid "VO₂ Max"
 msgstr "VO₂ Max"
+
+msgid "Value"
+msgstr "Valeur"
 
 msgid "Volleyball"
 msgstr "Volley-ball"
@@ -853,10 +892,10 @@ msgid "WaterSports"
 msgstr "Sports nautiques"
 
 msgid "Wed"
-msgstr "mer."
+msgstr "Mer."
 
 msgid "Wednesday"
-msgstr "mercredi"
+msgstr "Mercredi"
 
 msgid "Week"
 msgstr "Semaine"
@@ -878,6 +917,9 @@ msgstr "Année"
 
 msgid "Yoga"
 msgstr "Yoga"
+
+msgid "bpm·min"
+msgstr "bpm·min"
 
 msgid "from"
 msgstr "de"

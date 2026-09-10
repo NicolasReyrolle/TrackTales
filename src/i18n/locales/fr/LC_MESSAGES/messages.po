@@ -668,7 +668,7 @@ msgstr "Recommandation de récupération"
 
 # Recovery recommendation card (Trends tab)
 msgid "Recovery recommendation:"
-msgstr "Recommandation de recuperation :"
+msgstr "Recommandation de récupération :"
 
 msgid "Rest"
 msgstr "Repos"

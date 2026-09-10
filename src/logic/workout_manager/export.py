@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 import pandas as pd
 
 from i18n import t
+from ui.helpers import format_date_label
 
 
 class WorkoutManagerExportMixin:
@@ -224,11 +225,16 @@ class WorkoutManagerExportMixin:
             max(seasonal_counts, key=lambda day: seasonal_counts[day]) if seasonal_counts else "N/A"
         )
         activity_label = t(activity_type).replace("|", "\\|")
-        date_label = (
-            f"{start_date:%Y-%m-%d} {t('to')} {end_date:%Y-%m-%d}"
-            if start_date is not None and end_date is not None
-            else t("All available dates")
-        )
+
+        if start_date is not None and end_date is not None:
+            start_str = format_date_label(start_date)
+            end_str = format_date_label(end_date)
+
+            # Combine the formatted dates with the translated 'to'
+            date_label = f"{start_str} {t('to')} {end_str}"
+        else:
+            date_label = t("All available dates")
+
         training_load = self.get_training_load(activity_type, start_date, end_date)
         recovery = self.get_recovery_recommendation(
             activity_type,

@@ -79,7 +79,7 @@ class TestBestSegmentsTabData:
                     "avg_power": "–",
                     "avg_power_confidence_icon": "help_outline",
                     "avg_power_confidence_tooltip": "No matching power data",
-                    "start_date": "09/16/2025",
+                    "start_date": "9/16/25",
                     "workout_ts": float(pd.Timestamp("2025-09-16").timestamp()),
                     "children": [],
                 }

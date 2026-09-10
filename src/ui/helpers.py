@@ -8,9 +8,10 @@ from typing import Any, Protocol
 
 import pandas as pd
 from babel.core import default_locale
+from babel.dates import format_date
 from babel.numbers import format_decimal
 
-from i18n import translate
+from i18n import get_language, translate
 from units import METERS_TO_FEET, METERS_TO_MILES, MINUTES_PER_HOUR, SECONDS_PER_MINUTE
 
 
@@ -237,12 +238,24 @@ def parse_float(value: Any) -> float | None:
         return None
 
 
-def format_date_label(start_date: _SupportsStrftime, language_code: str) -> str:
-    """Format a date label according to the selected language."""
+def format_date_label(date_obj: datetime | pd.Timestamp, language_code: str | None = None) -> str:
+    """Format a date label according to the requested language.
+    Args:
+        date_obj: Date to format.
+        language_code: Language code to use for formatting (default to current language)
+
+    Returns:
+        Formatted date string such as ``"1/1/22"`` or ``"01.01.2022"``.
+    """
+    if language_code is None:
+        language_code = get_language()
     normalized_language_code = _normalize_language_code(language_code)
-    if normalized_language_code == "fr":
-        return start_date.strftime("%d/%m/%Y")
-    return start_date.strftime("%m/%d/%Y")
+
+    # Ensure pd.Timestamp is converted to a standard Python datetime for Babel
+    if isinstance(date_obj, pd.Timestamp):
+        date_obj = date_obj.to_pydatetime()
+
+    return format_date(date_obj, format="short", locale=normalized_language_code)
 
 
 def translate_parser_progress_message(message: str, language_code: str) -> str:

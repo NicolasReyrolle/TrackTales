@@ -331,7 +331,7 @@ def test_set_longest_metric_from_details_branches() -> None:
         )
         assert state.metrics["longest_run"] == pytest.approx(0.0)  # type: ignore[arg-type]
         assert state.metrics_display["longest_run"] == "0.0"
-        assert state.metrics_tooltip["longest_run"] == "02/03/2025"
+        assert state.metrics_tooltip["longest_run"] == "2/3/25"
 
         duration_only = {"distance": 12.3, "duration": 3661}
         layout._set_longest_metric_from_details(  # type: ignore[attr-defined]
@@ -378,7 +378,7 @@ def test_set_longest_metric_from_details_supports_display_options() -> None:
             decimal_places=2,
         )
         assert state.metrics_display["longest_swim"] == "1.24"
-        assert state.metrics_tooltip["longest_swim"] == "03/04/2025"
+        assert state.metrics_tooltip["longest_swim"] == "3/4/25"
         assert state.metrics_workout_index["longest_swim"] == 11
 
         layout._set_longest_metric_from_details(  # type: ignore[attr-defined]

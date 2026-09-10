@@ -34,7 +34,7 @@ msgid "Activity heat map (day/time)"
 msgstr "Carte de chaleur des activités (jour/heure)"
 
 msgid "Activity:"
-msgstr "Activité:"
+msgstr "Activité :"
 
 # Trends period selector
 msgid "Aggregate by:"
@@ -223,7 +223,7 @@ msgid "Date range"
 msgstr "Plage de dates"
 
 msgid "Date range:"
-msgstr "Plage de dates:"
+msgstr "Plage de dates :"
 
 msgid "Day of week"
 msgstr "Jour de la semaine"

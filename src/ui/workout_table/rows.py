@@ -480,8 +480,8 @@ def _nearest_vo2_max(
     if not vo2_dates.notna().any():
         return "–"
     deltas = (vo2_dates - workout_date).abs()
-    min_idx = deltas.idxmin()
-    value = _safe_float(vo2_df.loc[min_idx, "value"])
+    min_pos = int(deltas.argmin())
+    value = _safe_float(vo2_df["value"].iloc[min_pos])
     if value is None:
         return "–"
     return f"{value:.1f} mL/min·kg"

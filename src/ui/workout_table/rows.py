@@ -113,6 +113,7 @@ def _extract_workout_heart_rate_samples(
         (heart_rate_samples["startDate"] >= start_date)
         & (heart_rate_samples["startDate"] <= end_date)
     ]
+    samples = samples[samples["startDate"].notna()]
     return list(
         zip(
             samples["startDate"].map(lambda ts: ts.to_pydatetime()).tolist(),

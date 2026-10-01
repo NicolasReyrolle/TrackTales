@@ -25,11 +25,13 @@ _MISSING_SORT = -1.0
 
 def _parse_local_naive_dates(dates: pd.Series) -> pd.Series:
     """Parse ISO8601 dates individually, preserving local wall time."""
-    return dates.map(
-        lambda value: pd.to_datetime(
+    def parse_local_naive(value: object) -> pd.Timestamp | None:
+        parsed = pd.to_datetime(
             value, format=PANDAS_ISO8601_FORMAT, errors="coerce"
-        ).tz_localize(None)
-    )
+        )
+        return None if pd.isna(parsed) else parsed.tz_localize(None)
+
+    return dates.map(parse_local_naive)
 
 
 # Only these fields are needed by the visible q-table columns and row-action event.

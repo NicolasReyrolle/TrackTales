@@ -6,8 +6,6 @@ from enum import Enum
 
 import pandas as pd
 
-from logic.constants import PANDAS_ISO8601_FORMAT
-
 
 @dataclass(frozen=True)
 class RecordsByType:
@@ -74,7 +72,10 @@ class RecordsByType:
 
         # Parse individually to preserve local wall time across mixed UTC offsets.
         def parse_local_naive(value: object) -> pd.Timestamp | None:
-            parsed = pd.to_datetime(value, format=PANDAS_ISO8601_FORMAT, errors="coerce")
+            try:
+                parsed = pd.Timestamp(str(value))
+            except Exception:
+                return None
             return None if pd.isna(parsed) else parsed.tz_localize(None)
 
         work[date_col] = work[date_col].map(parse_local_naive)

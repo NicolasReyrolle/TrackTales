@@ -12,7 +12,6 @@ import pandas as pd
 from app_state import get_distance_unit, get_elevation_unit, get_temperature_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
-from logic.constants import PANDAS_ISO8601_FORMAT
 from logic.workout_manager.workout_route import WorkoutRoute
 from ui.helpers import format_date_label, format_duration_label
 from units import METERS_TO_FEET, METERS_TO_MILES, celsius_to_fahrenheit
@@ -27,7 +26,10 @@ def _parse_local_naive_dates(dates: pd.Series) -> pd.Series:
     """Parse ISO8601 dates individually, preserving local wall time."""
 
     def parse_local_naive(value: object) -> pd.Timestamp | None:
-        parsed = pd.to_datetime(value, format=PANDAS_ISO8601_FORMAT, errors="coerce")
+        try:
+            parsed = pd.Timestamp(str(value))
+        except Exception:
+            return None
         return None if pd.isna(parsed) else parsed.tz_localize(None)
 
     return dates.map(parse_local_naive)
@@ -128,7 +130,7 @@ def _extract_workout_heart_rate_samples(
     samples = samples[samples["startDate"].notna()]
     return list(
         zip(
-            samples["startDate"].map(lambda ts: ts.to_pydatetime()).tolist(),
+            samples["startDate"].map(lambda ts: cast(pd.Timestamp, ts).to_pydatetime()).tolist(),
             samples["value"].astype(float).tolist(),
             strict=False,
         )

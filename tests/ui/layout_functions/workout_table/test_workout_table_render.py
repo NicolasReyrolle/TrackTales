@@ -486,6 +486,26 @@ class TestNearestVo2Max:
             state.records_by_type = original
         assert result == "50.0 mL/min·kg"
 
+    def test_mixed_timezone_offsets_preserve_local_wall_time(self) -> None:
+        """Choose the nearest VO2 record using local wall time across DST."""
+        from app_state import state
+        from logic.records_by_type import RecordsByType
+
+        vo2_df = pd.DataFrame(
+            [
+                {"startDate": "2024-10-27 02:00:00 +0200", "value": 40.0},
+                {"startDate": "2024-10-27 02:30:00 +0100", "value": 50.0},
+            ]
+        )
+        original = state.records_by_type
+        try:
+            state.records_by_type = RecordsByType(data={"VO2Max": vo2_df})
+            result = wt._nearest_vo2_max(pd.Timestamp("2024-10-27 02:10:00"))
+        finally:
+            state.records_by_type = original
+
+        assert result == "40.0 mL/min·kg"
+
     def test_returns_dash_when_nearest_record_has_none_value(self) -> None:
         """Should return '–' when the nearest VO2Max record has a null/NaN value."""
         from app_state import state

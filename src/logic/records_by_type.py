@@ -6,6 +6,15 @@ from enum import Enum
 
 import pandas as pd
 
+_TIMESTAMP_TIME_ATTRS = ("hour", "minute", "second", "microsecond", "nanosecond")
+_DATETIME_TIME_ATTRS = ("hour", "minute", "second", "microsecond")
+
+
+def _has_time_component(end_date: datetime | pd.Timestamp) -> bool:
+    """Return True when *end_date* carries a non-zero time component."""
+    attrs = _TIMESTAMP_TIME_ATTRS if isinstance(end_date, pd.Timestamp) else _DATETIME_TIME_ATTRS
+    return any(getattr(end_date, attr) != 0 for attr in attrs)
+
 
 @dataclass(frozen=True)
 class RecordsByType:
@@ -69,10 +78,13 @@ class RecordsByType:
             return pd.DataFrame(columns=["period", "avg", "min", "max", "count"])
 
         work = df[[date_col, value_col]].copy()
-        # Parse dates using the ISO8601 parser to avoid per-row inference warnings.
-        work[date_col] = pd.to_datetime(work[date_col], format="ISO8601", errors="coerce")
-        if isinstance(work[date_col].dtype, pd.DatetimeTZDtype):
-            work[date_col] = work[date_col].dt.tz_localize(None)
+
+        local_dates = (
+            work[date_col]
+            .astype("string")
+            .str.replace(r"(?:\s*[+-]\d{2}:?\d{2}|Z)$", "", regex=True)
+        )
+        work[date_col] = pd.to_datetime(local_dates, format="ISO8601", errors="coerce")
         work[value_col] = pd.to_numeric(work[value_col], errors="coerce")
         work = work.dropna(subset=[date_col, value_col])
 
@@ -80,26 +92,10 @@ class RecordsByType:
             work = work[work[date_col] >= pd.Timestamp(start_date)]
         if end_date is not None:
             end_ts = pd.Timestamp(end_date)
-            # Distinguish between date-only and datetime-with-time bounds.
-            # For date-only (e.g. from a date picker), include the full day by using an
-            # exclusive next-day boundary. For datetimes with a time component, treat the
-            # bound as an exact timestamp and include records up to and including end_ts.
-            has_time_component = False
-            if isinstance(end_date, pd.Timestamp):
-                has_time_component = any(
-                    getattr(end_date, attr) != 0
-                    for attr in ("hour", "minute", "second", "microsecond", "nanosecond")
-                )
-            else:
-                has_time_component = any(
-                    getattr(end_date, attr) != 0
-                    for attr in ("hour", "minute", "second", "microsecond")
-                )
-            if has_time_component:
+            if _has_time_component(end_date):
                 work = work[work[date_col] <= end_ts]
             else:
-                next_day = end_ts + pd.Timedelta(days=1)
-                work = work[work[date_col] < next_day]
+                work = work[work[date_col] < end_ts + pd.Timedelta(days=1)]
 
         if work.empty:
             return pd.DataFrame(columns=["period", "avg", "min", "max", "count"])
@@ -126,8 +122,7 @@ class RecordsByType:
             cols = ["avg", "min", "max"]
             result = result.astype(dict.fromkeys(cols, "Float64"))
 
-            result["count"] = result["count"].fillna(0)
-            result["count"] = result["count"].astype(int)
+            result["count"] = result["count"].astype("Int64").fillna(0)
 
         return result
 

@@ -72,11 +72,13 @@ class RecordsByType:
 
         work = df[[date_col, value_col]].copy()
         # Parse individually to preserve local wall time across mixed UTC offsets.
-        work[date_col] = work[date_col].map(
-            lambda value: pd.to_datetime(
+        def parse_local_naive(value: object) -> pd.Timestamp | None:
+            parsed = pd.to_datetime(
                 value, format=PANDAS_ISO8601_FORMAT, errors="coerce"
-            ).tz_localize(None)
-        )
+            )
+            return None if pd.isna(parsed) else parsed.tz_localize(None)
+
+        work[date_col] = work[date_col].map(parse_local_naive)
         work[value_col] = pd.to_numeric(work[value_col], errors="coerce")
         work = work.dropna(subset=[date_col, value_col])
 

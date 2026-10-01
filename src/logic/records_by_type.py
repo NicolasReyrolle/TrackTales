@@ -79,8 +79,10 @@ class RecordsByType:
 
         work = df[[date_col, value_col]].copy()
 
-        local_dates = work[date_col].astype("string").str.replace(
-            r"(?:\s*[+-]\d{2}:?\d{2}|Z)$", "", regex=True
+        local_dates = (
+            work[date_col]
+            .astype("string")
+            .str.replace(r"(?:\s*[+-]\d{2}:?\d{2}|Z)$", "", regex=True)
         )
         work[date_col] = pd.to_datetime(local_dates, format="ISO8601", errors="coerce")
         work[value_col] = pd.to_numeric(work[value_col], errors="coerce")

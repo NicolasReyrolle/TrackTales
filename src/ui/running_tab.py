@@ -25,7 +25,7 @@ def _filter_running_workouts() -> pd.DataFrame:
     if workouts.empty:
         return workouts
     if "activityType" in workouts.columns:
-        activity_series = workouts["activityType"].astype(str).str.strip()
+        activity_series = workouts["activityType"].str.strip()
         workouts = workouts[activity_series.str.contains(r"\brunning\b", case=False, regex=True)]
     return filter_workouts_by_date_range(
         workouts,

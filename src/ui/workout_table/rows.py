@@ -233,7 +233,9 @@ def _build_workout_rows(
     vo2_df: pd.DataFrame = state.records_by_type.get("VO2Max")
     vo2_dates: pd.Series | None = None
     if not vo2_df.empty and "startDate" in vo2_df.columns:
-        vo2_dates = pd.to_datetime(vo2_df["startDate"], errors="coerce").dt.tz_localize(None)
+        vo2_dates = pd.to_datetime(
+            vo2_df["startDate"], format="ISO8601", errors="coerce"
+        ).dt.tz_localize(None)
 
     for idx, (workout_index, row) in enumerate(df.iterrows()):
         row_data = _extract_row_data(

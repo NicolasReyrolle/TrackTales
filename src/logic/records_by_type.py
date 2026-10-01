@@ -126,8 +126,7 @@ class RecordsByType:
             cols = ["avg", "min", "max"]
             result = result.astype(dict.fromkeys(cols, "Float64"))
 
-            result["count"] = result["count"].fillna(0)
-            result["count"] = result["count"].astype(int)
+            result["count"] = result["count"].astype("Int64").fillna(0)
 
         return result
 

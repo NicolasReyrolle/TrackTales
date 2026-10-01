@@ -253,7 +253,7 @@ class ExportParser:
         if parsed_health_dt is not None:
             return parsed_health_dt.replace(tzinfo=None)
 
-        parsed_fallback = pd.to_datetime(raw_start_date, errors="coerce")
+        parsed_fallback = pd.to_datetime(raw_start_date, format="ISO8601", errors="coerce")
         return parsed_fallback if not pd.isna(parsed_fallback) else None
 
     @staticmethod
@@ -264,7 +264,7 @@ class ExportParser:
         if not isinstance(raw_datetime, str):
             return None
 
-        parsed_datetime = pd.to_datetime(raw_datetime, utc=True, errors="coerce")
+        parsed_datetime = pd.to_datetime(raw_datetime, format="ISO8601", utc=True, errors="coerce")
         if pd.isna(parsed_datetime):
             return None
         return parsed_datetime.tz_localize(None)

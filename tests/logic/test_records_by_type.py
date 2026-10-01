@@ -316,6 +316,7 @@ class TestRecordsByTypeConvenienceStats:
         result_without_fill = records.vo2_max_stats("M", fill_missing_periods=False)
 
         assert list(result_with_fill["period"].astype(str)) == ["2024-01", "2024-02", "2024-03"]
+        assert str(result_with_fill["count"].dtype) == "Int64"
         feb = result_with_fill[result_with_fill["period"].astype(str) == "2024-02"].iloc[0]
         assert pd.isna(feb["avg"])
         assert pd.isna(feb["min"])

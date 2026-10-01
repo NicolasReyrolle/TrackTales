@@ -24,7 +24,7 @@ def _get_cached_heart_rate_samples() -> pd.DataFrame:
     if not heart_rate_df.empty and {"startDate", "value"}.issubset(heart_rate_df.columns):
         heart_rate_samples = heart_rate_df[["startDate", "value"]].copy()
         heart_rate_samples["startDate"] = pd.to_datetime(
-            heart_rate_samples["startDate"], utc=True, errors="coerce"
+            heart_rate_samples["startDate"], format="ISO8601", utc=True, errors="coerce"
         ).dt.tz_localize(None)
         heart_rate_samples["value"] = pd.to_numeric(heart_rate_samples["value"], errors="coerce")
         heart_rate_samples = heart_rate_samples.dropna(subset=["startDate", "value"]).sort_values(

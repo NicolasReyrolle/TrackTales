@@ -27,7 +27,7 @@ def _filter_workouts_for_statistics() -> pd.DataFrame:
 def _build_day_time_heatmap_values(workouts: pd.DataFrame) -> list[tuple[int, int, int]]:
     if workouts.empty or "startDate" not in workouts.columns:
         return []
-    start_dates = pd.to_datetime(workouts["startDate"], errors="coerce")
+    start_dates = pd.to_datetime(workouts["startDate"], format="ISO8601", errors="coerce")
     start_dates = start_dates.dropna()
     if start_dates.empty:
         return []

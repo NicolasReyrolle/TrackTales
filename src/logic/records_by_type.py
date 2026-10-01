@@ -71,11 +71,10 @@ class RecordsByType:
             return pd.DataFrame(columns=["period", "avg", "min", "max", "count"])
 
         work = df[[date_col, value_col]].copy()
+
         # Parse individually to preserve local wall time across mixed UTC offsets.
         def parse_local_naive(value: object) -> pd.Timestamp | None:
-            parsed = pd.to_datetime(
-                value, format=PANDAS_ISO8601_FORMAT, errors="coerce"
-            )
+            parsed = pd.to_datetime(value, format=PANDAS_ISO8601_FORMAT, errors="coerce")
             return None if pd.isna(parsed) else parsed.tz_localize(None)
 
         work[date_col] = work[date_col].map(parse_local_naive)

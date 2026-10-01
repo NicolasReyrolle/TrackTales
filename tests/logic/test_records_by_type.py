@@ -117,6 +117,24 @@ class TestRecordsByTypeStatsByPeriod:
         assert list(result["max"]) == [80, 70]
         assert list(result["count"]) == [2, 1]
 
+    def test_stats_by_period_handles_mixed_timezone_offsets(self) -> None:
+        """Group mixed-offset dates by their local wall-time dates."""
+        heart_rate_df = pd.DataFrame(
+            {
+                "startDate": [
+                    "2024-03-30 23:30:00 +0100",
+                    "2024-03-31 03:30:00 +0200",
+                ],
+                "value": [60, 80],
+            }
+        )
+        records = RecordsByType({"HeartRate": heart_rate_df})
+
+        result = records.stats_by_period("HeartRate", period="D", fill_missing_periods=False)
+
+        assert list(result["period"].astype(str)) == ["2024-03-30", "2024-03-31"]
+        assert list(result["count"]) == [1, 1]
+
     def test_stats_by_period_groups_by_quarter(self) -> None:
         """Aggregate values into quarter buckets when period='Q'."""
         heart_rate_df = pd.DataFrame(

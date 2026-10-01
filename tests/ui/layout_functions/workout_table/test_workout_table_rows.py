@@ -214,13 +214,18 @@ class TestBuildWorkoutRows:
             [
                 {
                     "activityType": "Running",
-                    "startDate": pd.Timestamp("2025-01-02"),
+                    "startDate": pd.Timestamp("2024-10-27 02:10:00"),
                     "duration": 3600.0,
                     "averageRunningSpeed": 10.0,
                 }
             ]
         )
-        vo2_df = pd.DataFrame([{"startDate": "2025-01-01", "value": 48.5}])
+        vo2_df = pd.DataFrame(
+            [
+                {"startDate": "2024-10-27 02:00:00 +0200", "value": 48.5},
+                {"startDate": "2024-10-27 02:30:00 +0100", "value": 55.0},
+            ]
+        )
         try:
             state.workouts = workouts_mock
             state.records_by_type = RecordsByType(data={"VO2Max": vo2_df})

@@ -22,6 +22,16 @@ _logger = logging.getLogger(__name__)
 # Sentinel used for missing optional numeric values so they sort to the bottom.
 _MISSING_SORT = -1.0
 
+
+def _parse_local_naive_dates(dates: pd.Series) -> pd.Series:
+    """Parse ISO8601 dates individually, preserving local wall time."""
+    return dates.map(
+        lambda value: pd.to_datetime(
+            value, format=PANDAS_ISO8601_FORMAT, errors="coerce"
+        ).tz_localize(None)
+    )
+
+
 # Only these fields are needed by the visible q-table columns and row-action event.
 _TABLE_ROW_FIELDS: tuple[str, ...] = (
     "id",
@@ -234,9 +244,7 @@ def _build_workout_rows(
     vo2_df: pd.DataFrame = state.records_by_type.get("VO2Max")
     vo2_dates: pd.Series | None = None
     if not vo2_df.empty and "startDate" in vo2_df.columns:
-        vo2_dates = pd.to_datetime(
-            vo2_df["startDate"], format=PANDAS_ISO8601_FORMAT, errors="coerce"
-        ).dt.tz_localize(None)
+        vo2_dates = _parse_local_naive_dates(vo2_df["startDate"])
 
     for idx, (workout_index, row) in enumerate(df.iterrows()):
         row_data = _extract_row_data(
@@ -477,10 +485,7 @@ def _nearest_vo2_max(
         return "–"
 
     if vo2_dates is None:
-        # Use explicit ISO8601 parser for Apple Health timestamps
-        vo2_dates = pd.to_datetime(
-            vo2_df["startDate"], format=PANDAS_ISO8601_FORMAT, errors="coerce"
-        ).dt.tz_localize(None)
+        vo2_dates = _parse_local_naive_dates(vo2_df["startDate"])
     if not vo2_dates.notna().any():
         return "–"
     deltas = (vo2_dates - workout_date).abs()

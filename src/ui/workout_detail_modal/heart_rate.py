@@ -6,6 +6,8 @@ from typing import Any, cast
 
 import pandas as pd
 
+from logic.constants import PANDAS_ISO8601_FORMAT
+
 _HEART_RATE_SAMPLES_CACHE: tuple[Any, pd.DataFrame] | None = None
 
 
@@ -24,7 +26,10 @@ def _get_cached_heart_rate_samples() -> pd.DataFrame:
     if not heart_rate_df.empty and {"startDate", "value"}.issubset(heart_rate_df.columns):
         heart_rate_samples = heart_rate_df[["startDate", "value"]].copy()
         heart_rate_samples["startDate"] = pd.to_datetime(
-            heart_rate_samples["startDate"], format="ISO8601", utc=True, errors="coerce"
+            heart_rate_samples["startDate"],
+            format=PANDAS_ISO8601_FORMAT,
+            utc=True,
+            errors="coerce",
         ).dt.tz_localize(None)
         heart_rate_samples["value"] = pd.to_numeric(heart_rate_samples["value"], errors="coerce")
         heart_rate_samples = heart_rate_samples.dropna(subset=["startDate", "value"]).sort_values(

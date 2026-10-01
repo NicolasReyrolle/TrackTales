@@ -7,6 +7,8 @@ from typing import Any, TypedDict, cast
 
 import pandas as pd
 
+from logic.constants import PANDAS_ISO8601_FORMAT
+
 from .workout_route import WorkoutRoute
 
 _logger = logging.getLogger(__name__)
@@ -462,12 +464,18 @@ class WorkoutManagerSegmentsMixin:
         # Use utc=True so mixed offsets (+0100/+0200) remain datetimelike and
         # can safely flow through .dt operations in overlap computations.
         rp_times = pd.to_datetime(
-            running_power_df["startDate"], format="ISO8601", errors="coerce", utc=True
+            running_power_df["startDate"],
+            format=PANDAS_ISO8601_FORMAT,
+            errors="coerce",
+            utc=True,
         )
         rp_end_times: pd.Series | None = None
         if "endDate" in running_power_df.columns:
             rp_end_times = pd.to_datetime(
-                running_power_df["endDate"], format="ISO8601", errors="coerce", utc=True
+                running_power_df["endDate"],
+                format=PANDAS_ISO8601_FORMAT,
+                errors="coerce",
+                utc=True,
             )
         rp_values = pd.to_numeric(running_power_df["value"], errors="coerce")
         return rp_times, rp_end_times, rp_values

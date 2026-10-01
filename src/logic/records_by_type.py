@@ -6,6 +6,8 @@ from enum import Enum
 
 import pandas as pd
 
+from logic.constants import PANDAS_ISO8601_FORMAT
+
 
 @dataclass(frozen=True)
 class RecordsByType:
@@ -70,7 +72,9 @@ class RecordsByType:
 
         work = df[[date_col, value_col]].copy()
         # Parse dates using the ISO8601 parser to avoid per-row inference warnings.
-        work[date_col] = pd.to_datetime(work[date_col], format="ISO8601", errors="coerce")
+        work[date_col] = pd.to_datetime(
+            work[date_col], format=PANDAS_ISO8601_FORMAT, errors="coerce"
+        )
         if isinstance(work[date_col].dtype, pd.DatetimeTZDtype):
             work[date_col] = work[date_col].dt.tz_localize(None)
         work[value_col] = pd.to_numeric(work[value_col], errors="coerce")

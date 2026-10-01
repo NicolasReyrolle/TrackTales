@@ -13,6 +13,7 @@ from zipfile import ZipFile
 import pandas as pd
 from defusedxml.ElementTree import iterparse
 
+from logic.constants import PANDAS_ISO8601_FORMAT
 from logic.models import WorkoutRecord
 from logic.parsed_health_data import ParsedHealthData
 from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
@@ -253,7 +254,9 @@ class ExportParser:
         if parsed_health_dt is not None:
             return parsed_health_dt.replace(tzinfo=None)
 
-        parsed_fallback = pd.to_datetime(raw_start_date, format="ISO8601", errors="coerce")
+        parsed_fallback = pd.to_datetime(
+            raw_start_date, format=PANDAS_ISO8601_FORMAT, errors="coerce"
+        )
         return parsed_fallback if not pd.isna(parsed_fallback) else None
 
     @staticmethod
@@ -264,7 +267,9 @@ class ExportParser:
         if not isinstance(raw_datetime, str):
             return None
 
-        parsed_datetime = pd.to_datetime(raw_datetime, format="ISO8601", utc=True, errors="coerce")
+        parsed_datetime = pd.to_datetime(
+            raw_datetime, format=PANDAS_ISO8601_FORMAT, utc=True, errors="coerce"
+        )
         if pd.isna(parsed_datetime):
             return None
         return parsed_datetime.tz_localize(None)

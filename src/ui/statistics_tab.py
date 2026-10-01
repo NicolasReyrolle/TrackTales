@@ -7,6 +7,7 @@ from nicegui import ui
 
 from app_state import state
 from i18n import t
+from logic.constants import PANDAS_ISO8601_FORMAT
 from ui.charts import render_heat_map_graph
 from ui.helpers import filter_workouts_by_date_range
 
@@ -27,7 +28,9 @@ def _filter_workouts_for_statistics() -> pd.DataFrame:
 def _build_day_time_heatmap_values(workouts: pd.DataFrame) -> list[tuple[int, int, int]]:
     if workouts.empty or "startDate" not in workouts.columns:
         return []
-    start_dates = pd.to_datetime(workouts["startDate"], format="ISO8601", errors="coerce")
+    start_dates = pd.to_datetime(
+        workouts["startDate"], format=PANDAS_ISO8601_FORMAT, errors="coerce"
+    )
     start_dates = start_dates.dropna()
     if start_dates.empty:
         return []

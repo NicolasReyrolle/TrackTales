@@ -12,6 +12,7 @@ import pandas as pd
 from app_state import get_distance_unit, get_elevation_unit, get_temperature_unit, state
 from i18n import get_language, t
 from i18n.activity_types import activity_display_label
+from logic.constants import PANDAS_ISO8601_FORMAT
 from logic.workout_manager.workout_route import WorkoutRoute
 from ui.helpers import format_date_label, format_duration_label
 from units import METERS_TO_FEET, METERS_TO_MILES, celsius_to_fahrenheit
@@ -234,7 +235,7 @@ def _build_workout_rows(
     vo2_dates: pd.Series | None = None
     if not vo2_df.empty and "startDate" in vo2_df.columns:
         vo2_dates = pd.to_datetime(
-            vo2_df["startDate"], format="ISO8601", errors="coerce"
+            vo2_df["startDate"], format=PANDAS_ISO8601_FORMAT, errors="coerce"
         ).dt.tz_localize(None)
 
     for idx, (workout_index, row) in enumerate(df.iterrows()):
@@ -478,7 +479,7 @@ def _nearest_vo2_max(
     if vo2_dates is None:
         # Use explicit ISO8601 parser for Apple Health timestamps
         vo2_dates = pd.to_datetime(
-            vo2_df["startDate"], format="ISO8601", errors="coerce"
+            vo2_df["startDate"], format=PANDAS_ISO8601_FORMAT, errors="coerce"
         ).dt.tz_localize(None)
     if not vo2_dates.notna().any():
         return "–"

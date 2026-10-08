@@ -264,12 +264,11 @@ def render_pie_rose_graph(
         ],
     }
 
-    with ui.dialog().props("maximized") as dialog:
-        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
-            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
-                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
-            ui.echart(fullscreen_chart_config).classes(ECHART_FULLSCREEN_CLASSES)
+    with ui.dialog().props("maximized") as dialog, ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(title_text).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+        ui.echart(fullscreen_chart_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
@@ -450,12 +449,11 @@ def render_generic_graph(
                 with ui.icon("info").classes(CHART_TOOLTIP_ICON_CLASSES):
                     ui.tooltip(tooltip)
 
-    with ui.dialog().props("maximized") as dialog:
-        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
-            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                _render_title()
-                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
-            ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
+    with ui.dialog().props("maximized") as dialog, ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            _render_title()
+            ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+        ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
@@ -646,14 +644,13 @@ def render_scatter_graph(
     }
     card_config, fullscreen_config = _build_chart_configs(base_config)
 
-    with ui.dialog().props("maximized") as dialog:
-        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
-            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
-                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
-            if fullscreen_description:
-                ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
-            fullscreen_chart = ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
+    with ui.dialog().props("maximized") as dialog, ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+        if fullscreen_description:
+            ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
+        fullscreen_chart = ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
@@ -778,14 +775,13 @@ def render_heat_map_graph(
     }
     fullscreen_config["grid"] = {"left": "3%", "right": "4%", "bottom": "16%", "containLabel": True}
 
-    with ui.dialog().props("maximized") as dialog:
-        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
-            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
-                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
-            if fullscreen_description:
-                ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
-            ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
+    with ui.dialog().props("maximized") as dialog, ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+        if fullscreen_description:
+            ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
+        ui.echart(fullscreen_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):
@@ -831,14 +827,13 @@ def render_box_plot_graph(
         "toolbox": _toolbox_config(),
     }
 
-    with ui.dialog().props("maximized") as dialog:
-        with ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
-            with ui.row().classes(CHART_HEADER_ROW_CLASSES):
-                ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
-                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
-            if fullscreen_description:
-                ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
-            ui.echart(base_config).classes(ECHART_FULLSCREEN_CLASSES)
+    with ui.dialog().props("maximized") as dialog, ui.card().classes(CHART_FULLSCREEN_CARD_CLASSES):
+        with ui.row().classes(CHART_HEADER_ROW_CLASSES):
+            ui.label(label).classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+        if fullscreen_description:
+            ui.label(fullscreen_description).classes(LABEL_MUTED_CLASSES)
+        ui.echart(base_config).classes(ECHART_FULLSCREEN_CLASSES)
 
     with ui.card().classes(CHART_CARD_CLASSES):
         with ui.row().classes(CHART_HEADER_ROW_CLASSES):

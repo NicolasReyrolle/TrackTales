@@ -178,12 +178,12 @@ async def test_load_health_data_success_and_exception_paths() -> None:
         state.health_data_graphs = {}
         state.selected_main_tab = "running"
 
-        with patch("ui.layout.render_health_data_tab.refresh") as refresh_mock:
-            with patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock:
-                with patch(
-                    "ui.layout.asyncio.to_thread", new=AsyncMock(return_value={"heart_rate": {}})
-                ):
-                    await layout.load_health_data(force=True)
+        with (
+            patch("ui.layout.render_health_data_tab.refresh") as refresh_mock,
+            patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock,
+            patch("ui.layout.asyncio.to_thread", new=AsyncMock(return_value={"heart_rate": {}})),
+        ):
+            await layout.load_health_data(force=True)
 
         assert state.health_data_loaded is True
         assert state.health_data_loading is False
@@ -191,14 +191,16 @@ async def test_load_health_data_success_and_exception_paths() -> None:
         assert running_refresh_mock.call_count == 3
 
         state.health_data_loaded = False
-        with patch("ui.layout.render_health_data_tab.refresh") as refresh_mock:
-            with patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock:
-                with patch("ui.layout._logger.exception") as exception_mock:
-                    with patch(
-                        "ui.layout.asyncio.to_thread",
-                        new=AsyncMock(side_effect=RuntimeError("boom")),
-                    ):
-                        await layout.load_health_data(force=True)
+        with (
+            patch("ui.layout.render_health_data_tab.refresh") as refresh_mock,
+            patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock,
+            patch("ui.layout._logger.exception") as exception_mock,
+            patch(
+                "ui.layout.asyncio.to_thread",
+                new=AsyncMock(side_effect=RuntimeError("boom")),
+            ),
+        ):
+            await layout.load_health_data(force=True)
 
         exception_mock.assert_called_once()
         assert state.health_data_loaded is False
@@ -261,12 +263,12 @@ async def test_load_health_data_does_not_refresh_running_when_tab_not_selected()
         state.health_data_graphs = {}
         state.selected_main_tab = "summary"
 
-        with patch("ui.layout.render_health_data_tab.refresh"):
-            with patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock:
-                with patch(
-                    "ui.layout.asyncio.to_thread", new=AsyncMock(return_value={"heart_rate": {}})
-                ):
-                    await layout.load_health_data(force=True)
+        with (
+            patch("ui.layout.render_health_data_tab.refresh"),
+            patch("ui.layout.render_running_health_graphs.refresh") as running_refresh_mock,
+            patch("ui.layout.asyncio.to_thread", new=AsyncMock(return_value={"heart_rate": {}})),
+        ):
+            await layout.load_health_data(force=True)
         running_refresh_mock.assert_not_called()
     finally:
         state.health_data_loading = original_loading
@@ -511,61 +513,53 @@ async def test_reset_state_helpers_cancel_inflight_tasks() -> None:
 
 def test_refresh_data_schedules_load_for_selected_tab(monkeypatch: pytest.MonkeyPatch) -> None:
     """refresh_data should only schedule deferred loading for the active tab."""
-    with patch("ui.layout._refresh_summary_metrics"):
-        with patch("ui.layout._refresh_longest_workout_metrics"):
-            with patch("ui.layout._reset_best_segments_state"):
-                with patch("ui.layout._reset_health_data_state"):
-                    with patch("ui.layout.render_activity_graphs.refresh"):
-                        with patch("ui.layout.render_recovery_recommendation.refresh"):
-                            with patch("ui.layout.render_trends_graphs.refresh"):
-                                with patch("ui.layout.render_running_tab.refresh"):
-                                    with patch("ui.layout.render_health_data_tab.refresh"):
-                                        with patch("ui.layout.render_best_segments_tab.refresh"):
-                                            with patch(
-                                                "ui.layout.render_distance_range_selector.refresh"
-                                            ):
-                                                with patch(
-                                                    "ui.layout.render_duration_range_selector.refresh"
-                                                ):
-                                                    with patch(
-                                                        "ui.layout.render_workout_table.refresh"
-                                                    ):
-                                                        with patch(
-                                                            "ui.layout.schedule_best_segments_load"
-                                                        ) as best_mock:
-                                                            with patch(
-                                                                "ui.layout.schedule_health_data_load"
-                                                            ) as health_mock:
-                                                                monkeypatch.setattr(
-                                                                    state,
-                                                                    "selected_main_tab",
-                                                                    "running",
-                                                                )
-                                                                layout.refresh_data()
-                                                                best_mock.assert_not_called()
-                                                                health_mock.assert_called_once()
+    with (
+        patch("ui.layout._refresh_summary_metrics"),
+        patch("ui.layout._refresh_longest_workout_metrics"),
+        patch("ui.layout._reset_best_segments_state"),
+        patch("ui.layout._reset_health_data_state"),
+        patch("ui.layout.render_activity_graphs.refresh"),
+        patch("ui.layout.render_recovery_recommendation.refresh"),
+        patch("ui.layout.render_trends_graphs.refresh"),
+        patch("ui.layout.render_running_tab.refresh"),
+        patch("ui.layout.render_health_data_tab.refresh"),
+        patch("ui.layout.render_best_segments_tab.refresh"),
+        patch("ui.layout.render_distance_range_selector.refresh"),
+        patch("ui.layout.render_duration_range_selector.refresh"),
+        patch("ui.layout.render_workout_table.refresh"),
+        patch("ui.layout.schedule_best_segments_load") as best_mock,
+        patch("ui.layout.schedule_health_data_load") as health_mock,
+    ):
+        monkeypatch.setattr(
+            state,
+            "selected_main_tab",
+            "running",
+        )
+        layout.refresh_data()
+        best_mock.assert_not_called()
+        health_mock.assert_called_once()
 
-                                                                best_mock.reset_mock()
-                                                                health_mock.reset_mock()
-                                                                monkeypatch.setattr(
-                                                                    state,
-                                                                    "selected_main_tab",
-                                                                    "health_data",
-                                                                )
-                                                                layout.refresh_data()
-                                                                health_mock.assert_called_once()
-                                                                best_mock.assert_not_called()
+        best_mock.reset_mock()
+        health_mock.reset_mock()
+        monkeypatch.setattr(
+            state,
+            "selected_main_tab",
+            "health_data",
+        )
+        layout.refresh_data()
+        health_mock.assert_called_once()
+        best_mock.assert_not_called()
 
-                                                                best_mock.reset_mock()
-                                                                health_mock.reset_mock()
-                                                                monkeypatch.setattr(
-                                                                    state,
-                                                                    "selected_main_tab",
-                                                                    "best_segments",
-                                                                )
-                                                                layout.refresh_data()
-                                                                best_mock.assert_called_once()
-                                                                health_mock.assert_not_called()
+        best_mock.reset_mock()
+        health_mock.reset_mock()
+        monkeypatch.setattr(
+            state,
+            "selected_main_tab",
+            "best_segments",
+        )
+        layout.refresh_data()
+        best_mock.assert_called_once()
+        health_mock.assert_not_called()
 
 
 def test_render_left_drawer_renders_export_actions() -> None:
@@ -598,9 +592,11 @@ async def test_pick_file_notifies_or_sets_input_value() -> None:
     state.input_file = SimpleNamespace(value="")  # type: ignore[assignment]
 
     try:
-        with patch("ui.layout.LocalFilePicker", new=AsyncMock(return_value=[])):
-            with patch("ui.layout.ui.notify") as notify_mock:
-                await layout.pick_file()
+        with (
+            patch("ui.layout.LocalFilePicker", new=AsyncMock(return_value=[])),
+            patch("ui.layout.ui.notify") as notify_mock,
+        ):
+            await layout.pick_file()
         notify_mock.assert_called_once_with("No file selected")
 
         with patch("ui.layout.LocalFilePicker", new=AsyncMock(return_value=["C:/x.zip"])):
@@ -657,13 +653,15 @@ async def test_load_file_guards_success_and_error() -> None:
             call_soon_threadsafe=lambda callback: callback()  # type: ignore[arg-type]
         )
 
-        with patch("ui.layout.asyncio.get_running_loop", return_value=fake_loop), patch(
-            "ui.layout.asyncio.to_thread", new=AsyncMock(side_effect=_to_thread_success)
-        ), patch("ui.layout.render_activity_select.refresh") as activity_refresh:
-            with patch("ui.layout.render_date_range_selector.refresh") as date_refresh:
-                with patch("ui.layout.refresh_data") as refresh_data_mock:
-                    with patch("ui.layout.ui.notify") as notify_mock:
-                        await layout.load_file()
+        with (
+            patch("ui.layout.asyncio.get_running_loop", return_value=fake_loop),
+            patch("ui.layout.asyncio.to_thread", new=AsyncMock(side_effect=_to_thread_success)),
+            patch("ui.layout.render_activity_select.refresh") as activity_refresh,
+            patch("ui.layout.render_date_range_selector.refresh") as date_refresh,
+            patch("ui.layout.refresh_data") as refresh_data_mock,
+            patch("ui.layout.ui.notify") as notify_mock,
+        ):
+            await layout.load_file()
 
         assert state.workouts is workouts
         assert state.records_by_type is records
@@ -677,9 +675,12 @@ async def test_load_file_guards_success_and_error() -> None:
         assert state.loading_status == ""
 
         state.loading = False
-        with patch(
-            "ui.layout.asyncio.to_thread", new=AsyncMock(side_effect=RuntimeError("bad zip"))
-        ), patch("ui.layout.ui.notify") as notify_mock:
+        with (
+            patch(
+                "ui.layout.asyncio.to_thread", new=AsyncMock(side_effect=RuntimeError("bad zip"))
+            ),
+            patch("ui.layout.ui.notify") as notify_mock,
+        ):
             await layout.load_file()
 
         notify_mock.assert_called_once()
@@ -727,15 +728,17 @@ def test_render_period_selector_period_change_schedules_health_load_on_health_ta
 
     try:
         state.selected_main_tab = "health_data"
-        with patch("ui.layout.ui.label"):
-            with patch("ui.layout.ui.radio", side_effect=_radio_factory):
-                with patch("ui.layout.render_trends_graphs") as render_trends_graphs_mock:
-                    with patch("ui.layout.render_health_data_tab") as render_health_data_tab_mock:
-                        with patch("ui.layout.render_running_tab") as render_running_tab_mock:
-                            with patch("ui.layout._reset_health_data_state"):
-                                with patch("ui.layout.schedule_health_data_load") as schedule_mock:
-                                    layout.render_period_selector()
-                                    radios[0].on_change()
+        with (
+            patch("ui.layout.ui.label"),
+            patch("ui.layout.ui.radio", side_effect=_radio_factory),
+            patch("ui.layout.render_trends_graphs") as render_trends_graphs_mock,
+            patch("ui.layout.render_health_data_tab") as render_health_data_tab_mock,
+            patch("ui.layout.render_running_tab") as render_running_tab_mock,
+            patch("ui.layout._reset_health_data_state"),
+            patch("ui.layout.schedule_health_data_load") as schedule_mock,
+        ):
+            layout.render_period_selector()
+            radios[0].on_change()
 
         render_trends_graphs_mock.refresh.assert_called_once()
         render_health_data_tab_mock.refresh.assert_called_once()

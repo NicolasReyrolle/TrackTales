@@ -285,9 +285,11 @@ class TestSetupLogging:
         assert clean_logger is logging.getLogger()
         monkeypatch.setenv("TRACKTALES_LOG_DIR", str(tmp_path / "logs"))
 
-        with patch("pathlib.Path.mkdir", side_effect=OSError("no permission")):
-            with caplog.at_level(logging.WARNING):
-                tracktales.setup_logging("INFO", enable_file_logging=True)
+        with (
+            patch("pathlib.Path.mkdir", side_effect=OSError("no permission")),
+            caplog.at_level(logging.WARNING),
+        ):
+            tracktales.setup_logging("INFO", enable_file_logging=True)
 
         assert any("File logging disabled" in record.message for record in caplog.records), (
             "Expected a warning when file logging cannot be initialized"
@@ -486,7 +488,8 @@ class TestCLIArgumentParsing:
             patch("sys.argv", ["tracktales.py", "--dev-file", "~/bad/path.zip"]),
             patch("pathlib.Path.resolve", side_effect=OSError("bad path")),
             patch.object(tracktales, "setup_logging") as mock_setup_logging,
-            patch("nicegui.ui.run") as mock_ui_run,pytest.raises(SystemExit) as exc_info
+            patch("nicegui.ui.run") as mock_ui_run,
+            pytest.raises(SystemExit) as exc_info,
         ):
             tracktales.cli_main()
 
@@ -550,7 +553,8 @@ class TestCLIArgumentParsing:
 
         with (
             patch.object(tracktales, "setup_logging") as mock_setup_logging,
-            patch("nicegui.ui.run") as mock_ui_run,pytest.raises(SystemExit) as exc_info
+            patch("nicegui.ui.run") as mock_ui_run,
+            pytest.raises(SystemExit) as exc_info,
         ):
             tracktales.cli_main()
 

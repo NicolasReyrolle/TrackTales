@@ -4,8 +4,9 @@ It writes the results directly to a CSV file to minimize memory usage."""
 import argparse
 import csv
 import sys
-import defusedxml.ElementTree as ET
 from pathlib import Path
+
+from lxml import etree as ET
 
 
 def get_element_text_value(elem) -> str | None:
@@ -104,12 +105,17 @@ def extract_active_heart_rate_to_csv(xml_path: str, csv_path: str) -> None:
             writer = csv.writer(csv_file, delimiter=";")
             writer.writerow(["start_date", "end_date", "bpm"])
 
-            for _event, elem in ET.iterparse(xml_path, events=("end",)):
+            for _event, elem in ET.iterparse(
+                xml_path,
+                events=("end",),
+                resolve_entities=False,
+                no_network=True,
+            ):
                 if elem.tag == "Record":
                     _process_heart_rate_elem(elem, writer)
                 elem.clear()
 
-    except ET.ParseError as e:
+    except ET.XMLSyntaxError as e:
         print(f"Error parsing XML file: {e}", file=sys.stderr)
         sys.exit(1)
     except OSError as e:

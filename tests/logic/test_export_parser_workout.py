@@ -1,10 +1,10 @@
 """Tests for workout processing functionality."""
 
 from pathlib import Path
-from xml.etree.ElementTree import Element
 from zipfile import ZipFile
 
 import pytest
+from lxml.etree import Element
 
 import logic.export_parser as ep
 

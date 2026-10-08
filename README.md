@@ -108,7 +108,7 @@ For development setup, quality checks, release workflow, packaging validation, a
 
 ## 🔒 Security
 
-This application uses **streaming XML parsing** (`iterparse`) to remain memory-efficient even with large exports (GBs of data) and `defusedxml.ElementTree` to mitigate risks associated with untrusted XML data.
+This application uses **streaming XML parsing** (`iterparse`) to remain memory-efficient even with large exports (GBs of data) and `lxml.etree` (entity resolution and network access disabled) to mitigate risks associated with untrusted XML data.
 
 ## 📄 License
 

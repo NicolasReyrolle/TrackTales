@@ -1,8 +1,7 @@
 """Tests for parsing and value conversion functionality."""
 
-from xml.etree.ElementTree import Element
-
 import pytest
+from lxml.etree import Element
 
 import logic.export_parser as ep
 

@@ -311,7 +311,7 @@ If this smoke test fails with a traceback, include the full stack trace in the i
 
 The `tracktales.spec` file configures PyInstaller to:
 
-- Bundle all Python dependencies (nicegui, pandas, babel, defusedxml, etc.)
+- Bundle all Python dependencies (nicegui, pandas, babel, lxml, etc.)
 - Include i18n locale files and resources
 - Create a Windows .exe with no console window
 - Create a macOS .app bundle with appropriate metadata

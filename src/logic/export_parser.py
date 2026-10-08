@@ -7,11 +7,16 @@ from collections.abc import Callable
 from datetime import datetime
 from types import TracebackType
 from typing import Any
-from xml.etree.ElementTree import Element, tostring
 from zipfile import ZipFile
 
 import pandas as pd
-from defusedxml.ElementTree import iterparse
+from lxml.etree import (  # type: ignore[attr-defined]  # pylint: disable=no-name-in-module
+    _Element as Element,
+)
+from lxml.etree import (
+    iterparse,
+    tostring,
+)
 
 from logic.constants import PANDAS_ISO8601_FORMAT
 from logic.models import WorkoutRecord
@@ -29,6 +34,21 @@ DATETIME64_NS_DTYPE = "datetime64[ns]"
 SUPPORTED_RECORD_TYPES = frozenset(
     {"HeartRate", "RestingHeartRate", "BodyMass", "VO2Max", "RunningPower"}
 )
+
+_GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"  # noqa: S5332
+
+# lxml's iterparse builds its own parser from these options; they preserve anti-XXE protections.
+_SAFE_ITERPARSE_OPTIONS: dict[str, Any] = {"resolve_entities": False, "no_network": True}
+
+
+def _purge_element(elem: Element) -> None:
+    """Release a processed element and its already-seen siblings to keep memory low."""
+    elem.clear()
+    parent = elem.getparent()
+    if parent is None:
+        return
+    while elem.getprevious() is not None:
+        del parent[0]
 
 
 class ExportParser:
@@ -282,13 +302,22 @@ class ExportParser:
             workout_rows: list[WorkoutRecord] = []
             record_rows_by_type: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
-            for _, elem in iterparse(export_file, events=("end",)):
+            for _, elem in iterparse(
+                export_file,
+                events=("end",),
+                tag=("Workout", "Record"),
+                **_SAFE_ITERPARSE_OPTIONS,
+            ):
                 if elem.tag == "Workout":
                     self._process_workout_event(elem, zipfile, workout_rows)
-                    elem.clear()
-                elif elem.tag == "Record":
+                    _purge_element(elem)
+                else:
                     self._process_record_event(elem, record_rows_by_type)
-                    elem.clear()
+                    parent = elem.getparent()
+                    if parent is not None and parent.tag == "Workout":
+                        elem.clear()
+                    else:
+                        _purge_element(elem)
 
             return self._build_parsed_health_data(workout_rows, record_rows_by_type)
 
@@ -561,7 +590,7 @@ class ExportParser:
         """Extract speed value from GPX extensions element."""
         if ext_elem is None:
             return 0.0
-        speed_elem = ext_elem.find("{http://www.topografix.com/GPX/1/1}speed")
+        speed_elem = ext_elem.find(f"{{{_GPX_NAMESPACE}}}speed")
         if speed_elem is None or not speed_elem.text:
             return 0.0
         try:
@@ -579,13 +608,13 @@ class ExportParser:
                 "Skipping GPX trackpoint with missing latitude/longitude: %s", elem.attrib
             )
 
-        ele_elem = elem.find("{http://www.topografix.com/GPX/1/1}ele")
-        time_elem = elem.find("{http://www.topografix.com/GPX/1/1}time")
+        ele_elem = elem.find(f"{{{_GPX_NAMESPACE}}}ele")
+        time_elem = elem.find(f"{{{_GPX_NAMESPACE}}}time")
 
         altitude = (ele_elem.text or "0.0") if ele_elem is not None else "0.0"
         time_str = (time_elem.text or "") if time_elem is not None else ""
 
-        ext_elem = elem.find("{http://www.topografix.com/GPX/1/1}extensions")
+        ext_elem = elem.find(f"{{{_GPX_NAMESPACE}}}extensions")
         speed_val = ExportParser._parse_gpx_speed(ext_elem)
 
         return latitude, longitude, altitude, time_str, speed_val
@@ -608,21 +637,25 @@ class ExportParser:
         try:
             with zipfile.open(f"apple_health_export{route_path}") as route_file:
                 points: list[RoutePoint] = []
-                for _, elem in iterparse(route_file, events=("end",)):
-                    if elem.tag == "{http://www.topografix.com/GPX/1/1}trkpt":
-                        point_data = self._extract_gpx_point_data(elem)
-                        try:
-                            points.append(self._create_route_point(*point_data))
-                        except (TypeError, ValueError) as exc:
-                            # Missing lat/lon is already reported in _extract_gpx_point_data.
-                            if point_data[0] and point_data[1]:
-                                _logger.debug(
-                                    "Skipping malformed GPX trackpoint for %s (error: %s): %s",
-                                    route_path,
-                                    exc,
-                                    elem.attrib,
-                                )
-                        elem.clear()
+                for _, elem in iterparse(
+                    route_file,
+                    events=("end",),
+                    tag=f"{{{_GPX_NAMESPACE}}}trkpt",
+                    **_SAFE_ITERPARSE_OPTIONS,
+                ):
+                    point_data = self._extract_gpx_point_data(elem)
+                    try:
+                        points.append(self._create_route_point(*point_data))
+                    except (TypeError, ValueError) as exc:
+                        # Missing lat/lon is already reported in _extract_gpx_point_data.
+                        if point_data[0] and point_data[1]:
+                            _logger.debug(
+                                "Skipping malformed GPX trackpoint for %s (error: %s): %s",
+                                route_path,
+                                exc,
+                                elem.attrib,
+                            )
+                    _purge_element(elem)
                 return WorkoutRoute(points=points)
         except KeyError:
             self._log(f"Route file not found in export: {route_path}")

@@ -115,7 +115,10 @@ def _build_rotation(
 
 def anonymize_gpx(file_path: str) -> None:
     """Rewrite a GPX file in place while preserving route geometry and distances."""
-    tree = ET.parse(file_path)
+    tree = ET.parse(
+        file_path,
+        parser=ET.XMLParser(resolve_entities=False, no_network=True),
+    )
     root = tree.getroot()
     if root is None:
         raise ValueError("Invalid XML structure in file")
@@ -212,7 +215,10 @@ def anonymize_gpx_single_track(
 
     namespaces = {"gpx": GPX_NAMESPACE}
 
-    first_tree = ET.parse(file_paths[0])
+    first_tree = ET.parse(
+        file_paths[0],
+        parser=ET.XMLParser(resolve_entities=False, no_network=True),
+    )
     first_root = first_tree.getroot()
     if first_root is None:
         raise ValueError(f"Invalid XML structure in file: {file_paths[0]}")
@@ -234,7 +240,10 @@ def anonymize_gpx_single_track(
     previous_last: LatLon | None = None
 
     for index, file_path in enumerate(file_paths):
-        tree = ET.parse(file_path)
+        tree = ET.parse(
+            file_path,
+            parser=ET.XMLParser(resolve_entities=False, no_network=True),
+        )
         root = tree.getroot()
         if root is None:
             raise ValueError(f"Invalid XML structure in file: {file_path}")

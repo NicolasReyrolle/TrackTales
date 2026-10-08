@@ -313,6 +313,52 @@ class TestHikingWorkoutParsing:
 class TestLoadRoute:
     """Test the _load_route method."""
 
+    def test_external_entities_are_not_resolved(self, tmp_path: Path) -> None:
+        """Apple Health and GPX parsing must not expand external entities."""
+        sentinel = tmp_path / "sentinel.txt"
+        sentinel.write_text("9876.5", encoding="utf-8")
+        entity_uri = sentinel.as_uri()
+        zip_path = tmp_path / "external_entity_export.zip"
+        xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE HealthData [<!ENTITY external SYSTEM "{entity_uri}">]>
+<HealthData>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01 10:00:00 +0000" endDate="2024-01-01 10:01:00 +0000"
+        duration="1" durationUnit="min">
+        <MetadataEntry key="test">&external;</MetadataEntry>
+        <WorkoutRoute startDate="2024-01-01 10:00:00 +0000"
+            endDate="2024-01-01 10:01:00 +0000">
+            <FileReference path="/workout-routes/external_entity.gpx"/>
+        </WorkoutRoute>
+    </Workout>
+</HealthData>
+"""
+        gpx_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE gpx [<!ENTITY external SYSTEM "{entity_uri}">]>
+<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
+    <trk><trkseg>
+        <trkpt lat="48.8566" lon="2.3522">
+            <ele>&external;</ele>
+            <time>2024-01-01T10:00:00Z</time>
+        </trkpt>
+    </trkseg></trk>
+</gpx>
+"""
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", xml_content)
+            zf.writestr(
+                "apple_health_export/workout-routes/external_entity.gpx",
+                gpx_content,
+            )
+
+        with ExportParser() as parser:
+            health_data = parser.parse(str(zip_path))
+
+        workout = health_data.workouts.iloc[0]
+        assert "&external;" in workout["xmlFragment"]
+        assert "9876.5" not in workout["xmlFragment"]
+        assert workout["route"].points[0].altitude == pytest.approx(0.0)
+
     def test_load_route_with_valid_gpx(self, tmp_path: Path) -> None:
         """Test loading a valid GPX route file."""
         zip_path = tmp_path / "route_export.zip"

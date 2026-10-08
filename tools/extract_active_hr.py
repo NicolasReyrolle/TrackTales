@@ -105,7 +105,12 @@ def extract_active_heart_rate_to_csv(xml_path: str, csv_path: str) -> None:
             writer = csv.writer(csv_file, delimiter=";")
             writer.writerow(["start_date", "end_date", "bpm"])
 
-            for _event, elem in ET.iterparse(xml_path, events=("end",)):
+            for _event, elem in ET.iterparse(
+                xml_path,
+                events=("end",),
+                resolve_entities=False,
+                no_network=True,
+            ):
                 if elem.tag == "Record":
                     _process_heart_rate_elem(elem, writer)
                 elem.clear()

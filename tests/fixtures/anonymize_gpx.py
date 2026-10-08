@@ -7,6 +7,7 @@ import math
 import sys
 from collections.abc import Callable
 from pathlib import Path
+
 from lxml import etree as ET
 
 GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"  # noqa: S5332

@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Mapping
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, cast, override
 
 import pandas as pd
 
@@ -63,6 +63,7 @@ class WorkoutManagerAggregationsMixin(WorkoutManagerSeasonalAggregationsMixin):
         result: list[str] = self.workouts["activityType"].dropna().unique().tolist()
         return result
 
+    @override
     def _filter_workouts(
         self,
         activity_type: str = "All",
@@ -99,6 +100,7 @@ class WorkoutManagerAggregationsMixin(WorkoutManagerSeasonalAggregationsMixin):
         excluded = exclude_columns if exclude_columns is not None else self.DEFAULT_EXCLUDED_COLUMNS
         return [col for col in self.workouts.columns if col not in excluded]
 
+    @override
     def _get_length_unit_divisor(self, unit: str) -> float:
         """Get the divisor to convert meters to the given length unit (distance or elevation)."""
         if unit == "km":

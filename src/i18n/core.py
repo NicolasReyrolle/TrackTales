@@ -2,7 +2,7 @@ import gettext
 import logging
 from functools import cache
 from pathlib import Path
-from typing import cast
+from typing import cast, override
 
 from babel.messages import mofile, pofile
 
@@ -19,10 +19,12 @@ _logger = logging.getLogger(__name__)
 
 
 class _POTranslations(gettext.NullTranslations):
+    @override
     def __init__(self, messages: dict[str, str]) -> None:
         super().__init__()
         self._messages = messages
 
+    @override
     def gettext(self, message: str) -> str:
         return self._messages.get(message) or message
 

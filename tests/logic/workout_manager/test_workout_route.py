@@ -1,12 +1,12 @@
 """Unit tests for workout route domain models and calculations."""
 
-import xml.etree.ElementTree as ET
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
+from lxml import etree as ET
 
 from logic.export_parser import ExportParser
 from logic.workout_manager import WorkoutManager

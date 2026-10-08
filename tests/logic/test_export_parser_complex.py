@@ -3,11 +3,11 @@
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from xml.etree.ElementTree import Element
 from zipfile import ZipFile
 
 import pandas as pd
 import pytest
+from lxml.etree import Element
 
 from logic.export_parser import ExportParser, WorkoutRecord
 from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from xml.etree.ElementTree import Element
 
 import pandas as pd
 import pytest
+from lxml.etree import Element as XmlElement
+from lxml.etree import SubElement
+from lxml.etree import _Element as Element
 
 from logic.export_parser import ExportParser, ParsedHealthData
 from logic.records_by_type import RecordsByType
@@ -410,9 +412,8 @@ class TestParseSwimEventMetadata:
     @staticmethod
     def _make_event_element(metadata: dict[str, str]) -> Element:
         """Build a fake WorkoutEvent XML element with the given metadata entries."""
-        from xml.etree.ElementTree import Element, SubElement
 
-        elem = Element(
+        elem = XmlElement(
             "WorkoutEvent",
             attrib={
                 "type": "HKWorkoutEventTypeLap",
@@ -453,9 +454,8 @@ class TestParseSwimEventMetadata:
 
     def test_ignores_non_metadata_entry_tags(self) -> None:
         """Child elements with tags other than MetadataEntry should be silently skipped."""
-        from xml.etree.ElementTree import Element, SubElement
 
-        elem = Element("WorkoutEvent")
+        elem = XmlElement("WorkoutEvent")
         SubElement(elem, "OtherTag", attrib={"key": "HKSWOLFScore", "value": "99.0"})
         result = ExportParser._parse_swim_event_metadata(elem)  # type: ignore[misc]
         assert result == {}

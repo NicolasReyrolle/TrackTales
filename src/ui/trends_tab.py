@@ -38,10 +38,9 @@ def render_recovery_recommendation() -> None:
         start_date=state.start_date,
         end_date=state.end_date,
     )
-    with ui.row().classes(ROW_CENTERED_CLASSES):
-        with ui.card().classes(RECOVERY_CARD_CLASSES):
-            ui.label(t("Recovery Recommendation")).classes(LABEL_MUTED_CLASSES)
-            ui.label(t(recommendation)).classes(RECOVERY_RECOMMENDATION_CLASSES)
+    with ui.row().classes(ROW_CENTERED_CLASSES), ui.card().classes(RECOVERY_CARD_CLASSES):
+        ui.label(t("Recovery Recommendation")).classes(LABEL_MUTED_CLASSES)
+        ui.label(t(recommendation)).classes(RECOVERY_RECOMMENDATION_CLASSES)
 
 
 @ui.refreshable

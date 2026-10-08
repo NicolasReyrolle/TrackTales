@@ -737,27 +737,26 @@ def render_header() -> None:
         # Preferences menu (language + unit system)
         current_language = get_language()
         current_system = get_unit_system()
-        with ui.button(icon="tune").props(BUTTON_FLAT_ROUND_PROPS):
-            with ui.menu():
-                ui.label(t("Language")).classes(PREF_SECTION_LABEL_CLASSES)
-                for code, name in LANGUAGES.items():
-                    ui.menu_item(
-                        f"{'✓ ' if code == current_language else ''}{name}",
-                        on_click=lambda _event, c=code: _change_language(c),
-                    ).classes(PREF_MENU_ITEM_CLASSES)
+        with ui.button(icon="tune").props(BUTTON_FLAT_ROUND_PROPS), ui.menu():
+            ui.label(t("Language")).classes(PREF_SECTION_LABEL_CLASSES)
+            for code, name in LANGUAGES.items():
+                ui.menu_item(
+                    f"{'✓ ' if code == current_language else ''}{name}",
+                    on_click=lambda _event, c=code: _change_language(c),
+                ).classes(PREF_MENU_ITEM_CLASSES)
+            ui.separator()
+            ui.label(t("Units")).classes(PREF_SECTION_LABEL_CLASSES)
+            for system_code, system_label in UNIT_SYSTEMS.items():
+                ui.menu_item(
+                    f"{'✓ ' if system_code == current_system else ''}{t(system_label)}",
+                    on_click=lambda _event, s=system_code: _change_unit_system(s),
+                ).classes(PREF_MENU_ITEM_CLASSES)
+            if getattr(sys, "frozen", False):
                 ui.separator()
-                ui.label(t("Units")).classes(PREF_SECTION_LABEL_CLASSES)
-                for system_code, system_label in UNIT_SYSTEMS.items():
-                    ui.menu_item(
-                        f"{'✓ ' if system_code == current_system else ''}{t(system_label)}",
-                        on_click=lambda _event, s=system_code: _change_unit_system(s),
-                    ).classes(PREF_MENU_ITEM_CLASSES)
-                if getattr(sys, "frozen", False):
-                    ui.separator()
-                    ui.menu_item(
-                        t("Quit TrackTales"),
-                        on_click=_quit_packaged_app,
-                    ).classes(PREF_MENU_ITEM_CLASSES)
+                ui.menu_item(
+                    t("Quit TrackTales"),
+                    on_click=_quit_packaged_app,
+                ).classes(PREF_MENU_ITEM_CLASSES)
 
 
 async def pick_file() -> None:

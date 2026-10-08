@@ -657,15 +657,13 @@ async def test_load_file_guards_success_and_error() -> None:
             call_soon_threadsafe=lambda callback: callback()  # type: ignore[arg-type]
         )
 
-        with patch("ui.layout.asyncio.get_running_loop", return_value=fake_loop):
-            with patch(
-                "ui.layout.asyncio.to_thread", new=AsyncMock(side_effect=_to_thread_success)
-            ):
-                with patch("ui.layout.render_activity_select.refresh") as activity_refresh:
-                    with patch("ui.layout.render_date_range_selector.refresh") as date_refresh:
-                        with patch("ui.layout.refresh_data") as refresh_data_mock:
-                            with patch("ui.layout.ui.notify") as notify_mock:
-                                await layout.load_file()
+        with patch("ui.layout.asyncio.get_running_loop", return_value=fake_loop), patch(
+            "ui.layout.asyncio.to_thread", new=AsyncMock(side_effect=_to_thread_success)
+        ), patch("ui.layout.render_activity_select.refresh") as activity_refresh:
+            with patch("ui.layout.render_date_range_selector.refresh") as date_refresh:
+                with patch("ui.layout.refresh_data") as refresh_data_mock:
+                    with patch("ui.layout.ui.notify") as notify_mock:
+                        await layout.load_file()
 
         assert state.workouts is workouts
         assert state.records_by_type is records
@@ -681,9 +679,8 @@ async def test_load_file_guards_success_and_error() -> None:
         state.loading = False
         with patch(
             "ui.layout.asyncio.to_thread", new=AsyncMock(side_effect=RuntimeError("bad zip"))
-        ):
-            with patch("ui.layout.ui.notify") as notify_mock:
-                await layout.load_file()
+        ), patch("ui.layout.ui.notify") as notify_mock:
+            await layout.load_file()
 
         notify_mock.assert_called_once()
         message = notify_mock.call_args.args[0]

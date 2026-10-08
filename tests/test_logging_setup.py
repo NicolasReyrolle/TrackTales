@@ -486,10 +486,9 @@ class TestCLIArgumentParsing:
             patch("sys.argv", ["tracktales.py", "--dev-file", "~/bad/path.zip"]),
             patch("pathlib.Path.resolve", side_effect=OSError("bad path")),
             patch.object(tracktales, "setup_logging") as mock_setup_logging,
-            patch("nicegui.ui.run") as mock_ui_run,
+            patch("nicegui.ui.run") as mock_ui_run,pytest.raises(SystemExit) as exc_info
         ):
-            with pytest.raises(SystemExit) as exc_info:
-                tracktales.cli_main()
+            tracktales.cli_main()
 
         assert exc_info.value.code == 1
         mock_setup_logging.assert_called_once()
@@ -551,10 +550,9 @@ class TestCLIArgumentParsing:
 
         with (
             patch.object(tracktales, "setup_logging") as mock_setup_logging,
-            patch("nicegui.ui.run") as mock_ui_run,
+            patch("nicegui.ui.run") as mock_ui_run,pytest.raises(SystemExit) as exc_info
         ):
-            with pytest.raises(SystemExit) as exc_info:
-                tracktales.cli_main()
+            tracktales.cli_main()
 
         assert exc_info.value.code == 1
         mock_setup_logging.assert_called_once()

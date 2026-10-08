@@ -559,265 +559,262 @@ def create_workout_detail_modal(
 
     modal_state: dict[str, int] = {"index": 0}
 
-    with ui.dialog() as dialog:
-        with ui.card().classes(MODAL_CARD_CLASSES):
-            # ---- Header (title + close button) ----
-            with ui.row().classes(MODAL_HEADER_ROW_CLASSES):
-                modal_title = ui.label().classes(LABEL_UPPERCASE_CLASSES)
-                ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
+    with ui.dialog() as dialog, ui.card().classes(MODAL_CARD_CLASSES):
+        # ---- Header (title + close button) ----
+        with ui.row().classes(MODAL_HEADER_ROW_CLASSES):
+            modal_title = ui.label().classes(LABEL_UPPERCASE_CLASSES)
+            ui.button(icon="close", on_click=dialog.close).props(BUTTON_DENSE_PROPS)
 
-            # ---- Tab bar ----
-            with ui.tabs().classes(TABS_FULL_CLASSES) as detail_tabs:
-                ui.tab("overview", t("Overview"))
-                activity_tab = ui.tab("activity", t("Activity"))
-                route_tab = ui.tab("route", t("Route"))
-                profile_tab = ui.tab("profile", t("Charts"))
-                intervals_tab = ui.tab("intervals", t("Intervals"))
-                comparisons_tab = ui.tab("comparisons", t("Comparisons"))
+        # ---- Tab bar ----
+        with ui.tabs().classes(TABS_FULL_CLASSES) as detail_tabs:
+            ui.tab("overview", t("Overview"))
+            activity_tab = ui.tab("activity", t("Activity"))
+            route_tab = ui.tab("route", t("Route"))
+            profile_tab = ui.tab("profile", t("Charts"))
+            intervals_tab = ui.tab("intervals", t("Intervals"))
+            comparisons_tab = ui.tab("comparisons", t("Comparisons"))
 
-            # ---- Tab panels ----
-            with ui.tab_panels(detail_tabs, value="overview").classes(MODAL_TAB_PANELS_CLASSES):
-                # Overview tab: generic workout attributes
-                with ui.tab_panel("overview"):
-                    with ui.row().classes(MODAL_CENTERED_ROW_CLASSES):
-                        with ui.column().classes(MODAL_CENTERED_CONTENT_CLASSES):
-                            field_rows = _build_field_rows(_FIELD_DISPLAY)
+        # ---- Tab panels ----
+        with ui.tab_panels(detail_tabs, value="overview").classes(MODAL_TAB_PANELS_CLASSES):
+            # Overview tab: generic workout attributes
+            with ui.tab_panel("overview"), ui.row().classes(MODAL_CENTERED_ROW_CLASSES):
+                with ui.column().classes(MODAL_CENTERED_CONTENT_CLASSES):
+                    field_rows = _build_field_rows(_FIELD_DISPLAY)
 
-                # Activity tab: type-specific metrics
-                with ui.tab_panel("activity"):
-                    with ui.row().classes(MODAL_CENTERED_ROW_CLASSES):
-                        with ui.column().classes(MODAL_CENTERED_CONTENT_CLASSES):
-                            # Shown for unsupported activity types
-                            no_activity_label = ui.label(
-                                t("No activity-specific data available.")
-                            ).classes(LABEL_MUTED_CLASSES)
-                            # Running-specific metrics; shown only when activity is Running
-                            running_container = ui.column().classes(TABS_FULL_CLASSES)
-                            with running_container:
-                                running_field_rows = _build_field_rows(_RUNNING_FIELD_DISPLAY)
-                            # Walking-specific metrics; shown only when activity is Walking
-                            walking_container = ui.column().classes(TABS_FULL_CLASSES)
-                            with walking_container:
-                                walking_field_rows = _build_field_rows(_WALKING_FIELD_DISPLAY)
-                            # Hiking-specific metrics; shown only when activity is Hiking
-                            hiking_container = ui.column().classes(TABS_FULL_CLASSES)
-                            with hiking_container:
-                                hiking_field_rows = _build_field_rows(_HIKING_FIELD_DISPLAY)
-                            # Swimming summary metrics; shown only when activity is Swimming
-                            swimming_container = ui.column().classes(TABS_FULL_CLASSES)
-                            with swimming_container:
-                                swimming_field_rows = _build_field_rows(_SWIMMING_FIELD_DISPLAY)
-                            # Cycling-specific metrics; shown only when activity is Cycling
-                            cycling_container = ui.column().classes(TABS_FULL_CLASSES)
-                            with cycling_container:
-                                cycling_field_rows = _build_field_rows(_CYCLING_FIELD_DISPLAY)
-
-                # Intervals tab: swim lap table (Swimming) or GPS splits (other workouts with GPS)
-                with ui.tab_panel("intervals"):
-                    # Swimming section: per-interval lap table
-                    no_swim_laps_label = ui.label(t("No lap data available.")).classes(
-                        LABEL_MUTED_CLASSES
-                    )
-                    swim_columns = [
-                        {
-                            "name": "num",
-                            "label": "#",
-                            "field": "num",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "dist",
-                            "label": t("Dist"),
-                            "field": "dist",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "dur",
-                            "label": t("Time"),
-                            "field": "dur",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "stroke",
-                            "label": t("Stroke"),
-                            "field": "stroke",
-                            "align": "left",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "swolf",
-                            "label": "SWOLF",
-                            "field": "swolf",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "pause",
-                            "label": t("Rest"),
-                            "field": "pause",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                    ]
-                    swim_table = (
-                        ui.table(columns=swim_columns, rows=[], row_key="num")
-                        .classes(MODAL_SWIM_TABLE_CLASSES)
-                        .props(TABLE_DENSE_FLAT_PROPS)
-                    )
-
-                    # GPS splits section: per-km or per-mi splits for workouts with a route
-                    no_splits_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
-                    # Initialise the split-number column header from the first row's unit so
-                    # the correct label ("km" or "mi") is visible before the first tab-click.
-                    _initial_du = rows[0].get("distance_unit", "km") if rows else "km"
-                    splits_columns = [
-                        {
-                            "name": "split",
-                            "label": _initial_du,
-                            "field": "split",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "pace",
-                            "label": t("Pace"),
-                            "field": "pace_str",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "speed",
-                            "label": t("Speed"),
-                            "field": "speed_str",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "avg_hr",
-                            "label": t("Avg HR"),
-                            "field": "avg_hr_str",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "elevation",
-                            "label": t("Elev"),
-                            "field": "elev_str",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                    ]
-                    splits_table = (
-                        ui.table(columns=splits_columns, rows=[], row_key="split")
-                        .classes(MODAL_SPLITS_TABLE_CLASSES)
-                        .props(TABLE_DENSE_FLAT_PROPS)
-                    )
-
-                # Route tab: interactive Leaflet route map with start/end markers
-                with ui.tab_panel("route"):
-                    no_route_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
-                    with ui.row().classes(MODAL_ROUTE_MAP_CONTAINER_CLASSES):
-                        route_map = ui.leaflet(
-                            center=(0.0, 0.0),
-                            zoom=13,
-                            options={"zoomControl": True},
-                        ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
-
-                # Charts tab: route profile (altitude/pace) + standalone heart-rate chart
-                with ui.tab_panel("profile"):
-                    no_route_profile_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
-                        LABEL_MUTED_CLASSES
-                    )
-                    with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
-                        route_profile_chart = ui.echart(
-                            {
-                                "backgroundColor": "transparent",
-                                "xAxis": {"type": "value"},
-                                "yAxis": {"type": "value"},
-                                "series": [{"type": "line", "data": []}],
-                            }
-                        ).classes(MODAL_ROUTE_PROFILE_CLASSES)
-                    no_heart_rate_profile_label = ui.label(
-                        t("No heart rate data available.")
+            # Activity tab: type-specific metrics
+            with ui.tab_panel("activity"), ui.row().classes(MODAL_CENTERED_ROW_CLASSES):
+                with ui.column().classes(MODAL_CENTERED_CONTENT_CLASSES):
+                    # Shown for unsupported activity types
+                    no_activity_label = ui.label(
+                        t("No activity-specific data available.")
                     ).classes(LABEL_MUTED_CLASSES)
-                    with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
-                        heart_rate_profile_chart = ui.echart(
-                            {
-                                "backgroundColor": "transparent",
-                                "xAxis": {"type": "value"},
-                                "yAxis": {"type": "value"},
-                                "series": [{"type": "line", "data": []}],
-                            }
-                        ).classes(MODAL_ROUTE_PROFILE_CLASSES)
+                    # Running-specific metrics; shown only when activity is Running
+                    running_container = ui.column().classes(TABS_FULL_CLASSES)
+                    with running_container:
+                        running_field_rows = _build_field_rows(_RUNNING_FIELD_DISPLAY)
+                    # Walking-specific metrics; shown only when activity is Walking
+                    walking_container = ui.column().classes(TABS_FULL_CLASSES)
+                    with walking_container:
+                        walking_field_rows = _build_field_rows(_WALKING_FIELD_DISPLAY)
+                    # Hiking-specific metrics; shown only when activity is Hiking
+                    hiking_container = ui.column().classes(TABS_FULL_CLASSES)
+                    with hiking_container:
+                        hiking_field_rows = _build_field_rows(_HIKING_FIELD_DISPLAY)
+                    # Swimming summary metrics; shown only when activity is Swimming
+                    swimming_container = ui.column().classes(TABS_FULL_CLASSES)
+                    with swimming_container:
+                        swimming_field_rows = _build_field_rows(_SWIMMING_FIELD_DISPLAY)
+                    # Cycling-specific metrics; shown only when activity is Cycling
+                    cycling_container = ui.column().classes(TABS_FULL_CLASSES)
+                    with cycling_container:
+                        cycling_field_rows = _build_field_rows(_CYCLING_FIELD_DISPLAY)
 
-                # Comparisons tab: route-comparison leaderboard for GPS workouts
-                with ui.tab_panel("comparisons"):
-                    no_route_label_comp = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
-                        LABEL_MUTED_CLASSES
-                    )
-                    no_similar_label = ui.label(t("No similar routes found.")).classes(
-                        LABEL_MUTED_CLASSES
-                    )
-                    comparison_rank_label = ui.label().classes(MODAL_COMPARISON_RANK_CLASSES)
-                    comparison_columns = [
-                        {
-                            "name": "rank",
-                            "label": "#",
-                            "field": "rank_str",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "date",
-                            "label": t("Date"),
-                            "field": "date",
-                            "align": "left",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "duration",
-                            "label": t("Duration"),
-                            "field": "duration",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "diff",
-                            "label": t("Diff"),
-                            "field": "diff_str",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                        {
-                            "name": "pace",
-                            "label": t("Pace"),
-                            "field": "pace",
-                            "align": "right",
-                            "sortable": False,
-                        },
-                    ]
-                    comparison_table = (
-                        ui.table(columns=comparison_columns, rows=[], row_key="rank")
-                        .classes(MODAL_COMPARISON_TABLE_CLASSES)
-                        .props(TABLE_DENSE_FLAT_PROPS)
-                    )
+            # Intervals tab: swim lap table (Swimming) or GPS splits (other workouts with GPS)
+            with ui.tab_panel("intervals"):
+                # Swimming section: per-interval lap table
+                no_swim_laps_label = ui.label(t("No lap data available.")).classes(
+                    LABEL_MUTED_CLASSES
+                )
+                swim_columns = [
+                    {
+                        "name": "num",
+                        "label": "#",
+                        "field": "num",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "dist",
+                        "label": t("Dist"),
+                        "field": "dist",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "dur",
+                        "label": t("Time"),
+                        "field": "dur",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "stroke",
+                        "label": t("Stroke"),
+                        "field": "stroke",
+                        "align": "left",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "swolf",
+                        "label": "SWOLF",
+                        "field": "swolf",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "pause",
+                        "label": t("Rest"),
+                        "field": "pause",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                ]
+                swim_table = (
+                    ui.table(columns=swim_columns, rows=[], row_key="num")
+                    .classes(MODAL_SWIM_TABLE_CLASSES)
+                    .props(TABLE_DENSE_FLAT_PROPS)
+                )
 
-            # ---- Navigation footer ----
-            with ui.row().classes(MODAL_NAV_ROW_CLASSES):
-                prev_btn = ui.button(
-                    icon="chevron_left",
-                    on_click=lambda: _navigate(-1),
-                ).props(BUTTON_DENSE_PROPS)
-                tab_loading_feedback = ui.spinner(size="1rem")
-                tab_loading_feedback.set_visibility(False)
-                nav_counter = ui.label().classes(MODAL_NAV_COUNTER_CLASSES)
-                next_btn = ui.button(
-                    icon="chevron_right",
-                    on_click=lambda: _navigate(1),
-                ).props(BUTTON_DENSE_PROPS)
+                # GPS splits section: per-km or per-mi splits for workouts with a route
+                no_splits_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
+                # Initialise the split-number column header from the first row's unit so
+                # the correct label ("km" or "mi") is visible before the first tab-click.
+                _initial_du = rows[0].get("distance_unit", "km") if rows else "km"
+                splits_columns = [
+                    {
+                        "name": "split",
+                        "label": _initial_du,
+                        "field": "split",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "pace",
+                        "label": t("Pace"),
+                        "field": "pace_str",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "speed",
+                        "label": t("Speed"),
+                        "field": "speed_str",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "avg_hr",
+                        "label": t("Avg HR"),
+                        "field": "avg_hr_str",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "elevation",
+                        "label": t("Elev"),
+                        "field": "elev_str",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                ]
+                splits_table = (
+                    ui.table(columns=splits_columns, rows=[], row_key="split")
+                    .classes(MODAL_SPLITS_TABLE_CLASSES)
+                    .props(TABLE_DENSE_FLAT_PROPS)
+                )
+
+            # Route tab: interactive Leaflet route map with start/end markers
+            with ui.tab_panel("route"):
+                no_route_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(LABEL_MUTED_CLASSES)
+                with ui.row().classes(MODAL_ROUTE_MAP_CONTAINER_CLASSES):
+                    route_map = ui.leaflet(
+                        center=(0.0, 0.0),
+                        zoom=13,
+                        options={"zoomControl": True},
+                    ).classes(MODAL_ROUTE_MAP_HTML_CLASSES)
+
+            # Charts tab: route profile (altitude/pace) + standalone heart-rate chart
+            with ui.tab_panel("profile"):
+                no_route_profile_label = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
+                    LABEL_MUTED_CLASSES
+                )
+                with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
+                    route_profile_chart = ui.echart(
+                        {
+                            "backgroundColor": "transparent",
+                            "xAxis": {"type": "value"},
+                            "yAxis": {"type": "value"},
+                            "series": [{"type": "line", "data": []}],
+                        }
+                    ).classes(MODAL_ROUTE_PROFILE_CLASSES)
+                no_heart_rate_profile_label = ui.label(
+                    t("No heart rate data available.")
+                ).classes(LABEL_MUTED_CLASSES)
+                with ui.row().classes(MODAL_ROUTE_PROFILE_CONTAINER_CLASSES):
+                    heart_rate_profile_chart = ui.echart(
+                        {
+                            "backgroundColor": "transparent",
+                            "xAxis": {"type": "value"},
+                            "yAxis": {"type": "value"},
+                            "series": [{"type": "line", "data": []}],
+                        }
+                    ).classes(MODAL_ROUTE_PROFILE_CLASSES)
+
+            # Comparisons tab: route-comparison leaderboard for GPS workouts
+            with ui.tab_panel("comparisons"):
+                no_route_label_comp = ui.label(t(_NO_GPS_ROUTE_MSG)).classes(
+                    LABEL_MUTED_CLASSES
+                )
+                no_similar_label = ui.label(t("No similar routes found.")).classes(
+                    LABEL_MUTED_CLASSES
+                )
+                comparison_rank_label = ui.label().classes(MODAL_COMPARISON_RANK_CLASSES)
+                comparison_columns = [
+                    {
+                        "name": "rank",
+                        "label": "#",
+                        "field": "rank_str",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "date",
+                        "label": t("Date"),
+                        "field": "date",
+                        "align": "left",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "duration",
+                        "label": t("Duration"),
+                        "field": "duration",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "diff",
+                        "label": t("Diff"),
+                        "field": "diff_str",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                    {
+                        "name": "pace",
+                        "label": t("Pace"),
+                        "field": "pace",
+                        "align": "right",
+                        "sortable": False,
+                    },
+                ]
+                comparison_table = (
+                    ui.table(columns=comparison_columns, rows=[], row_key="rank")
+                    .classes(MODAL_COMPARISON_TABLE_CLASSES)
+                    .props(TABLE_DENSE_FLAT_PROPS)
+                )
+
+        # ---- Navigation footer ----
+        with ui.row().classes(MODAL_NAV_ROW_CLASSES):
+            prev_btn = ui.button(
+                icon="chevron_left",
+                on_click=lambda: _navigate(-1),
+            ).props(BUTTON_DENSE_PROPS)
+            tab_loading_feedback = ui.spinner(size="1rem")
+            tab_loading_feedback.set_visibility(False)
+            nav_counter = ui.label().classes(MODAL_NAV_COUNTER_CLASSES)
+            next_btn = ui.button(
+                icon="chevron_right",
+                on_click=lambda: _navigate(1),
+            ).props(BUTTON_DENSE_PROPS)
 
     def _refresh_header(idx: int, n: int, row: dict[str, Any]) -> None:
         """Update modal title and navigation state."""

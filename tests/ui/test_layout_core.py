@@ -233,11 +233,10 @@ def test_change_language_reloads_ui_without_triggering_file_load() -> None:
 
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={}))
 
-    with patch("ui.layout.app", fake_app):
-        with patch("ui.layout.ui.navigate.reload") as reload_mock:
-            with patch("ui.layout.load_file") as load_file_mock:
-                change_language = getattr(layout, "_change_language")
-                change_language("fr")
+    with patch("ui.layout.app", fake_app), patch("ui.layout.ui.navigate.reload") as reload_mock:
+        with patch("ui.layout.load_file") as load_file_mock:
+            change_language = getattr(layout, "_change_language")
+            change_language("fr")
 
     assert fake_app.storage.user["language"] == "fr"
     reload_mock.assert_called_once()

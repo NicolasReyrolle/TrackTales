@@ -310,9 +310,14 @@ class ExportParser:
             ):
                 if elem.tag == "Workout":
                     self._process_workout_event(elem, zipfile, workout_rows)
+                    _purge_element(elem)
                 else:
                     self._process_record_event(elem, record_rows_by_type)
-                _purge_element(elem)
+                    parent = elem.getparent()
+                    if parent is not None and parent.tag == "Workout":
+                        elem.clear()
+                    else:
+                        _purge_element(elem)
 
             return self._build_parsed_health_data(workout_rows, record_rows_by_type)
 

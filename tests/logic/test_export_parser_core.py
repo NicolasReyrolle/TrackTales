@@ -97,6 +97,29 @@ class TestLoadWorkouts:
         # Check duration values are captured in seconds
         assert list(workouts.get_workouts()["duration"]) == [1800, 1500]
 
+    def test_nested_record_does_not_remove_workout_statistics(self, tmp_path: Path) -> None:
+        """Preserve workout statistics preceding records nested inside a workout."""
+        zip_path = tmp_path / "nested_record_export.zip"
+        xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
+<HealthData>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01" endDate="2024-01-01" duration="30" durationUnit="min">
+        <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning"
+            sum="5" unit="km"/>
+        <Record type="HKQuantityTypeIdentifierHeartRate" value="120"
+            startDate="2024-01-01" endDate="2024-01-01"/>
+    </Workout>
+</HealthData>
+"""
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", xml_content)
+
+        parser = ep.ExportParser()
+        with parser:
+            workouts = wm.WorkoutManager(parser.parse(str(zip_path)).workouts)
+
+        assert workouts.get_workouts().iloc[0]["distance"] == 5000
+
 
 class TestDurationToSeconds:
     """Test the duration_to_seconds static method."""

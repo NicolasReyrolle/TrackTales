@@ -2,7 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
-from typing import Any, TypeAlias, cast
+from typing import Any, cast
 
 from nicegui import background_tasks, ui
 
@@ -65,7 +65,7 @@ from ui.workout_detail_modal.routes import (
 from units import METERS_TO_MILES
 
 #: Callable returning a translated label string; alias for readability.
-_LabelFn: TypeAlias = Callable[[], str]
+type _LabelFn = Callable[[], str]
 
 #: i18n key reused across GPS-dependent modal sections.
 _NO_GPS_ROUTE_MSG = "No GPS route available."

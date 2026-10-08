@@ -35,7 +35,7 @@ SUPPORTED_RECORD_TYPES = frozenset(
     {"HeartRate", "RestingHeartRate", "BodyMass", "VO2Max", "RunningPower"}
 )
 
-_GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"
+_GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"  # noqa: S5332
 
 # lxml's iterparse builds its own parser from these options; they preserve anti-XXE protections.
 _SAFE_ITERPARSE_OPTIONS: dict[str, Any] = {"resolve_entities": False, "no_network": True}

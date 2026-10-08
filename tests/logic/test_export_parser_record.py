@@ -321,9 +321,8 @@ class TestExportParserInternalBranches:
             raise RuntimeError("boom")
 
         parser = ExportParser(progress_callback=broken_callback)
-        with caplog.at_level("DEBUG"):
-            with parser:
-                result = parser.parse(str(zip_path))
+        with caplog.at_level("DEBUG"), parser:
+            result = parser.parse(str(zip_path))
 
         assert len(result.workouts) == 1
         assert any("Loading the workouts" in record.message for record in caplog.records)

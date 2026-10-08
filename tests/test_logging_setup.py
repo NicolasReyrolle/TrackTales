@@ -285,9 +285,11 @@ class TestSetupLogging:
         assert clean_logger is logging.getLogger()
         monkeypatch.setenv("TRACKTALES_LOG_DIR", str(tmp_path / "logs"))
 
-        with patch("pathlib.Path.mkdir", side_effect=OSError("no permission")):
-            with caplog.at_level(logging.WARNING):
-                tracktales.setup_logging("INFO", enable_file_logging=True)
+        with (
+            patch("pathlib.Path.mkdir", side_effect=OSError("no permission")),
+            caplog.at_level(logging.WARNING),
+        ):
+            tracktales.setup_logging("INFO", enable_file_logging=True)
 
         assert any("File logging disabled" in record.message for record in caplog.records), (
             "Expected a warning when file logging cannot be initialized"
@@ -487,9 +489,9 @@ class TestCLIArgumentParsing:
             patch("pathlib.Path.resolve", side_effect=OSError("bad path")),
             patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
+            pytest.raises(SystemExit) as exc_info,
         ):
-            with pytest.raises(SystemExit) as exc_info:
-                tracktales.cli_main()
+            tracktales.cli_main()
 
         assert exc_info.value.code == 1
         mock_setup_logging.assert_called_once()
@@ -552,9 +554,9 @@ class TestCLIArgumentParsing:
         with (
             patch.object(tracktales, "setup_logging") as mock_setup_logging,
             patch("nicegui.ui.run") as mock_ui_run,
+            pytest.raises(SystemExit) as exc_info,
         ):
-            with pytest.raises(SystemExit) as exc_info:
-                tracktales.cli_main()
+            tracktales.cli_main()
 
         assert exc_info.value.code == 1
         mock_setup_logging.assert_called_once()

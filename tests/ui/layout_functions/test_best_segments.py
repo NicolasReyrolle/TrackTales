@@ -218,9 +218,11 @@ class TestBestSegmentsTabData:
             state.best_segments_loading = False
             state.best_segments_loaded = False
 
-            with patch("ui.best_segments.get_language", return_value="fr"):
-                with patch("ui.layout.render_best_segments_tab.refresh"):
-                    await layout.load_best_segments_data(force=True)
+            with (
+                patch("ui.best_segments.get_language", return_value="fr"),
+                patch("ui.layout.render_best_segments_tab.refresh"),
+            ):
+                await layout.load_best_segments_data(force=True)
 
             assert state.best_segments_rows[0]["start_date"] == "16/09/2025"
         finally:
@@ -245,11 +247,13 @@ class TestBestSegmentsTabData:
             state.best_segments_loading = False
             state.best_segments_loaded = False
 
-            with patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock:
-                with patch(
+            with (
+                patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock,
+                patch(
                     "ui.best_segments.asyncio.to_thread", new=AsyncMock(return_value=expected_rows)
-                ):
-                    await layout.load_best_segments_data()
+                ),
+            ):
+                await layout.load_best_segments_data()
 
             assert state.best_segments_rows == expected_rows
             assert state.best_segments_loaded is True
@@ -274,9 +278,11 @@ class TestBestSegmentsTabData:
             state.best_segments_loading = False
             state.best_segments_loaded = False
 
-            with patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock:
-                with patch("ui.best_segments.asyncio.to_thread", new=AsyncMock()) as to_thread_mock:
-                    await layout.load_best_segments_data()
+            with (
+                patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock,
+                patch("ui.best_segments.asyncio.to_thread", new=AsyncMock()) as to_thread_mock,
+            ):
+                await layout.load_best_segments_data()
 
             assert state.best_segments_rows == [{"distance": "existing"}]
             assert state.best_segments_loading is False
@@ -300,9 +306,11 @@ class TestBestSegmentsTabData:
             state.best_segments_loading = True
             state.best_segments_loaded = False
 
-            with patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock:
-                with patch("ui.best_segments.asyncio.to_thread", new=AsyncMock()) as to_thread_mock:
-                    await layout.load_best_segments_data(force=True)
+            with (
+                patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock,
+                patch("ui.best_segments.asyncio.to_thread", new=AsyncMock()) as to_thread_mock,
+            ):
+                await layout.load_best_segments_data(force=True)
 
             refresh_mock.assert_not_called()
             to_thread_mock.assert_not_called()
@@ -323,9 +331,11 @@ class TestBestSegmentsTabData:
             state.best_segments_loading = False
             state.best_segments_loaded = True
 
-            with patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock:
-                with patch("ui.best_segments.asyncio.to_thread", new=AsyncMock()) as to_thread_mock:
-                    await layout.load_best_segments_data(force=False)
+            with (
+                patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock,
+                patch("ui.best_segments.asyncio.to_thread", new=AsyncMock()) as to_thread_mock,
+            ):
+                await layout.load_best_segments_data(force=False)
 
             refresh_mock.assert_not_called()
             to_thread_mock.assert_not_called()
@@ -415,13 +425,15 @@ class TestBestSegmentsTabData:
             state.best_segments_loading = False
             state.best_segments_loaded = False
 
-            with patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock:
-                with patch("ui.best_segments._logger.exception") as exception_mock:
-                    with patch(
-                        "ui.best_segments.asyncio.to_thread",
-                        new=AsyncMock(side_effect=RuntimeError("boom")),
-                    ):
-                        await layout.load_best_segments_data(force=True)
+            with (
+                patch("ui.layout.render_best_segments_tab.refresh") as refresh_mock,
+                patch("ui.best_segments._logger.exception") as exception_mock,
+                patch(
+                    "ui.best_segments.asyncio.to_thread",
+                    new=AsyncMock(side_effect=RuntimeError("boom")),
+                ),
+            ):
+                await layout.load_best_segments_data(force=True)
 
             exception_mock.assert_called_once()
             assert state.best_segments_loading is False

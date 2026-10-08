@@ -98,9 +98,11 @@ def test_render_activity_graphs_renders_all_charts() -> None:
 
     try:
         state.workouts = workouts_mock
-        with patch("ui.activities_tab.ui.row", return_value=_DummyRow()):
-            with patch("ui.activities_tab.render_pie_rose_graph") as render_graph_mock:
-                layout.render_activity_graphs.func()
+        with (
+            patch("ui.activities_tab.ui.row", return_value=_DummyRow()),
+            patch("ui.activities_tab.render_pie_rose_graph") as render_graph_mock,
+        ):
+            layout.render_activity_graphs.func()
 
         assert render_graph_mock.call_count == 5
         render_graph_mock.assert_any_call(
@@ -137,9 +139,11 @@ def test_render_activity_graphs_renders_all_charts() -> None:
 def test_render_period_selector_renders_label_and_radio() -> None:
     """Test that render_period_selector renders the 'Aggregate by:' label and radio button."""
 
-    with patch("ui.layout.ui.label") as label_mock:
-        with patch("ui.layout.ui.radio", side_effect=_DummyRadio) as radio_mock:
-            layout.render_period_selector()
+    with (
+        patch("ui.layout.ui.label") as label_mock,
+        patch("ui.layout.ui.radio", side_effect=_DummyRadio) as radio_mock,
+    ):
+        layout.render_period_selector()
 
     # Verify the label was created
     label_mock.assert_called_once_with("Aggregate by:")
@@ -162,9 +166,11 @@ def test_render_period_selector_radio_bound_to_state() -> None:
         radio_instances.append(instance)
         return instance
 
-    with patch("ui.layout.ui.label"):
-        with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
-            layout.render_period_selector()
+    with (
+        patch("ui.layout.ui.label"),
+        patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock,
+    ):
+        layout.render_period_selector()
 
     # Get the radio instance that was created
     assert radio_mock.call_count == 1
@@ -189,21 +195,23 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
 
     try:
         state.selected_main_tab = "summary"
-        with patch("ui.layout.ui.label"):
-            with patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock:
-                with patch("ui.layout.render_trends_graphs") as render_graphs_mock:
-                    with patch("ui.layout.render_health_data_tab"):
-                        with patch("ui.layout.render_running_health_graphs") as running_health_mock:
-                            with patch("ui.layout._reset_health_data_state"):
-                                with patch("ui.layout.schedule_health_data_load"):
-                                    layout.render_period_selector()
+        with (
+            patch("ui.layout.ui.label"),
+            patch("ui.layout.ui.radio", side_effect=_radio_factory) as radio_mock,
+            patch("ui.layout.render_trends_graphs") as render_graphs_mock,
+            patch("ui.layout.render_health_data_tab"),
+            patch("ui.layout.render_running_health_graphs") as running_health_mock,
+            patch("ui.layout._reset_health_data_state"),
+            patch("ui.layout.schedule_health_data_load"),
+        ):
+            layout.render_period_selector()
 
-                                    assert radio_mock.call_count == 1
-                                    radio_instance = radio_instances[0]
-                                    assert radio_instance.on_change is not None
+            assert radio_mock.call_count == 1
+            radio_instance = radio_instances[0]
+            assert radio_instance.on_change is not None
 
-                                    # Invoke inside patch scope so mocks are still active
-                                    radio_instance.on_change()
+            # Invoke inside patch scope so mocks are still active
+            radio_instance.on_change()
 
         render_graphs_mock.refresh.assert_called_once()
         running_health_mock.refresh.assert_not_called()
@@ -214,12 +222,14 @@ def test_render_period_selector_radio_calls_refresh_on_change() -> None:
 def test_render_trends_tab_renders_dashboard_heading_and_content() -> None:
     """Test that render_trends_tab renders the dashboard heading and content."""
 
-    with patch("i18n.core.get_language", return_value="en"):
-        with patch("ui.trends_tab.render_trends_graphs") as render_graphs_mock:
-            with patch("ui.trends_tab.render_recovery_recommendation") as render_recovery_mock:
-                with patch("ui.trends_tab.ui.label") as label_mock:
-                    with patch("ui.trends_tab.ui.radio") as radio_mock:
-                        layout.render_trends_tab()
+    with (
+        patch("i18n.core.get_language", return_value="en"),
+        patch("ui.trends_tab.render_trends_graphs") as render_graphs_mock,
+        patch("ui.trends_tab.render_recovery_recommendation") as render_recovery_mock,
+        patch("ui.trends_tab.ui.label") as label_mock,
+        patch("ui.trends_tab.ui.radio") as radio_mock,
+    ):
+        layout.render_trends_tab()
 
     # The dashboard heading and both content sections should be rendered.
     render_graphs_mock.assert_called_once()
@@ -233,11 +243,13 @@ def test_change_language_reloads_ui_without_triggering_file_load() -> None:
 
     fake_app = SimpleNamespace(storage=SimpleNamespace(user={}))
 
-    with patch("ui.layout.app", fake_app):
-        with patch("ui.layout.ui.navigate.reload") as reload_mock:
-            with patch("ui.layout.load_file") as load_file_mock:
-                change_language = getattr(layout, "_change_language")
-                change_language("fr")
+    with (
+        patch("ui.layout.app", fake_app),
+        patch("ui.layout.ui.navigate.reload") as reload_mock,
+        patch("ui.layout.load_file") as load_file_mock,
+    ):
+        change_language = getattr(layout, "_change_language")
+        change_language("fr")
 
     assert fake_app.storage.user["language"] == "fr"
     reload_mock.assert_called_once()
@@ -262,11 +274,13 @@ def test_render_date_range_selector_applies_french_calendar_locale() -> None:
 
     try:
         state.workouts = workouts_mock
-        with patch("ui.layout.get_language", return_value="fr"):
-            with patch("ui.layout.ui.row", return_value=_DummyRow()):
-                with patch("ui.layout.ui.input", return_value=_DummyInput()):
-                    with patch("ui.layout.ui.date", return_value=dummy_date):
-                        layout.render_date_range_selector.func()
+        with (
+            patch("ui.layout.get_language", return_value="fr"),
+            patch("ui.layout.ui.row", return_value=_DummyRow()),
+            patch("ui.layout.ui.input", return_value=_DummyInput()),
+            patch("ui.layout.ui.date", return_value=dummy_date),
+        ):
+            layout.render_date_range_selector.func()
 
         assert "firstDayOfWeek" in dummy_date.props_arg
         assert '"firstDayOfWeek": 1' in dummy_date.props_arg
@@ -287,11 +301,13 @@ def test_render_date_range_selector_applies_english_calendar_locale() -> None:
 
     try:
         state.workouts = workouts_mock
-        with patch("ui.layout.get_language", return_value="en"):
-            with patch("ui.layout.ui.row", return_value=_DummyRow()):
-                with patch("ui.layout.ui.input", return_value=_DummyInput()):
-                    with patch("ui.layout.ui.date", return_value=dummy_date):
-                        layout.render_date_range_selector.func()
+        with (
+            patch("ui.layout.get_language", return_value="en"),
+            patch("ui.layout.ui.row", return_value=_DummyRow()),
+            patch("ui.layout.ui.input", return_value=_DummyInput()),
+            patch("ui.layout.ui.date", return_value=dummy_date),
+        ):
+            layout.render_date_range_selector.func()
 
         assert "firstDayOfWeek" in dummy_date.props_arg
         assert '"firstDayOfWeek": 0' in dummy_date.props_arg
@@ -312,11 +328,13 @@ def test_render_date_range_selector_unknown_language_falls_back_to_english() -> 
 
     try:
         state.workouts = workouts_mock
-        with patch("ui.layout.get_language", return_value="xx"):
-            with patch("ui.layout.ui.row", return_value=_DummyRow()):
-                with patch("ui.layout.ui.input", return_value=_DummyInput()):
-                    with patch("ui.layout.ui.date", return_value=dummy_date):
-                        layout.render_date_range_selector.func()
+        with (
+            patch("ui.layout.get_language", return_value="xx"),
+            patch("ui.layout.ui.row", return_value=_DummyRow()),
+            patch("ui.layout.ui.input", return_value=_DummyInput()),
+            patch("ui.layout.ui.date", return_value=dummy_date),
+        ):
+            layout.render_date_range_selector.func()
 
         assert '"firstDayOfWeek": 0' in dummy_date.props_arg
         assert "January" in dummy_date.props_arg
@@ -409,40 +427,36 @@ def test_render_header_dark_mode_callbacks_update_state_and_refresh_graphs() -> 
     original_dark_mode_enabled = state.dark_mode_enabled
     try:
         state.dark_mode_enabled = False
-        with patch("ui.layout.ui.dark_mode", return_value=dark_mode):
-            with patch("ui.layout.ui.header", return_value=_DummyRow()):
-                with patch("ui.layout.ui.image", return_value=_DummyImage()):
-                    with patch("ui.layout.ui.label", return_value=_DummyLabel()):
-                        with patch("ui.layout.ui.button", side_effect=_button_factory):
-                            with patch("ui.layout.ui.menu", return_value=_DummyRow()):
-                                with patch("ui.layout.ui.menu_item"):
-                                    with patch("ui.layout.ui.separator"):
-                                        with patch("ui.layout.LANGUAGES", {}):
-                                            with patch(
-                                                "ui.layout.render_activity_graphs.refresh"
-                                            ) as act:
-                                                with patch(
-                                                    "ui.layout.render_trends_graphs.refresh"
-                                                ) as trends:
-                                                    with patch(
-                                                        "ui.layout.render_health_data_tab.refresh"
-                                                    ) as health:
-                                                        layout.render_header()
+        with (
+            patch("ui.layout.ui.dark_mode", return_value=dark_mode),
+            patch("ui.layout.ui.header", return_value=_DummyRow()),
+            patch("ui.layout.ui.image", return_value=_DummyImage()),
+            patch("ui.layout.ui.label", return_value=_DummyLabel()),
+            patch("ui.layout.ui.button", side_effect=_button_factory),
+            patch("ui.layout.ui.menu", return_value=_DummyRow()),
+            patch("ui.layout.ui.menu_item"),
+            patch("ui.layout.ui.separator"),
+            patch("ui.layout.LANGUAGES", {}),
+            patch("ui.layout.render_activity_graphs.refresh") as act,
+            patch("ui.layout.render_trends_graphs.refresh") as trends,
+            patch("ui.layout.render_health_data_tab.refresh") as health,
+        ):
+            layout.render_header()
 
-                                                        assert state.dark_mode_enabled is True
+            assert state.dark_mode_enabled is True
 
-                                                        callbacks["light_mode"]()
-                                                        assert dark_mode.disabled is True
-                                                        assert state.dark_mode_enabled is False
-                                                        assert act.call_count == 1
-                                                        assert trends.call_count == 1
-                                                        assert health.call_count == 1
+            callbacks["light_mode"]()
+            assert dark_mode.disabled is True
+            assert state.dark_mode_enabled is False
+            assert act.call_count == 1
+            assert trends.call_count == 1
+            assert health.call_count == 1
 
-                                                        callbacks["dark_mode"]()
-                                                        assert dark_mode.enabled is True
-                                                        assert state.dark_mode_enabled is True
-                                                        assert act.call_count == 2
-                                                        assert trends.call_count == 2
-                                                        assert health.call_count == 2
+            callbacks["dark_mode"]()
+            assert dark_mode.enabled is True
+            assert state.dark_mode_enabled is True
+            assert act.call_count == 2
+            assert trends.call_count == 2
+            assert health.call_count == 2
     finally:
         state.dark_mode_enabled = original_dark_mode_enabled

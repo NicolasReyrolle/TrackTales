@@ -1,5 +1,7 @@
 """Core WorkoutManager class composed from dedicated mixins."""
 
+from typing import override
+
 import pandas as pd
 
 from .aggregations import WorkoutManagerAggregationsMixin, calculate_trend_slope
@@ -53,6 +55,7 @@ class WorkoutManager(
         else:
             self.workouts = pd_workouts
 
+    @override
     def get_trend_analysis(
         self,
         data_points: list[float],

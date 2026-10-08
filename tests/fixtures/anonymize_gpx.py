@@ -7,7 +7,6 @@ import math
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import TypeAlias
 
 from lxml import etree as ET
 
@@ -15,9 +14,9 @@ GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"  # noqa: S5332
 XSI_NAMESPACE = "http://www.w3.org/2001/XMLSchema-instance"  # noqa: S5332
 GPX_TRKPT_XPATH = ".//gpx:trkpt"
 ZERO_THRESHOLD = 1e-12
-Vector3: TypeAlias = tuple[float, float, float]
-LatLon: TypeAlias = tuple[float, float]
-RotateFn: TypeAlias = Callable[[Vector3], Vector3]
+type Vector3 = tuple[float, float, float]
+type LatLon = tuple[float, float]
+type RotateFn = Callable[[Vector3], Vector3]
 
 
 def _lat_lon_to_vector(latitude: float, longitude: float) -> Vector3:

@@ -6,7 +6,7 @@ import logging.handlers
 import os
 import sys
 from pathlib import Path
-from typing import TextIO
+from typing import TextIO, override
 
 # Module-level devnull stream cache.  Created on first use and closed on
 # interpreter exit via atexit so callers never need to manage its lifetime.
@@ -25,6 +25,7 @@ def _get_or_create_devnull() -> TextIO:
 class _ImmediateFlushHandler(logging.handlers.RotatingFileHandler):
     """A RotatingFileHandler that flushes after every emit (for subprocess/reload scenarios)."""
 
+    @override
     def emit(self, record: logging.LogRecord) -> None:
         """Emit a record and flush immediately."""
         super().emit(record)

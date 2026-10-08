@@ -4,6 +4,7 @@ Originates from https://github.com/zauberzeug/nicegui/tree/main/examples/local_f
 
 import platform
 from pathlib import Path
+from typing import override
 
 from nicegui import events, ui
 
@@ -12,6 +13,7 @@ class LocalFilePicker(ui.dialog):
     """A simple file picker that allows you to select a file from the local filesystem where
     NiceGUI is running."""
 
+    @override
     def __init__(
         self,
         directory: str,

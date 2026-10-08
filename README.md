@@ -35,7 +35,7 @@ If you are contributing or maintaining the project, see [MAINTAINERS.md](MAINTAI
 
 ### Prerequisites
 
-- Python 3.11 or higher.
+- Python 3.12 or higher.
 - An Apple Health export file (`export.zip`).
 
 ### Setup

@@ -13,7 +13,7 @@ mypy==2.4.0
 # Development
 ipython==9.17.1
 pre-commit==4.6.2
-commitizen==4.19.0
+commitizen==4.19.1
 
 # Type stubs
 pandas-stubs==3.0.5.260914

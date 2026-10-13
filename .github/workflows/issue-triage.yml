@@ -1,5 +1,5 @@
 # .github/workflows/issue_triage.yml
-name: Automated Issue Triage
+name: Issue Triage Agent
 on:
     issues:
         types: [opened]
@@ -7,46 +7,26 @@ on:
 jobs:
     triage:
         runs-on: ubuntu-latest
+        permissions:
+            issues: write
+            contents: read
+
         steps:
-            - name: Checkout repository
+            - name: Checkout code
               uses: actions/checkout@v4
 
-            - name: Analyze issue and post comment
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Install dependencies
+              run: |
+                  pip install azure-ai-inference PyGithub pydantic
+
+            - name: Run Triage Agent
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # The GitHub CLI requires the GH_TOKEN variable
-                  ISSUE_TITLE: ${{ github.event.issue.title }}
-                  ISSUE_BODY: ${{ github.event.issue.body }}
                   ISSUE_NUMBER: ${{ github.event.issue.number }}
-              run: |
-                  # Call the native GitHub inference API to evaluate the issue
-                  RESPONSE=$(curl -s -X POST "https://models.inference.ai.azure.com/chat/completions" \
-                    -H "Authorization: Bearer $GITHUB_TOKEN" \
-                    -H "Content-Type: application/json" \
-                    -d '{
-                      "model": "gpt-4o",
-                      "messages": [
-                        {
-                          "role": "system", 
-                          "content": "You are a Python backend triage agent for the apple-health-analyzer repository. Provide a short, polite summary of the technical issue. State clearly if pytest unit tests can be written based on the provided XML/GPX data. Output ONLY the comment text."
-                        },
-                        {
-                          "role": "user", 
-                          "content": "Analyze this issue:\nTitle: '"$ISSUE_TITLE"'\nBody: '"$ISSUE_BODY"'"
-                        }
-                      ]
-                    }')
-
-                  # Extract the LLM message content using jq
-                  LLM_COMMENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
-
-                  # Check if the response is empty or null to avoid posting blank comments
-                  if [ -z "$LLM_COMMENT" ] || [ "$LLM_COMMENT" == "null" ]; then
-                    echo "Error: Failed to get a valid response from the model."
-                    exit 1
-                  fi
-
-                  # Post the comment to the issue using the GitHub CLI
-                  gh issue comment "$ISSUE_NUMBER" --body "🤖 **Automated Triage Analysis:**
-
-                  $LLM_COMMENT"
+                  REPO_NAME: ${{ github.repository }}
+              run: python -m .github.scripts.triage_agent.agent

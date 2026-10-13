@@ -3,7 +3,9 @@ from typing import Literal
 
 from .models import TriageAnalysis
 
-_BUG_TERMS = re.compile(r"\b(?:bug|error|crash|fail(?:ure|ed)?|incorrect|wrong|regression)\b")
+_BUG_TERMS = re.compile(
+    r"\b(?:bugs?|errors?|crash(?:es|ed|ing)?|fail(?:s|ures?|ed|ing)?|incorrect|wrong|regressions?)\b"
+)
 _FEATURE_TERMS = re.compile(r"\b(?:feature|enhancement|improve|request|support)\b")
 _QUESTION_TERMS = re.compile(r"\b(?:how|what|why|question|help)\b")
 _INVALID_TERMS = re.compile(r"\b(?:spam|unrelated|duplicate|not an issue)\b")

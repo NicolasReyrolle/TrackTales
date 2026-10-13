@@ -204,10 +204,24 @@ class ExportParser:
         record = self._create_workout_record(elem, activity_type)
         record["xmlFragment"] = tostring(elem, encoding="unicode")
         self._process_workout_children(elem, record, zipfile)
+        self._apply_estimated_elevation(record)
         workout_rows.append(record)
 
         if len(workout_rows) % WORKOUT_PROGRESS_INTERVAL == 0:
             self._log(f"Processed {len(workout_rows)} workouts...")
+
+    @staticmethod
+    def _apply_estimated_elevation(record: WorkoutRecord) -> None:
+        """Fall back to a route-derived elevation gain when the workout has none."""
+        if "ElevationAscended" in record:
+            return
+        route = record.get("route")
+        if route is None:
+            return
+        gain = route.estimated_elevation_gain_m()
+        if gain is not None:
+            record["ElevationAscended"] = gain  # type: ignore[typeddict-unknown-key]
+            record["ElevationAscendedUnit"] = "m"  # type: ignore[typeddict-unknown-key]
 
     def _process_record_event(
         self,

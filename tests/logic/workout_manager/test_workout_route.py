@@ -1,7 +1,7 @@
 """Unit tests for workout route domain models and calculations."""
 
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -651,3 +651,38 @@ class TestSamplePointAtFraction:
             assert result is not None, f"fraction={fraction} returned None"
             lat, lon = result
             assert 48.84 < lat < 48.88
+
+
+class TestEstimatedElevationGain:
+    """Tests for the noise-filtered elevation gain estimate."""
+
+    @staticmethod
+    def _route(altitudes: list[float]) -> WorkoutRoute:
+        start = datetime(2024, 1, 1, tzinfo=UTC)
+        return WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=start + timedelta(seconds=i),
+                    latitude=0.0,
+                    longitude=0.0,
+                    altitude=alt,
+                )
+                for i, alt in enumerate(altitudes)
+            ]
+        )
+
+    def test_no_altitude_data_returns_none(self) -> None:
+        """Routes without altitude data give no estimate."""
+        assert self._route([0.0, 0.0, 0.0]).estimated_elevation_gain_m() is None
+        assert self._route([5.0]).estimated_elevation_gain_m() is None
+
+    def test_noise_is_ignored(self) -> None:
+        """Small oscillations are not counted as climbing."""
+        route = self._route([100.0, 100.8, 99.9, 100.7, 100.1] * 6)
+        assert route.estimated_elevation_gain_m() == pytest.approx(0.0)  # type: ignore[misc]
+
+    def test_real_climb_is_counted(self) -> None:
+        """A sustained climb is counted, a following descent is not."""
+        altitudes = [100.0] * 10 + [110.0] * 10 + [100.0] * 10
+        route = self._route(altitudes)
+        assert route.estimated_elevation_gain_m() == pytest.approx(10.0, abs=1.0)  # type: ignore[misc]

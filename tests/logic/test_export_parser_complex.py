@@ -146,6 +146,33 @@ class TestComplexRealWorldWorkout:
 
         assert len(merged_route.points) == expected_points - dedup_boundaries
 
+    def test_elevation_estimated_from_route_when_missing(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """A workout without HKElevationAscended gets a noise-filtered gain from its route."""
+        fragment = load_export_fragment("workout_running_without_elevation.xml")
+        exports_dir = Path(__file__).resolve().parents[1] / "fixtures" / "exports"
+        route_file = exports_dir / "workout-routes" / "route_2024-08-14_7.59pm.gpx"
+
+        zip_path = tmp_path / "no_elevation.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", build_health_export_xml([fragment]))
+            zf.writestr(
+                f"apple_health_export/workout-routes/{route_file.name}", route_file.read_bytes()
+            )
+
+        parser = ExportParser()
+        with parser:
+            health_data = parser.parse(str(zip_path))
+
+        workout = health_data.workouts.iloc[0]
+        raw_gain = workout["route"].elevation_gain_m
+        assert workout["ElevationAscendedUnit"] == "m"
+        assert 0.0 < workout["ElevationAscended"] < raw_gain / 2
+
     def test_route_windows_without_matching_points_are_skipped(
         self,
         tmp_path: Path,

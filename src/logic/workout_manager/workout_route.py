@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from math import atan2, cos, radians, sin, sqrt
+from statistics import median
 
 import pandas as pd
 
@@ -66,6 +67,43 @@ class WorkoutRoute:
     def elevation_loss_m(self) -> float:
         """Calculate the total elevation loss of the workout route in meters."""
         return sum(max(0.0, a.altitude - b.altitude) for a, b in zip(self.points, self.points[1:]))
+
+    def estimated_elevation_gain_m(
+        self, smoothing_window: int = 9, threshold_m: float = 3.0
+    ) -> float | None:
+        """Estimate the elevation gain while filtering out GPS altitude noise.
+
+        Altitudes are smoothed with a moving median, then a hysteresis threshold is
+        applied so that only climbs larger than ``threshold_m`` are accumulated.
+
+        Returns:
+            The estimated gain in meters, or ``None`` when the route carries no
+            altitude information (fewer than two points or all altitudes are zero).
+        """
+        if len(self.points) < 2 or all(p.altitude == 0.0 for p in self.points):
+            return None
+
+        altitudes = [p.altitude for p in self.points]
+        half = max(smoothing_window, 1) // 2
+        smoothed = [
+            median(altitudes[max(0, i - half) : i + half + 1]) for i in range(len(altitudes))
+        ]
+
+        gain = 0.0
+        base = peak = smoothed[0]
+        for value in smoothed[1:]:
+            if value > peak:
+                peak = value
+            elif peak - value >= threshold_m:
+                # A descent of at least the threshold confirms the preceding climb.
+                if peak - base >= threshold_m:
+                    gain += peak - base
+                base = peak = value
+            elif value < base:
+                base = peak = value
+        if peak - base >= threshold_m:
+            gain += peak - base
+        return gain
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the workout route to a pandas DataFrame."""

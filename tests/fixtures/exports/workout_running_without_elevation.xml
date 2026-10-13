@@ -1,0 +1,519 @@
+<Workout workoutActivityType="HKWorkoutActivityTypeRunning" duration="70.74877681732178" durationUnit="min" sourceName="Intervals Pro" sourceVersion="9802" device="&lt;&lt;HKDevice: 0x8c50d0540&gt;, name:Apple Watch, manufacturer:Apple Inc., model:Watch, hardware:Watch3,4, software:8.8.1, creation date:2023-09-04 10:56:20 +0000&gt;" creationDate="2024-08-14 18:59:56 +0100" startDate="2024-08-14 17:49:05 +0100" endDate="2024-08-14 18:59:51 +0100">
+  <MetadataEntry key="split_km_5" value="6:12/km"/>
+  <MetadataEntry key="split_km_11" value="6:49/km"/>
+  <MetadataEntry key="split_mi_1" value="10:50/mi"/>
+  <MetadataEntry key="split_km_3" value="7:11/km"/>
+  <MetadataEntry key="HKMetadataKeySyncVersion" value="1"/>
+  <MetadataEntry key="location" value="Outdoor"/>
+  <MetadataEntry key="split_km_10" value="7:18/km"/>
+  <MetadataEntry key="color name" value="systemBlue"/>
+  <MetadataEntry key="split_km_1" value="6:42/km"/>
+  <MetadataEntry key="split_mi_6" value="11:23/mi"/>
+  <MetadataEntry key="uuid" value="1841370C-0C82-494B-A264-7521E01DB7CE"/>
+  <MetadataEntry key="split_km_8" value="8:01/km"/>
+  <MetadataEntry key="symbol name" value="running_ubs_symbol"/>
+  <MetadataEntry key="split_mi_4" value="10:08/mi"/>
+  <MetadataEntry key="split_km_6" value="6:08/km"/>
+  <MetadataEntry key="HKWorkoutBrandName" value="3 * (6 * (20’’/20’’) / Repos 2’)"/>
+  <MetadataEntry key="workout length" value="01:10:47"/>
+  <MetadataEntry key="split_mi_2" value="11:21/mi"/>
+  <MetadataEntry key="workout name" value="3 * (6 * (20’’/20’’) / Repos 2’)"/>
+  <MetadataEntry key="split_km_4" value="7:05/km"/>
+  <MetadataEntry key="interval tracking" value="workout events"/>
+  <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+  <MetadataEntry key="HKMetadataKeySyncIdentifier" value="976139C3-B374-42DB-A442-D7C74339F7DC"/>
+  <MetadataEntry key="step count" value="11092"/>
+  <MetadataEntry key="split_km_2" value="6:49/km"/>
+  <MetadataEntry key="split_mi_7" value="11:17/mi"/>
+  <MetadataEntry key="split_km_9" value="6:55/km"/>
+  <MetadataEntry key="HKIndoorWorkout" value="0"/>
+  <MetadataEntry key="workout tracking" value="standalone watch"/>
+  <MetadataEntry key="split_mi_5" value="12:36/mi"/>
+  <MetadataEntry key="split_km_7" value="7:13/km"/>
+  <MetadataEntry key="HKAverageMETs" value="9.13823 kcal/hr·kg"/>
+  <MetadataEntry key="split_mi_3" value="10:49/mi"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 17:49:05 +0100" duration="30.02044238448143" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Échauffement"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="120"/>
+   <MetadataEntry key="Heart Rate Begin" value="146"/>
+   <MetadataEntry key="Steps" value="4755"/>
+   <MetadataEntry key="Active Cal" value="312"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="4313"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-14 17:49:06 +0100"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:19:06 +0100" duration="0.3334599991639455" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Intervalle"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="127"/>
+   <MetadataEntry key="Heart Rate Begin" value="120"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="3"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="49"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:19:26 +0100" duration="0.3333237508932749" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="130"/>
+   <MetadataEntry key="Heart Rate Begin" value="125"/>
+   <MetadataEntry key="Steps" value="55"/>
+   <MetadataEntry key="Active Cal" value="3"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="54"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:19:46 +0100" duration="0.333455499013265" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Intervalle #2"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="134"/>
+   <MetadataEntry key="Heart Rate Begin" value="131"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="58"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:20:06 +0100" duration="0.3333999673525492" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="136"/>
+   <MetadataEntry key="Heart Rate Begin" value="134"/>
+   <MetadataEntry key="Steps" value="49"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="63"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:20:26 +0100" duration="0.3334193329016368" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #3"/>
+   <MetadataEntry key="Heart Rate End" value="135"/>
+   <MetadataEntry key="Heart Rate Begin" value="133"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="60"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:20:46 +0100" duration="0.333404666185379" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="139"/>
+   <MetadataEntry key="Heart Rate Begin" value="135"/>
+   <MetadataEntry key="Steps" value="55"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="59"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:21:06 +0100" duration="0.3334083000818888" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #4"/>
+   <MetadataEntry key="Heart Rate End" value="145"/>
+   <MetadataEntry key="Heart Rate Begin" value="143"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="53"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:21:26 +0100" duration="0.3334924002488454" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="149"/>
+   <MetadataEntry key="Heart Rate Begin" value="146"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="6"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="63"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:21:46 +0100" duration="0.3333389004071554" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #5"/>
+   <MetadataEntry key="Heart Rate End" value="148"/>
+   <MetadataEntry key="Heart Rate Begin" value="152"/>
+   <MetadataEntry key="Steps" value="51"/>
+   <MetadataEntry key="Active Cal" value="5"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="59"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:22:06 +0100" duration="0.333924800157547" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="151"/>
+   <MetadataEntry key="Heart Rate Begin" value="147"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="63"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:22:26 +0100" duration="0.3327547987302145" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Intervalle #6"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="147"/>
+   <MetadataEntry key="Heart Rate Begin" value="151"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="49"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:22:46 +0100" duration="0.333323601881663" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="144"/>
+   <MetadataEntry key="Heart Rate Begin" value="147"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="63"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:23:06 +0100" duration="2.000058382749557" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Récupération 3 Minutes"/>
+   <MetadataEntry key="Heart Rate End" value="123"/>
+   <MetadataEntry key="Heart Rate Begin" value="144"/>
+   <MetadataEntry key="Steps" value="315"/>
+   <MetadataEntry key="Active Cal" value="21"/>
+   <MetadataEntry key="Interval Color" value="#FFD60AFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemYellow"/>
+   <MetadataEntry key="Distance" value="280"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:25:06 +0100" duration="0.3334193487962087" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Intervalle"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="130"/>
+   <MetadataEntry key="Heart Rate Begin" value="126"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="3"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="57"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:25:26 +0100" duration="0.3333864510059357" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="131"/>
+   <MetadataEntry key="Heart Rate Begin" value="132"/>
+   <MetadataEntry key="Steps" value="48"/>
+   <MetadataEntry key="Active Cal" value="3"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="63"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:25:46 +0100" duration="0.333435050646464" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #2"/>
+   <MetadataEntry key="Heart Rate End" value="130"/>
+   <MetadataEntry key="Heart Rate Begin" value="132"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="54"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:26:06 +0100" duration="0.3334776163101196" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="126"/>
+   <MetadataEntry key="Heart Rate Begin" value="129"/>
+   <MetadataEntry key="Steps" value="54"/>
+   <MetadataEntry key="Active Cal" value="3"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="57"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:26:26 +0100" duration="0.3335533837477366" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Intervalle #3"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="128"/>
+   <MetadataEntry key="Heart Rate Begin" value="126"/>
+   <MetadataEntry key="Steps" value="58"/>
+   <MetadataEntry key="Active Cal" value="3"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="49"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:26:46 +0100" duration="0.3331638316313426" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="133"/>
+   <MetadataEntry key="Heart Rate Begin" value="128"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="65"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:27:06 +0100" duration="0.3334074834982554" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #4"/>
+   <MetadataEntry key="Heart Rate End" value="133"/>
+   <MetadataEntry key="Heart Rate Begin" value="134"/>
+   <MetadataEntry key="Steps" value="49"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="59"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:27:26 +0100" duration="0.3334542175134023" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="136"/>
+   <MetadataEntry key="Heart Rate Begin" value="135"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="63"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:27:46 +0100" duration="0.3338120659192403" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Intervalle #5"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="138"/>
+   <MetadataEntry key="Heart Rate Begin" value="136"/>
+   <MetadataEntry key="Steps" value="53"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="54"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:28:06 +0100" duration="0.332984850804011" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="151"/>
+   <MetadataEntry key="Heart Rate Begin" value="141"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="54"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:28:26 +0100" duration="0.3333848158518473" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #6"/>
+   <MetadataEntry key="Heart Rate End" value="151"/>
+   <MetadataEntry key="Heart Rate Begin" value="153"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="5"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="62"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:28:46 +0100" duration="0.3335361162821452" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="158"/>
+   <MetadataEntry key="Heart Rate Begin" value="155"/>
+   <MetadataEntry key="Steps" value="55"/>
+   <MetadataEntry key="Active Cal" value="6"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="59"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:29:06 +0100" duration="2.000039984782537" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Récupération 3 Minutes"/>
+   <MetadataEntry key="Heart Rate End" value="141"/>
+   <MetadataEntry key="Heart Rate Begin" value="158"/>
+   <MetadataEntry key="Steps" value="313"/>
+   <MetadataEntry key="Active Cal" value="23"/>
+   <MetadataEntry key="Interval Color" value="#FFD60AFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemYellow"/>
+   <MetadataEntry key="Distance" value="262"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:31:06 +0100" duration="0.3336747487386068" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Intervalle"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="142"/>
+   <MetadataEntry key="Heart Rate Begin" value="140"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="56"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:31:26 +0100" duration="0.3334160347779592" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="148"/>
+   <MetadataEntry key="Heart Rate Begin" value="145"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="64"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:31:46 +0100" duration="0.3338237822055817" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #2"/>
+   <MetadataEntry key="Heart Rate End" value="142"/>
+   <MetadataEntry key="Heart Rate Begin" value="147"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="49"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:32:06 +0100" duration="0.3330024679501851" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="144"/>
+   <MetadataEntry key="Heart Rate Begin" value="140"/>
+   <MetadataEntry key="Steps" value="57"/>
+   <MetadataEntry key="Active Cal" value="5"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="59"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:32:26 +0100" duration="0.3334131320317587" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #3"/>
+   <MetadataEntry key="Heart Rate End" value="145"/>
+   <MetadataEntry key="Heart Rate Begin" value="150"/>
+   <MetadataEntry key="Steps" value="47"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="51"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:32:46 +0100" duration="0.3334136843681336" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="Heart Rate End" value="140"/>
+   <MetadataEntry key="Heart Rate Begin" value="142"/>
+   <MetadataEntry key="Steps" value="51"/>
+   <MetadataEntry key="Active Cal" value="3"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="43"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:33:06 +0100" duration="0.3336755990982055" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #4"/>
+   <MetadataEntry key="Heart Rate End" value="141"/>
+   <MetadataEntry key="Heart Rate Begin" value="141"/>
+   <MetadataEntry key="Steps" value="55"/>
+   <MetadataEntry key="Active Cal" value="3"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="58"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:33:26 +0100" duration="0.3334296345710754" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="141"/>
+   <MetadataEntry key="Heart Rate Begin" value="142"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="50"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:33:46 +0100" duration="0.3333908319473267" durationUnit="min">
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Interval Name" value="Intervalle #5"/>
+   <MetadataEntry key="Heart Rate End" value="147"/>
+   <MetadataEntry key="Heart Rate Begin" value="143"/>
+   <MetadataEntry key="Steps" value="56"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="53"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:34:06 +0100" duration="0.3334372162818909" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="151"/>
+   <MetadataEntry key="Heart Rate Begin" value="149"/>
+   <MetadataEntry key="Steps" value="55"/>
+   <MetadataEntry key="Active Cal" value="5"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="56"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:34:26 +0100" duration="0.333357318242391" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Intervalle #6"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="145"/>
+   <MetadataEntry key="Heart Rate Begin" value="147"/>
+   <MetadataEntry key="Steps" value="36"/>
+   <MetadataEntry key="Active Cal" value="4"/>
+   <MetadataEntry key="Interval Color Name" value="systemGreen"/>
+   <MetadataEntry key="Distance" value="27"/>
+   <MetadataEntry key="Interval Color" value="#30D158FF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:34:46 +0100" duration="0.3334344824155172" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Repos"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="155"/>
+   <MetadataEntry key="Heart Rate Begin" value="151"/>
+   <MetadataEntry key="Steps" value="48"/>
+   <MetadataEntry key="Active Cal" value="5"/>
+   <MetadataEntry key="Interval Color Name" value="systemBlue"/>
+   <MetadataEntry key="Distance" value="67"/>
+   <MetadataEntry key="Interval Color" value="#0A84FFFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-14 18:35:06 +0100" duration="24.75010851621628" durationUnit="min">
+   <MetadataEntry key="Interval Name" value="Refroidissement"/>
+   <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+   <MetadataEntry key="Heart Rate End" value="122"/>
+   <MetadataEntry key="Heart Rate Begin" value="155"/>
+   <MetadataEntry key="Steps" value="3761"/>
+   <MetadataEntry key="Active Cal" value="226"/>
+   <MetadataEntry key="Interval Color Name" value="systemOrange"/>
+   <MetadataEntry key="Distance" value="3293"/>
+   <MetadataEntry key="Interval Color" value="#FF9F0AFF"/>
+  </WorkoutEvent>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-14 18:35:34 +0100"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-14 18:35:38 +0100"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-14 18:38:24 +0100"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-14 18:38:33 +0100"/>
+  <WorkoutEvent type="HKWorkoutEventTypePause" date="2024-08-14 18:59:50 +0100"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2024-08-14 17:49:05 +0100" endDate="2024-08-14 18:59:51 +0100" sum="726.231" unit="kcal"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2024-08-14 17:49:05 +0100" endDate="2024-08-14 18:59:51 +0100" sum="10.1774" unit="km"/>
+  <WorkoutRoute sourceName="Intervals Pro" sourceVersion="9802" device="&lt;&lt;HKDevice: 0x8c51a11a0&gt;, name:Apple Watch, manufacturer:Apple Inc., model:Watch, hardware:Watch3,4, software:8.8.1, creation date:2023-09-04 10:56:20 +0000&gt;" creationDate="2024-08-14 17:49:08 +0100" startDate="2024-08-14 17:49:06 +0100" endDate="2024-08-14 18:59:50 +0100">
+   <FileReference path="/workout-routes/route_2024-08-14_7.59pm.gpx"/>
+  </WorkoutRoute>
+  <MetadataEntry key="split_km_5" value="6:12/km"/>
+  <MetadataEntry key="split_km_11" value="6:49/km"/>
+  <MetadataEntry key="split_mi_1" value="10:50/mi"/>
+  <MetadataEntry key="split_km_3" value="7:11/km"/>
+  <MetadataEntry key="HKMetadataKeySyncVersion" value="1"/>
+  <MetadataEntry key="location" value="Outdoor"/>
+  <MetadataEntry key="split_km_10" value="7:18/km"/>
+  <MetadataEntry key="color name" value="systemBlue"/>
+  <MetadataEntry key="split_km_1" value="6:42/km"/>
+  <MetadataEntry key="split_mi_6" value="11:23/mi"/>
+  <MetadataEntry key="uuid" value="1841370C-0C82-494B-A264-7521E01DB7CE"/>
+  <MetadataEntry key="split_km_8" value="8:01/km"/>
+  <MetadataEntry key="symbol name" value="running_ubs_symbol"/>
+  <MetadataEntry key="split_mi_4" value="10:08/mi"/>
+  <MetadataEntry key="split_km_6" value="6:08/km"/>
+  <MetadataEntry key="HKWorkoutBrandName" value="3 * (6 * (20’’/20’’) / Repos 2’)"/>
+  <MetadataEntry key="workout length" value="01:10:47"/>
+  <MetadataEntry key="split_mi_2" value="11:21/mi"/>
+  <MetadataEntry key="workout name" value="3 * (6 * (20’’/20’’) / Repos 2’)"/>
+  <MetadataEntry key="split_km_4" value="7:05/km"/>
+  <MetadataEntry key="interval tracking" value="workout events"/>
+  <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+  <MetadataEntry key="HKMetadataKeySyncIdentifier" value="976139C3-B374-42DB-A442-D7C74339F7DC"/>
+  <MetadataEntry key="step count" value="11092"/>
+  <MetadataEntry key="split_km_2" value="6:49/km"/>
+  <MetadataEntry key="split_mi_7" value="11:17/mi"/>
+  <MetadataEntry key="split_km_9" value="6:55/km"/>
+  <MetadataEntry key="HKIndoorWorkout" value="0"/>
+  <MetadataEntry key="workout tracking" value="standalone watch"/>
+  <MetadataEntry key="split_mi_5" value="12:36/mi"/>
+  <MetadataEntry key="split_km_7" value="7:13/km"/>
+  <MetadataEntry key="HKAverageMETs" value="9.13823 kcal/hr·kg"/>
+  <MetadataEntry key="split_mi_3" value="10:49/mi"/>
+ </Workout>

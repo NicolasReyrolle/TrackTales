@@ -27,6 +27,7 @@ class RoutePoint:
     altitude: float = 0.0
     speed: float = 0.0  # GPS-measured speed in m/s; 0.0 means unknown/unavailable
     heart_rate: float | None = None
+    altitude_available: bool = True
 
 
 @dataclass
@@ -99,19 +100,42 @@ class WorkoutRoute:
 
         Returns:
             The estimated gain in meters, or ``None`` when the route carries no
-            altitude information (fewer than two points or all altitudes are zero).
+            altitude information (fewer than two available samples or all are zero).
         """
-        if len(self.points) < 2 or all(
-            isclose(p.altitude, 0.0, abs_tol=ALTITUDE_ZERO_TOLERANCE_M) for p in self.points
+        valid_altitudes = [p.altitude for p in self.points if p.altitude_available]
+        if len(valid_altitudes) < 2 or all(
+            isclose(altitude, 0.0, abs_tol=ALTITUDE_ZERO_TOLERANCE_M)
+            for altitude in valid_altitudes
         ):
             return None
 
-        altitudes = [p.altitude for p in self.points]
+        gain = 0.0
+        continuous_altitudes: list[float] = []
+        for point in self.points:
+            if point.altitude_available:
+                continuous_altitudes.append(point.altitude)
+            else:
+                gain += self._estimate_continuous_elevation_gain(
+                    continuous_altitudes, smoothing_window, threshold_m
+                )
+                continuous_altitudes = []
+        gain += self._estimate_continuous_elevation_gain(
+            continuous_altitudes, smoothing_window, threshold_m
+        )
+        return gain
+
+    @staticmethod
+    def _estimate_continuous_elevation_gain(
+        altitudes: list[float], smoothing_window: int, threshold_m: float
+    ) -> float:
+        """Estimate elevation gain for one uninterrupted sequence of altitude samples."""
+        if len(altitudes) < 2:
+            return 0.0
+
         half = max(smoothing_window, 1) // 2
         smoothed = [
             median(altitudes[max(0, i - half) : i + half + 1]) for i in range(len(altitudes))
         ]
-
         gain = 0.0
         base = peak = smoothed[0]
         for value in smoothed[1:]:

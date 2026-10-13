@@ -16,6 +16,51 @@ from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
 class TestComplexRealWorldWorkout:
     """Test parsing of a complex real-world Apple Health workout with multiple elements."""
 
+    def test_gpx_point_without_elevation_is_marked_unavailable(self) -> None:
+        """An omitted GPX <ele> is distinct from a valid zero-meter altitude."""
+        namespace = "http://www.topografix.com/GPX/1/1"
+        point_elem = Element(f"{{{namespace}}}trkpt", attrib={"lat": "48.8566", "lon": "2.3522"})
+        time_elem = Element(f"{{{namespace}}}time")
+        time_elem.text = "2024-01-01T00:00:00Z"
+        point_elem.append(time_elem)
+
+        point_data = ExportParser._extract_gpx_point_data(point_elem)
+        point = ExportParser._create_route_point(*point_data)
+
+        assert point.altitude == pytest.approx(0.0)
+        assert not point.altitude_available
+
+    def test_estimated_elevation_uses_discrete_route_parts(self) -> None:
+        """A merged boundary jump between route windows is not counted as climbing."""
+
+        def make_route(altitude: float, start_hour: int) -> WorkoutRoute:
+            return WorkoutRoute(
+                points=[
+                    RoutePoint(
+                        time=datetime(2024, 1, 1, start_hour, minute),
+                        latitude=48.8566,
+                        longitude=2.3522,
+                        altitude=altitude,
+                    )
+                    for minute in range(10)
+                ]
+            )
+
+        route_parts = [make_route(100.0, 0), make_route(200.0, 1)]
+        merged_route = WorkoutRoute(
+            points=[point for route_part in route_parts for point in route_part.points]
+        )
+        record: WorkoutRecord = {
+            "activityType": "Running",
+            "route": merged_route,
+            "route_parts": route_parts,
+        }
+
+        assert merged_route.estimated_elevation_gain_m() == pytest.approx(100.0)
+        ExportParser._apply_estimated_elevation(record)
+
+        assert record.get("ElevationAscended") == pytest.approx(0.0)
+
     def test_parse_complex_workout_with_all_elements(
         self,
         create_health_zip: Callable[..., str],

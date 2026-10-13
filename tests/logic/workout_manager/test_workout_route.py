@@ -657,7 +657,9 @@ class TestEstimatedElevationGain:
     """Tests for the noise-filtered elevation gain estimate."""
 
     @staticmethod
-    def _route(altitudes: list[float]) -> WorkoutRoute:
+    def _route(
+        altitudes: list[float], altitude_available: list[bool] | None = None
+    ) -> WorkoutRoute:
         start = datetime(2024, 1, 1, tzinfo=UTC)
         return WorkoutRoute(
             points=[
@@ -666,6 +668,9 @@ class TestEstimatedElevationGain:
                     latitude=0.0,
                     longitude=0.0,
                     altitude=alt,
+                    altitude_available=(
+                        altitude_available[i] if altitude_available is not None else True
+                    ),
                 )
                 for i, alt in enumerate(altitudes)
             ]
@@ -701,3 +706,10 @@ class TestEstimatedElevationGain:
         """A climb below the threshold is dropped when a descent confirms it."""
         route = self._route([100.0, 102.0, 98.0, 98.0])
         assert route.estimated_elevation_gain_m(smoothing_window=1) == pytest.approx(0.0)  # type: ignore[misc]
+
+    def test_missing_altitude_gap_does_not_create_climb(self) -> None:
+        """Points without GPX elevation do not connect otherwise separate altitude runs."""
+        altitudes = [100.0] * 9 + [0.0] * 9 + [100.0] * 9
+        available = [True] * 9 + [False] * 9 + [True] * 9
+        route = self._route(altitudes, available)
+        assert route.estimated_elevation_gain_m() == pytest.approx(0.0)  # type: ignore[misc]

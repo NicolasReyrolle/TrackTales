@@ -458,9 +458,7 @@ class ExportParser:
             elif child.tag == "WorkoutEvent" and record.get("activityType") == "Swimming":
                 self._collect_workout_event(child, record)
 
-    def _process_interval_activity_elevation(
-        self, elem: Element, record: WorkoutRecord
-    ) -> None:
+    def _process_interval_activity_elevation(self, elem: Element, record: WorkoutRecord) -> None:
         """Retain workout elevation metadata while skipping overlapping interval data."""
         for child in elem:
             if (

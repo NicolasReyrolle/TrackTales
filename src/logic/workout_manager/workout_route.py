@@ -5,10 +5,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from math import atan2, cos, radians, sin, sqrt
+from math import atan2, cos, isclose, radians, sin, sqrt
 from statistics import median
 
 import pandas as pd
+
+from logic.constants import (
+    ALTITUDE_ZERO_TOLERANCE_M,
+    ELEVATION_NOISE_THRESHOLD_M,
+    ELEVATION_SMOOTHING_WINDOW,
+)
 
 
 @dataclass(frozen=True)
@@ -69,18 +75,35 @@ class WorkoutRoute:
         return sum(max(0.0, a.altitude - b.altitude) for a, b in zip(self.points, self.points[1:]))
 
     def estimated_elevation_gain_m(
-        self, smoothing_window: int = 9, threshold_m: float = 3.0
+        self,
+        smoothing_window: int = ELEVATION_SMOOTHING_WINDOW,
+        threshold_m: float = ELEVATION_NOISE_THRESHOLD_M,
     ) -> float | None:
         """Estimate the elevation gain while filtering out GPS altitude noise.
 
-        Altitudes are smoothed with a moving median, then a hysteresis threshold is
-        applied so that only climbs larger than ``threshold_m`` are accumulated.
+        Summing raw point-to-point altitude increases (see ``elevation_gain_m``) badly
+        overestimates the gain because GPS altitude jitters by several meters. The
+        algorithm works in two steps:
+
+        1. Smoothing: each altitude is replaced by the median of the ``smoothing_window``
+           samples centred on it (shorter near the route ends), which removes spikes.
+        2. Hysteresis: the smoothed profile is walked while tracking ``base`` (the lowest
+           altitude of the current climb) and ``peak`` (the highest altitude reached since).
+           A new maximum raises ``peak``. A drop of at least ``threshold_m`` below ``peak``
+           confirms the climb: ``peak - base`` is added to the gain if it is itself at least
+           ``threshold_m``, then both restart from the current altitude. A fall below
+           ``base`` before any confirmation restarts the climb lower. The pending climb is
+           added at the end of the route if it reaches the threshold.
+
+        Variations smaller than ``threshold_m`` are therefore never counted.
 
         Returns:
             The estimated gain in meters, or ``None`` when the route carries no
             altitude information (fewer than two points or all altitudes are zero).
         """
-        if len(self.points) < 2 or all(p.altitude == 0.0 for p in self.points):
+        if len(self.points) < 2 or all(
+            isclose(p.altitude, 0.0, abs_tol=ALTITUDE_ZERO_TOLERANCE_M) for p in self.points
+        ):
             return None
 
         altitudes = [p.altitude for p in self.points]
@@ -95,7 +118,6 @@ class WorkoutRoute:
             if value > peak:
                 peak = value
             elif peak - value >= threshold_m:
-                # A descent of at least the threshold confirms the preceding climb.
                 if peak - base >= threshold_m:
                     gain += peak - base
                 base = peak = value

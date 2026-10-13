@@ -26,5 +26,4 @@ twine==7.0.0
 pyinstaller==6.22.3
 
 # CI/CD
-azure-ai-inference==1.0.0b9
-PyGithub==2.10.0
+-r requirements-triage.txt

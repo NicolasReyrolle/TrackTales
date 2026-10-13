@@ -448,12 +448,26 @@ class ExportParser:
                 self._process_metadata_entry(child, record)
             elif child.tag == "WorkoutRoute":
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
-            elif child.tag == "WorkoutActivity" and not self._is_interval_activity(child):
-                self._process_workout_activity_children(
-                    child, record, zipfile, active_end=active_end
-                )
+            elif child.tag == "WorkoutActivity":
+                if self._is_interval_activity(child):
+                    self._process_interval_activity_elevation(child, record)
+                else:
+                    self._process_workout_activity_children(
+                        child, record, zipfile, active_end=active_end
+                    )
             elif child.tag == "WorkoutEvent" and record.get("activityType") == "Swimming":
                 self._collect_workout_event(child, record)
+
+    def _process_interval_activity_elevation(
+        self, elem: Element, record: WorkoutRecord
+    ) -> None:
+        """Retain workout elevation metadata while skipping overlapping interval data."""
+        for child in elem:
+            if (
+                child.tag == "MetadataEntry"
+                and child.get("key", "").replace("HK", "") == "ElevationAscended"
+            ):
+                self._process_metadata_entry(child, record)
 
     @staticmethod
     def _is_interval_activity(elem: Element) -> bool:

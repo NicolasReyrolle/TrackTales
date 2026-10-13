@@ -1,4 +1,5 @@
 import re
+from typing import Literal
 
 from .models import TriageAnalysis
 
@@ -17,6 +18,7 @@ _TEST_EVIDENCE = re.compile(
 def analyze_issue(title: str, body: str) -> TriageAnalysis:
     text = f"{title}\n{body}".lower()
 
+    classification: Literal["bug", "enhancement", "question", "invalid"]
     if _INVALID_TERMS.search(text):
         classification = "invalid"
     elif _FEATURE_TERMS.search(text):
@@ -26,6 +28,7 @@ def analyze_issue(title: str, body: str) -> TriageAnalysis:
     else:
         classification = "bug"
 
+    severity: Literal["low", "medium", "high", "critical"]
     if _CRITICAL_TERMS.search(text):
         severity = "critical"
     elif _HIGH_TERMS.search(text):

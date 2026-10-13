@@ -1,7 +1,7 @@
 """Unit tests for workout route domain models and calculations."""
 
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -651,3 +651,65 @@ class TestSamplePointAtFraction:
             assert result is not None, f"fraction={fraction} returned None"
             lat, lon = result
             assert 48.84 < lat < 48.88
+
+
+class TestEstimatedElevationGain:
+    """Tests for the noise-filtered elevation gain estimate."""
+
+    @staticmethod
+    def _route(
+        altitudes: list[float], altitude_available: list[bool] | None = None
+    ) -> WorkoutRoute:
+        start = datetime(2024, 1, 1, tzinfo=UTC)
+        return WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=start + timedelta(seconds=i),
+                    latitude=0.0,
+                    longitude=0.0,
+                    altitude=alt,
+                    altitude_available=(
+                        altitude_available[i] if altitude_available is not None else True
+                    ),
+                )
+                for i, alt in enumerate(altitudes)
+            ]
+        )
+
+    def test_no_altitude_data_returns_none(self) -> None:
+        """Routes without altitude data give no estimate."""
+        assert self._route([0.0, 0.0, 0.0]).estimated_elevation_gain_m() is None
+        assert self._route([5.0]).estimated_elevation_gain_m() is None
+
+    def test_noise_is_ignored(self) -> None:
+        """Small oscillations are not counted as climbing."""
+        route = self._route([100.0, 100.8, 99.9, 100.7, 100.1] * 6)
+        assert route.estimated_elevation_gain_m() == pytest.approx(0.0)  # type: ignore[misc]
+
+    def test_real_climb_is_counted(self) -> None:
+        """A sustained climb is counted, a following descent is not."""
+        altitudes = [100.0] * 10 + [110.0] * 10 + [100.0] * 10
+        route = self._route(altitudes)
+        assert route.estimated_elevation_gain_m() == pytest.approx(10.0, abs=1.0)  # type: ignore[misc]
+
+    def test_climb_at_end_of_route_is_counted(self) -> None:
+        """A climb not followed by a descent is added when the route ends."""
+        route = self._route([100.0] * 10 + [110.0] * 10)
+        assert route.estimated_elevation_gain_m() == pytest.approx(10.0, abs=1.0)  # type: ignore[misc]
+
+    def test_small_drop_below_base_restarts_climb(self) -> None:
+        """A sub-threshold drop below the base lowers the base so the full climb is counted."""
+        route = self._route([100.0, 98.0, 108.0])
+        assert route.estimated_elevation_gain_m(smoothing_window=1) == pytest.approx(10.0)  # type: ignore[misc]
+
+    def test_small_climb_before_confirming_descent_is_ignored(self) -> None:
+        """A climb below the threshold is dropped when a descent confirms it."""
+        route = self._route([100.0, 102.0, 98.0, 98.0])
+        assert route.estimated_elevation_gain_m(smoothing_window=1) == pytest.approx(0.0)  # type: ignore[misc]
+
+    def test_missing_altitude_gap_does_not_create_climb(self) -> None:
+        """Points without GPX elevation do not connect otherwise separate altitude runs."""
+        altitudes = [100.0] * 9 + [0.0] * 9 + [100.0] * 9
+        available = [True] * 9 + [False] * 9 + [True] * 9
+        route = self._route(altitudes, available)
+        assert route.estimated_elevation_gain_m() == pytest.approx(0.0)  # type: ignore[misc]

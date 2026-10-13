@@ -204,10 +204,33 @@ class ExportParser:
         record = self._create_workout_record(elem, activity_type)
         record["xmlFragment"] = tostring(elem, encoding="unicode")
         self._process_workout_children(elem, record, zipfile)
+        self._apply_estimated_elevation(record)
         workout_rows.append(record)
 
         if len(workout_rows) % WORKOUT_PROGRESS_INTERVAL == 0:
             self._log(f"Processed {len(workout_rows)} workouts...")
+
+    @staticmethod
+    def _apply_estimated_elevation(record: WorkoutRecord) -> None:
+        """Fall back to a route-derived elevation gain when the workout has none."""
+        if "ElevationAscended" in record:
+            return
+        route_parts = record.get("route_parts")
+        if isinstance(route_parts, list) and route_parts:
+            part_gains = [
+                part_gain
+                for part in route_parts
+                if (part_gain := part.estimated_elevation_gain_m()) is not None
+            ]
+            gain = sum(part_gains) if part_gains else None
+        else:
+            route = record.get("route")
+            if route is None:
+                return
+            gain = route.estimated_elevation_gain_m()
+        if gain is not None:
+            record["ElevationAscended"] = gain  # type: ignore[typeddict-unknown-key]
+            record["ElevationAscendedUnit"] = "m"  # type: ignore[typeddict-unknown-key]
 
     def _process_record_event(
         self,
@@ -599,7 +622,7 @@ class ExportParser:
             return 0.0
 
     @staticmethod
-    def _extract_gpx_point_data(elem: Element) -> tuple[str, str, str, str, float]:
+    def _extract_gpx_point_data(elem: Element) -> tuple[str, str, str | None, str, float]:
         """Extract coordinate and metadata from a GPX trackpoint element."""
         latitude = elem.get("lat") or ""
         longitude = elem.get("lon") or ""
@@ -611,7 +634,7 @@ class ExportParser:
         ele_elem = elem.find(f"{{{_GPX_NAMESPACE}}}ele")
         time_elem = elem.find(f"{{{_GPX_NAMESPACE}}}time")
 
-        altitude = (ele_elem.text or "0.0") if ele_elem is not None else "0.0"
+        altitude = ele_elem.text if ele_elem is not None else None
         time_str = (time_elem.text or "") if time_elem is not None else ""
 
         ext_elem = elem.find(f"{{{_GPX_NAMESPACE}}}extensions")
@@ -621,14 +644,15 @@ class ExportParser:
 
     @staticmethod
     def _create_route_point(
-        latitude: str, longitude: str, altitude: str, time_str: str, speed_val: float
+        latitude: str, longitude: str, altitude: str | None, time_str: str, speed_val: float
     ) -> RoutePoint:
         """Create a RoutePoint from extracted GPX data."""
         return RoutePoint(
             time=datetime.fromisoformat(time_str.replace("Z", "+00:00")),
             latitude=float(latitude),
             longitude=float(longitude),
-            altitude=float(altitude),
+            altitude=float(altitude) if altitude is not None else 0.0,
+            altitude_available=altitude is not None,
             speed=speed_val,
         )
 

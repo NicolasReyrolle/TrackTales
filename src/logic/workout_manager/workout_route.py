@@ -5,9 +5,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from math import atan2, cos, radians, sin, sqrt
+from math import atan2, cos, isclose, radians, sin, sqrt
+from statistics import median
 
 import pandas as pd
+
+from logic.constants import (
+    ALTITUDE_ZERO_TOLERANCE_M,
+    ELEVATION_NOISE_THRESHOLD_M,
+    ELEVATION_SMOOTHING_WINDOW,
+)
 
 
 @dataclass(frozen=True)
@@ -20,6 +27,7 @@ class RoutePoint:
     altitude: float = 0.0
     speed: float = 0.0  # GPS-measured speed in m/s; 0.0 means unknown/unavailable
     heart_rate: float | None = None
+    altitude_available: bool = True
 
 
 @dataclass
@@ -66,6 +74,82 @@ class WorkoutRoute:
     def elevation_loss_m(self) -> float:
         """Calculate the total elevation loss of the workout route in meters."""
         return sum(max(0.0, a.altitude - b.altitude) for a, b in zip(self.points, self.points[1:]))
+
+    def estimated_elevation_gain_m(
+        self,
+        smoothing_window: int = ELEVATION_SMOOTHING_WINDOW,
+        threshold_m: float = ELEVATION_NOISE_THRESHOLD_M,
+    ) -> float | None:
+        """Estimate the elevation gain while filtering out GPS altitude noise.
+
+        Summing raw point-to-point altitude increases (see ``elevation_gain_m``) badly
+        overestimates the gain because GPS altitude jitters by several meters. The
+        algorithm works in two steps:
+
+        1. Smoothing: each altitude is replaced by the median of the ``smoothing_window``
+           samples centred on it (shorter near the route ends), which removes spikes.
+        2. Hysteresis: the smoothed profile is walked while tracking ``base`` (the lowest
+           altitude of the current climb) and ``peak`` (the highest altitude reached since).
+           A new maximum raises ``peak``. A drop of at least ``threshold_m`` below ``peak``
+           confirms the climb: ``peak - base`` is added to the gain if it is itself at least
+           ``threshold_m``, then both restart from the current altitude. A fall below
+           ``base`` before any confirmation restarts the climb lower. The pending climb is
+           added at the end of the route if it reaches the threshold.
+
+        Variations smaller than ``threshold_m`` are therefore never counted.
+
+        Returns:
+            The estimated gain in meters, or ``None`` when the route carries no
+            altitude information (fewer than two available samples or all are zero).
+        """
+        valid_altitudes = [p.altitude for p in self.points if p.altitude_available]
+        if len(valid_altitudes) < 2 or all(
+            isclose(altitude, 0.0, abs_tol=ALTITUDE_ZERO_TOLERANCE_M)
+            for altitude in valid_altitudes
+        ):
+            return None
+
+        gain = 0.0
+        continuous_altitudes: list[float] = []
+        for point in self.points:
+            if point.altitude_available:
+                continuous_altitudes.append(point.altitude)
+            else:
+                gain += self._estimate_continuous_elevation_gain(
+                    continuous_altitudes, smoothing_window, threshold_m
+                )
+                continuous_altitudes = []
+        gain += self._estimate_continuous_elevation_gain(
+            continuous_altitudes, smoothing_window, threshold_m
+        )
+        return gain
+
+    @staticmethod
+    def _estimate_continuous_elevation_gain(
+        altitudes: list[float], smoothing_window: int, threshold_m: float
+    ) -> float:
+        """Estimate elevation gain for one uninterrupted sequence of altitude samples."""
+        if len(altitudes) < 2:
+            return 0.0
+
+        half = max(smoothing_window, 1) // 2
+        smoothed = [
+            median(altitudes[max(0, i - half) : i + half + 1]) for i in range(len(altitudes))
+        ]
+        gain = 0.0
+        base = peak = smoothed[0]
+        for value in smoothed[1:]:
+            if value > peak:
+                peak = value
+            elif peak - value >= threshold_m:
+                if peak - base >= threshold_m:
+                    gain += peak - base
+                base = peak = value
+            elif value < base:
+                base = peak = value
+        if peak - base >= threshold_m:
+            gain += peak - base
+        return gain
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the workout route to a pandas DataFrame."""

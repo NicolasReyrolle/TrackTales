@@ -475,7 +475,8 @@ class ExportParser:
         distance and route points.
         """
         return any(
-            child.tag == "MetadataEntry" and child.get("key") == "WOIntervalStepKeyPath"
+            child.tag == "MetadataEntry"
+            and child.get("key", "").replace("HK", "") == "WOIntervalStepKeyPath"
             for child in elem
         )
 

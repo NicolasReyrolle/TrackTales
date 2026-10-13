@@ -17,7 +17,7 @@ class IssueTriageAgent:
 
         # GitHub Models endpoints are compatible with Azure AI Inference SDK
         self.llm_client = ChatCompletionsClient(
-            endpoint="https://models.inference.ai.azure.com",
+            endpoint="https://models.github.ai/inference",
             credential=AzureKeyCredential(github_token),
         )
 
@@ -26,7 +26,7 @@ class IssueTriageAgent:
 
         response = self.llm_client.complete(
             messages=[SystemMessage(content=SYSTEM_PROMPT), UserMessage(content=user_content)],
-            model="gpt-4o",
+            model="openai/gpt-4o",
             response_format="json_object",
         )
 

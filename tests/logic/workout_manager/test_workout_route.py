@@ -686,3 +686,18 @@ class TestEstimatedElevationGain:
         altitudes = [100.0] * 10 + [110.0] * 10 + [100.0] * 10
         route = self._route(altitudes)
         assert route.estimated_elevation_gain_m() == pytest.approx(10.0, abs=1.0)  # type: ignore[misc]
+
+    def test_climb_at_end_of_route_is_counted(self) -> None:
+        """A climb not followed by a descent is added when the route ends."""
+        route = self._route([100.0] * 10 + [110.0] * 10)
+        assert route.estimated_elevation_gain_m() == pytest.approx(10.0, abs=1.0)  # type: ignore[misc]
+
+    def test_small_drop_below_base_restarts_climb(self) -> None:
+        """A sub-threshold drop below the base lowers the base so the full climb is counted."""
+        route = self._route([100.0, 98.0, 108.0])
+        assert route.estimated_elevation_gain_m(smoothing_window=1) == pytest.approx(10.0)  # type: ignore[misc]
+
+    def test_small_climb_before_confirming_descent_is_ignored(self) -> None:
+        """A climb below the threshold is dropped when a descent confirms it."""
+        route = self._route([100.0, 102.0, 98.0, 98.0])
+        assert route.estimated_elevation_gain_m(smoothing_window=1) == pytest.approx(0.0)  # type: ignore[misc]

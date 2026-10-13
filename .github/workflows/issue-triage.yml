@@ -3,6 +3,12 @@ name: Issue Triage Agent
 on:
     issues:
         types: [opened]
+    workflow_dispatch:
+        inputs:
+            issue_number:
+                description: "Issue number to analyze"
+                required: true
+                type: string
 
 jobs:
     triage:
@@ -27,6 +33,7 @@ jobs:
             - name: Run Triage Agent
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  ISSUE_NUMBER: ${{ github.event.issue.number }}
+                  # Fallback to input issue_number if manually triggered
+                  ISSUE_NUMBER: ${{ inputs.issue_number || github.event.issue.number }}
                   REPO_NAME: ${{ github.repository }}
               run: python -m .github.scripts.triage_agent.agent

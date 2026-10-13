@@ -1,0 +1,39 @@
+# .github/workflows/issue_triage.yml
+name: Issue Triage Agent
+on:
+    issues:
+        types: [opened]
+    workflow_dispatch:
+        inputs:
+            issue_number:
+                description: "Issue number to analyze"
+                required: true
+                type: string
+
+jobs:
+    triage:
+        runs-on: ubuntu-latest
+        permissions:
+            issues: write
+            contents: read
+            models: read
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.12"
+
+            - name: Install dependencies
+              run: pip install -r requirements-triage.txt
+
+            - name: Run Triage Agent
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  # Fallback to input issue_number if manually triggered
+                  ISSUE_NUMBER: ${{ inputs.issue_number || github.event.issue.number }}
+                  REPO_NAME: ${{ github.repository }}
+              run: cd .github/scripts && python -m triage_agent.agent

@@ -37,10 +37,13 @@ class IssueTriageAgent:
         analysis = self.analyze()
 
         # 1. Apply labels
-        labels = set(
+        requested_labels = set(
             analysis.suggested_labels + [analysis.classification, f"severity:{analysis.severity}"]
         )
-        self.issue.add_to_labels(*list(labels))
+        available_labels = {label.name for label in self.repo.get_labels()}
+        labels = requested_labels & available_labels
+        if labels:
+            self.issue.add_to_labels(*labels)
 
         # 2. Post structured comment
         comment_body = (

@@ -1,12 +1,9 @@
 import os
 
-from azure.ai.inference import ChatCompletionsClient
-from azure.ai.inference.models import SystemMessage, UserMessage
-from azure.core.credentials import AzureKeyCredential
 from github import Github
 
+from .analysis import analyze_issue
 from .models import TriageAnalysis
-from .prompts import SYSTEM_PROMPT
 
 
 class IssueTriageAgent:
@@ -15,23 +12,8 @@ class IssueTriageAgent:
         self.repo = self.gh.get_repo(repo_name)
         self.issue = self.repo.get_issue(number=issue_number)
 
-        # GitHub Models endpoints are compatible with Azure AI Inference SDK
-        self.llm_client = ChatCompletionsClient(
-            endpoint="https://models.github.ai/inference",
-            credential=AzureKeyCredential(github_token),
-        )
-
     def analyze(self) -> TriageAnalysis:
-        user_content = f"Title: {self.issue.title}\n\nBody:\n{self.issue.body or ''}"
-
-        response = self.llm_client.complete(
-            messages=[SystemMessage(content=SYSTEM_PROMPT), UserMessage(content=user_content)],
-            model="openai/gpt-4o",
-            response_format="json_object",
-        )
-
-        raw_json = response.choices[0].message.content
-        return TriageAnalysis.model_validate_json(raw_json)
+        return analyze_issue(self.issue.title, self.issue.body or "")
 
     def execute_triage(self):
         analysis = self.analyze()

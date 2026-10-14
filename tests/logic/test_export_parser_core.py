@@ -191,6 +191,47 @@ class TestLoadWorkouts:
         assert len(best_segment) == 1
         assert best_segment.iloc[0]["duration_s"] > 200
 
+    def test_issue_367_workout_preserves_summary_and_best_segments(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """Parse the issue's custom workout without importing its interval statistics."""
+        exports_dir = Path(__file__).resolve().parents[1] / "fixtures" / "exports"
+        route_dir = exports_dir / "workout-routes"
+        zip_path = tmp_path / "issue_367_export.zip"
+        workout_xml = load_export_fragment("workout_issue_367.xml")
+
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr(
+                "apple_health_export/export.xml",
+                build_health_export_xml([workout_xml]),
+            )
+            for route_file in sorted(route_dir.glob("route_2025-04-17_7.*pm.gpx")):
+                zf.write(
+                    route_file,
+                    f"apple_health_export/workout-routes/{route_file.name}",
+                )
+
+        parser = ep.ExportParser()
+        with parser:
+            parsed = parser.parse(str(zip_path))
+
+        workout = parsed.workouts.iloc[0]
+        assert workout["distance"] == 7857
+        assert workout["averageRunningSpeed"] == pytest.approx(9.65213)
+        assert workout["maximumRunningSpeed"] == pytest.approx(12.2723)
+        assert workout["ElevationAscended"] == pytest.approx(57.59)
+        assert "WOIntervalStepSuccessful" not in workout
+        assert len(workout["route_parts"]) == 7
+
+        best_segments = wm.WorkoutManager(parsed.workouts).get_best_segments(
+            topn=1, distances=[1000]
+        )
+        assert len(best_segments) == 1
+        assert best_segments.iloc[0]["duration_s"] == pytest.approx(297, abs=1)
+
 
 class TestDurationToSeconds:
     """Test the duration_to_seconds static method."""

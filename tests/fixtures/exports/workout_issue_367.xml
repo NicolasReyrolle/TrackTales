@@ -1,0 +1,194 @@
+<Workout workoutActivityType="HKWorkoutActivityTypeRunning" duration="49.0656075656414" durationUnit="min" sourceName="Apple Watch" sourceVersion="11.4" creationDate="2025-04-17 19:46:32 +0200" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200">
+  <MetadataEntry key="HKIndoorWorkout" value="0"/>
+  <MetadataEntry key="HKElevationAscended" value="5759 cm"/>
+  <MetadataEntry key="HKWeatherHumidity" value="8100 %"/>
+  <MetadataEntry key="HKTimeZone" value="UTC"/>
+  <MetadataEntry key="HKWeatherTemperature" value="45.8282 degF"/>
+  <MetadataEntry key="HKAverageMETs" value="10.103 kcal/hr·kg"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 18:57:19 +0200" duration="6.302453118562698" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 18:57:19 +0200" duration="9.961780780553818" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:03:37 +0200" duration="6.152009866635004" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:07:17 +0200" duration="9.881704731782277" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:09:46 +0200" duration="6.009837738672892" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:15:47 +0200" duration="5.613998297850291" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:17:10 +0200" duration="9.462210303544998" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:21:24 +0200" duration="6.294413091739019" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:26:37 +0200" duration="9.965550561745962" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:27:41 +0200" duration="6.618383145332336" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:34:18 +0200" duration="5.7108298321565" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:36:35 +0200" duration="9.748900699615479" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:40:01 +0200" duration="6.318221986293793" durationUnit="min"/>
+  <WorkoutActivity startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" duration="20.00000523328781" durationUnit="min">
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 18:57:19 +0200" duration="6.302453118562698" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 18:57:19 +0200" duration="9.961780780553818" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:03:37 +0200" duration="6.152009866635004" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:07:17 +0200" duration="9.881704731782277" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:09:46 +0200" duration="6.009837738672892" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:15:47 +0200" duration="5.613998297850291" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:17:10 +0200" duration="9.462210303544998" durationUnit="min"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" sum="3380" unit="count"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" average="302.528" minimum="282" maximum="329" unit="ms"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" average="230.847" minimum="66" maximum="318" unit="W"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" sum="239.69" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" sum="35.6993" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" average="8.62652" minimum="8.1" maximum="10.8" unit="cm"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" average="9.72221" minimum="2.3047" maximum="10.7361" unit="km/hr"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningStrideLength" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" average="0.95787" minimum="0.82" maximum="1.2" unit="m"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" sum="3.24284" unit="km"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:17:19 +0200" average="130.09" minimum="122" maximum="137" unit="count/min"/>
+   <MetadataEntry key="WOIntervalStepKeyPath" value="0.0.0"/>
+   <MetadataEntry key="WOIntervalStepSuccessful" value="1"/>
+  </WorkoutActivity>
+  <WorkoutActivity startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" duration="6.000000717242559" durationUnit="min">
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:15:47 +0200" duration="5.613998297850291" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:17:10 +0200" duration="9.462210303544998" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:21:24 +0200" duration="6.294413091739019" durationUnit="min"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" sum="985.386" unit="count"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" average="295.143" minimum="275" maximum="336" unit="ms"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" average="250.403" minimum="113" maximum="277" unit="W"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" sum="77.9977" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" sum="10.7093" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" average="8.90308" minimum="8.4" maximum="10.7" unit="cm"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" average="10.9036" minimum="2.30534" maximum="12.1178" unit="km/hr"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningStrideLength" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" average="1.07703" minimum="0.95" maximum="1.19" unit="m"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" sum="1.08142" unit="km"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200" average="146.606" minimum="130" maximum="156" unit="count/min"/>
+   <MetadataEntry key="WOIntervalStepKeyPath" value="1.0.0"/>
+   <MetadataEntry key="WOIntervalStepSuccessful" value="1"/>
+  </WorkoutActivity>
+  <WorkoutActivity startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" duration="2.000001966953278" durationUnit="min">
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:17:10 +0200" duration="9.462210303544998" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:21:24 +0200" duration="6.294413091739019" durationUnit="min"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" sum="273.788" unit="count"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" average="314.1" minimum="312" maximum="321" unit="ms"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" average="161.319" minimum="99" maximum="270" unit="W"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" sum="18.4425" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" sum="3.5697" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" average="8.71" minimum="8.4" maximum="9.2" unit="cm"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" average="7.6743" minimum="5.59913" maximum="11.4526" unit="km/hr"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningStrideLength" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" average="0.997273" minimum="0.88" maximum="1.22" unit="m"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" sum="0.252363" unit="km"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-04-17 19:23:19 +0200" endDate="2025-04-17 19:25:19 +0200" average="132.153" minimum="120" maximum="151" unit="count/min"/>
+   <MetadataEntry key="WOIntervalStepKeyPath" value="1.0.1"/>
+   <MetadataEntry key="WOIntervalStepSuccessful" value="1"/>
+  </WorkoutActivity>
+  <WorkoutActivity startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" duration="21.06559964815775" durationUnit="min">
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:17:10 +0200" duration="9.462210303544998" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:21:24 +0200" duration="6.294413091739019" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:26:37 +0200" duration="9.965550561745962" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:27:41 +0200" duration="6.618383145332336" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:34:18 +0200" duration="5.7108298321565" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:36:35 +0200" duration="9.748900699615479" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:40:01 +0200" duration="6.318221986293793" durationUnit="min"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" sum="3339.64" unit="count"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="296.393" minimum="260" maximum="347" unit="ms"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="225.491" minimum="67" maximum="355" unit="W"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" sum="254.456" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" sum="37.2904" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="8.70311" minimum="7.9" maximum="10.9" unit="cm"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="9.41801" minimum="2.61178" maximum="12.2723" unit="km/hr"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningStrideLength" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="0.987128" minimum="0.84" maximum="1.14" unit="m"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" sum="3.28047" unit="km"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-04-17 19:25:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="144.94" minimum="120" maximum="163" unit="count/min"/>
+   <MetadataEntry key="WOIntervalStepKeyPath" value="1.1.0"/>
+   <MetadataEntry key="WOIntervalStepSuccessful" value="1"/>
+  </WorkoutActivity>
+  <WorkoutActivity startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" duration="6.000002549091975" durationUnit="min">
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:26:37 +0200" duration="9.965550561745962" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:27:41 +0200" duration="6.618383145332336" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:34:18 +0200" duration="5.7108298321565" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:36:35 +0200" duration="9.748900699615479" durationUnit="min"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" sum="1027.51" unit="count"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" average="277.303" minimum="260" maximum="313" unit="ms"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" average="261.092" minimum="209" maximum="355" unit="W"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" sum="85.637" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" sum="10.7094" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" average="8.69254" minimum="7.9" maximum="9.7" unit="cm"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" average="11.1994" minimum="9.93593" maximum="12.2723" unit="km/hr"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningStrideLength" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" average="1.06333" minimum="0.98" maximum="1.14" unit="m"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" sum="1.11727" unit="km"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-04-17 19:33:19 +0200" endDate="2025-04-17 19:39:19 +0200" average="152.564" minimum="130" maximum="163" unit="count/min"/>
+   <MetadataEntry key="WOIntervalStepKeyPath" value="1.2.0"/>
+   <MetadataEntry key="WOIntervalStepSuccessful" value="1"/>
+  </WorkoutActivity>
+  <WorkoutActivity startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" duration="1.999997252225876" durationUnit="min">
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:34:18 +0200" duration="5.7108298321565" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:36:35 +0200" duration="9.748900699615479" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:40:01 +0200" duration="6.318221986293793" durationUnit="min"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" sum="233.679" unit="count"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" average="299.5" minimum="280" maximum="319" unit="ms"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" average="133.766" minimum="105" maximum="257" unit="W"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" sum="15.4457" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" sum="3.56988" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" average="9.125" minimum="8.5" maximum="10.9" unit="cm"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" average="6.15535" minimum="5.28499" maximum="10.258" unit="km/hr"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningStrideLength" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" average="0.84" minimum="0.84" maximum="0.84" unit="m"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" sum="0.194675" unit="km"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-04-17 19:39:19 +0200" endDate="2025-04-17 19:41:19 +0200" average="136.571" minimum="120" maximum="159" unit="count/min"/>
+   <MetadataEntry key="WOIntervalStepKeyPath" value="1.2.1"/>
+   <MetadataEntry key="WOIntervalStepSuccessful" value="1"/>
+  </WorkoutActivity>
+  <WorkoutActivity startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" duration="5.000001116593679" durationUnit="min">
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:36:35 +0200" duration="9.748900699615479" durationUnit="min"/>
+   <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2025-04-17 19:40:01 +0200" duration="6.318221986293793" durationUnit="min"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" sum="816.01" unit="count"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" average="323.304" minimum="294" maximum="347" unit="ms"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" average="197.402" minimum="153" maximum="242" unit="W"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" sum="54.8378" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" sum="8.88463" unit="kcal"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" average="8.74909" minimum="8.4" maximum="9.3" unit="cm"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" average="8.71937" minimum="8.41278" maximum="9.07058" unit="km/hr"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierRunningStrideLength" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" average="0.879455" minimum="0.86" maximum="0.9" unit="m"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" sum="0.727568" unit="km"/>
+   <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-04-17 19:41:19 +0200" endDate="2025-04-17 19:46:19 +0200" average="136.339" minimum="127" maximum="148" unit="count/min"/>
+   <MetadataEntry key="WOIntervalStepKeyPath" value="2.0.0"/>
+  </WorkoutActivity>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierStepCount" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" sum="7978.82" unit="count"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierRunningGroundContactTime" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="299.442" minimum="260" maximum="347" unit="ms"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierRunningPower" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="228.075" minimum="66" maximum="355" unit="W"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" sum="590.586" unit="kcal"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" sum="87.2688" unit="kcal"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierRunningVerticalOscillation" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="8.69398" minimum="7.9" maximum="10.9" unit="cm"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="9.65213" minimum="2.3047" maximum="12.2723" unit="km/hr"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierRunningStrideLength" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="0.985375" minimum="0.82" maximum="1.22" unit="m"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" sum="7.8571" unit="km"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierHeartRate" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" average="139.059" minimum="120" maximum="163" unit="count/min"/>
+  <WorkoutZoneGroup type="HKQuantityTypeIdentifierHeartRate" source="system" unit="count/min">
+   <WorkoutZone maximum="127" duration="4.94999" durationUnit="min"/>
+   <WorkoutZone minimum="127" maximum="140" duration="22.9667" durationUnit="min"/>
+   <WorkoutZone minimum="140" maximum="152" duration="10.1966" durationUnit="min"/>
+   <WorkoutZone minimum="152" maximum="164" duration="10.0167" durationUnit="min"/>
+   <WorkoutZone minimum="164" maximum="177" duration="0" durationUnit="min"/>
+  </WorkoutZoneGroup>
+  <WorkoutRoute sourceName="Apple Watch" sourceVersion="11.4" creationDate="2025-04-17 19:46:36 +0200" startDate="2025-04-17 18:57:20 +0200" endDate="2025-04-17 19:17:18 +0200">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <FileReference path="/workout-routes/route_2025-04-17_7.17pm.gpx"/>
+  </WorkoutRoute>
+  <WorkoutRoute sourceName="Apple Watch" sourceVersion="11.4" creationDate="2025-04-17 19:46:36 +0200" startDate="2025-04-17 19:17:19 +0200" endDate="2025-04-17 19:23:19 +0200">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <FileReference path="/workout-routes/route_2025-04-17_7.23pm.gpx"/>
+  </WorkoutRoute>
+  <WorkoutRoute sourceName="Apple Watch" sourceVersion="11.4" creationDate="2025-04-17 19:46:36 +0200" startDate="2025-04-17 19:23:20 +0200" endDate="2025-04-17 19:25:19 +0200">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <FileReference path="/workout-routes/route_2025-04-17_7.25pm.gpx"/>
+  </WorkoutRoute>
+  <WorkoutRoute sourceName="Apple Watch" sourceVersion="11.4" creationDate="2025-04-17 19:46:36 +0200" startDate="2025-04-17 19:33:20 +0200" endDate="2025-04-17 19:39:19 +0200">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <FileReference path="/workout-routes/route_2025-04-17_7.39pm.gpx"/>
+  </WorkoutRoute>
+  <WorkoutRoute sourceName="Apple Watch" sourceVersion="11.4" creationDate="2025-04-17 19:46:36 +0200" startDate="2025-04-17 19:39:20 +0200" endDate="2025-04-17 19:41:19 +0200">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <FileReference path="/workout-routes/route_2025-04-17_7.41pm.gpx"/>
+  </WorkoutRoute>
+  <WorkoutRoute sourceName="Apple Watch" sourceVersion="11.4" creationDate="2025-04-17 19:46:37 +0200" startDate="2025-04-17 19:25:20 +0200" endDate="2025-04-17 19:46:23 +0200">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <FileReference path="/workout-routes/route_2025-04-17_7.46pm.gpx"/>
+  </WorkoutRoute>
+  <WorkoutRoute sourceName="Apple Watch" sourceVersion="11.4" creationDate="2025-04-17 19:46:37 +0200" startDate="2025-04-17 19:41:20 +0200" endDate="2025-04-17 19:46:23 +0200">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <FileReference path="/workout-routes/route_2025-04-17_7.46pm.gpx"/>
+  </WorkoutRoute>
+  <Record type="HKQuantityTypeIdentifierWorkoutEffortScore" sourceName="Apple Watch" sourceVersion="11.4" unit="appleEffortScore" creationDate="2025-04-17 19:46:35 +0200" startDate="2025-04-17 18:57:19 +0200" endDate="2025-04-17 19:46:23 +0200" value="5"/>
+  <Record type="HKQuantityTypeIdentifierEstimatedWorkoutEffortScore" sourceName="Apple Watch" sourceVersion="11.4" unit="appleEffortScore" creationDate="2025-04-17 19:31:25 +0200" startDate="2025-04-17 18:57:20 +0200" endDate="2025-04-17 19:31:19 +0200" value="5"/>
+  <Record type="HKQuantityTypeIdentifierEstimatedWorkoutEffortScore" sourceName="Apple Watch" sourceVersion="11.4" unit="appleEffortScore" creationDate="2025-04-17 19:46:23 +0200" startDate="2025-04-17 19:31:21 +0200" endDate="2025-04-17 19:46:23 +0200" value="5"/>
+ </Workout>

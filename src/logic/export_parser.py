@@ -449,11 +449,36 @@ class ExportParser:
             elif child.tag == "WorkoutRoute":
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
             elif child.tag == "WorkoutActivity":
-                self._process_workout_activity_children(
-                    child, record, zipfile, active_end=active_end
-                )
+                if self._is_interval_activity(child):
+                    self._process_interval_activity_elevation(child, record)
+                else:
+                    self._process_workout_activity_children(
+                        child, record, zipfile, active_end=active_end
+                    )
             elif child.tag == "WorkoutEvent" and record.get("activityType") == "Swimming":
                 self._collect_workout_event(child, record)
+
+    def _process_interval_activity_elevation(self, elem: Element, record: WorkoutRecord) -> None:
+        """Retain workout elevation metadata while skipping overlapping interval data."""
+        for child in elem:
+            if (
+                child.tag == "MetadataEntry"
+                and child.get("key", "").replace("HK", "") == "ElevationAscended"
+            ):
+                self._process_metadata_entry(child, record)
+
+    @staticmethod
+    def _is_interval_activity(elem: Element) -> bool:
+        """Return True for nested interval WorkoutActivity blocks of custom workouts.
+
+        These overlap in time with the main activity and would double-count
+        distance and route points.
+        """
+        return any(
+            child.tag == "MetadataEntry"
+            and child.get("key", "").replace("HK", "") == "WOIntervalStepKeyPath"
+            for child in elem
+        )
 
     def _process_workout_activity_children(
         self, elem: Element, record: WorkoutRecord, zipfile: ZipFile, *, active_end: datetime | None

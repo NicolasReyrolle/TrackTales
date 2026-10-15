@@ -120,6 +120,118 @@ class TestLoadWorkouts:
 
         assert workouts.get_workouts().iloc[0]["distance"] == 5000
 
+    def test_interval_activity_does_not_duplicate_workout_data(self, tmp_path: Path) -> None:
+        """Ignore overlapping interval statistics and routes while preserving elevation."""
+        zip_path = tmp_path / "interval_export.zip"
+        xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
+<HealthData>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01 10:00:00 +0000"
+        endDate="2024-01-01 10:05:00 +0000" duration="5" durationUnit="min">
+        <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning"
+            sum="5" unit="km"/>
+        <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed"
+            average="8" unit="km/hr"/>
+        <WorkoutRoute startDate="2024-01-01 10:00:00 +0000"
+            endDate="2024-01-01 10:05:00 +0000">
+            <FileReference path="/workout-routes/main.gpx"/>
+        </WorkoutRoute>
+        <WorkoutActivity startDate="2024-01-01 10:00:00 +0000"
+            endDate="2024-01-01 10:05:00 +0000">
+            <MetadataEntry key="WOIntervalStepKeyPath" value="0.0.0"/>
+            <MetadataEntry key="HKElevationAscended" value="123 m"/>
+            <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning"
+                sum="50" unit="km"/>
+            <WorkoutStatistics type="HKQuantityTypeIdentifierRunningSpeed"
+                average="50" unit="km/hr"/>
+            <WorkoutRoute startDate="2024-01-01 10:00:00 +0000"
+                endDate="2024-01-01 10:05:00 +0000">
+                <FileReference path="/workout-routes/interval.gpx"/>
+            </WorkoutRoute>
+        </WorkoutActivity>
+    </Workout>
+</HealthData>
+"""
+        main_gpx = b"""<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1">
+    <trk><trkseg>
+        <trkpt lat="0" lon="0"><ele>100</ele><time>2024-01-01T10:00:00Z</time></trkpt>
+        <trkpt lat="0" lon="0.045"><ele>110</ele><time>2024-01-01T10:05:00Z</time></trkpt>
+    </trkseg></trk>
+</gpx>
+"""
+        interval_gpx = b"""<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1">
+    <trk><trkseg>
+        <trkpt lat="0" lon="0"><ele>100</ele><time>2024-01-01T10:00:00Z</time></trkpt>
+        <trkpt lat="0" lon="0.02"><ele>120</ele><time>2024-01-01T10:01:00Z</time></trkpt>
+    </trkseg></trk>
+</gpx>
+"""
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", xml_content)
+            zf.writestr("apple_health_export/workout-routes/main.gpx", main_gpx)
+            zf.writestr("apple_health_export/workout-routes/interval.gpx", interval_gpx)
+
+        parser = ep.ExportParser()
+        with parser:
+            parsed = parser.parse(str(zip_path))
+
+        workout = parsed.workouts.iloc[0]
+        assert workout["distance"] == 5000
+        assert workout["averageRunningSpeed"] == 8
+        assert workout["ElevationAscended"] == pytest.approx(123.0)
+        assert workout["ElevationAscendedUnit"] == "m"
+        assert len(workout["route_parts"]) == 1
+        assert workout["route_parts"][0].points[-1].longitude == pytest.approx(0.045)
+
+        best_segment = wm.WorkoutManager(parsed.workouts).get_best_segments(
+            topn=1, distances=[1000]
+        )
+        assert len(best_segment) == 1
+        assert best_segment.iloc[0]["duration_s"] > 200
+
+    def test_issue_367_workout_preserves_summary_and_best_segments(
+        self,
+        tmp_path: Path,
+        load_export_fragment: Callable[[str], str],
+        build_health_export_xml: Callable[[list[str]], str],
+    ) -> None:
+        """Parse the issue's custom workout without importing its interval statistics."""
+        exports_dir = Path(__file__).resolve().parents[1] / "fixtures" / "exports"
+        route_dir = exports_dir / "workout-routes"
+        zip_path = tmp_path / "issue_367_export.zip"
+        workout_xml = load_export_fragment("workout_issue_367.xml")
+
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr(
+                "apple_health_export/export.xml",
+                build_health_export_xml([workout_xml]),
+            )
+            for route_file in sorted(route_dir.glob("route_2025-04-17_7.*pm.gpx")):
+                zf.write(
+                    route_file,
+                    f"apple_health_export/workout-routes/{route_file.name}",
+                )
+
+        parser = ep.ExportParser()
+        with parser:
+            parsed = parser.parse(str(zip_path))
+
+        workout = parsed.workouts.iloc[0]
+        assert workout["distance"] == 7857
+        assert workout["averageRunningSpeed"] == pytest.approx(9.65213)
+        assert workout["maximumRunningSpeed"] == pytest.approx(12.2723)
+        assert workout["ElevationAscended"] == pytest.approx(57.59)
+        assert "WOIntervalStepSuccessful" not in workout
+        assert len(workout["route_parts"]) == 7
+
+        best_segments = wm.WorkoutManager(parsed.workouts).get_best_segments(
+            topn=1, distances=[1000]
+        )
+        assert len(best_segments) == 1
+        assert best_segments.iloc[0]["duration_s"] == pytest.approx(297, abs=1)
+
 
 class TestDurationToSeconds:
     """Test the duration_to_seconds static method."""

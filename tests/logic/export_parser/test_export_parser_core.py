@@ -218,7 +218,7 @@ class TestLoadWorkouts:
         build_health_export_xml: Callable[[list[str]], str],
     ) -> None:
         """Parse the issue's custom workout without importing its interval statistics."""
-        exports_dir = Path(__file__).resolve().parents[1] / "fixtures" / "exports"
+        exports_dir = Path(__file__).resolve().parents[2] / "fixtures" / "exports"
         route_dir = exports_dir / "workout-routes"
         zip_path = tmp_path / "issue_367_export.zip"
         workout_xml = load_export_fragment("workout_issue_367.xml")
@@ -244,13 +244,13 @@ class TestLoadWorkouts:
         assert workout["maximumRunningSpeed"] == pytest.approx(12.2723)
         assert workout["ElevationAscended"] == pytest.approx(57.59)
         assert "WOIntervalStepSuccessful" not in workout
-        assert len(workout["route_parts"]) == 7
+        assert len(workout["route_parts"]) == 6
 
         best_segments = wm.WorkoutManager(parsed.workouts).get_best_segments(
             topn=1, distances=[1000]
         )
         assert len(best_segments) == 1
-        assert best_segments.iloc[0]["duration_s"] == pytest.approx(297, abs=1)
+        assert best_segments.iloc[0]["duration_s"] == pytest.approx(317, abs=1)
 
     def test_interval_activity_route_is_fallback_when_primary_route_missing(
         self, tmp_path: Path

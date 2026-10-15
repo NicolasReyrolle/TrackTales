@@ -288,17 +288,43 @@ class WorkoutRoute:
             current_end += 1
         return current_end
 
+    def _interpolate_at_distance(
+        self, end_idx: int, target_unscaled: float, cum: list[float]
+    ) -> tuple[float, float]:
+        """Return ``(seconds since first point, altitude)`` where *cum* reaches the target.
+
+        The crossing lies in the segment ending at ``end_idx``. Interpolating avoids
+        attributing a whole distance jump (e.g. across a gap without GPS points) to the
+        split that happens to contain the next recorded point.
+        """
+        previous = self.points[end_idx - 1]
+        current = self.points[end_idx]
+        origin = self.points[0].time
+        span = cum[end_idx] - cum[end_idx - 1]
+        ratio = (target_unscaled - cum[end_idx - 1]) / span if span > 0 else 1.0
+        ratio = min(max(ratio, 0.0), 1.0)
+        elapsed = (previous.time - origin).total_seconds() + ratio * (
+            current.time - previous.time
+        ).total_seconds()
+        altitude = previous.altitude + ratio * (current.altitude - previous.altitude)
+        return elapsed, altitude
+
     def _build_split_data(
         self,
         split_num: int,
         split_start_idx: int,
         split_end_idx: int,
         split_distance_m: float,
+        split_start_distance: float,
+        split_end_distance: float,
+        start: tuple[float, float],
+        end: tuple[float, float],
     ) -> dict[str, float | int] | None:
-        """Build one split result when the indexed segment has a positive duration."""
-        duration_s = (
-            self.points[split_end_idx].time - self.points[split_start_idx].time
-        ).total_seconds()
+        """Build one split result when the segment has a positive duration.
+
+        ``start`` and ``end`` are ``(elapsed seconds, altitude)`` boundaries.
+        """
+        duration_s = end[0] - start[0]
         if duration_s <= 0:
             return None
 
@@ -306,14 +332,16 @@ class WorkoutRoute:
             "split": split_num,
             "duration_s": duration_s,
             "pace_min_per_km": (duration_s / 60.0) * (1000.0 / split_distance_m),
-            "elevation_change_m": (
-                self.points[split_end_idx].altitude - self.points[split_start_idx].altitude
-            ),
+            "elevation_change_m": end[1] - start[1],
         }
+        cumulative_distances = self._cumulative_distances()
         heart_rates = [
             point.heart_rate
-            for point in self.points[split_start_idx : split_end_idx + 1]
-            if point.heart_rate is not None
+            for point_idx, point in enumerate(
+                self.points[split_start_idx : split_end_idx + 1], start=split_start_idx
+            )
+            if split_start_distance <= cumulative_distances[point_idx] <= split_end_distance
+            and point.heart_rate is not None
         ]
         if heart_rates:
             split_data["avg_heart_rate"] = sum(heart_rates) / len(heart_rates)
@@ -446,6 +474,7 @@ class WorkoutRoute:
         splits: list[dict[str, float | int]] = []
         split_num = 1
         split_start_idx = 0
+        start: tuple[float, float] = (0.0, self.points[0].altitude)
 
         while True:
             target_scaled = split_num * split_distance_m
@@ -461,16 +490,22 @@ class WorkoutRoute:
             if split_end_idx >= len(self.points):
                 break
 
+            end = self._interpolate_at_distance(split_end_idx, target_unscaled, cum)
             split_data = self._build_split_data(
                 split_num=split_num,
                 split_start_idx=split_start_idx,
                 split_end_idx=split_end_idx,
                 split_distance_m=split_distance_m,
+                split_start_distance=(split_num - 1) * split_distance_m / distance_scale_factor,
+                split_end_distance=target_unscaled,
+                start=start,
+                end=end,
             )
             if split_data is not None:
                 splits.append(split_data)
 
             split_num += 1
-            split_start_idx = split_end_idx
+            split_start_idx = split_end_idx - 1
+            start = end
 
         return splits

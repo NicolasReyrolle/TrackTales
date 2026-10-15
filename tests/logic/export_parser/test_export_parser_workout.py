@@ -814,9 +814,7 @@ class TestProcessWorkoutActivityChildren:
                 "endDate": "2024-01-01 10:02:00 +0000",
             },
         )
-        route_elem.append(
-            Element("FileReference", attrib={"path": "/workout-routes/activity.gpx"})
-        )
+        route_elem.append(Element("FileReference", attrib={"path": "/workout-routes/activity.gpx"}))
         activity = Element("WorkoutActivity")
         activity.append(route_elem)
 

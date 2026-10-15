@@ -301,3 +301,20 @@ class TestExtractHealthDataRecord:
         assert record_data["type"] == "RestingHeartRate"
         assert record_data["value"] == 58
         assert record_data["startDate"] == "2022-01-17 06:00:00 +0100"
+
+    def test_extract_health_data_record_hk_prefixed_non_metadata_key(self) -> None:
+        """HK-prefixed key that is not HKMetadataKey should strip only the HK prefix."""
+        elem = Element(
+            "Record",
+            attrib={"type": "HKQuantityTypeIdentifierHeartRate", "value": "70"},
+        )
+        metadata = Element("MetadataEntry")
+        metadata.set("key", "HKHeartRateMotionContext")
+        metadata.set("value", "2")
+        elem.append(metadata)
+
+        parser = ep.ExportParser()
+        _, record_data = parser._extract_health_data_record(elem)  # type: ignore[misc]
+
+        assert "HeartRateMotionContext" in record_data
+        assert record_data["HeartRateMotionContext"] == 2

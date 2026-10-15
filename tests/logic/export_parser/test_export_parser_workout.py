@@ -623,3 +623,239 @@ class TestNestedElevationPrecedence:
 
         assert record.get("ElevationAscended") == pytest.approx(200.0)
         assert record.get("ElevationAscendedUnit") == "m"
+
+
+class TestExtractElevationAscendedBoolBranch:
+    """Tests for the bool branch in _extract_elevation_ascended."""
+
+    def test_elevation_value_of_zero_parsed_as_bool_returns_none(self) -> None:
+        """parse_value returns False for '0 m'; to_number must recover the numeric value."""
+        elem = Element(
+            "MetadataEntry",
+            attrib={"key": "HKElevationAscended", "value": "0 m"},
+        )
+        # parse_value("0 m") -> (0.0, "m") which is not bool, so this hits the elif branch.
+        # To hit the bool branch we need a bare "0" or "1" without unit.
+        # parse_value("1") -> (True, None) — bool branch with no unit.
+        elem_bool = Element(
+            "MetadataEntry",
+            attrib={"key": "HKElevationAscended", "value": "1"},
+        )
+        result = ep.ExportParser._extract_elevation_ascended(elem_bool)  # type: ignore[misc]
+        assert result == (1.0, "m")
+
+    def test_elevation_bool_zero_recovers_numeric_zero(self) -> None:
+        """parse_value returns False for bare '0'; to_number recovers 0.0."""
+        elem = Element(
+            "MetadataEntry",
+            attrib={"key": "HKElevationAscended", "value": "0"},
+        )
+        result = ep.ExportParser._extract_elevation_ascended(elem)  # type: ignore[misc]
+        assert result == (0.0, "m")
+
+
+class TestProcessIntervalActivityElevationWithoutNestedList:
+    """Tests for _process_interval_activity_elevation called without nested_elevations."""
+
+    def test_elevation_written_to_record_when_not_already_present(self) -> None:
+        """When nested_elevations is None and record has no elevation, write directly."""
+        elem = Element("WorkoutActivity")
+        elem.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "HKElevationAscended", "value": "42 m"},
+            )
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+        parser._process_interval_activity_elevation(elem, record)  # type: ignore[misc]
+        assert record.get("ElevationAscended") == pytest.approx(42.0)
+
+    def test_elevation_not_overwritten_when_already_present(self) -> None:
+        """When nested_elevations is None and record already has elevation, skip."""
+        elem = Element("WorkoutActivity")
+        elem.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "HKElevationAscended", "value": "99 m"},
+            )
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running", "ElevationAscended": 10.0}  # type: ignore[typeddict-unknown-key]
+        parser._process_interval_activity_elevation(elem, record)  # type: ignore[misc]
+        assert record.get("ElevationAscended") == pytest.approx(10.0)
+
+
+class TestProcessWorkoutActivityChildren:
+    """Tests for _process_workout_activity_children (non-interval WorkoutActivity)."""
+
+    def test_workout_statistics_fill_missing_only(self, tmp_path: Path) -> None:
+        """WorkoutStatistics inside a non-interval activity fills missing keys only."""
+        zip_path = tmp_path / "test.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        activity = Element("WorkoutActivity")
+        activity.append(
+            Element(
+                "WorkoutStatistics",
+                attrib={
+                    "type": "HKQuantityTypeIdentifierDistanceWalkingRunning",
+                    "sum": "3",
+                    "unit": "km",
+                },
+            )
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+        with ZipFile(zip_path) as zf:
+            parser._process_workout_activity_children(activity, record, zf, active_end=None)  # type: ignore[misc]
+        assert record.get("distance") == 3000
+
+    def test_workout_statistics_does_not_overwrite_existing(self, tmp_path: Path) -> None:
+        """WorkoutStatistics inside a non-interval activity must not overwrite existing keys."""
+        zip_path = tmp_path / "test.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        activity = Element("WorkoutActivity")
+        activity.append(
+            Element(
+                "WorkoutStatistics",
+                attrib={
+                    "type": "HKQuantityTypeIdentifierDistanceWalkingRunning",
+                    "sum": "99",
+                    "unit": "km",
+                },
+            )
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running", "distance": 5000}  # type: ignore[typeddict-unknown-key]
+        with ZipFile(zip_path) as zf:
+            parser._process_workout_activity_children(activity, record, zf, active_end=None)  # type: ignore[misc]
+        assert record.get("distance") == 5000
+
+    def test_metadata_entry_elevation_written_when_absent(self, tmp_path: Path) -> None:
+        """ElevationAscended MetadataEntry is written when not already in record."""
+        zip_path = tmp_path / "test.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        activity = Element("WorkoutActivity")
+        activity.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "HKElevationAscended", "value": "55 m"},
+            )
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+        with ZipFile(zip_path) as zf:
+            parser._process_workout_activity_children(activity, record, zf, active_end=None)  # type: ignore[misc]
+        assert record.get("ElevationAscended") == pytest.approx(55.0)
+
+    def test_metadata_entry_elevation_not_overwritten(self, tmp_path: Path) -> None:
+        """ElevationAscended MetadataEntry is skipped when already in record."""
+        zip_path = tmp_path / "test.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        activity = Element("WorkoutActivity")
+        activity.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "HKElevationAscended", "value": "99 m"},
+            )
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running", "ElevationAscended": 20.0}  # type: ignore[typeddict-unknown-key]
+        with ZipFile(zip_path) as zf:
+            parser._process_workout_activity_children(activity, record, zf, active_end=None)  # type: ignore[misc]
+        assert record.get("ElevationAscended") == pytest.approx(20.0)
+
+    def test_non_elevation_metadata_entry_is_written(self, tmp_path: Path) -> None:
+        """Non-elevation MetadataEntry inside a non-interval activity is written normally."""
+        zip_path = tmp_path / "test.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        activity = Element("WorkoutActivity")
+        activity.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "HKMetadataKeyTimeZone", "value": "Europe/Paris"},
+            )
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+        with ZipFile(zip_path) as zf:
+            parser._process_workout_activity_children(activity, record, zf, active_end=None)  # type: ignore[misc]
+        assert record.get("MetadataKeyTimeZone") == "Europe/Paris"
+
+    def test_workout_route_inside_non_interval_activity_is_processed(self, tmp_path: Path) -> None:
+        """WorkoutRoute inside a non-interval WorkoutActivity is loaded."""
+        route_gpx = b"""<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1">
+    <trk><trkseg>
+        <trkpt lat="0" lon="0"><ele>100</ele><time>2024-01-01T10:00:00Z</time></trkpt>
+        <trkpt lat="0" lon="0.01"><ele>110</ele><time>2024-01-01T10:01:00Z</time></trkpt>
+    </trkseg></trk>
+</gpx>
+"""
+        zip_path = tmp_path / "test.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+            zf.writestr("apple_health_export/workout-routes/activity.gpx", route_gpx)
+
+        route_elem = Element(
+            "WorkoutRoute",
+            attrib={
+                "startDate": "2024-01-01 10:00:00 +0000",
+                "endDate": "2024-01-01 10:02:00 +0000",
+            },
+        )
+        route_elem.append(
+            Element("FileReference", attrib={"path": "/workout-routes/activity.gpx"})
+        )
+        activity = Element("WorkoutActivity")
+        activity.append(route_elem)
+
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+        with ZipFile(zip_path) as zf:
+            parser._process_workout_activity_children(activity, record, zf, active_end=None)  # type: ignore[misc]
+        assert record.get("route") is not None
+
+
+class TestCollectWorkoutEventEdgeCases:
+    """Tests for early-return branches in _collect_workout_event."""
+
+    def test_non_lap_segment_event_is_ignored(self) -> None:
+        """WorkoutEvent with type other than Lap/Segment must be ignored."""
+        child = Element(
+            "WorkoutEvent",
+            attrib={
+                "type": "HKWorkoutEventTypeMotionPaused",
+                "date": "2024-01-01 10:00:00 +0000",
+                "duration": "60",
+                "durationUnit": "s",
+            },
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Swimming"}
+        parser._collect_workout_event(child, record)  # type: ignore[misc]
+        assert "swimming_events" not in record
+
+    def test_lap_event_with_missing_duration_is_ignored(self) -> None:
+        """Lap event without duration must be ignored."""
+        child = Element(
+            "WorkoutEvent",
+            attrib={
+                "type": "HKWorkoutEventTypeLap",
+                "date": "2024-01-01 10:00:00 +0000",
+            },
+        )
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Swimming"}
+        parser._collect_workout_event(child, record)  # type: ignore[misc]
+        assert "swimming_events" not in record

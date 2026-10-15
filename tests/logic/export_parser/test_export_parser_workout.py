@@ -630,7 +630,7 @@ class TestExtractElevationAscendedBoolBranch:
 
     def test_elevation_value_of_zero_parsed_as_bool_returns_none(self) -> None:
         """parse_value returns False for '0 m'; to_number must recover the numeric value."""
-        elem = Element(
+        Element(
             "MetadataEntry",
             attrib={"key": "HKElevationAscended", "value": "0 m"},
         )

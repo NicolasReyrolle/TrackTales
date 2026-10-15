@@ -1,7 +1,6 @@
 """Export processor for Apple Health data."""
 
 import logging
-from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from collections.abc import Callable
 from datetime import datetime
@@ -19,36 +18,36 @@ from lxml.etree import (
 )
 
 from logic.constants import PANDAS_ISO8601_FORMAT
+from logic.gpx_loader import (
+    _SAFE_ITERPARSE_OPTIONS,
+    GpxLoader,
+    _create_route_point,
+    _extract_gpx_point_data,
+    _purge_element,
+    clip_route_to_window,
+    get_or_init_route_parts,
+    merge_route_parts,
+    trim_overlapping_route_part,
+)
 from logic.models import WorkoutRecord
 from logic.parsed_health_data import ParsedHealthData
-from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
-from units import METERS_TO_MILES
+from logic.value_parser import (
+    duration_to_seconds,
+    parse_metadata_value,
+    parse_value,
+    str_distance_to_meters,
+    to_number,
+)
+from logic.workout_manager.workout_route import WorkoutRoute
 
 _logger = logging.getLogger(__name__)
 
-# Configuration constants
-WORKOUT_PROGRESS_INTERVAL = 100  # Report progress every N workouts
+WORKOUT_PROGRESS_INTERVAL = 100
 DATETIME64_NS_DTYPE = "datetime64[ns]"
 
-# Only parse record types that the application currently supports to limit memory usage.
 SUPPORTED_RECORD_TYPES = frozenset(
     {"HeartRate", "RestingHeartRate", "BodyMass", "VO2Max", "RunningPower"}
 )
-
-_GPX_NAMESPACE = "http://www.topografix.com/GPX/1/1"  # noqa: S5332
-
-# lxml's iterparse builds its own parser from these options; they preserve anti-XXE protections.
-_SAFE_ITERPARSE_OPTIONS: dict[str, Any] = {"resolve_entities": False, "no_network": True}
-
-
-def _purge_element(elem: Element) -> None:
-    """Release a processed element and its already-seen siblings to keep memory low."""
-    elem.clear()
-    parent = elem.getparent()
-    if parent is None:
-        return
-    while elem.getprevious() is not None:
-        del parent[0]
 
 
 class ExportParser:
@@ -56,7 +55,12 @@ class ExportParser:
 
     def __init__(self, progress_callback: Callable[[str], None] | None = None) -> None:
         self.progress_callback = progress_callback
-        self._route_cache: dict[str, WorkoutRoute | None] = {}
+        self._gpx_loader = GpxLoader()
+
+    # Keep _route_cache as a property for any external code that may reference it
+    @property
+    def _route_cache(self) -> dict[str, WorkoutRoute | None]:
+        return self._gpx_loader._route_cache
 
     def __enter__(self) -> "ExportParser":
         return self
@@ -67,131 +71,65 @@ class ExportParser:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        # Nothing to do for now
         pass
+
+    # --- Delegated static helpers (kept as static methods for backward compatibility) ---
 
     @staticmethod
     def to_number(raw: str | None) -> float | int | None:
-        """Convert a string to a number (int or float), or return None if conversion fails."""
-        if raw is None:
-            return None
-        try:
-            value = float(raw)
-            return int(value) if value.is_integer() else value
-        except ValueError:
-            return None
+        return to_number(raw)
 
     @staticmethod
     def parse_metadata_value(raw_value: str | None) -> tuple[Any, str | None]:
-        """
-        Parse a metadata entry value without boolean coercion.
-
-        Unlike _parse_value, numeric values "0" and "1" are returned as integers,
-        not booleans. This is needed for enumerated metadata fields such as
-        HeartRateMotionContext (0/1/2).
-
-        Returns: (value, unit) where unit is None when no unit is present.
-        """
-        if not raw_value:
-            return None, None
-
-        raw_value = raw_value.strip()
-
-        parts = raw_value.split(maxsplit=1)
-        if len(parts) == 1:
-            num = ExportParser.to_number(parts[0])
-            if num is not None:
-                return num, None
-            return parts[0], None
-
-        num = ExportParser.to_number(parts[0])
-        if num is not None:
-            unit = parts[1].strip() or None
-            return float(num), unit
-        return raw_value, None
+        return parse_metadata_value(raw_value)
 
     @staticmethod
     def _parse_value(raw_value: str | None) -> tuple[Any, str | None]:
-        """
-        Internal helper: Separates value and unit, converts to standard metric system.
-
-        Specific rules:
-        - Number without unit (0 or 1) -> Boolean (False/True)
-        - Number without unit (other) -> Float
-        - String (not a number) -> String
-        - "Value Unit" -> Converted Float + Unit
-
-        Returns: (value, unit) or (None, None)
-        """
-        # Check if value is empty or None
-        if not raw_value:
-            return None, None
-
-        # CASE A: No unit detected (No space)
-        if " " not in raw_value:
-            try:
-                val = float(raw_value)
-
-                # Logic for Booleans (0 or 1 without unit)
-                # We compare with 0 and 1. Note that 0.0 == 0 is True in Python.
-                if val == 0:
-                    return False, None
-                if val == 1:
-                    return True, None
-
-                # Other numbers (e.g. "10", "42.5")
-                return val, None
-
-            except ValueError:
-                # It is not a number, so it is a string (e.g. "Europe/Luxembourg")
-                return raw_value, None
-
-        # CASE B: Value with Unit (contains space)
-        parts = raw_value.split(" ")
-
-        # Handle cases like "String with spaces" that are not numbers
-        # We try to parse the first part as a number. If it fails, treat whole string as text.
-        try:
-            val = float(parts[0])
-        except ValueError:
-            return raw_value, None
-
-        unit = parts[1]
-
-        # --- Unit Conversion Logic ---
-        if unit == "cm":
-            val = val / 100.0
-            unit = "m"
-
-        elif unit == "%":
-            val = val / 100.0
-            unit = "%"
-
-        elif unit == "degF":
-            val = (val - 32) * 5.0 / 9.0
-            unit = "degC"
-
-        return val, unit
+        return parse_value(raw_value)
 
     @staticmethod
     def duration_to_seconds(value: float, unit: str = "min") -> int:
-        """Convert duration to seconds based on the unit."""
-        if unit == "min" or unit == "":
-            return int(value * 60)
-        elif unit == "h":
-            return int(value * 3600)
-        elif unit == "s":
-            return int(value)
-        else:
-            raise ValueError(f"Unknown duration unit: {unit}")
+        return duration_to_seconds(value, unit)
+
+    @staticmethod
+    def str_distance_to_meters(value: str, unit: str | None) -> int:
+        return str_distance_to_meters(value, unit)
+
+    @staticmethod
+    def _extract_gpx_point_data(elem: Element) -> tuple[str, str, str | None, str, float]:
+        return _extract_gpx_point_data(elem)
+
+    @staticmethod
+    def _create_route_point(
+        latitude: str,
+        longitude: str,
+        altitude: str | None,
+        time_str: str,
+        speed_val: float,
+    ) -> Any:
+        return _create_route_point(latitude, longitude, altitude, time_str, speed_val)
+
+    def _load_route(self, zipfile: ZipFile, route_path: str) -> WorkoutRoute | None:
+        return self._gpx_loader._load_route(zipfile, route_path)
+
+    @staticmethod
+    def clip_route_to_window(
+        route: WorkoutRoute,
+        window_start: datetime | None,
+        window_end: datetime | None,
+    ) -> WorkoutRoute:
+        return clip_route_to_window(route, window_start, window_end)
+
+    # --- Progress logging ---
 
     def _log(self, message: str) -> None:
-        """Emit progress message if callback is enabled."""
         if self.progress_callback:
             try:
                 self.progress_callback(message)
             except Exception:
                 _logger.debug(message)
+
+    # --- Workout processing ---
 
     def _process_workout_event(
         self,
@@ -199,7 +137,6 @@ class ExportParser:
         zipfile: ZipFile,
         workout_rows: list[WorkoutRecord],
     ) -> None:
-        """Process a workout element and append the normalized workout record."""
         activity_type = self._extract_activity_type(elem)
         record = self._create_workout_record(elem, activity_type)
         record["xmlFragment"] = tostring(elem, encoding="unicode")
@@ -212,7 +149,6 @@ class ExportParser:
 
     @staticmethod
     def _apply_estimated_elevation(record: WorkoutRecord) -> None:
-        """Fall back to a route-derived elevation gain when the workout has none."""
         if "ElevationAscended" in record:
             return
         route_parts = record.get("route_parts")
@@ -237,11 +173,9 @@ class ExportParser:
         elem: Element,
         record_rows_by_type: dict[str, list[dict[str, Any]]],
     ) -> None:
-        """Process a health record element and store supported record types."""
         result = self._extract_health_data_record(elem)
         if result is None:
             return
-
         record_type, record_data = result
         if record_type in SUPPORTED_RECORD_TYPES:
             record_rows_by_type[record_type].append(record_data)
@@ -251,7 +185,6 @@ class ExportParser:
         workout_rows: list[WorkoutRecord],
         record_rows_by_type: dict[str, list[dict[str, Any]]],
     ) -> ParsedHealthData:
-        """Build ParsedHealthData from parsed row collections."""
         workouts_df = pd.DataFrame(workout_rows)
         records_by_type_df = {
             record_type: pd.DataFrame(rows) for record_type, rows in record_rows_by_type.items()
@@ -259,24 +192,21 @@ class ExportParser:
 
         if len(workouts_df) > 0:
             normalized_start_dates_utc = [
-                self._normalize_health_datetime_to_utc_naive(raw_start_date)
-                for raw_start_date in workouts_df["startDate"].tolist()
+                self._normalize_health_datetime_to_utc_naive(raw)
+                for raw in workouts_df["startDate"].tolist()
             ]
             workouts_df["startDateUtc"] = pd.Series(
                 normalized_start_dates_utc, dtype=DATETIME64_NS_DTYPE
             )
             normalized_end_dates_utc = [
-                self._normalize_health_datetime_to_utc_naive(raw_end_date)
-                for raw_end_date in workouts_df["endDate"].tolist()
+                self._normalize_health_datetime_to_utc_naive(raw)
+                for raw in workouts_df["endDate"].tolist()
             ]
             workouts_df["endDateUtc"] = pd.Series(
                 normalized_end_dates_utc, dtype=DATETIME64_NS_DTYPE
             )
-            # Parse each Apple Health datetime and drop timezone information while
-            # preserving the local wall-clock timestamp.
             normalized_start_dates = [
-                self._normalize_workout_start_date(raw_start_date)
-                for raw_start_date in workouts_df["startDate"].tolist()
+                self._normalize_workout_start_date(raw) for raw in workouts_df["startDate"].tolist()
             ]
             workouts_df["startDate"] = pd.Series(normalized_start_dates, dtype=DATETIME64_NS_DTYPE)
 
@@ -285,18 +215,11 @@ class ExportParser:
 
     @staticmethod
     def _normalize_workout_start_date(raw_start_date: Any) -> datetime | pd.Timestamp | None:
-        """Normalize workout start date to a naive datetime-like value.
-
-        Supports Apple Health timestamps with timezone offsets as well as plain
-        date strings used in tests.
-        """
         if not isinstance(raw_start_date, str):
             return None
-
         parsed_health_dt = ExportParser._parse_health_datetime(raw_start_date)
         if parsed_health_dt is not None:
             return parsed_health_dt.replace(tzinfo=None)
-
         parsed_fallback = pd.to_datetime(
             raw_start_date, format=PANDAS_ISO8601_FORMAT, errors="coerce"
         )
@@ -306,10 +229,8 @@ class ExportParser:
     def _normalize_health_datetime_to_utc_naive(
         raw_datetime: Any,
     ) -> datetime | pd.Timestamp | None:
-        """Normalize an Apple Health datetime to a UTC-based naive datetime."""
         if not isinstance(raw_datetime, str):
             return None
-
         parsed_datetime = pd.to_datetime(
             raw_datetime, format=PANDAS_ISO8601_FORMAT, utc=True, errors="coerce"
         )
@@ -318,7 +239,6 @@ class ExportParser:
         return parsed_datetime.tz_localize(None)
 
     def _load_data(self, zipfile: ZipFile) -> ParsedHealthData:
-        """Load workouts and HealthKit records from the export file into ParsedHealthData."""
         self._log("Loading the workouts...")
 
         with zipfile.open("apple_health_export/export.xml") as export_file:
@@ -345,7 +265,6 @@ class ExportParser:
             return self._build_parsed_health_data(workout_rows, record_rows_by_type)
 
     def _extract_health_data_record(self, elem: Element) -> tuple[str, dict[str, Any]] | None:
-        """Extract and clean health data record from element attributes and metadata."""
         raw_type = elem.get("type")
         if not raw_type:
             return None
@@ -354,9 +273,8 @@ class ExportParser:
             "type": record_type,
             "startDate": elem.get("startDate"),
             "endDate": elem.get("endDate"),
-            "value": self.to_number(elem.get("value")),
+            "value": to_number(elem.get("value")),
         }
-        # Include metadata entries as additional fields
         for child in elem:
             if child.tag == "MetadataEntry":
                 raw_key = child.get("key", "")
@@ -366,25 +284,22 @@ class ExportParser:
                     key = raw_key[2:]
                 else:
                     key = raw_key
-                value, unit = self.parse_metadata_value(child.get("value", ""))
+                value, unit = parse_metadata_value(child.get("value", ""))
                 record_data[key] = value
                 if unit:
                     record_data[f"{key}Unit"] = unit
         return record_type, record_data
 
     def _extract_activity_type(self, elem: Element) -> str:
-        """Extract and clean activity type from workout element."""
-        activity_type_raw = elem.get("workoutActivityType", "")
-        return activity_type_raw.replace("HKWorkoutActivityType", "")
+        return elem.get("workoutActivityType", "").replace("HKWorkoutActivityType", "")
 
     def _create_workout_record(self, elem: Element, activity_type: str) -> WorkoutRecord:
-        """Create base workout record from element attributes."""
         duration_str = elem.get("duration")
         duration_unit_str: str = elem.get("durationUnit") or ""
         return {
             "activityType": activity_type,
             "duration": (
-                self.duration_to_seconds(float(duration_str), duration_unit_str)
+                duration_to_seconds(float(duration_str), duration_unit_str)
                 if duration_str
                 else None
             ),
@@ -401,7 +316,6 @@ class ExportParser:
         last_paused: datetime | None,
         last_resumed: datetime | None,
     ) -> tuple[datetime | None, datetime | None]:
-        """Update motion timestamps based on event type."""
         if event_type == "HKWorkoutEventTypeMotionPaused":
             if last_paused is None or event_date > last_paused:
                 last_paused = event_date
@@ -412,12 +326,7 @@ class ExportParser:
 
     @staticmethod
     def _compute_active_end(elem: Element) -> datetime | None:
-        """Return the last MotionPaused time if it is not followed by a MotionResumed.
-
-        When the user forgets to stop the watch before getting into a vehicle, the GPS
-        keeps recording at vehicle speed after the final pause.  Trimming route points
-        beyond this timestamp prevents impossible best-segment values.
-        """
+        """Return the last MotionPaused time if it is not followed by a MotionResumed."""
         last_paused: datetime | None = None
         last_resumed: datetime | None = None
         for child in elem:
@@ -439,8 +348,9 @@ class ExportParser:
     def _process_workout_children(
         self, elem: Element, record: WorkoutRecord, zipfile: ZipFile
     ) -> None:
-        """Process child elements of workout (statistics and metadata)."""
         active_end = self._compute_active_end(elem)
+        nested_elevations: list[tuple[float, str | None]] = []
+        deferred_interval_routes: list[Element] = []
         for child in elem:
             if child.tag == "WorkoutStatistics":
                 self._process_workout_statistics(child, record)
@@ -450,30 +360,74 @@ class ExportParser:
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
             elif child.tag == "WorkoutActivity":
                 if self._is_interval_activity(child):
-                    self._process_interval_activity_elevation(child, record)
+                    self._process_interval_activity_elevation(
+                        child, record, nested_elevations=nested_elevations
+                    )
+                    deferred_interval_routes.extend(
+                        activity_child
+                        for activity_child in child
+                        if activity_child.tag == "WorkoutRoute"
+                    )
                 else:
                     self._process_workout_activity_children(
-                        child, record, zipfile, active_end=active_end
+                        child,
+                        record,
+                        zipfile,
+                        active_end=active_end,
+                        nested_elevations=nested_elevations,
                     )
             elif child.tag == "WorkoutEvent" and record.get("activityType") == "Swimming":
                 self._collect_workout_event(child, record)
 
-    def _process_interval_activity_elevation(self, elem: Element, record: WorkoutRecord) -> None:
-        """Retain workout elevation metadata while skipping overlapping interval data."""
+        if record.get("route") is None:
+            for route in deferred_interval_routes:
+                self._process_workout_route(route, record, zipfile, active_end=active_end)
+
+        self._apply_nested_elevation_fallback(record, nested_elevations)
+
+    @staticmethod
+    def _extract_elevation_ascended(child: Element) -> tuple[float, str | None] | None:
+        if (
+            child.tag == "MetadataEntry"
+            and child.get("key", "").replace("HK", "") == "ElevationAscended"
+        ):
+            raw_val = child.get("value", "")
+            value, unit = parse_value(raw_val)
+            if isinstance(value, bool):
+                num = to_number(raw_val)
+                if num is not None:
+                    return float(num), unit or "m"
+            elif isinstance(value, (int, float)):
+                return float(value), unit or "m"
+        return None
+
+    @staticmethod
+    def _apply_nested_elevation_fallback(
+        record: WorkoutRecord, nested_elevations: list[tuple[float, str | None]]
+    ) -> None:
+        if "ElevationAscended" in record or not nested_elevations:
+            return
+        total_gain = round(sum(val for val, _ in nested_elevations), 4)
+        unit = next((u for _, u in nested_elevations if u), "m")
+        record["ElevationAscended"] = total_gain  # type: ignore[typeddict-unknown-key]
+        if unit:
+            record["ElevationAscendedUnit"] = unit  # type: ignore[typeddict-unknown-key]
+
+    def _process_interval_activity_elevation(
+        self,
+        elem: Element,
+        record: WorkoutRecord,
+        nested_elevations: list[tuple[float, str | None]] | None = None,
+    ) -> None:
         for child in elem:
-            if (
-                child.tag == "MetadataEntry"
-                and child.get("key", "").replace("HK", "") == "ElevationAscended"
-            ):
-                self._process_metadata_entry(child, record)
+            if (elev := self._extract_elevation_ascended(child)) is not None:
+                if nested_elevations is not None:
+                    nested_elevations.append(elev)
+                elif "ElevationAscended" not in record:
+                    self._process_metadata_entry(child, record)
 
     @staticmethod
     def _is_interval_activity(elem: Element) -> bool:
-        """Return True for nested interval WorkoutActivity blocks of custom workouts.
-
-        These overlap in time with the main activity and would double-count
-        distance and route points.
-        """
         return any(
             child.tag == "MetadataEntry"
             and child.get("key", "").replace("HK", "") == "WOIntervalStepKeyPath"
@@ -481,36 +435,30 @@ class ExportParser:
         )
 
     def _process_workout_activity_children(
-        self, elem: Element, record: WorkoutRecord, zipfile: ZipFile, *, active_end: datetime | None
+        self,
+        elem: Element,
+        record: WorkoutRecord,
+        zipfile: ZipFile,
+        *,
+        active_end: datetime | None,
+        nested_elevations: list[tuple[float, str | None]] | None = None,
     ) -> None:
-        """Process children of a WorkoutActivity element.
-
-        Only fills keys not already present in the record so that top-level Workout
-        statistics/metadata take precedence over WorkoutActivity values when both exist.
-        The active_end computed from the parent Workout is reused to avoid an extra pass.
-        """
         for child in elem:
             if child.tag == "WorkoutStatistics":
                 self._process_workout_statistics(child, record, fill_missing_only=True)
             elif child.tag == "MetadataEntry":
-                self._process_metadata_entry(child, record)  # already skips duplicates
+                if (elev := self._extract_elevation_ascended(child)) is not None:
+                    if nested_elevations is not None:
+                        nested_elevations.append(elev)
+                    elif "ElevationAscended" not in record:
+                        self._process_metadata_entry(child, record)
+                else:
+                    self._process_metadata_entry(child, record)
             elif child.tag == "WorkoutRoute":
                 self._process_workout_route(child, record, zipfile, active_end=active_end)
 
     @staticmethod
     def _parse_swim_event_metadata(child: Element) -> dict[str, Any]:
-        """Parse MetadataEntry children of a WorkoutEvent into a metadata dict.
-
-        Extracts ``SWOLFScore`` (as float) and ``SwimmingStrokeStyle`` (as int)
-        from ``MetadataEntry`` sub-elements.  All other tags are ignored.
-
-        Args:
-            child: The ``WorkoutEvent`` XML element whose children to parse.
-
-        Returns:
-            Dict with zero or more of ``"swolf"`` (float) and
-            ``"stroke_style"`` (int) keys.
-        """
         extra: dict[str, Any] = {}
         for meta in child:
             if meta.tag != "MetadataEntry":
@@ -523,33 +471,16 @@ class ExportParser:
                 except ValueError:
                     pass
             elif key == "SwimmingStrokeStyle":
-                num = ExportParser.to_number(raw_val)
+                num = to_number(raw_val)
                 if num is not None:
                     extra["stroke_style"] = int(num)
         return extra
 
     def _collect_workout_event(self, child: Element, record: WorkoutRecord) -> None:
-        """Collect a WorkoutEvent element into the record's ``swimming_events`` list.
-
-        Captures ``HKWorkoutEventTypeLap`` and ``HKWorkoutEventTypeSegment`` events
-        with their duration, start date, and any per-event metadata (stroke style,
-        SWOLF score).  The data is appended to ``record["swimming_events"]``.
-
-        Other event types (e.g. ``HKWorkoutEventTypeMotionPaused``) are ignored
-        because they are already handled by :meth:`_compute_active_end`.
-
-        Args:
-            child:  The ``WorkoutEvent`` XML element.
-            record: The workout record being built; modified in-place.
-        """
         raw_type = child.get("type", "")
-        if raw_type not in (
-            "HKWorkoutEventTypeLap",
-            "HKWorkoutEventTypeSegment",
-        ):
+        if raw_type not in ("HKWorkoutEventTypeLap", "HKWorkoutEventTypeSegment"):
             return
 
-        event_type = raw_type.replace("HKWorkoutEventType", "")
         date_str = child.get("date")
         duration_str = child.get("duration")
         duration_unit = child.get("durationUnit", "")
@@ -557,11 +488,10 @@ class ExportParser:
         if not date_str or not duration_str:
             return
 
-        duration_s = self.duration_to_seconds(float(duration_str), duration_unit)
         event: dict[str, Any] = {
-            "type": event_type,
+            "type": raw_type.replace("HKWorkoutEventType", ""),
             "start_date": date_str,
-            "duration_s": duration_s,
+            "duration_s": duration_to_seconds(float(duration_str), duration_unit),
             **self._parse_swim_event_metadata(child),
         }
 
@@ -572,29 +502,14 @@ class ExportParser:
             record["swimming_events"] = [event]  # type: ignore[literal-required]
 
     @staticmethod
-    def str_distance_to_meters(value: str, unit: str | None) -> int:
-        """Convert distance to meters."""
-        if unit is None:
-            raise ValueError("Distance unit is missing (None). Cannot convert to meters.")
-        if unit == "km":
-            return int(float(value) * 1000)
-        if unit == "m":
-            return int(float(value))
-        if unit == "mi":
-            return int(float(value) / METERS_TO_MILES)
-        raise ValueError(f"Unknown distance unit: {unit}")
-
-    @staticmethod
     def _process_distance_stat(
         record: WorkoutRecord,
         stat_attr_str: str,
         unit: str | None,
         fill_missing_only: bool,
     ) -> None:
-        """Process distance statistic (consolidates all distance types into the `distance`
-        field)."""
         if not fill_missing_only or "distance" not in record:
-            record["distance"] = ExportParser.str_distance_to_meters(stat_attr_str, unit)
+            record["distance"] = str_distance_to_meters(stat_attr_str, unit)
 
     @staticmethod
     def _process_non_distance_stat(
@@ -605,7 +520,6 @@ class ExportParser:
         unit: str | None,
         fill_missing_only: bool,
     ) -> None:
-        """Process non-distance statistic."""
         key = f"{stat_attr}{stat_type}"
         if not fill_missing_only or key not in record:
             record[key] = float(stat_attr_str)  # type: ignore[literal-required]
@@ -614,18 +528,12 @@ class ExportParser:
     def _process_workout_statistics(
         self, child: Element, record: WorkoutRecord, *, fill_missing_only: bool = False
     ) -> None:
-        """Process workout statistics child element.
-
-        When fill_missing_only is True, only populate keys that are not already present
-        in the record so that top-level Workout values take precedence.
-        """
         stat_type = child.get("type", "").replace("HKQuantityTypeIdentifier", "")
         unit = child.get("unit")
 
         for stat_attr in ["sum", "average", "minimum", "maximum"]:
             if child.get(stat_attr):
                 stat_attr_str = child.get(stat_attr) or "0"
-                # Consolidate all distance types into a single Distance field
                 if stat_attr == "sum" and "Distance" in stat_type:
                     self._process_distance_stat(record, stat_attr_str, unit, fill_missing_only)
                 else:
@@ -633,82 +541,69 @@ class ExportParser:
                         record, stat_attr, stat_type, stat_attr_str, unit, fill_missing_only
                     )
 
-    @staticmethod
-    def _parse_gpx_speed(ext_elem: Element | None) -> float:
-        """Extract speed value from GPX extensions element."""
-        if ext_elem is None:
-            return 0.0
-        speed_elem = ext_elem.find(f"{{{_GPX_NAMESPACE}}}speed")
-        if speed_elem is None or not speed_elem.text:
-            return 0.0
-        try:
-            return float(speed_elem.text)
-        except ValueError:
-            return 0.0
+    def _process_metadata_entry(self, child: Element, record: WorkoutRecord) -> None:
+        key = child.get("key", "").replace("HK", "")
+        if key == "WOIntervalStepKeyPath":
+            return
+        value, unit = parse_value(child.get("value", ""))
+        if key in record:
+            logging.debug("Duplicate key '%s' found, bypassing the second one", key)
+        else:
+            record[key] = value  # type: ignore[literal-required]
+            if unit:
+                record[f"{key}Unit"] = unit  # type: ignore[literal-required]
 
-    @staticmethod
-    def _extract_gpx_point_data(elem: Element) -> tuple[str, str, str | None, str, float]:
-        """Extract coordinate and metadata from a GPX trackpoint element."""
-        latitude = elem.get("lat") or ""
-        longitude = elem.get("lon") or ""
-        if not latitude or not longitude:
-            _logger.debug(
-                "Skipping GPX trackpoint with missing latitude/longitude: %s", elem.attrib
-            )
-
-        ele_elem = elem.find(f"{{{_GPX_NAMESPACE}}}ele")
-        time_elem = elem.find(f"{{{_GPX_NAMESPACE}}}time")
-
-        altitude = ele_elem.text if ele_elem is not None else None
-        time_str = (time_elem.text or "") if time_elem is not None else ""
-
-        ext_elem = elem.find(f"{{{_GPX_NAMESPACE}}}extensions")
-        speed_val = ExportParser._parse_gpx_speed(ext_elem)
-
-        return latitude, longitude, altitude, time_str, speed_val
-
-    @staticmethod
-    def _create_route_point(
-        latitude: str, longitude: str, altitude: str | None, time_str: str, speed_val: float
-    ) -> RoutePoint:
-        """Create a RoutePoint from extracted GPX data."""
-        return RoutePoint(
-            time=datetime.fromisoformat(time_str.replace("Z", "+00:00")),
-            latitude=float(latitude),
-            longitude=float(longitude),
-            altitude=float(altitude) if altitude is not None else 0.0,
-            altitude_available=altitude is not None,
-            speed=speed_val,
+    def _process_workout_route(
+        self,
+        elem: Element,
+        record: WorkoutRecord,
+        zipfile: ZipFile,
+        active_end: datetime | None = None,
+    ) -> None:
+        route_path = next(
+            (child.get("path") for child in elem if child.tag == "FileReference"), None
         )
+        if not route_path:
+            return
 
-    def _load_route(self, zipfile: ZipFile, route_path: str) -> WorkoutRoute | None:
-        """Load GPX route file from the export zip."""
-        try:
-            with zipfile.open(f"apple_health_export{route_path}") as route_file:
-                points: list[RoutePoint] = []
-                for _, elem in iterparse(
-                    route_file,
-                    events=("end",),
-                    tag=f"{{{_GPX_NAMESPACE}}}trkpt",
-                    **_SAFE_ITERPARSE_OPTIONS,
-                ):
-                    point_data = self._extract_gpx_point_data(elem)
-                    try:
-                        points.append(self._create_route_point(*point_data))
-                    except (TypeError, ValueError) as exc:
-                        # Missing lat/lon is already reported in _extract_gpx_point_data.
-                        if point_data[0] and point_data[1]:
-                            _logger.debug(
-                                "Skipping malformed GPX trackpoint for %s (error: %s): %s",
-                                route_path,
-                                exc,
-                                elem.attrib,
-                            )
-                    _purge_element(elem)
-                return WorkoutRoute(points=points)
-        except KeyError:
-            self._log(f"Route file not found in export: {route_path}")
-            return None
+        route_source = self._gpx_loader.load_route_cached(zipfile, route_path)
+        if route_source is None:
+            return
+
+        window_start = self._parse_health_datetime(elem.get("startDate"))
+        window_end = self._parse_health_datetime(elem.get("endDate"))
+        if active_end is not None and window_end is not None:  # type: ignore[redundant-expr]
+            window_end = min(window_end, active_end)
+        route_part = clip_route_to_window(route_source, window_start, window_end)
+
+        if not route_part.points:
+            self._log(
+                "Skipping WorkoutRoute window without GPX points: "
+                f"{elem.get('startDate')} -> {elem.get('endDate')} ({route_path})"
+            )
+            return
+
+        route_parts = get_or_init_route_parts(record)
+        trimmed_part = trim_overlapping_route_part(route_parts, route_part)
+        if trimmed_part is None:
+            self._log(
+                "Skipping duplicate WorkoutRoute window: "
+                f"{elem.get('startDate')} -> {elem.get('endDate')} ({route_path})"
+            )
+            return
+        if len(trimmed_part.points) < len(route_part.points):
+            _logger.debug(
+                "Trimmed %d overlapping points from WorkoutRoute window: %s -> %s (%s)",
+                len(route_part.points) - len(trimmed_part.points),
+                elem.get("startDate"),
+                elem.get("endDate"),
+                route_path,
+            )
+        route_parts.append(trimmed_part)
+
+        merged_route = merge_route_parts(route_parts)
+        if merged_route is not None:
+            record["route"] = merged_route
 
     @staticmethod
     def _parse_health_datetime(raw: str | None) -> datetime | None:
@@ -720,183 +615,26 @@ class ExportParser:
         except ValueError:
             return None
 
-    def _load_route_cached(self, zipfile: ZipFile, route_path: str) -> WorkoutRoute | None:
-        """Load GPX route once per file path for the current export parsing session."""
-        if route_path not in self._route_cache:
-            self._route_cache[route_path] = self._load_route(zipfile, route_path)
-        return self._route_cache[route_path]
-
-    @staticmethod
-    def clip_route_to_window(
-        route: WorkoutRoute,
-        window_start: datetime | None,
-        window_end: datetime | None,
-    ) -> WorkoutRoute:
-        """Return route points clipped to WorkoutRoute time window.
-
-        Apple Health exports can reference the same GPX file from multiple adjacent
-        WorkoutRoute entries. We must keep only points that belong to the current
-        window to avoid creating artificial cross-window traces.
-
-        Uses binary search on the cached sorted-times list for O(log n) clipping instead
-        of an O(n) linear scan, which matters when the same cached GPX route is clipped
-        many times across a large export. Falls back to a linear scan if route times
-        are not monotonic.
-        """
-        if window_start is None or window_end is None:
-            return WorkoutRoute(points=list(route.points))
-
-        times = route.sorted_times()
-        if not times:
-            return WorkoutRoute(points=[])
-
-        try:
-            is_monotonic = all(t1 <= t2 for t1, t2 in zip(times, times[1:]))
-        except TypeError:
-            _logger.debug("Non-comparable route times encountered; falling back to linear clipping")
-            is_monotonic = False
-
-        if is_monotonic:
-            left = bisect_left(times, window_start)
-            right = bisect_right(times, window_end)
-            return WorkoutRoute(points=route.points[left:right])
-
-        # Fallback: linear scan for routes with non-monotonic or invalid times.
-        clipped_points: list[RoutePoint] = [
-            point
-            for point in route.points
-            if point.time is not None  # type: ignore[redundant-expr]
-            and window_start <= point.time <= window_end
-        ]
-        return WorkoutRoute(points=clipped_points)
-
-    @staticmethod
-    def _should_skip_merged_point(last_point: RoutePoint | None, point: RoutePoint) -> bool:
-        """Return whether a point should be skipped while merging route parts."""
-        if last_point is None:
-            return False
-
-        if point.time < last_point.time:
-            # Avoid re-introducing overlap before the previous window end.
-            _logger.debug(
-                "Skipping overlapping GPX point during route merge: %s < %s",
-                point.time,
-                last_point.time,
-            )
-            return True
-
-        if point == last_point:
-            # De-duplicate exact boundary points across adjacent windows.
-            return True
-
-        return False
-
+    # Keep these as static methods for backward compatibility with tests
     @staticmethod
     def _merge_route_parts(route_parts: list[WorkoutRoute]) -> WorkoutRoute | None:
-        """Merge route parts as a compatibility route while preserving part boundaries.
+        return merge_route_parts(route_parts)
 
-        Use ``route_parts`` for analytics. The merged ``route`` field remains available
-        for legacy consumers that expect a single route object.
-        """
-        if not route_parts:
-            return None
+    @staticmethod
+    def _trim_overlapping_route_part(
+        existing_parts: list[WorkoutRoute],
+        route_part: WorkoutRoute,
+    ) -> WorkoutRoute | None:
+        return trim_overlapping_route_part(existing_parts, route_part)
 
-        merged_points: list[RoutePoint] = []
-        for route_part in route_parts:
-            for point in route_part.points:
-                last_point = merged_points[-1] if merged_points else None
-                if ExportParser._should_skip_merged_point(last_point, point):
-                    continue
-                merged_points.append(point)
-
-        return WorkoutRoute(points=merged_points) if merged_points else None
-
-    def _process_workout_route(
-        self,
-        elem: Element,
-        record: WorkoutRecord,
-        zipfile: ZipFile,
-        active_end: datetime | None = None,
-    ) -> None:
-        """Process one WorkoutRoute XML block as an independent time window.
-
-        Behavior is intentionally window-based to prevent unrealistic best-segment
-        calculations when adjacent windows reuse GPX files or when a window has no
-        matching GPX points.
-
-        ``active_end`` clips the window end to the last unpaired MotionPaused event,
-        which prevents vehicle-speed GPS points recorded after forgetting to stop the
-        watch from influencing best-segment calculations.
-        """
-        route_path: str | None = None
-        for child in elem:
-            if child.tag == "FileReference":
-                route_path = child.get("path")
-
-        if not route_path:
-            return
-
-        route_source = self._load_route_cached(zipfile, route_path)
-        if route_source is None:
-            return
-
-        window_start = self._parse_health_datetime(elem.get("startDate"))
-        window_end = self._parse_health_datetime(elem.get("endDate"))
-        if active_end is not None and window_end is not None:  # type: ignore[redundant-expr]
-            window_end = min(window_end, active_end)
-        route_part = self.clip_route_to_window(route_source, window_start, window_end)
-
-        if not route_part.points:
-            self._log(
-                "Skipping WorkoutRoute window without GPX points: "
-                f"{elem.get('startDate')} -> {elem.get('endDate')} ({route_path})"
-            )
-            return
-
-        existing_parts = record.get("route_parts")
-        route_parts: list[WorkoutRoute]
-        if isinstance(existing_parts, list) and all(
-            isinstance(existing_part, WorkoutRoute) for existing_part in existing_parts
-        ):
-            route_parts = existing_parts
-        else:
-            route_parts = []
-            if isinstance(existing_parts, list):
-                route_parts = [
-                    existing_part
-                    for existing_part in existing_parts
-                    if isinstance(existing_part, WorkoutRoute)
-                ]
-            record["route_parts"] = route_parts
-        route_parts.append(route_part)
-
-        merged_route = self._merge_route_parts(route_parts)
-        if merged_route is not None:
-            record["route"] = merged_route
-
-    def _process_metadata_entry(self, child: Element, record: WorkoutRecord) -> None:
-        """Process metadata entry child element."""
-        key = child.get("key", "").replace("HK", "")
-
-        # Skip keys that have no meaning for analysis
-        if key == "WOIntervalStepKeyPath":
-            return
-
-        value, unit = self._parse_value(child.get("value", ""))
-
-        # If the key already exists, do not consider it as there can be duplicate in the real file
-        if key in record:
-            logging.debug("Duplicate key '%s' found, bypassing the second one", key)
-        else:
-            record[key] = value  # type: ignore[literal-required]
-            if unit:
-                record[f"{key}Unit"] = unit  # type: ignore[literal-required]
+    @staticmethod
+    def _get_or_init_route_parts(record: WorkoutRecord) -> list[WorkoutRoute]:
+        return get_or_init_route_parts(record)
 
     def parse(self, export_file: str) -> ParsedHealthData:
         """Parse the export file."""
-
         try:
-            self._route_cache.clear()
+            self._gpx_loader.clear_cache()
             self._log("Starting to parse the Apple Health export file...")
             with ZipFile(export_file, "r") as zipfile:
                 result = self._load_data(zipfile)

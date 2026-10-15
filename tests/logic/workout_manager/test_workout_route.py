@@ -499,6 +499,27 @@ class TestComputeSplits:
                 float(split["duration_s"]), rel=0.01
             )
 
+    def test_heart_rate_averages_use_samples_within_split_boundaries(self) -> None:
+        """A split should not include heart-rate samples from before its distance boundary."""
+        start = datetime.fromisoformat("2024-01-01T10:00:00Z".replace("Z", "+00:00"))
+        points = [
+            RoutePoint(
+                time=start + timedelta(seconds=index * 250),
+                latitude=0.0,
+                longitude=index * 0.0045,
+                altitude=0.0,
+                speed=2.0,
+                heart_rate=float(100 + index * 100),
+            )
+            for index in range(5)
+        ]
+
+        splits = WorkoutRoute(points=points).compute_splits(split_distance_m=1000.0)
+
+        assert len(splits) == 2
+        assert splits[0]["avg_heart_rate"] == pytest.approx(200.0)
+        assert splits[1]["avg_heart_rate"] == pytest.approx(400.0)
+
     def test_scale_factor_changes_split_count(self) -> None:
         """A distance_scale_factor > 1 should reduce the number of splits (shorter route)."""
         route = self._speed_route(num_points=3001, seconds_per_point=1.0, speed_m_s=3.0)
@@ -561,8 +582,10 @@ class TestComputeSplits:
         ]
         route = WorkoutRoute(points=points)
         splits = route.compute_splits(split_distance_m=500.0, distance_scale_factor=2.0)
-        # Two complete splits are found; the third iteration hits the boundary guard.
-        assert len(splits) == 2
+        # Split boundaries are interpolated, so several splits may fall within one segment:
+        # 1000 m route x 2.0 scale = 2000 m -> four complete 500 m splits.
+        assert len(splits) == 4
+        assert [round(split["duration_s"]) for split in splits] == [250, 250, 125, 125]
 
 
 # ---------------------------------------------------------------------------

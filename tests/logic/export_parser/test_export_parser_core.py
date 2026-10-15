@@ -25,6 +25,26 @@ class TestExportParser:
             # If file doesn't exist or is invalid, that's okay for this test
             pass
 
+    def test_route_cache_property_delegates_to_gpx_loader(self) -> None:
+        """_route_cache property should return the underlying GpxLoader cache."""
+        parser = ep.ExportParser()
+        assert parser._route_cache is parser._gpx_loader._route_cache  # noqa: PLC0123
+
+    def test_context_manager_exit_with_exception_does_not_suppress(self) -> None:
+        """__exit__ should not suppress exceptions raised inside the with block."""
+        parser = ep.ExportParser()
+        with pytest.raises(ValueError, match="test error"):
+            with parser:
+                raise ValueError("test error")
+
+    def test_parse_error_is_logged_and_reraised(self) -> None:
+        """parse() should log the error message and re-raise the exception."""
+        messages: list[str] = []
+        parser = ep.ExportParser(progress_callback=messages.append)
+        with pytest.raises(FileNotFoundError):
+            parser.parse("nonexistent_file.zip")
+        assert any("Error during parsing" in m for m in messages)
+
 
 class TestLoadWorkouts:
     """Test the _load_workouts method."""
@@ -232,6 +252,48 @@ class TestLoadWorkouts:
         assert len(best_segments) == 1
         assert best_segments.iloc[0]["duration_s"] == pytest.approx(297, abs=1)
 
+    def test_interval_activity_route_is_fallback_when_primary_route_missing(
+        self, tmp_path: Path
+    ) -> None:
+        """Keep interval route data when the workout has no primary route."""
+        zip_path = tmp_path / "interval_route_only_export.zip"
+        xml_content = b"""<?xml version="1.0" encoding="UTF-8"?>
+<HealthData>
+    <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+        startDate="2024-01-01 10:00:00 +0000"
+        endDate="2024-01-01 10:02:00 +0000" duration="2" durationUnit="min">
+        <WorkoutActivity startDate="2024-01-01 10:00:00 +0000"
+            endDate="2024-01-01 10:02:00 +0000">
+            <MetadataEntry key="WOIntervalStepKeyPath" value="0.0.0"/>
+            <WorkoutRoute startDate="2024-01-01 10:00:00 +0000"
+                endDate="2024-01-01 10:02:00 +0000">
+                <FileReference path="/workout-routes/interval.gpx"/>
+            </WorkoutRoute>
+        </WorkoutActivity>
+    </Workout>
+</HealthData>
+"""
+        route_gpx = b"""<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1">
+    <trk><trkseg>
+        <trkpt lat="0" lon="0"><ele>100</ele><time>2024-01-01T10:00:00Z</time></trkpt>
+        <trkpt lat="0" lon="0.01"><ele>110</ele><time>2024-01-01T10:01:00Z</time></trkpt>
+    </trkseg></trk>
+</gpx>
+"""
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", xml_content)
+            zf.writestr("apple_health_export/workout-routes/interval.gpx", route_gpx)
+
+        parser = ep.ExportParser()
+        with parser:
+            parsed = parser.parse(str(zip_path))
+
+        workout = parsed.workouts.iloc[0]
+        assert workout["route"] is not None
+        assert len(workout["route_parts"]) == 1
+        assert workout["route"].points[-1].longitude == pytest.approx(0.01)
+
 
 class TestDurationToSeconds:
     """Test the duration_to_seconds static method."""
@@ -308,6 +370,16 @@ class TestNormalizeWorkoutStartDate:
         assert ep.ExportParser._normalize_workout_start_date(None) is None  # type: ignore[misc]
         assert ep.ExportParser._normalize_workout_start_date(123) is None  # type: ignore[misc]
 
+    def test_normalize_workout_start_date_pandas_fallback(self) -> None:
+        """ISO8601 string not matching Apple Health format falls back to pandas parsing."""
+        result = ep.ExportParser._normalize_workout_start_date("2024-01-15T10:30:00")  # type: ignore[misc]
+        assert result == pd.Timestamp("2024-01-15 10:30:00").to_pydatetime()
+
+    def test_normalize_workout_start_date_unparseable_returns_none(self) -> None:
+        """Completely unparseable string returns None via pandas fallback."""
+        result = ep.ExportParser._normalize_workout_start_date("not-a-date")  # type: ignore[misc]
+        assert result is None
+
 
 class TestNormalizeHealthDatetimeToUtcNaive:
     """Tests for UTC-normalized workout matching timestamps."""
@@ -318,6 +390,12 @@ class TestNormalizeHealthDatetimeToUtcNaive:
         )
 
         assert result == pd.Timestamp("2025-01-02 10:00:00").to_pydatetime()
+
+    def test_normalize_health_datetime_to_utc_naive_non_string_returns_none(self) -> None:
+        assert ep.ExportParser._normalize_health_datetime_to_utc_naive(None) is None  # type: ignore[misc]
+
+    def test_normalize_health_datetime_to_utc_naive_unparseable_returns_none(self) -> None:
+        assert ep.ExportParser._normalize_health_datetime_to_utc_naive("not-a-date") is None  # type: ignore[misc]
 
 
 class TestStrDistanceToMeters:

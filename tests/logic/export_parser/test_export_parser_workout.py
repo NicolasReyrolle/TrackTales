@@ -339,3 +339,287 @@ class TestProcessWorkoutChildren:
 
         # Should only have activityType, unknown element should be ignored
         assert record == {"activityType": "Running"}
+
+
+class TestApplyEstimatedElevation:
+    """Tests for _apply_estimated_elevation branches."""
+
+    def test_skips_when_elevation_already_present(self) -> None:
+        """Does nothing when ElevationAscended is already set."""
+        record: ep.WorkoutRecord = {"activityType": "Running", "ElevationAscended": 50.0}  # type: ignore[typeddict-unknown-key]
+        ep.ExportParser._apply_estimated_elevation(record)  # type: ignore[misc]
+        assert record["ElevationAscended"] == 50.0  # type: ignore[typeddict-item]
+
+    def test_skips_when_no_route_and_no_route_parts(self) -> None:
+        """Does nothing when neither route nor route_parts is present."""
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+        ep.ExportParser._apply_estimated_elevation(record)  # type: ignore[misc]
+        assert "ElevationAscended" not in record
+
+    def test_skips_when_route_is_none(self) -> None:
+        """Does nothing when route key exists but is None."""
+        record: ep.WorkoutRecord = {"activityType": "Running", "route": None}  # type: ignore[typeddict-unknown-key]
+        ep.ExportParser._apply_estimated_elevation(record)  # type: ignore[misc]
+        assert "ElevationAscended" not in record
+
+    def test_sets_elevation_from_single_route(self) -> None:
+        """Sets ElevationAscended from a single route when route_parts is absent."""
+        from datetime import datetime
+
+        from logic.workout_manager.workout_route import RoutePoint, WorkoutRoute
+
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=datetime(2024, 1, 1, 10, 0), latitude=0.0, longitude=0.0, altitude=100.0
+                ),
+                RoutePoint(
+                    time=datetime(2024, 1, 1, 10, 1), latitude=0.0, longitude=0.0, altitude=110.0
+                ),
+            ]
+        )
+        record: ep.WorkoutRecord = {"activityType": "Running", "route": route}  # type: ignore[typeddict-unknown-key]
+        ep.ExportParser._apply_estimated_elevation(record)  # type: ignore[misc]
+        assert "ElevationAscended" in record
+        assert record["ElevationAscendedUnit"] == "m"  # type: ignore[typeddict-item]
+
+    def test_skips_when_all_route_parts_return_none_gain(self) -> None:
+        """Does nothing when route_parts exist but all return None for estimated gain."""
+        from unittest.mock import MagicMock
+
+        from logic.workout_manager.workout_route import WorkoutRoute
+
+        mock_part = MagicMock(spec=WorkoutRoute)
+        mock_part.estimated_elevation_gain_m.return_value = None
+        record: ep.WorkoutRecord = {"activityType": "Running", "route_parts": [mock_part]}  # type: ignore[typeddict-unknown-key]
+        ep.ExportParser._apply_estimated_elevation(record)  # type: ignore[misc]
+        assert "ElevationAscended" not in record
+
+
+class TestUpdateMotionTimestamps:
+    """Tests for _update_motion_timestamps."""
+
+    def test_updates_last_paused_when_none(self) -> None:
+        from datetime import datetime
+
+        dt = datetime(2024, 1, 1, 10, 0)
+        paused, resumed = ep.ExportParser._update_motion_timestamps(  # type: ignore[misc]
+            "HKWorkoutEventTypeMotionPaused", dt, None, None
+        )
+        assert paused == dt
+        assert resumed is None
+
+    def test_updates_last_paused_when_newer(self) -> None:
+        from datetime import datetime
+
+        earlier = datetime(2024, 1, 1, 10, 0)
+        later = datetime(2024, 1, 1, 10, 5)
+        paused, resumed = ep.ExportParser._update_motion_timestamps(  # type: ignore[misc]
+            "HKWorkoutEventTypeMotionPaused", later, earlier, None
+        )
+        assert paused == later
+
+    def test_does_not_update_last_paused_when_older(self) -> None:
+        from datetime import datetime
+
+        earlier = datetime(2024, 1, 1, 10, 0)
+        later = datetime(2024, 1, 1, 10, 5)
+        paused, _ = ep.ExportParser._update_motion_timestamps(  # type: ignore[misc]
+            "HKWorkoutEventTypeMotionPaused", earlier, later, None
+        )
+        assert paused == later
+
+    def test_updates_last_resumed(self) -> None:
+        from datetime import datetime
+
+        dt = datetime(2024, 1, 1, 10, 0)
+        paused, resumed = ep.ExportParser._update_motion_timestamps(  # type: ignore[misc]
+            "HKWorkoutEventTypeMotionResumed", dt, None, None
+        )
+        assert paused is None
+        assert resumed == dt
+
+    def test_ignores_unknown_event_type(self) -> None:
+        from datetime import datetime
+
+        dt = datetime(2024, 1, 1, 10, 0)
+        paused, resumed = ep.ExportParser._update_motion_timestamps(  # type: ignore[misc]
+            "HKWorkoutEventTypeLap", dt, None, None
+        )
+        assert paused is None
+        assert resumed is None
+
+
+class TestNestedElevationPrecedence:
+    """Test precedence and aggregation of nested activity and interval elevations."""
+
+    def test_interval_elevation_deferred_and_overridden_by_later_top_level_elevation(
+        self, tmp_path: Path
+    ) -> None:
+        """Top-level HKElevationAscended after interval activity must take precedence."""
+        zip_path = tmp_path / "test_export.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        workout = Element("Workout")
+        interval = Element("WorkoutActivity")
+        interval.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "WOIntervalStepKeyPath", "value": "0.0.0"},
+            )
+        )
+        interval.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "HKElevationAscended", "value": "25 m"},
+            )
+        )
+        workout.append(interval)
+
+        top_elevation = Element(
+            "MetadataEntry",
+            attrib={"key": "HKElevationAscended", "value": "100 m"},
+        )
+        workout.append(top_elevation)
+
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+
+        with ZipFile(zip_path, "r") as zf:
+            parser._process_workout_children(workout, record, zf)  # type: ignore[misc]
+
+        assert record.get("ElevationAscended") == pytest.approx(100.0)
+        assert record.get("ElevationAscendedUnit") == "m"
+
+    def test_non_interval_activity_elevation_deferred_and_overridden_by_later_top_level(
+        self, tmp_path: Path
+    ) -> None:
+        """Top-level HKElevationAscended after non-interval WorkoutActivity must take precedence."""
+        zip_path = tmp_path / "test_export.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        workout = Element("Workout")
+        activity = Element("WorkoutActivity")
+        activity.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "HKElevationAscended", "value": "30 m"},
+            )
+        )
+        workout.append(activity)
+
+        top_elevation = Element(
+            "MetadataEntry",
+            attrib={"key": "HKElevationAscended", "value": "150 m"},
+        )
+        workout.append(top_elevation)
+
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+
+        with ZipFile(zip_path, "r") as zf:
+            parser._process_workout_children(workout, record, zf)  # type: ignore[misc]
+
+        assert record.get("ElevationAscended") == pytest.approx(150.0)
+        assert record.get("ElevationAscendedUnit") == "m"
+
+    def test_multiple_interval_activities_elevations_are_aggregated(self, tmp_path: Path) -> None:
+        """Multiple interval activities without top-level elevation must aggregate their gains."""
+        zip_path = tmp_path / "test_export.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        workout = Element("Workout")
+        for idx, elev_m in enumerate([20, 35, 15]):
+            interval = Element("WorkoutActivity")
+            interval.append(
+                Element(
+                    "MetadataEntry",
+                    attrib={"key": "WOIntervalStepKeyPath", "value": f"{idx}.0.0"},
+                )
+            )
+            interval.append(
+                Element(
+                    "MetadataEntry",
+                    attrib={"key": "HKElevationAscended", "value": f"{elev_m} m"},
+                )
+            )
+            workout.append(interval)
+
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+
+        with ZipFile(zip_path, "r") as zf:
+            parser._process_workout_children(workout, record, zf)  # type: ignore[misc]
+
+        assert record.get("ElevationAscended") == pytest.approx(70.0)
+        assert record.get("ElevationAscendedUnit") == "m"
+
+    def test_multiple_non_interval_activities_elevations_are_aggregated(
+        self, tmp_path: Path
+    ) -> None:
+        """Multiple non-interval activities without top-level elevation must aggregate
+        their gains.
+        """
+        zip_path = tmp_path / "test_export.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        workout = Element("Workout")
+        for elev_m in [40, 60]:
+            activity = Element("WorkoutActivity")
+            activity.append(
+                Element(
+                    "MetadataEntry",
+                    attrib={"key": "HKElevationAscended", "value": f"{elev_m} m"},
+                )
+            )
+            workout.append(activity)
+
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+
+        with ZipFile(zip_path, "r") as zf:
+            parser._process_workout_children(workout, record, zf)  # type: ignore[misc]
+
+        assert record.get("ElevationAscended") == pytest.approx(100.0)
+        assert record.get("ElevationAscendedUnit") == "m"
+
+    def test_earlier_top_level_elevation_precedes_nested_elevation(self, tmp_path: Path) -> None:
+        """Top-level elevation placed before WorkoutActivity must also take precedence."""
+        zip_path = tmp_path / "test_export.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", b"<HealthData></HealthData>")
+
+        workout = Element("Workout")
+        top_elevation = Element(
+            "MetadataEntry",
+            attrib={"key": "HKElevationAscended", "value": "200 m"},
+        )
+        workout.append(top_elevation)
+
+        interval = Element("WorkoutActivity")
+        interval.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "WOIntervalStepKeyPath", "value": "0.0.0"},
+            )
+        )
+        interval.append(
+            Element(
+                "MetadataEntry",
+                attrib={"key": "HKElevationAscended", "value": "50 m"},
+            )
+        )
+        workout.append(interval)
+
+        parser = ep.ExportParser()
+        record: ep.WorkoutRecord = {"activityType": "Running"}
+
+        with ZipFile(zip_path, "r") as zf:
+            parser._process_workout_children(workout, record, zf)  # type: ignore[misc]
+
+        assert record.get("ElevationAscended") == pytest.approx(200.0)
+        assert record.get("ElevationAscendedUnit") == "m"

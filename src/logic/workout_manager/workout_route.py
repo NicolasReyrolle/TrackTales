@@ -36,11 +36,21 @@ class WorkoutRoute:
 
     # Maximum allowed relative deviation between route-derived distance and workout
     # summary distance for normalization to be considered realistic.
+    # This governs the symmetric ±10% guard applied when scale_factor <= 1.0
+    # (i.e., GPS over-count or very small under-count cases).
     #
     # Example with default 0.10 (10%):
-    # - route=20.8km vs workout=21.1km -> scaling applied
-    # - route=15.0km vs workout=21.1km -> scaling rejected
+    # - route=20.8km vs workout=21.1km -> scaling applied (scale ≈ 1.015, within ±10%)
+    # - route=15.0km vs workout=21.1km -> scaling rejected (scale ≈ 1.41, above ceiling)
     MAX_REALISTIC_DISTANCE_SCALE_DEVIATION = 0.10
+
+    # Upper ceiling for GPS under-count scale factors caused by GPS recording interruptions
+    # during pause events (HKWorkoutEventTypeMotionPaused). When the Apple Watch pauses GPS
+    # recording, the pedometer continues accumulating distance, so the HealthKit summary
+    # distance can be up to ~2× the GPS route distance. Scale factors in (1.10, 2.0] are
+    # accepted and applied; scale factors above 2.0 are rejected as corrupt or mis-categorized
+    # data (e.g., a treadmill workout logged as an outdoor run).
+    MAX_GPS_INTERRUPTION_SCALE_FACTOR = 2.0
 
     points: list[RoutePoint]
     _cumulative_distance_cache: list[float] | None = field(default=None, init=False, repr=False)
@@ -251,23 +261,43 @@ class WorkoutRoute:
     ) -> float:
         """Return a route-distance normalization factor when the mismatch is realistic.
 
-        The reference distance comes from the workout summary. A modest adjustment helps
-        when GPX-derived distance slightly under/over-counts due to sampling, pauses, or
-        Apple Health export quirks. Large mismatches are treated as data quality issues and
-        therefore do not trigger scaling.
+        The reference distance comes from the workout summary. The guard is asymmetric
+        because GPS over-count and GPS under-count have different physical causes and
+        different plausible magnitudes:
+
+        - ``scale_factor <= 1.0`` (GPS over-counts vs HealthKit): accept only within
+          the symmetric ``±MAX_REALISTIC_DISTANCE_SCALE_DEVIATION`` (±10%) window.
+          GPS-derived distances that exceed the HealthKit summary by more than 10% are
+          implausible and are treated as data quality issues.
+
+        - ``1.0 < scale_factor <= MAX_GPS_INTERRUPTION_SCALE_FACTOR`` (GPS under-counts):
+          accept and return the scale factor.  Apple Watch stops recording GPS during
+          ``HKWorkoutEventTypeMotionPaused`` events while the pedometer continues
+          accumulating distance, so the HealthKit summary can be up to ~2× the GPS route
+          distance on pause-heavy workouts.  Scale factors in this range are physically
+          plausible and necessary for accurate best-segment computation.
+
+        - ``scale_factor > MAX_GPS_INTERRUPTION_SCALE_FACTOR`` (i.e., > 2.0): reject as
+          corrupt or mis-categorized data (e.g., a treadmill workout logged as an outdoor
+          run) and fall back to 1.0.
 
         This factor is computed once per workout route and reused for all queried
-        segment distances (100m, 200m, 1km, 5km, half-marathon, etc.).
+        segment distances (100 m, 200 m, 1 km, 5 km, half-marathon, etc.).
         """
         if reference_distance_m is None or route_distance_m <= 0 or reference_distance_m <= 0:
             return 1.0
 
         scale_factor = reference_distance_m / route_distance_m
-        deviation = abs(scale_factor - 1.0)
-        if deviation <= cls.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
-            return scale_factor
-
-        return 1.0
+        if scale_factor <= 1.0:
+            # GPS over-counts vs HealthKit: only accept within ±10%
+            if abs(scale_factor - 1.0) <= cls.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
+                return scale_factor
+            return 1.0
+        else:
+            # GPS under-counts due to pause-event recording interruptions: accept up to 2.0×
+            if scale_factor <= cls.MAX_GPS_INTERRUPTION_SCALE_FACTOR:
+                return scale_factor
+            return 1.0
 
     def _find_segment_end_index(
         self,

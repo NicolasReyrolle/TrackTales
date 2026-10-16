@@ -303,6 +303,39 @@ class WorkoutManagerSegmentsMixin:
             run_distance_m,
         )
 
+        raw_scale = (
+            (run_distance_m / total_trace_distance_m)
+            if (run_distance_m and total_trace_distance_m > 0)
+            else None
+        )
+        if (
+            raw_scale is not None
+            and raw_scale > 1.0 + WorkoutRoute.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION
+            and distance_scale_factor > 1.0
+        ):
+            coverage_pct = total_trace_distance_m / run_distance_m * 100
+            _logger.warning(
+                "GPS interruption correction applied for workout %s: "
+                "scale_factor=%.3f (GPS=%.0fm, HealthKit=%.0fm, GPS covers %.1f%% of distance). "
+                "GPS trace is incomplete due to pause events.",
+                run_record.startDate,
+                distance_scale_factor,
+                total_trace_distance_m,
+                run_distance_m,
+                coverage_pct,
+            )
+        if raw_scale is not None and raw_scale > WorkoutRoute.MAX_GPS_INTERRUPTION_SCALE_FACTOR:
+            _logger.warning(
+                "GPS distance scale factor rejected for workout %s: "
+                "raw_scale=%.3f exceeds ceiling %.1f (GPS=%.0fm, HealthKit=%.0fm). "
+                "Best segments will use raw GPS distance.",
+                run_record.startDate,
+                raw_scale,
+                WorkoutRoute.MAX_GPS_INTERRUPTION_SCALE_FACTOR,
+                total_trace_distance_m,
+                run_distance_m,
+            )
+
         rows: list[list[Any]] = []
         for distance in distances:
             if run_distance_m is not None and float(distance) > run_distance_m:

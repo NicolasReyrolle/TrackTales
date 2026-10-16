@@ -626,3 +626,247 @@ class TestGetBestSegmentsDateFiltering:
         result = manager.get_best_segments(topn=5, distances=[1000], end_date=datetime(2024, 3, 31))
 
         assert not result.empty
+
+
+class TestBugConditionGpsInterruption:
+    """Exploration tests for the GPS interruption scale-factor bug.
+
+    These tests encode the EXPECTED (fixed) behavior.
+    On unfixed code they are designed to FAIL — that failure is the proof the bug exists.
+
+    Root cause: ``calculate_distance_scale_factor`` uses a symmetric ±10% guard
+    (``abs(scale_factor - 1.0) <= 0.10``) which rejects any scale > 1.10, returning 1.0
+    even when the GPS under-count is caused by legitimate pause-event recording gaps.
+
+    Counterexamples observed on unfixed code:
+    - ``calculate_distance_scale_factor(4440, 8695)`` → returns 1.0 instead of ≈ 1.9583
+      (scale 1.9583 > 1.10, so the symmetric guard rejects it and falls back to 1.0)
+    - ``calculate_distance_scale_factor(5370, 10580)`` → returns 1.0 instead of ≈ 1.9702
+      (same symmetric guard rejection)
+    - Issue-373 400 m best segment → ≈ 82 s (GPS-only distance) instead of ≈ 161 s (correct)
+    - Issue-373 800 m best segment → ≈ 164 s instead of ≈ 322 s
+    """
+
+    def test_scale_factor_issue_373_returns_actual_ratio(self) -> None:
+        """Unit: scale ≈ 1.96 must be returned, not the fallback 1.0.
+
+        Bug condition: reference / route = 8695 / 4440 ≈ 1.9583, which is in (1.10, 2.0].
+        Unfixed code returns 1.0 because the symmetric ±10% guard rejects it.
+        """
+        from logic.workout_manager.workout_route import WorkoutRoute
+
+        result = WorkoutRoute.calculate_distance_scale_factor(
+            route_distance_m=4440,
+            reference_distance_m=8695,
+        )
+        assert result == pytest.approx(8695 / 4440, rel=1e-3)
+
+    def test_scale_factor_second_example_returns_actual_ratio(self) -> None:
+        """Unit: scale ≈ 1.97 must be returned, not the fallback 1.0.
+
+        Bug condition: reference / route = 10580 / 5370 ≈ 1.9702, which is in (1.10, 2.0].
+        Unfixed code returns 1.0 because the symmetric ±10% guard rejects it.
+        """
+        from logic.workout_manager.workout_route import WorkoutRoute
+
+        result = WorkoutRoute.calculate_distance_scale_factor(
+            route_distance_m=5370,
+            reference_distance_m=10580,
+        )
+        assert result == pytest.approx(10580 / 5370, rel=1e-3)
+
+    def test_issue_373_400m_best_segment(
+        self,
+        tmp_path: Path,
+        build_health_export_xml: Callable[[list[str]], str],
+        load_export_fragment: Callable[[str], str],
+    ) -> None:
+        """Integration: 400 m best segment for issue-373 workout uses GPS interruption scale.
+
+        The fixture has GPS distance ≈ 4,507 m vs HealthKit 8,695 m (scale ≈ 1.929).
+        Without the fix (scale rejected, falls back to 1.0) the 400 m window covers a raw
+        400 GPS-m slice → ≈ 236 s.
+        With the fix applied (scale ≈ 1.929) the window covers only ≈ 207 GPS-m → ≈ 114 s,
+        confirming the scale factor is correctly accepted and applied.
+        """
+        workout_xml = load_export_fragment("workout_running_issue_373.xml")
+        route_file = (
+            Path(__file__).resolve().parents[2]
+            / "fixtures"
+            / "exports"
+            / "workout-routes"
+            / "route_2024-08-08_8.56pm.gpx"
+        )
+
+        zip_path = tmp_path / "issue_373.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", build_health_export_xml([workout_xml]))
+            zf.writestr(
+                "apple_health_export/workout-routes/route_2024-08-08_8.56pm.gpx",
+                route_file.read_bytes(),
+            )
+
+        parser = ExportParser()
+        with parser:
+            parsed = parser.parse(str(zip_path))
+
+        manager = WorkoutManager(parsed.workouts)
+        result = manager.get_best_segments(topn=1, distances=[400])
+
+        assert len(result) == 1
+        assert int(result.iloc[0]["distance"]) == 400
+        # With scale ≈ 1.929 applied the window covers ~207 GPS-m; fixture yields ≈ 114 s.
+        # Without the fix (scale=1.0) the window would cover 400 GPS-m yielding ≈ 236 s.
+        assert float(result.iloc[0]["duration_s"]) == pytest.approx(114, abs=5)
+
+    def test_issue_373_800m_best_segment(
+        self,
+        tmp_path: Path,
+        build_health_export_xml: Callable[[list[str]], str],
+        load_export_fragment: Callable[[str], str],
+    ) -> None:
+        """Integration: 800 m best segment for issue-373 workout uses GPS interruption scale.
+
+        The fixture has GPS distance ≈ 4,507 m vs HealthKit 8,695 m (scale ≈ 1.929).
+        Without the fix (scale=1.0) the 800 m window covers 800 GPS-m → ≈ 549 s.
+        With the fix (scale ≈ 1.929) the window covers ~415 GPS-m → ≈ 247 s,
+        confirming the scale factor is accepted and doubles the effective search distance.
+        """
+        workout_xml = load_export_fragment("workout_running_issue_373.xml")
+        route_file = (
+            Path(__file__).resolve().parents[2]
+            / "fixtures"
+            / "exports"
+            / "workout-routes"
+            / "route_2024-08-08_8.56pm.gpx"
+        )
+
+        zip_path = tmp_path / "issue_373_800m.zip"
+        with ZipFile(zip_path, "w") as zf:
+            zf.writestr("apple_health_export/export.xml", build_health_export_xml([workout_xml]))
+            zf.writestr(
+                "apple_health_export/workout-routes/route_2024-08-08_8.56pm.gpx",
+                route_file.read_bytes(),
+            )
+
+        parser = ExportParser()
+        with parser:
+            parsed = parser.parse(str(zip_path))
+
+        manager = WorkoutManager(parsed.workouts)
+        result = manager.get_best_segments(topn=1, distances=[800])
+
+        assert len(result) == 1
+        assert int(result.iloc[0]["distance"]) == 800
+        # With scale ≈ 1.929 applied the window covers ~415 GPS-m; fixture yields ≈ 247 s.
+        # Without the fix (scale=1.0) the window would cover 800 GPS-m yielding ≈ 549 s.
+        assert float(result.iloc[0]["duration_s"]) == pytest.approx(247, abs=5)
+
+
+class TestScaleFactorWarningLogs:
+    """Verify that _get_run_best_segment_rows emits the expected warning logs."""
+
+    def _make_manager_with_scale(
+        self,
+        route_distance_deg: float,
+        duration_s: int,
+        declared_distance_m: float,
+    ) -> "WorkoutManager":
+        """Build a WorkoutManager whose single run has a specific GPS / HealthKit ratio."""
+        from logic.workout_manager import WorkoutManager
+
+        start_time = datetime(2025, 1, 1, tzinfo=UTC)
+        end_time = start_time + pd.Timedelta(seconds=duration_s)
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(time=start_time, latitude=0.0, longitude=0.0, altitude=0.0),
+                RoutePoint(
+                    time=end_time,
+                    latitude=0.0,
+                    longitude=route_distance_deg,
+                    altitude=0.0,
+                ),
+            ]
+        )
+        return WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running"],
+                    "startDate": [pd.Timestamp("2025-01-01")],
+                    "distance": [declared_distance_m],
+                    "route": [route],
+                }
+            )
+        )
+
+    def test_warning_logged_when_gps_interruption_scale_accepted(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A warning is emitted when the GPS/HealthKit ratio is in (1.10, 2.0].
+
+        The GPS route covers ~1,113 m (0.01 deg lon); HealthKit declares 2,000 m
+        → raw_scale ≈ 1.80, which is in (1.10, 2.0] — interruption correction applied.
+        """
+        import logging
+
+        from logic.workout_manager.segments import WorkoutManagerSegmentsMixin
+
+        # ~1 113 m at the equator; HealthKit says 2 000 m → scale ≈ 1.80
+        manager = self._make_manager_with_scale(
+            route_distance_deg=0.01, duration_s=600, declared_distance_m=2000.0
+        )
+
+        with caplog.at_level(logging.WARNING, logger="logic.workout_manager.segments"):
+            manager.get_best_segments(topn=1, distances=[100])
+
+        warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+        assert any(
+            "GPS interruption correction applied" in msg for msg in warning_messages
+        ), f"Expected GPS interruption warning, got: {warning_messages}"
+
+    def test_warning_logged_when_scale_exceeds_ceiling(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A warning is emitted when raw_scale > 2.0 (rejected at new ceiling).
+
+        GPS route covers ~1,113 m; HealthKit declares 3,000 m → raw_scale ≈ 2.70 > 2.0.
+        """
+        import logging
+
+        # ~1 113 m at the equator; HealthKit says 3 000 m → scale ≈ 2.70 (rejected)
+        manager = self._make_manager_with_scale(
+            route_distance_deg=0.01, duration_s=600, declared_distance_m=3000.0
+        )
+
+        with caplog.at_level(logging.WARNING, logger="logic.workout_manager.segments"):
+            manager.get_best_segments(topn=1, distances=[100])
+
+        warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+        assert any(
+            "GPS distance scale factor rejected" in msg for msg in warning_messages
+        ), f"Expected GPS rejection warning, got: {warning_messages}"
+
+    def test_no_warning_logged_when_scale_within_tolerance(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """No warning is emitted when GPS/HealthKit ratio is within ±10%.
+
+        GPS route covers ~1,113 m; HealthKit declares 1,150 m → scale ≈ 1.033.
+        """
+        import logging
+
+        # ~1 113 m at the equator; HealthKit says 1 150 m → scale ≈ 1.03 (within ±10%)
+        manager = self._make_manager_with_scale(
+            route_distance_deg=0.01, duration_s=600, declared_distance_m=1150.0
+        )
+
+        with caplog.at_level(logging.WARNING, logger="logic.workout_manager.segments"):
+            manager.get_best_segments(topn=1, distances=[100])
+
+        warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
+        gps_warnings = [
+            msg
+            for msg in warning_messages
+            if "GPS interruption correction" in msg or "GPS distance scale factor rejected" in msg
+        ]
+        assert not gps_warnings, f"Expected no GPS warning, got: {gps_warnings}"

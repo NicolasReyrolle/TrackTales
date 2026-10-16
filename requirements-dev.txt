@@ -8,18 +8,18 @@ hypothesis==6.135.26
 pywin32==312; platform_system == "Windows"
 
 # Code quality
-ruff==0.16.10
+ruff==0.17.0
 mypy==2.4.0
 
 # Development
 ipython==9.17.1
-pre-commit==4.6.2
-commitizen==4.19.1
+pre-commit==4.7.0
+commitizen==4.19.2
 
 # Type stubs
 pandas-stubs==3.0.5.260914
 lxml-stubs==0.5.1
-types-pywin32==312.0.0.20260928
+types-pywin32==312.0.0.20261006
 
 # Building
 build==1.6.1

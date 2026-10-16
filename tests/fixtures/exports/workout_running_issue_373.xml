@@ -1,0 +1,91 @@
+ <Workout workoutActivityType="HKWorkoutActivityTypeRunning" duration="73.23131659825643" durationUnit="min" sourceName="Apple Watch de Nicolas" sourceVersion="8.8.1" device="&lt;&lt;HKDevice: 0x7ce0885800&gt;, name:Apple Watch, manufacturer:Apple Inc., model:Watch, hardware:Watch3,4, software:8.8.1, creation date:2023-09-04 10:56:20 +0000&gt;" creationDate="2024-08-08 20:57:13 +0200" startDate="2024-08-08 19:43:43 +0200" endDate="2024-08-08 20:56:57 +0200">
+  <MetadataEntry key="HKIndoorWorkout" value="0"/>
+  <MetadataEntry key="HKAverageMETs" value="7.97626 kcal/hr·kg"/>
+  <MetadataEntry key="HKWeatherTemperature" value="73.4 degF"/>
+  <MetadataEntry key="HKWeatherHumidity" value="5400 %"/>
+  <MetadataEntry key="HKTimeZone" value="Europe/Paris"/>
+  <MetadataEntry key="HKElevationAscended" value="7091 cm"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 19:43:43 +0200" duration="7.039698332548141" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 19:43:43 +0200" duration="11.28098052740097" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 19:43:44 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 19:50:45 +0200" duration="6.908010043700537" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 19:55:00 +0200" duration="11.80503475864728" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 19:57:40 +0200" duration="7.212762945890427" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:04:53 +0200" duration="8.580982782443364" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:05:12 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:05:22 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:05:24 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:05:40 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:06:48 +0200" duration="18.45024826129277" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:08:33 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:09:02 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:12:37 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:12:47 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:12:49 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:12:55 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:12:56 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:13:12 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:13:27 +0200" duration="13.96304233670235" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:13:56 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:14:09 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:14:23 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:14:39 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:15:03 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:15:28 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:15:40 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:16:16 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:16:55 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:17:12 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:18:07 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:18:12 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:19:14 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:19:28 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:19:59 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:20:09 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:20:38 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:20:48 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:22:08 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:22:29 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:22:32 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:22:44 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:22:56 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:23:00 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:23:10 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:23:19 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:23:35 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:24:14 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:25:15 +0200" duration="10.42278061707814" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:26:16 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:26:43 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:26:50 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:26:56 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:27:25 +0200" duration="5.616812707980474" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:33:02 +0200" duration="6.317355938752493" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:35:40 +0200" duration="12.40498184959094" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:39:21 +0200" duration="8.372274255752563" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:41:41 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:41:46 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:45:55 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:46:00 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:47:44 +0200" duration="9.149544054269791" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeSegment" date="2024-08-08 20:48:05 +0200" duration="8.796457384030024" durationUnit="min"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:49:43 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:49:58 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:53:21 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:53:34 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:53:51 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:54:27 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:54:38 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:55:22 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionPaused" date="2024-08-08 20:55:23 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:56:53 +0200"/>
+  <WorkoutEvent type="HKWorkoutEventTypeMotionResumed" date="2024-08-08 20:56:54 +0200"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned" startDate="2024-08-08 19:43:43 +0200" endDate="2024-08-08 20:56:57 +0200" sum="644.532" unit="kcal"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierDistanceWalkingRunning" startDate="2024-08-08 19:43:43 +0200" endDate="2024-08-08 20:56:57 +0200" sum="8.69529" unit="km"/>
+  <WorkoutStatistics type="HKQuantityTypeIdentifierBasalEnergyBurned" startDate="2024-08-08 19:43:43 +0200" endDate="2024-08-08 20:56:57 +0200" sum="123.464" unit="kcal"/>
+  <WorkoutRoute sourceName="Apple Watch de Nicolas" sourceVersion="8.8.1" creationDate="2024-08-08 20:57:38 +0200" startDate="2024-08-08 19:43:45 +0200" endDate="2024-08-08 20:56:55 +0200">
+   <MetadataEntry key="HKMetadataKeySyncVersion" value="2"/>
+   <MetadataEntry key="HKMetadataKeySyncIdentifier" value="ECD0F35F-16EA-4696-9CEB-A27C337A8781"/>
+   <FileReference path="/workout-routes/route_2024-08-08_8.56pm.gpx"/>
+  </WorkoutRoute>
+ </Workout>

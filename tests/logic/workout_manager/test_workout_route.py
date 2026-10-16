@@ -180,10 +180,19 @@ class TestWorkoutRoute:
         assert result == pytest.approx(95.0)  # type: ignore[misc]
 
     def test_calculate_distance_scale_factor_rejects_unrealistic_mismatch(self) -> None:
-        """Large route/workout distance mismatches should not be normalized."""
-        scale_factor = WorkoutRoute.calculate_distance_scale_factor(1000.0, 1300.0)
+        """Scale factors above MAX_GPS_INTERRUPTION_SCALE_FACTOR (2.0) are rejected.
 
-        assert scale_factor == pytest.approx(1.0)  # type: ignore[misc]
+        Scale 1.30 (GPS under-counts by 30%) is now accepted by the asymmetric guard
+        as a plausible GPS interruption case (scale ∈ (1.10, 2.0]). Only scale > 2.0
+        is treated as an unrealistic mismatch and returns 1.0.
+        """
+        # Scale 1.30 is in the GPS-interruption acceptance range → accepted
+        scale_factor = WorkoutRoute.calculate_distance_scale_factor(1000.0, 1300.0)
+        assert scale_factor == pytest.approx(1.3)  # type: ignore[misc]
+
+        # Scale 2.01 exceeds the ceiling → rejected
+        scale_factor_rejected = WorkoutRoute.calculate_distance_scale_factor(1000.0, 2010.0)
+        assert scale_factor_rejected == pytest.approx(1.0)  # type: ignore[misc]
 
     def test_find_fastest_segment_from_real_gpx_fixture_not_found(self) -> None:
         """find_fastest_segment should return None if no segment meets the required length."""
@@ -736,3 +745,148 @@ class TestEstimatedElevationGain:
         available = [True] * 9 + [False] * 9 + [True] * 9
         route = self._route(altitudes, available)
         assert route.estimated_elevation_gain_m() == pytest.approx(0.0)  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------------------
+# TestPreservationScaleFactorPaths
+# ---------------------------------------------------------------------------
+#
+# Observed baseline on UNFIXED code (symmetric ±10% guard):
+#   calculate_distance_scale_factor(1000, 1050) -> 1.05  (within ±10%, accepted)
+#   calculate_distance_scale_factor(1000, 850)  -> 1.0   (scale 0.85, GPS over-count rejected)
+#   calculate_distance_scale_factor(1000, 2100) -> 1.0   (scale 2.1, already rejected)
+#   calculate_distance_scale_factor(0,    1000) -> 1.0   (invalid route distance)
+#   calculate_distance_scale_factor(1000, None) -> 1.0   (missing reference)
+#
+# These tests document and preserve those behaviors across the fix.
+# ALL tests in this class MUST PASS on both unfixed and fixed code.
+
+
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+
+def _scale_factor(route: float, reference: float) -> float:
+    """Convenience wrapper."""
+    return WorkoutRoute.calculate_distance_scale_factor(route, reference)
+
+
+# Generators producing positive distances constrained to a target scale range.
+# route is drawn from [1, 100_000] m; reference is derived so the ratio hits the range.
+
+_ROUTE_ST = st.floats(min_value=1.0, max_value=100_000.0, allow_nan=False, allow_infinity=False)
+
+
+@st.composite
+def _route_and_ref_for_scale(
+    draw: st.DrawFn,
+    scale_min: float,
+    scale_max: float,
+) -> tuple[float, float]:
+    """Draw (route, reference) such that reference/route is in [scale_min, scale_max]."""
+    route = draw(_ROUTE_ST)
+    scale = draw(
+        st.floats(
+            min_value=scale_min,
+            max_value=scale_max,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    return route, route * scale
+
+
+class TestPreservationScaleFactorPaths:
+    """Verify that existing scale-factor acceptance/rejection paths are unaffected by the fix.
+
+    **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
+    """
+
+    # ------------------------------------------------------------------
+    # Unit tests – concrete edge cases
+    # ------------------------------------------------------------------
+
+    def test_within_10pct_accepted(self) -> None:
+        """Scale 1.05 (within ±10%) is accepted and returned unchanged."""
+        assert _scale_factor(1000.0, 1050.0) == pytest.approx(1.05)  # type: ignore[misc]
+
+    def test_gps_over_count_rejected(self) -> None:
+        """Scale 0.85 (GPS over-count > 10%) falls back to 1.0."""
+        assert _scale_factor(1000.0, 850.0) == pytest.approx(1.0)  # type: ignore[misc]
+
+    def test_scale_above_2_rejected(self) -> None:
+        """Scale 2.1 (above the GPS-interruption ceiling) falls back to 1.0."""
+        assert _scale_factor(1000.0, 2100.0) == pytest.approx(1.0)  # type: ignore[misc]
+
+    def test_zero_route_distance_returns_one(self) -> None:
+        """Zero route distance is invalid; result must be 1.0."""
+        assert _scale_factor(0.0, 1000.0) == pytest.approx(1.0)  # type: ignore[misc]
+
+    def test_none_reference_returns_one(self) -> None:
+        """Missing reference distance returns 1.0."""
+        assert _scale_factor(1000.0, None) == pytest.approx(1.0)  # type: ignore[misc]
+
+    def test_zero_reference_distance_returns_one(self) -> None:
+        """Zero reference distance is invalid; result must be 1.0."""
+        assert _scale_factor(1000.0, 0.0) == pytest.approx(1.0)  # type: ignore[misc]
+
+    def test_negative_route_distance_returns_one(self) -> None:
+        """Negative route distance is invalid; result must be 1.0."""
+        assert _scale_factor(-500.0, 1000.0) == pytest.approx(1.0)  # type: ignore[misc]
+
+    def test_scale_exactly_at_lower_boundary_0_90(self) -> None:
+        """Scale exactly 0.90 is right at the symmetric boundary; deviation == 0.10, accepted."""
+        assert _scale_factor(1000.0, 900.0) == pytest.approx(0.9)  # type: ignore[misc]
+
+    def test_scale_just_below_upper_boundary(self) -> None:
+        """Scale 1.09 is safely within ±10%; it is accepted and returned."""
+        result = _scale_factor(1000.0, 1090.0)
+        assert result == pytest.approx(1.09)  # type: ignore[misc]
+
+    def test_scale_just_above_upper_boundary_rejected(self) -> None:
+        """Scale 1.11 is in the GPS-interruption acceptance range (1.0, 2.0].
+
+        Pre-fix: symmetric guard rejected it → returned 1.0.
+        Post-fix: asymmetric guard accepts it → returns 1.11.
+        This test verifies the fixed behavior: scale in (1.10, 2.0] is returned as-is.
+        """
+        assert _scale_factor(1000.0, 1110.0) == pytest.approx(1.11)  # type: ignore[misc]
+
+    # ------------------------------------------------------------------
+    # Property-based tests
+    # ------------------------------------------------------------------
+
+    @given(_route_and_ref_for_scale(scale_min=0.901, scale_max=1.099))
+    @settings(max_examples=200)
+    def test_property_within_10pct_returns_scale(self, args: tuple[float, float]) -> None:
+        """For any (route, reference) where scale ∈ [0.901, 1.099], result equals reference/route.
+
+        The range avoids the float-precision edge at exactly ±0.10 (abs(1.1 - 1.0) rounds to
+        0.10000...09, which is > 0.10 and therefore rejected by the unfixed guard).
+
+        **Validates: Requirements 3.1**
+        """
+        route, reference = args
+        expected = reference / route
+        result = _scale_factor(route, reference)
+        assert result == pytest.approx(expected, rel=1e-9)  # type: ignore[misc]
+
+    @given(_route_and_ref_for_scale(scale_min=1e-6, scale_max=0.8999))
+    @settings(max_examples=200)
+    def test_property_gps_over_count_returns_one(self, args: tuple[float, float]) -> None:
+        """For any (route, reference) where scale < 0.90, result is 1.0 (GPS over-count).
+
+        **Validates: Requirements 3.2**
+        """
+        route, reference = args
+        assert _scale_factor(route, reference) == pytest.approx(1.0)  # type: ignore[misc]
+
+    @given(_route_and_ref_for_scale(scale_min=2.0001, scale_max=10.0))
+    @settings(max_examples=200)
+    def test_property_scale_above_2_returns_one(self, args: tuple[float, float]) -> None:
+        """For any (route, reference) where scale > 2.0, result is 1.0 (rejected).
+
+        **Validates: Requirements 3.3**
+        """
+        route, reference = args
+        assert _scale_factor(route, reference) == pytest.approx(1.0)  # type: ignore[misc]

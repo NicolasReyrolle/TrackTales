@@ -18,7 +18,7 @@ commitizen==4.19.3
 # Type stubs
 pandas-stubs==3.0.5.260914
 lxml-stubs==0.5.1
-types-pywin32==312.0.0.20261006
+types-pywin32==312.0.0.20261024
 
 # Building
 build==1.6.1

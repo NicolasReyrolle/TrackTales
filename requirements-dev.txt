@@ -2,23 +2,23 @@
 
 # Testing
 pytest==9.1.1
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
 pytest-cov==7.1.0
 pywin32==312; platform_system == "Windows"
 
 # Code quality
-ruff==0.17.1
+ruff==0.17.3
 mypy==2.4.0
 
 # Development
 ipython==9.17.1
 pre-commit==4.7.0
-commitizen==4.19.2
+commitizen==4.19.3
 
 # Type stubs
 pandas-stubs==3.0.5.260914
 lxml-stubs==0.5.1
-types-pywin32==312.0.0.20261006
+types-pywin32==312.0.0.20261024
 
 # Building
 build==1.6.1

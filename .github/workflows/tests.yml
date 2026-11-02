@@ -51,7 +51,7 @@ jobs:
       - name: Install test dependencies (other Python versions)
         if: matrix.python-version != '3.14'
         run: |
-          pip install pytest pytest-asyncio pytest-cov
+          pip install pytest pytest-asyncio pytest-cov hypothesis==6.135.26
 
       - name: Install runtime dependencies (if present)
         run: |

@@ -8,7 +8,7 @@ from typing import Any, TypedDict, cast
 
 import pandas as pd
 
-from logic.constants import PANDAS_ISO8601_FORMAT
+from logic.constants import MIN_GPS_TIME_COVERAGE_FOR_SCALING, PANDAS_ISO8601_FORMAT
 
 from .workout_route import WorkoutRoute
 
@@ -31,8 +31,6 @@ class CriticalPowerResult(TypedDict):
 
 
 class WorkoutManagerSegmentsMixin:
-    MIN_GPS_TIME_COVERAGE_FOR_SCALING = 0.8
-
     @staticmethod
     def _split_route_into_traces(route: WorkoutRoute) -> list[WorkoutRoute]:
         """Split route into monotonic-time traces to avoid cross-reversal windows."""
@@ -324,7 +322,7 @@ class WorkoutManagerSegmentsMixin:
         if (
             not math.isclose(distance_scale_factor, 1.0)
             and coverage is not None
-            and coverage < self.MIN_GPS_TIME_COVERAGE_FOR_SCALING
+            and coverage < MIN_GPS_TIME_COVERAGE_FOR_SCALING
         ):
             _logger.warning(
                 "GPS distance scaling skipped for workout %s: GPS spans only %.0f%% of the "

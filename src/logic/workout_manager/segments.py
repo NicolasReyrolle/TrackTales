@@ -238,16 +238,19 @@ class WorkoutManagerSegmentsMixin:
 
     @staticmethod
     def _gps_time_coverage(run_record: Any, route_traces: list[WorkoutRoute]) -> float | None:
-        """Return the fraction of the workout duration spanned by the GPS traces."""
+        """Return the fraction of the workout duration covered by GPS trace time.
+
+        Time between traces (pauses, GPS dropouts) is not counted as covered.
+        """
         raw_duration: Any = getattr(run_record, "duration", None)
         if raw_duration is None or pd.isna(raw_duration) or float(raw_duration) <= 0:
             return None
-        points = [trace.points for trace in route_traces if trace.points]
-        if not points:
-            return None
-        start = min(pts[0].time for pts in points)
-        end = max(pts[-1].time for pts in points)
-        return (end - start).total_seconds() / float(raw_duration)
+        covered_s = sum(
+            (trace.points[-1].time - trace.points[0].time).total_seconds()
+            for trace in route_traces
+            if trace.points
+        )
+        return min(covered_s / float(raw_duration), 1.0)
 
     @classmethod
     def _extract_route_traces(cls, run_record: Any) -> list[WorkoutRoute]:
@@ -313,16 +316,19 @@ class WorkoutManagerSegmentsMixin:
 
         run_distance_m = self._get_run_distance_m(run_record)
         total_trace_distance_m = sum(route_trace.distance_meters for route_trace in route_traces)
+        # Uniform scaling assumes missing distance is spread along the trace. Distance
+        # covered while GPS was off (gaps between traces) is expected at the trace's
+        # own pace, so only the remaining discrepancy may be attributed to the trace.
+        coverage = self._gps_time_coverage(run_record, route_traces)
+        expected_distance_m = (
+            total_trace_distance_m / coverage if coverage else total_trace_distance_m
+        )
         distance_scale_factor = WorkoutRoute.calculate_distance_scale_factor(
-            total_trace_distance_m,
+            expected_distance_m,
             run_distance_m,
         )
-        # Uniform scaling assumes missing distance is spread along the trace. When the GPS
-        # only covers part of the workout's time, the missing distance lies outside the
-        # trace and scaling would fabricate impossibly fast segments.
-        coverage = self._gps_time_coverage(run_record, route_traces)
         if (
-            distance_scale_factor > 1.0 + WorkoutRoute.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION
+            distance_scale_factor != 1.0
             and coverage is not None
             and coverage < self.MIN_GPS_TIME_COVERAGE_FOR_SCALING
         ):

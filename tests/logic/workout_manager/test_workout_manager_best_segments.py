@@ -908,3 +908,48 @@ class TestPartialGpsCoverageRegression:
         assert float(result.iloc[0]["duration_s"]) == pytest.approx(  # type: ignore[misc]
             gps_duration_s / gps_distance_m * 1000.0, rel=0.02
         )
+
+
+class TestGpsGapsExplainMissingDistance:
+    """Workout of 2025-04-17: 6.6 km of GPS over 84% of the time, 7.86 km reported."""
+
+    def test_distance_missing_during_gps_gaps_is_not_scaled_into_traces(self) -> None:
+        """Missing distance matches the pace during GPS gaps, so traces must stay unscaled."""
+        start = datetime(2025, 4, 17, 16, 57, 20, tzinfo=UTC)
+        speed_mps = 2.7
+
+        def make_part(offset_s: int, seconds: int) -> WorkoutRoute:
+            deg_per_s = speed_mps / 111_319.49
+            return WorkoutRoute(
+                points=[
+                    RoutePoint(
+                        time=start + timedelta(seconds=offset_s + i),
+                        latitude=0.0,
+                        longitude=(offset_s + i) * deg_per_s,
+                        altitude=0.0,
+                    )
+                    for i in range(seconds + 1)
+                ]
+            )
+
+        parts = [make_part(0, 1200), make_part(1500, 1200)]
+        covered_distance = 2400 * speed_mps
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running"],
+                    "startDate": [pd.Timestamp("2025-04-17 17:57:19")],
+                    "duration": [2700.0],
+                    "distance": [2700 * speed_mps],
+                    "route": [None],
+                    "route_parts": [parts],
+                }
+            )
+        )
+
+        result = manager.get_best_segments(topn=1, distances=[1000])
+
+        assert covered_distance < 2700 * speed_mps
+        assert float(result.iloc[0]["duration_s"]) == pytest.approx(  # type: ignore[misc]
+            1000 / speed_mps, rel=0.02
+        )

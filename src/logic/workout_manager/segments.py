@@ -1,13 +1,19 @@
 """Best-segment mixin for WorkoutManager."""
 
 import logging
+import math
 from datetime import datetime
 from itertools import combinations
 from typing import Any, TypedDict, cast
 
 import pandas as pd
 
-from logic.constants import PANDAS_ISO8601_FORMAT
+from logic.constants import (
+    MAX_GPS_INTERRUPTION_SCALE_FACTOR,
+    MAX_REALISTIC_DISTANCE_SCALE_DEVIATION,
+    MIN_GPS_TIME_COVERAGE_FOR_SCALING,
+    PANDAS_ISO8601_FORMAT,
+)
 
 from .workout_route import WorkoutRoute
 
@@ -234,6 +240,17 @@ class WorkoutManagerSegmentsMixin:
             return None
         return float(raw_run_distance)
 
+    @staticmethod
+    def _gps_time_coverage(run_record: Any, route_traces: list[WorkoutRoute]) -> float | None:
+        """Return the fraction of the workout duration covered by GPS trace time.
+
+        Long intervals between GPS samples (pauses, GPS dropouts) are not counted as covered.
+        """
+        raw_duration: Any = getattr(run_record, "duration", None)
+        if raw_duration is None or pd.isna(raw_duration) or float(raw_duration) <= 0:
+            return None
+        return WorkoutRoute.calculate_time_coverage(route_traces, float(raw_duration))
+
     @classmethod
     def _extract_route_traces(cls, run_record: Any) -> list[WorkoutRoute]:
         """Extract analysis traces from route parts first, then fallback to route."""
@@ -286,6 +303,73 @@ class WorkoutManagerSegmentsMixin:
                 best = result
         return best
 
+    def _get_run_distance_scale_factor(
+        self,
+        run_record: Any,
+        route_traces,
+        run_distance_m,
+        total_trace_distance_m,
+    ) -> float:
+        """Calculate the trace distance scale, accounting for GPS coverage."""
+        coverage = self._gps_time_coverage(run_record, route_traces)
+        raw_scale = (
+            run_distance_m / total_trace_distance_m
+            if run_distance_m is not None and run_distance_m > 0 and total_trace_distance_m > 0
+            else None
+        )
+        distance_scale_factor = WorkoutRoute.calculate_distance_scale_factor(
+            total_trace_distance_m,
+            run_distance_m,
+            time_coverage=coverage,
+        )
+        if (
+            raw_scale is not None
+            and not math.isclose(raw_scale, 1.0)
+            and coverage is not None
+            and coverage < MIN_GPS_TIME_COVERAGE_FOR_SCALING
+        ):
+            _logger.warning(
+                "GPS distance scaling skipped for workout %s: GPS spans only %.0f%% of the "
+                "workout duration.",
+                run_record.startDate,
+                coverage * 100.0,
+            )
+
+        if (
+            raw_scale is not None
+            and raw_scale > 1.0 + MAX_REALISTIC_DISTANCE_SCALE_DEVIATION
+            and distance_scale_factor > 1.0
+        ):
+            coverage_pct = 100.0 / raw_scale
+            _logger.warning(
+                "GPS interruption correction applied for workout %s: "
+                "scale_factor=%.3f (GPS=%.0fm, HealthKit=%.0fm, GPS covers %.1f%% of distance). "
+                "GPS trace is incomplete due to pause events.",
+                run_record.startDate,
+                distance_scale_factor,
+                total_trace_distance_m,
+                run_distance_m,
+                coverage_pct,
+            )
+        scale_to_validate = raw_scale
+        if raw_scale is not None and raw_scale > 1.0 + MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
+            if coverage is not None:
+                scale_to_validate = (
+                    raw_scale * coverage if coverage >= MIN_GPS_TIME_COVERAGE_FOR_SCALING else None
+                )
+        if scale_to_validate is not None and scale_to_validate > MAX_GPS_INTERRUPTION_SCALE_FACTOR:
+            _logger.warning(
+                "GPS distance scale factor rejected for workout %s: "
+                "adjusted_scale=%.3f exceeds ceiling %.1f (GPS=%.0fm, HealthKit=%.0fm). "
+                "Best segments will use raw GPS distance.",
+                run_record.startDate,
+                scale_to_validate,
+                MAX_GPS_INTERRUPTION_SCALE_FACTOR,
+                total_trace_distance_m,
+                run_distance_m,
+            )
+        return distance_scale_factor
+
     def _get_run_best_segment_rows(
         self,
         run_record: Any,
@@ -298,9 +382,11 @@ class WorkoutManagerSegmentsMixin:
 
         run_distance_m = self._get_run_distance_m(run_record)
         total_trace_distance_m = sum(route_trace.distance_meters for route_trace in route_traces)
-        distance_scale_factor = WorkoutRoute.calculate_distance_scale_factor(
-            total_trace_distance_m,
+        distance_scale_factor = self._get_run_distance_scale_factor(
+            run_record,
+            route_traces,
             run_distance_m,
+            total_trace_distance_m,
         )
 
         rows: list[list[Any]] = []

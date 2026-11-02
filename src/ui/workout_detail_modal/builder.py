@@ -248,7 +248,24 @@ def _compute_splits_lazy(row: dict[str, Any]) -> list[dict[str, Any]]:
     distance_sort = row.get("distance_sort")
     distance_sort_f = float(distance_sort) if isinstance(distance_sort, (int, float)) else None
     distance_m = distance_sort_f if distance_sort_f is not None and distance_sort_f > 0 else None
-    scale = WorkoutRoute.calculate_distance_scale_factor(route_obj.distance_meters, distance_m)
+    duration_sort = row.get("duration_sort")
+    duration_s = float(duration_sort) if isinstance(duration_sort, (int, float)) else None
+    route_parts = row.get("route_parts")
+    routes = (
+        [part for part in route_parts if isinstance(part, WorkoutRoute)]
+        if isinstance(route_parts, list)
+        else [route_obj]
+    )
+    if not routes:
+        routes = [route_obj]
+    coverage = (
+        WorkoutRoute.calculate_time_coverage(routes, duration_s) if duration_s is not None else None
+    )
+    scale = WorkoutRoute.calculate_distance_scale_factor(
+        route_obj.distance_meters,
+        distance_m,
+        time_coverage=coverage,
+    )
     splits = route_obj.compute_splits(split_distance_m=split_dist, distance_scale_factor=scale)
     row["splits"] = splits
     return splits

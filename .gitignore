@@ -135,6 +135,7 @@ Thumbs.db
 .codacy
 .continue
 .amazonq
+.kiro
 
 output/
 mutants/

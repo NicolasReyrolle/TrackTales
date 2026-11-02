@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from math import atan2, cos, isclose, radians, sin, sqrt
+from math import atan2, cos, isclose, isfinite, radians, sin, sqrt
 from statistics import median
 
 import pandas as pd
@@ -14,6 +14,10 @@ from logic.constants import (
     ALTITUDE_ZERO_TOLERANCE_M,
     ELEVATION_NOISE_THRESHOLD_M,
     ELEVATION_SMOOTHING_WINDOW,
+    MAX_GPS_INTERRUPTION_SCALE_FACTOR,
+    MAX_REALISTIC_DISTANCE_SCALE_DEVIATION,
+    MAX_UNSAMPLED_COVERED_GAP_S,
+    MIN_GPS_TIME_COVERAGE_FOR_SCALING,
 )
 
 
@@ -33,14 +37,6 @@ class RoutePoint:
 @dataclass
 class WorkoutRoute:
     """Represents a workout route as a sequence of GPS points."""
-
-    # Maximum allowed relative deviation between route-derived distance and workout
-    # summary distance for normalization to be considered realistic.
-    #
-    # Example with default 0.10 (10%):
-    # - route=20.8km vs workout=21.1km -> scaling applied
-    # - route=15.0km vs workout=21.1km -> scaling rejected
-    MAX_REALISTIC_DISTANCE_SCALE_DEVIATION = 0.10
 
     points: list[RoutePoint]
     _cumulative_distance_cache: list[float] | None = field(default=None, init=False, repr=False)
@@ -64,6 +60,26 @@ class WorkoutRoute:
         cumulative_distances = self._cumulative_distances()
 
         return cumulative_distances[-1] if cumulative_distances else 0.0
+
+    @staticmethod
+    def calculate_time_coverage(
+        route_traces: list[WorkoutRoute], workout_duration_s: float
+    ) -> float | None:
+        """Return the fraction of workout time covered by sufficiently frequent GPS samples."""
+        if not isfinite(workout_duration_s) or workout_duration_s <= 0:
+            return None
+
+        covered_s = sum(
+            interval_s
+            for trace in route_traces
+            for previous, current in zip(trace.points, trace.points[1:])
+            if 0 < (interval_s := (current.time - previous.time).total_seconds())
+            and (
+                previous.speed + current.speed > 0.0  # distance integrated from speed
+                or interval_s <= MAX_UNSAMPLED_COVERED_GAP_S
+            )
+        )
+        return min(covered_s / workout_duration_s, 1.0)
 
     @property
     def elevation_gain_m(self) -> float:
@@ -247,27 +263,60 @@ class WorkoutRoute:
 
     @classmethod
     def calculate_distance_scale_factor(
-        cls, route_distance_m: float, reference_distance_m: float | None
+        cls,
+        route_distance_m: float,
+        reference_distance_m: float | None,
+        time_coverage: float | None = None,
     ) -> float:
         """Return a route-distance normalization factor when the mismatch is realistic.
 
-        The reference distance comes from the workout summary. A modest adjustment helps
-        when GPX-derived distance slightly under/over-counts due to sampling, pauses, or
-        Apple Health export quirks. Large mismatches are treated as data quality issues and
-        therefore do not trigger scaling.
+        The reference distance comes from the workout summary. The guard is asymmetric
+        because GPS over-count and GPS under-count have different physical causes and
+        different plausible magnitudes:
+
+                - ``scale_factor <= 1.0`` (GPS over-counts vs HealthKit): accept only within
+                    the symmetric ``±MAX_REALISTIC_DISTANCE_SCALE_DEVIATION`` (±10%) window.
+          GPS-derived distances that exceed the HealthKit summary by more than 10% are
+          implausible and are treated as data quality issues.
+
+        - ``1.0 < scale_factor <= MAX_GPS_INTERRUPTION_SCALE_FACTOR`` (GPS under-counts):
+          accept and return the scale factor.  Apple Watch stops recording GPS during
+          ``HKWorkoutEventTypeMotionPaused`` events while the pedometer continues
+          accumulating distance, so the HealthKit summary can be up to ~2× the GPS route
+          distance on pause-heavy workouts.  Scale factors in this range are physically
+          plausible and necessary for accurate best-segment computation.
+
+        - ``scale_factor > MAX_GPS_INTERRUPTION_SCALE_FACTOR`` (i.e., > 2.0): reject as
+          corrupt or mis-categorized data (e.g., a treadmill workout logged as an outdoor
+          run) and fall back to 1.0.
+
+        When time coverage is available, only compensate for uncovered time when the workout
+        summary exceeds GPS distance by more than the normal deviation allowance. Scaling is
+        skipped for otherwise mismatched routes below the minimum time-coverage threshold.
 
         This factor is computed once per workout route and reused for all queried
-        segment distances (100m, 200m, 1km, 5km, half-marathon, etc.).
+        segment distances (100 m, 200 m, 1 km, 5 km, half-marathon, etc.).
         """
         if reference_distance_m is None or route_distance_m <= 0 or reference_distance_m <= 0:
             return 1.0
 
         scale_factor = reference_distance_m / route_distance_m
-        deviation = abs(scale_factor - 1.0)
-        if deviation <= cls.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
-            return scale_factor
+        if time_coverage is not None:
+            if time_coverage < MIN_GPS_TIME_COVERAGE_FOR_SCALING and not isclose(scale_factor, 1.0):
+                return 1.0
+            if scale_factor > 1.0 + MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
+                scale_factor *= time_coverage
 
-        return 1.0
+        if scale_factor <= 1.0:
+            # GPS over-counts vs HealthKit: only accept within ±10%
+            if abs(scale_factor - 1.0) <= MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
+                return scale_factor
+            return 1.0
+        else:
+            # GPS under-counts due to pause-event recording interruptions: accept up to 2.0×
+            if scale_factor <= MAX_GPS_INTERRUPTION_SCALE_FACTOR:
+                return scale_factor
+            return 1.0
 
     def _find_segment_end_index(
         self,

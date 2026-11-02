@@ -55,6 +55,7 @@ More detailed, path-scoped rules live under `.github/instructions/` and are auto
 
 ### During coding
 - Fix root cause; avoid cosmetic unrelated edits.
+- Put every new application setting, configurable default, or settings-candidate constant in `src/logic/constants.py` so it can serve as the source for a future user settings UI; do not define these in feature modules. Document each tunable constant's meaning, units/range where relevant, and the behavioral consequences of increasing or decreasing it in `constants.py`. Keep CSS-only constants in `src/ui/css.py` as specified above.
 - Keep public APIs stable unless the task explicitly requests API changes. Do not use compatibility layers unless absolutely necessary.
 - Use `# noqa: ...` or `# type: ignore` only when necessary and scoped to the smallest
   expression/line.
@@ -77,7 +78,7 @@ More detailed, path-scoped rules live under `.github/instructions/` and are auto
 A task is complete when all of the following are true:
 1. Requested behavior is implemented.
 2. Changed files are lint/type clean (or existing unrelated issues are explicitly called out).
-	Use both Pylance and Ruff for type/lint checks.
+	Use `ruff check` for linting and `mypy` for type checks (both configured in `pyproject.toml`).
 3. Relevant tests pass.
 4. Any new assumptions, trade-offs, or follow-ups are clearly reported.
 

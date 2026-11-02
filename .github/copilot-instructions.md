@@ -2,14 +2,7 @@
 
 ## Rule precedence
 
-When instructions conflict, apply this order:
-1. Safety and platform policy
-2. Explicit user request for the current task
-3. This repository instruction file
-4. General style preferences
-
-If two rules at the same level conflict, choose the option with fewer implementation steps or dependencies, prioritizing user-facing simplicity, and state the assumption.
-If a user request is ambiguous or incomplete, apply repository instructions that best match the stated intent and document the assumption in your response.
+Order: safety and platform policy > explicit user request > this file and `.github/instructions/` > general style preferences. For same-level conflicts or ambiguous requests, choose the simplest option and state the assumption.
 
 ## Project overview
 
@@ -23,10 +16,12 @@ If a user request is ambiguous or incomplete, apply repository instructions that
 - `src/ui/charts.py` - reusable chart and stat-card components
 - `src/ui/local_file_picker.py` - local file picker dialog
 - `src/ui/helpers.py` - label/date/duration/distance formatters
-- `src/logic/export_parser.py` - ZIP/XML/GPX parsing (`ExportParser`)
+- `src/logic/export_parser.py` - ZIP/XML/GPX parsing (`ExportParser`), route loading
 - `src/logic/workout_manager/` - workout aggregations/export/segment features
 - `src/logic/workout_route.py` - `WorkoutRoute`/`RoutePoint`, route metrics, segment search
-- `tests/` - unit tests for logic, UI, i18n
+- `tests/` - unit tests for logic, UI, i18n; `tests/conftest.py` holds shared fixtures and helpers
+- `pyproject.toml` - tooling configuration (pytest/mypy/ruff/formatters)
+- `resources/style.css` - global CSS: dark-mode vars, Quasar overrides, utility classes
 
 **Data flow**: page load → file selection → `load_workouts_from_file()` → parse with `ExportParser` → store in `AppState` → refresh tabs/views.
 
@@ -35,7 +30,8 @@ If a user request is ambiguous or incomplete, apply repository instructions that
 - Setup (Windows): `.\.venv\Scripts\Activate.ps1`
 - Run app: `python -m nicegui src.tracktales`
 - Tests: `pytest --cov=src tests/`
-- Quality: `ruff format src tests`, `ruff check src tests`, `mypy src tests`
+- Quality: `ruff format <files>`, `ruff check <files>`, `mypy <files>` (scope rules: `instructions/coding-workflow.instructions.md`)
+- If a required command cannot run in the current environment (for example, the Windows venv activation on another OS, or a missing dependency), do not claim the check passed. Name the skipped command and the reason in the response, and list it as a follow-up.
 
 ## Topic-specific instructions
 
@@ -45,72 +41,12 @@ More detailed, path-scoped rules live under `.github/instructions/` and are auto
 - [testing.instructions.md](instructions/testing.instructions.md) - `tests/**` (fixtures, mocking, TDD, float comparisons)
 - [translating.instructions.md](instructions/translating.instructions.md) - `src/i18n/**` and any new/changed translatable strings (gettext catalog workflow)
 - [commit-messages.instructions.md](instructions/commit-messages.instructions.md) - Conventional Commits policy
-
-## Coding workflow
-
-### Before coding
-- Identify impacted files and adjacent tests.
-- Reuse existing patterns and naming.
-- Prefer minimal, targeted changes over broad refactors.
-
-### During coding
-- Fix root cause; avoid cosmetic unrelated edits.
-- Put every new application setting, configurable default, or settings-candidate constant in `src/logic/constants.py` so it can serve as the source for a future user settings UI; do not define these in feature modules. Document each tunable constant's meaning, units/range where relevant, and the behavioral consequences of increasing or decreasing it in `constants.py`. Keep CSS-only constants in `src/ui/css.py` as specified above.
-- Keep public APIs stable unless the task explicitly requests API changes. Do not use compatibility layers unless absolutely necessary.
-- Use `# noqa: ...` or `# type: ignore` only when necessary and scoped to the smallest
-  expression/line.
-- Keep cognitive complexity low; break down complex functions into smaller helpers. Maximum complexity of 15 per function.
-- Keep functions under 50 lines where practical. If a function exceeds this, consider refactoring into smaller functions.
-- Each module must contain less than 1000 lines of code. This limit applies to both source and test files. If a module exceeds this, consider splitting it into smaller, focused modules (e.g. by feature area or tab).
-- Any `__init__.py` content should be kept to a minimum, without much logic inside. Only imports and real setup would be preferable.
-
-### After coding
-- Run `ruff format src tests`
-
-### Validation scope (default)
-- Validate changed files and directly affected tests first.
-- Run wider suites (`tests/`, full lint, full type-check) only when:
-  - requested by the user, or
-  - risk is high (cross-cutting parser/model/UI changes).
+- [coding-workflow.instructions.md](instructions/coding-workflow.instructions.md) - `src/**`, `tests/**` (before/during/after coding, size and complexity limits, constants placement, validation scope)
 
 ## Definition of done
 
 A task is complete when all of the following are true:
 1. Requested behavior is implemented.
-2. Changed files are lint/type clean (or existing unrelated issues are explicitly called out).
-	Use `ruff check` for linting and `mypy` for type checks (both configured in `pyproject.toml`).
+2. Changed files are `ruff check` and `mypy` clean (configured in `pyproject.toml`, and enforced by CI on PRs), or existing unrelated issues are explicitly called out. Do not introduce new warnings in touched code.
 3. Relevant tests pass.
 4. Any new assumptions, trade-offs, or follow-ups are clearly reported.
-
-## Key file map
-
-| File | Responsibility |
-|---|---|
-| `src/tracktales.py` | App entrypoint, page registration, CLI args |
-| `src/app_state.py` | Shared application state |
-| `src/ui/layout.py` | Main UI rendering/composition |
-| `src/ui/css.py` | All CSS class/props string constants (single source of truth) |
-| `src/ui/charts.py` | Reusable chart and stat-card components |
-| `src/ui/local_file_picker.py` | Local file picker dialog UI |
-| `src/ui/helpers.py` | UI formatting utilities |
-| `src/logic/export_parser.py` | Health export parsing, route loading |
-| `src/logic/workout_manager/` | Aggregations and reporting utilities |
-| `src/logic/workout_route.py` | Route models and route computations |
-| `tests/conftest.py` | Shared fixtures and test helpers |
-| `pyproject.toml` | Tooling configuration (pytest/mypy/ruff/formatters) |
-| `resources/style.css` | Global CSS: dark-mode vars, Quasar overrides, utility classes |
-
-## CI expectations
-
-CI validates tests and quality checks on PRs. Keep local changes aligned with configured tooling and avoid introducing new warnings in touched code.
-
-## Example responses
-
-### Small fix (single file)
-"Updated `src/logic/workout_route.py` to avoid float equality in the segment guard. Ran `pytest tests/logic/test_workout_route.py -q` (all passing). No API changes."
-
-### Multi-file change
-"Implemented the requested metric in `src/logic/workout_manager/` and wired it in `src/ui/layout.py`, with tests in `tests/logic/test_workout_manager_totals.py`. Validated changed tests and ran targeted lint/type checks for touched files."
-
-### Blocked case
-"I could not complete the change because the required fixture is missing and must be provided by a human (`tests/fixtures/exports/...`). I made no destructive edits. If you add the fixture, I can finish by adding parser handling and tests in one pass."

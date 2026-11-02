@@ -313,7 +313,7 @@ class WorkoutManagerSegmentsMixin:
             and raw_scale > 1.0 + WorkoutRoute.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION
             and distance_scale_factor > 1.0
         ):
-            coverage_pct = total_trace_distance_m / run_distance_m * 100
+            coverage_pct = 100.0 / raw_scale
             _logger.warning(
                 "GPS interruption correction applied for workout %s: "
                 "scale_factor=%.3f (GPS=%.0fm, HealthKit=%.0fm, GPS covers %.1f%% of distance). "

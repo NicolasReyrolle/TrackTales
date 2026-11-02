@@ -85,6 +85,13 @@ The parser and segment logic intentionally use window-bounded route behavior:
 - A single workout-level distance scale factor can normalize route-derived distance to workout summary distance, but only when mismatch is within `logic.constants.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION`.
 - The same normalization factor applies to all queried segment distances for that workout (100m … 100km).
 
+### Tuning route and elevation thresholds
+
+The definitions in `src/logic/constants.py` are the source of truth for these thresholds, including
+their units and the consequences of changing their values. Review those notes before tuning a
+threshold, and check or update boundary-case tests because these values affect which data is
+accepted and which results are reported.
+
 This behavior prevents unrealistic artifacts (for example impossible `100m` durations) when exports contain reused GPX file references or missing points in specific windows.
 
 ## Workout Manager Package Structure

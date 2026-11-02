@@ -868,3 +868,43 @@ class TestScaleFactorWarningLogs:
             if "GPS interruption correction" in msg or "GPS distance scale factor rejected" in msg
         ]
         assert not gps_warnings, f"Expected no GPS warning, got: {gps_warnings}"
+
+
+class TestPartialGpsCoverageRegression:
+    """Workout of 2021-02-14: GPS covers ~55% of the duration and ~51% of the distance."""
+
+    def test_partial_gps_coverage_does_not_fabricate_fast_segments(self) -> None:
+        """17.87 km in 2h42 with a 9.05 km / 89 min GPS trace must not yield a 10k record."""
+        start = datetime(2021, 2, 14, 15, 18, 13, tzinfo=UTC)
+        gps_duration_s = 5328
+        gps_distance_m = 9051.5
+        step_deg = gps_distance_m / 111_319.49 / gps_duration_s
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=start + timedelta(seconds=i),
+                    latitude=0.0,
+                    longitude=i * step_deg,
+                    altitude=0.0,
+                )
+                for i in range(gps_duration_s + 1)
+            ]
+        )
+        manager = WorkoutManager(
+            pd.DataFrame(
+                {
+                    "activityType": ["Running"],
+                    "startDate": [pd.Timestamp("2021-02-14 15:05:10")],
+                    "duration": [9731.0],
+                    "distance": [17868.0],
+                    "route": [route],
+                }
+            )
+        )
+
+        result = manager.get_best_segments(topn=1, distances=[1000, 10000])
+
+        assert 10000 not in result["distance"].tolist()
+        assert float(result.iloc[0]["duration_s"]) == pytest.approx(  # type: ignore[misc]
+            gps_duration_s / gps_distance_m * 1000.0, rel=0.02
+        )

@@ -30,6 +30,8 @@ class CriticalPowerResult(TypedDict):
 
 
 class WorkoutManagerSegmentsMixin:
+    MIN_GPS_TIME_COVERAGE_FOR_SCALING = 0.8
+
     @staticmethod
     def _split_route_into_traces(route: WorkoutRoute) -> list[WorkoutRoute]:
         """Split route into monotonic-time traces to avoid cross-reversal windows."""
@@ -234,6 +236,19 @@ class WorkoutManagerSegmentsMixin:
             return None
         return float(raw_run_distance)
 
+    @staticmethod
+    def _gps_time_coverage(run_record: Any, route_traces: list[WorkoutRoute]) -> float | None:
+        """Return the fraction of the workout duration spanned by the GPS traces."""
+        raw_duration: Any = getattr(run_record, "duration", None)
+        if raw_duration is None or pd.isna(raw_duration) or float(raw_duration) <= 0:
+            return None
+        points = [trace.points for trace in route_traces if trace.points]
+        if not points:
+            return None
+        start = min(pts[0].time for pts in points)
+        end = max(pts[-1].time for pts in points)
+        return (end - start).total_seconds() / float(raw_duration)
+
     @classmethod
     def _extract_route_traces(cls, run_record: Any) -> list[WorkoutRoute]:
         """Extract analysis traces from route parts first, then fallback to route."""
@@ -302,6 +317,22 @@ class WorkoutManagerSegmentsMixin:
             total_trace_distance_m,
             run_distance_m,
         )
+        # Uniform scaling assumes missing distance is spread along the trace. When the GPS
+        # only covers part of the workout's time, the missing distance lies outside the
+        # trace and scaling would fabricate impossibly fast segments.
+        coverage = self._gps_time_coverage(run_record, route_traces)
+        if (
+            distance_scale_factor > 1.0 + WorkoutRoute.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION
+            and coverage is not None
+            and coverage < self.MIN_GPS_TIME_COVERAGE_FOR_SCALING
+        ):
+            _logger.warning(
+                "GPS distance scaling skipped for workout %s: GPS spans only %.0f%% of the "
+                "workout duration.",
+                run_record.startDate,
+                coverage * 100.0,
+            )
+            distance_scale_factor = 1.0
 
         raw_scale = (
             (run_distance_m / total_trace_distance_m)

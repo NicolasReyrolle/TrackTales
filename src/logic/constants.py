@@ -21,6 +21,10 @@ ALTITUDE_ZERO_TOLERANCE_M = 1e-9
 # which can compensate for interruptions but may overstate distances when route data is missing.
 MIN_GPS_TIME_COVERAGE_FOR_SCALING = 0.8
 
+# Maximum interval between GPS samples counted as covered time. Increasing this counts longer
+# dropouts as GPS coverage and may overstate coverage; decreasing it excludes more sparse samples.
+MAX_GPS_TIME_COVERAGE_GAP_SECONDS = 30.0
+
 # Route-normalization settings candidates for a future user settings UI.
 # Maximum deviation of the scale factor from 1.0 accepted when GPS distance exceeds the workout
 # summary. Increasing this normalizes larger GPS over-counts; decreasing it leaves more routes

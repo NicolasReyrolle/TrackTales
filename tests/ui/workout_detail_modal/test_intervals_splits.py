@@ -475,3 +475,18 @@ class TestComputeSplitsLazy:
         assert result[0]["avg_heart_rate"] == pytest.approx(140.5, abs=0.6)
         assert "splits" in row
         assert len(row["splits"]) >= 3
+
+    def test_partial_time_coverage_does_not_scale_splits(self) -> None:
+        """A low-coverage route keeps raw GPS split distance and duration."""
+        route = self._make_route(n_points=3001, speed_m_s=3.0)
+        row: dict[str, Any] = {
+            "route": route,
+            "distance_unit": "km",
+            "distance_sort": 15000.0,
+            "duration_sort": 5000.0,
+        }
+
+        splits = wdm._compute_splits_lazy(row)
+
+        assert len(splits) == 9
+        assert splits[0]["duration_s"] == pytest.approx(1000 / 3, rel=0.02)

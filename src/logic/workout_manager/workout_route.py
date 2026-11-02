@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from math import atan2, cos, isclose, radians, sin, sqrt
+from math import atan2, cos, isclose, isfinite, radians, sin, sqrt
 from statistics import median
 
 import pandas as pd
@@ -15,7 +15,9 @@ from logic.constants import (
     ELEVATION_NOISE_THRESHOLD_M,
     ELEVATION_SMOOTHING_WINDOW,
     MAX_GPS_INTERRUPTION_SCALE_FACTOR,
+    MAX_GPS_TIME_COVERAGE_GAP_SECONDS,
     MAX_REALISTIC_DISTANCE_SCALE_DEVIATION,
+    MIN_GPS_TIME_COVERAGE_FOR_SCALING,
 )
 
 
@@ -58,6 +60,24 @@ class WorkoutRoute:
         cumulative_distances = self._cumulative_distances()
 
         return cumulative_distances[-1] if cumulative_distances else 0.0
+
+    @staticmethod
+    def calculate_time_coverage(
+        route_traces: list[WorkoutRoute], workout_duration_s: float
+    ) -> float | None:
+        """Return the fraction of workout time covered by sufficiently frequent GPS samples."""
+        if not isfinite(workout_duration_s) or workout_duration_s <= 0:
+            return None
+
+        covered_s = sum(
+            interval_s
+            for trace in route_traces
+            for previous, current in zip(trace.points, trace.points[1:])
+            if 0
+            < (interval_s := (current.time - previous.time).total_seconds())
+            <= MAX_GPS_TIME_COVERAGE_GAP_SECONDS
+        )
+        return min(covered_s / workout_duration_s, 1.0)
 
     @property
     def elevation_gain_m(self) -> float:
@@ -241,7 +261,10 @@ class WorkoutRoute:
 
     @classmethod
     def calculate_distance_scale_factor(
-        cls, route_distance_m: float, reference_distance_m: float | None
+        cls,
+        route_distance_m: float,
+        reference_distance_m: float | None,
+        time_coverage: float | None = None,
     ) -> float:
         """Return a route-distance normalization factor when the mismatch is realistic.
 
@@ -265,6 +288,10 @@ class WorkoutRoute:
           corrupt or mis-categorized data (e.g., a treadmill workout logged as an outdoor
           run) and fall back to 1.0.
 
+        When time coverage is available, only compensate for uncovered time when the workout
+        summary exceeds GPS distance by more than the normal deviation allowance. Scaling is
+        skipped for otherwise mismatched routes below the minimum time-coverage threshold.
+
         This factor is computed once per workout route and reused for all queried
         segment distances (100 m, 200 m, 1 km, 5 km, half-marathon, etc.).
         """
@@ -272,6 +299,12 @@ class WorkoutRoute:
             return 1.0
 
         scale_factor = reference_distance_m / route_distance_m
+        if time_coverage is not None:
+            if time_coverage < MIN_GPS_TIME_COVERAGE_FOR_SCALING and not isclose(scale_factor, 1.0):
+                return 1.0
+            if scale_factor > 1.0 + MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
+                scale_factor *= time_coverage
+
         if scale_factor <= 1.0:
             # GPS over-counts vs HealthKit: only accept within ±10%
             if abs(scale_factor - 1.0) <= MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:

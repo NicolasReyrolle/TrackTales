@@ -16,6 +16,7 @@ from logic.constants import (
     ELEVATION_SMOOTHING_WINDOW,
     MAX_GPS_INTERRUPTION_SCALE_FACTOR,
     MAX_REALISTIC_DISTANCE_SCALE_DEVIATION,
+    MAX_UNSAMPLED_COVERED_GAP_S,
     MIN_GPS_TIME_COVERAGE_FOR_SCALING,
 )
 
@@ -73,6 +74,10 @@ class WorkoutRoute:
             for trace in route_traces
             for previous, current in zip(trace.points, trace.points[1:])
             if 0 < (interval_s := (current.time - previous.time).total_seconds())
+            and (
+                previous.speed + current.speed > 0.0  # distance integrated from speed
+                or interval_s <= MAX_UNSAMPLED_COVERED_GAP_S
+            )
         )
         return min(covered_s / workout_duration_s, 1.0)
 

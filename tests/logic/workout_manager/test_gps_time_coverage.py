@@ -56,6 +56,25 @@ class TestGpsTimeCoverage:
         splits = route.compute_splits(distance_scale_factor=scale)
         assert splits[0]["duration_s"] == pytest.approx(1000 / 1.2, rel=0.02)
 
+    def test_no_speed_dropout_is_uncovered(self) -> None:
+        """A long gap without speed samples cannot be integrated, so it is not covered."""
+        start = datetime(2025, 1, 1, tzinfo=UTC)
+        timestamps = [*range(0, 3001, 10), *range(5000, 5001, 10)]
+        route = WorkoutRoute(
+            points=[
+                RoutePoint(
+                    time=start + timedelta(seconds=t),
+                    latitude=0.0,
+                    longitude=3.0 * t / 111_319.49,
+                )
+                for t in timestamps
+            ]
+        )
+
+        coverage = WorkoutRoute.calculate_time_coverage([route], 5000.0)
+
+        assert coverage == pytest.approx(3000 / 5000)
+
     def test_stationary_uncovered_tail_does_not_scale_an_accurate_trace(self) -> None:
         """A 50-second stationary tail does not make an accurate 1.9 km route shorter."""
         start = datetime(2025, 4, 17, 16, 57, 20, tzinfo=UTC)

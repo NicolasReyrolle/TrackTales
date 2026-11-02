@@ -21,6 +21,10 @@ ALTITUDE_ZERO_TOLERANCE_M = 1e-9
 # which can compensate for interruptions but may overstate distances when route data is missing.
 MIN_GPS_TIME_COVERAGE_FOR_SCALING = 0.8
 
+# Longest gap in seconds between two points without GPS speed that still counts as covered.
+# Without speed, distance is a straight line, which cannot capture an unrecorded detour.
+MAX_UNSAMPLED_COVERED_GAP_S = 30.0
+
 # Route-normalization settings candidates for a future user settings UI.
 # Maximum deviation of the scale factor from 1.0 accepted when GPS distance exceeds the workout
 # summary. Increasing this normalizes larger GPS over-counts; decreasing it leaves more routes

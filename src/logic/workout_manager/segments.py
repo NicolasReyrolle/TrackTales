@@ -305,21 +305,14 @@ class WorkoutManagerSegmentsMixin:
                 best = result
         return best
 
-    def _get_run_best_segment_rows(
+    def _get_run_distance_scale_factor(
         self,
         run_record: Any,
-        distances: list[int],
-    ) -> list[list[Any]]:
-        """Collect best-segment result rows for one running workout."""
-        route_traces = self._extract_route_traces(run_record)
-        if not route_traces:
-            return []
-
-        run_distance_m = self._get_run_distance_m(run_record)
-        total_trace_distance_m = sum(route_trace.distance_meters for route_trace in route_traces)
-        # Uniform scaling assumes missing distance is spread along the trace. Distance
-        # covered while GPS was off (gaps between traces) is expected at the trace's
-        # own pace, so only the remaining discrepancy may be attributed to the trace.
+        route_traces,
+        run_distance_m,
+        total_trace_distance_m,
+    ) -> float:
+        """Calculate the trace distance scale, accounting for GPS coverage."""
         coverage = self._gps_time_coverage(run_record, route_traces)
         expected_distance_m = (
             total_trace_distance_m / coverage if coverage else total_trace_distance_m
@@ -373,6 +366,26 @@ class WorkoutManagerSegmentsMixin:
                 total_trace_distance_m,
                 run_distance_m,
             )
+        return distance_scale_factor
+
+    def _get_run_best_segment_rows(
+        self,
+        run_record: Any,
+        distances: list[int],
+    ) -> list[list[Any]]:
+        """Collect best-segment result rows for one running workout."""
+        route_traces = self._extract_route_traces(run_record)
+        if not route_traces:
+            return []
+
+        run_distance_m = self._get_run_distance_m(run_record)
+        total_trace_distance_m = sum(route_trace.distance_meters for route_trace in route_traces)
+        distance_scale_factor = self._get_run_distance_scale_factor(
+            run_record,
+            route_traces,
+            run_distance_m,
+            total_trace_distance_m,
+        )
 
         rows: list[list[Any]] = []
         for distance in distances:

@@ -8,7 +8,12 @@ from typing import Any, TypedDict, cast
 
 import pandas as pd
 
-from logic.constants import MIN_GPS_TIME_COVERAGE_FOR_SCALING, PANDAS_ISO8601_FORMAT
+from logic.constants import (
+    MAX_GPS_INTERRUPTION_SCALE_FACTOR,
+    MAX_REALISTIC_DISTANCE_SCALE_DEVIATION,
+    MIN_GPS_TIME_COVERAGE_FOR_SCALING,
+    PANDAS_ISO8601_FORMAT,
+)
 
 from .workout_route import WorkoutRoute
 
@@ -339,7 +344,7 @@ class WorkoutManagerSegmentsMixin:
         )
         if (
             raw_scale is not None
-            and raw_scale > 1.0 + WorkoutRoute.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION
+            and raw_scale > 1.0 + MAX_REALISTIC_DISTANCE_SCALE_DEVIATION
             and distance_scale_factor > 1.0
         ):
             coverage_pct = 100.0 / raw_scale
@@ -353,14 +358,14 @@ class WorkoutManagerSegmentsMixin:
                 run_distance_m,
                 coverage_pct,
             )
-        if raw_scale is not None and raw_scale > WorkoutRoute.MAX_GPS_INTERRUPTION_SCALE_FACTOR:
+        if raw_scale is not None and raw_scale > MAX_GPS_INTERRUPTION_SCALE_FACTOR:
             _logger.warning(
                 "GPS distance scale factor rejected for workout %s: "
                 "raw_scale=%.3f exceeds ceiling %.1f (GPS=%.0fm, HealthKit=%.0fm). "
                 "Best segments will use raw GPS distance.",
                 run_record.startDate,
                 raw_scale,
-                WorkoutRoute.MAX_GPS_INTERRUPTION_SCALE_FACTOR,
+                MAX_GPS_INTERRUPTION_SCALE_FACTOR,
                 total_trace_distance_m,
                 run_distance_m,
             )

@@ -55,6 +55,7 @@ More detailed, path-scoped rules live under `.github/instructions/` and are auto
 
 ### During coding
 - Fix root cause; avoid cosmetic unrelated edits.
+- Put every new application setting, configurable default, or settings-candidate constant in `src/logic/constants.py` so it can serve as the source for a future user settings UI; do not define these in feature modules. Keep CSS-only constants in `src/ui/css.py` as specified above.
 - Keep public APIs stable unless the task explicitly requests API changes. Do not use compatibility layers unless absolutely necessary.
 - Use `# noqa: ...` or `# type: ignore` only when necessary and scoped to the smallest
   expression/line.

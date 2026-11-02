@@ -14,6 +14,8 @@ from logic.constants import (
     ALTITUDE_ZERO_TOLERANCE_M,
     ELEVATION_NOISE_THRESHOLD_M,
     ELEVATION_SMOOTHING_WINDOW,
+    MAX_GPS_INTERRUPTION_SCALE_FACTOR,
+    MAX_REALISTIC_DISTANCE_SCALE_DEVIATION,
 )
 
 
@@ -33,24 +35,6 @@ class RoutePoint:
 @dataclass
 class WorkoutRoute:
     """Represents a workout route as a sequence of GPS points."""
-
-    # Maximum allowed relative deviation between route-derived distance and workout
-    # summary distance for normalization to be considered realistic.
-    # This governs the symmetric ±10% guard applied when scale_factor <= 1.0
-    # (i.e., GPS over-count or very small under-count cases).
-    #
-    # Example with default 0.10 (10%):
-    # - route=20.8km vs workout=21.1km -> scaling applied (scale ≈ 1.015, within ±10%)
-    # - route=15.0km vs workout=21.1km -> scaling rejected (scale ≈ 1.41, above ceiling)
-    MAX_REALISTIC_DISTANCE_SCALE_DEVIATION = 0.10
-
-    # Upper ceiling for GPS under-count scale factors caused by GPS recording interruptions
-    # during pause events (HKWorkoutEventTypeMotionPaused). When the Apple Watch pauses GPS
-    # recording, the pedometer continues accumulating distance, so the HealthKit summary
-    # distance can be up to ~2× the GPS route distance. Scale factors in (1.10, 2.0] are
-    # accepted and applied; scale factors above 2.0 are rejected as corrupt or mis-categorized
-    # data (e.g., a treadmill workout logged as an outdoor run).
-    MAX_GPS_INTERRUPTION_SCALE_FACTOR = 2.0
 
     points: list[RoutePoint]
     _cumulative_distance_cache: list[float] | None = field(default=None, init=False, repr=False)
@@ -265,8 +249,8 @@ class WorkoutRoute:
         because GPS over-count and GPS under-count have different physical causes and
         different plausible magnitudes:
 
-        - ``scale_factor <= 1.0`` (GPS over-counts vs HealthKit): accept only within
-          the symmetric ``±MAX_REALISTIC_DISTANCE_SCALE_DEVIATION`` (±10%) window.
+                - ``scale_factor <= 1.0`` (GPS over-counts vs HealthKit): accept only within
+                    the symmetric ``±MAX_REALISTIC_DISTANCE_SCALE_DEVIATION`` (±10%) window.
           GPS-derived distances that exceed the HealthKit summary by more than 10% are
           implausible and are treated as data quality issues.
 
@@ -290,12 +274,12 @@ class WorkoutRoute:
         scale_factor = reference_distance_m / route_distance_m
         if scale_factor <= 1.0:
             # GPS over-counts vs HealthKit: only accept within ±10%
-            if abs(scale_factor - 1.0) <= cls.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
+            if abs(scale_factor - 1.0) <= MAX_REALISTIC_DISTANCE_SCALE_DEVIATION:
                 return scale_factor
             return 1.0
         else:
             # GPS under-counts due to pause-event recording interruptions: accept up to 2.0×
-            if scale_factor <= cls.MAX_GPS_INTERRUPTION_SCALE_FACTOR:
+            if scale_factor <= MAX_GPS_INTERRUPTION_SCALE_FACTOR:
                 return scale_factor
             return 1.0
 

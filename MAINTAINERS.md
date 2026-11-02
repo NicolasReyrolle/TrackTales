@@ -82,7 +82,7 @@ The parser and segment logic intentionally use window-bounded route behavior:
 - Best-segment analysis uses `route_parts` traces so segment windows do not cross disjoint route windows.
 - Trace splitting only occurs on strict timestamp reversals (`<`), not equal timestamps, so duplicate timestamps do not fragment long routes.
 - Traveled distance for segment search uses GPX speed integration (`speed × Δt`, trapezoidal between points) with Haversine fallback when speed is unavailable.
-- A single workout-level distance scale factor can normalize route-derived distance to workout summary distance, but only when mismatch is within `WorkoutRoute.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION`.
+- A single workout-level distance scale factor can normalize route-derived distance to workout summary distance, but only when mismatch is within `logic.constants.MAX_REALISTIC_DISTANCE_SCALE_DEVIATION`.
 - The same normalization factor applies to all queried segment distances for that workout (100m … 100km).
 
 This behavior prevents unrealistic artifacts (for example impossible `100m` durations) when exports contain reused GPX file references or missing points in specific windows.

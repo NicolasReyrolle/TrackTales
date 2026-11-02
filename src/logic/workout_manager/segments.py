@@ -1,6 +1,7 @@
 """Best-segment mixin for WorkoutManager."""
 
 import logging
+import math
 from datetime import datetime
 from itertools import combinations
 from typing import Any, TypedDict, cast
@@ -328,7 +329,7 @@ class WorkoutManagerSegmentsMixin:
             run_distance_m,
         )
         if (
-            distance_scale_factor != 1.0
+            not math.isclose(distance_scale_factor, 1.0)
             and coverage is not None
             and coverage < self.MIN_GPS_TIME_COVERAGE_FOR_SCALING
         ):

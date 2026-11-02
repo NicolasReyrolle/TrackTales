@@ -766,7 +766,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 
-def _scale_factor(route: float, reference: float) -> float:
+def _scale_factor(route: float, reference: float | None) -> float:
     """Convenience wrapper."""
     return WorkoutRoute.calculate_distance_scale_factor(route, reference)
 

@@ -27,30 +27,34 @@ def _manager_with_route(
 
 
 class TestGpsTimeCoverage:
-    def test_single_route_dropout_is_excluded_from_time_coverage(self) -> None:
-        """A long dropout inside one route must not inflate coverage or compress split times."""
-        start = datetime(2021, 2, 14, 15, 18, 13, tzinfo=UTC)
-        timestamps = [*range(1501), *range(3500, 5001)]
-        points: list[RoutePoint] = []
-        for timestamp_s in timestamps:
-            moving_s = timestamp_s if timestamp_s <= 1500 else timestamp_s - 2000
-            is_gap_edge = timestamp_s in (1500, 3500)
-            points.append(
+    def test_internal_dropout_does_not_discount_included_route_distance(self) -> None:
+        """A long interval's counted distance must not be discounted by its elapsed time."""
+        start = datetime(2025, 1, 1, tzinfo=UTC)
+        timestamps = [*range(901), *range(1100, 2001)]
+        route = WorkoutRoute(
+            points=[
                 RoutePoint(
                     time=start + timedelta(seconds=timestamp_s),
                     latitude=0.0,
-                    longitude=moving_s * 3 / 111_319.49,
-                    altitude=0.0,
-                    speed=0.0 if is_gap_edge else 3.0,
+                    longitude=0.0,
+                    speed=1.0,
                 )
-            )
-        route = WorkoutRoute(points=points)
-        manager = _manager_with_route(route, duration_s=5000.0, distance_m=15000.0)
+                for timestamp_s in timestamps
+            ]
+        )
+        manager = _manager_with_route(route, duration_s=2000.0, distance_m=2400.0)
 
         result = manager.get_best_segments(topn=1, distances=[1000])
 
-        assert WorkoutRoute.calculate_time_coverage([route], 5000.0) == pytest.approx(0.6)
-        assert float(result.iloc[0]["duration_s"]) == pytest.approx(1000 / 3, rel=0.02)
+        assert route.distance_meters == pytest.approx(2000.0)
+        coverage = WorkoutRoute.calculate_time_coverage([route], 2000.0)
+        assert coverage == pytest.approx(1.0)
+        assert float(result.iloc[0]["duration_s"]) == pytest.approx(1000 / 1.2, rel=0.02)
+        scale = WorkoutRoute.calculate_distance_scale_factor(
+            route.distance_meters, 2400.0, time_coverage=coverage
+        )
+        splits = route.compute_splits(distance_scale_factor=scale)
+        assert splits[0]["duration_s"] == pytest.approx(1000 / 1.2, rel=0.02)
 
     def test_stationary_uncovered_tail_does_not_scale_an_accurate_trace(self) -> None:
         """A 50-second stationary tail does not make an accurate 1.9 km route shorter."""

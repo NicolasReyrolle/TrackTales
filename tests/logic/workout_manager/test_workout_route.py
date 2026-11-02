@@ -6,6 +6,8 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 from lxml import etree as ET
 
 from logic.export_parser import ExportParser
@@ -760,10 +762,6 @@ class TestEstimatedElevationGain:
 #
 # These tests document and preserve those behaviors across the fix.
 # ALL tests in this class MUST PASS on both unfixed and fixed code.
-
-
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 
 def _scale_factor(route: float, reference: float | None) -> float:

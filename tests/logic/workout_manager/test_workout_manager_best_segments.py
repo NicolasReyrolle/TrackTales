@@ -809,8 +809,6 @@ class TestScaleFactorWarningLogs:
         """
         import logging
 
-        from logic.workout_manager.segments import WorkoutManagerSegmentsMixin
-
         # ~1 113 m at the equator; HealthKit says 2 000 m → scale ≈ 1.80
         manager = self._make_manager_with_scale(
             route_distance_deg=0.01, duration_s=600, declared_distance_m=2000.0
@@ -820,9 +818,9 @@ class TestScaleFactorWarningLogs:
             manager.get_best_segments(topn=1, distances=[100])
 
         warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
-        assert any(
-            "GPS interruption correction applied" in msg for msg in warning_messages
-        ), f"Expected GPS interruption warning, got: {warning_messages}"
+        assert any("GPS interruption correction applied" in msg for msg in warning_messages), (
+            f"Expected GPS interruption warning, got: {warning_messages}"
+        )
 
     def test_warning_logged_when_scale_exceeds_ceiling(
         self, caplog: pytest.LogCaptureFixture
@@ -842,9 +840,9 @@ class TestScaleFactorWarningLogs:
             manager.get_best_segments(topn=1, distances=[100])
 
         warning_messages = [r.message for r in caplog.records if r.levelno == logging.WARNING]
-        assert any(
-            "GPS distance scale factor rejected" in msg for msg in warning_messages
-        ), f"Expected GPS rejection warning, got: {warning_messages}"
+        assert any("GPS distance scale factor rejected" in msg for msg in warning_messages), (
+            f"Expected GPS rejection warning, got: {warning_messages}"
+        )
 
     def test_no_warning_logged_when_scale_within_tolerance(
         self, caplog: pytest.LogCaptureFixture

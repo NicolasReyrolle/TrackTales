@@ -243,16 +243,16 @@ class TestSplitsColumnHeader:
         return table_stubs
 
     def test_initial_header_is_km_when_metric(self) -> None:
-        """The split-number column label should start as 'km' for metric rows."""
+        """The split-number column label should start as '1 km' for metric rows."""
         table_stubs = self._create_modal_with_du("km")
         splits_table = table_stubs[1]
-        assert splits_table.columns[0]["label"] == "km"
+        assert splits_table.columns[0]["label"] == "1\u00a0km"
 
     def test_initial_header_is_mi_when_imperial(self) -> None:
-        """The split-number column label should start as 'mi' for imperial rows."""
+        """The split-number column label should start as '1 mi' for imperial rows."""
         table_stubs = self._create_modal_with_du("mi")
         splits_table = table_stubs[1]
-        assert splits_table.columns[0]["label"] == "mi"
+        assert splits_table.columns[0]["label"] == "1\u00a0mi"
 
     def test_header_updated_to_mi_when_intervals_tab_opened(self) -> None:
         """Column label should update to 'mi' when Intervals tab is opened in imperial mode."""
@@ -280,7 +280,7 @@ class TestSplitsColumnHeader:
         fn(0)
         tabs_stub.fire_value_change("intervals")
         splits_table = table_stubs[1]
-        assert splits_table.columns[0]["label"] == "mi"
+        assert splits_table.columns[0]["label"] == "1\u00a0mi"
 
 
 class TestComputeSplitsLazy:

@@ -508,7 +508,7 @@ def _do_refresh_intervals_tab(
     if has_splits:
         du = row.get("distance_unit", "km")
         # Update column header to reflect the active distance unit (km / mi).
-        splits_columns[0]["label"] = du
+        splits_columns[0]["label"] = f"1\u00a0{du}"
         splits_table.rows = _format_split_rows(splits, du)
         splits_table.update()
 
@@ -695,7 +695,7 @@ def create_workout_detail_modal(
                 splits_columns = [
                     {
                         "name": "split",
-                        "label": _initial_du,
+                        "label": f"1\u00a0{_initial_du}",
                         "field": "split",
                         "align": "right",
                         "sortable": False,

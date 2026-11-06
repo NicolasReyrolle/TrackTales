@@ -17,7 +17,7 @@ pre-commit==4.7.0
 commitizen==4.19.3
 
 # Type stubs
-pandas-stubs==3.0.5.260914
+pandas-stubs==3.1.0.261029
 lxml-stubs==0.5.1
 types-pywin32==312.0.0.20261031
 

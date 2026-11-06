@@ -7,8 +7,8 @@ various scenarios like page refreshes, multiple connections, and error handling.
 
 import asyncio
 import logging
-from collections.abc import Callable
-from unittest.mock import patch
+from collections.abc import Awaitable, Callable
+from unittest.mock import PropertyMock, patch
 
 import pytest
 from nicegui import app
@@ -269,3 +269,77 @@ class TestAutoLoadFunctionality:
             # Cleanup
             app.storage.general.pop("_dev_file_path", None)
             await asyncio.sleep(0.2)
+
+    async def test_auto_load_not_skipped_when_file_is_globally_loaded(
+        self, user: User, create_health_zip: Callable[..., str]
+    ) -> None:
+        """A file loaded by another page must not suppress auto-load for this page."""
+        from app_state import state
+
+        zip_path = create_health_zip()
+        app.storage.general["_dev_file_path"] = zip_path
+
+        try:
+            with patch("nicegui.ui.timer") as mock_timer:
+                state.file_loaded = True
+                await user.open("/")
+                await asyncio.sleep(0.5)
+
+                mock_timer.assert_called_once()
+        finally:
+            state.file_loaded = False
+            app.storage.general.pop("_dev_file_path", None)
+            await asyncio.sleep(0.2)
+
+    async def test_auto_load_skipped_once_for_preference_reload(
+        self, user: User, create_health_zip: Callable[..., str]
+    ) -> None:
+        """A preference reload marker suppresses only that page's auto-load."""
+        from app_state import DEV_AUTO_LOAD_SKIP_KEY
+
+        zip_path = create_health_zip()
+        app.storage.general["_dev_file_path"] = zip_path
+        tab_storage = {DEV_AUTO_LOAD_SKIP_KEY: True}
+        timer_callback: Callable[[], Awaitable[None]] | None = None
+
+        def capture_timer(
+            _interval: float,
+            callback: Callable[[], Awaitable[None]],
+            **_kwargs: object,
+        ) -> None:
+            nonlocal timer_callback
+            timer_callback = callback
+
+        try:
+            with patch("nicegui.ui.timer", side_effect=capture_timer):
+                await user.open("/")
+
+            assert timer_callback is not None
+            with patch.object(
+                type(app.storage), "tab", new_callable=PropertyMock, return_value=tab_storage
+            ):
+                await timer_callback()
+
+            assert DEV_AUTO_LOAD_SKIP_KEY not in tab_storage
+        finally:
+            app.storage.general.pop("_dev_file_path", None)
+            await asyncio.sleep(0.2)
+
+    def test_preference_reload_sets_tab_scoped_marker(
+        self, create_health_zip: Callable[..., str]
+    ) -> None:
+        """Preference changes mark only the current tab's next render to skip auto-load."""
+        from app_state import DEV_AUTO_LOAD_SKIP_KEY
+        from ui.layout import _mark_dev_auto_load_skip_for_preference_reload
+
+        app.storage.general["_dev_file_path"] = create_health_zip()
+        tab_storage: dict[str, bool] = {}
+        try:
+            with patch.object(
+                type(app.storage), "tab", new_callable=PropertyMock, return_value=tab_storage
+            ):
+                _mark_dev_auto_load_skip_for_preference_reload()
+
+            assert tab_storage == {DEV_AUTO_LOAD_SKIP_KEY: True}
+        finally:
+            app.storage.general.pop("_dev_file_path", None)

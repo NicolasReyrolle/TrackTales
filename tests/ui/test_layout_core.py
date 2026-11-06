@@ -241,7 +241,7 @@ def test_render_trends_tab_renders_dashboard_heading_and_content() -> None:
 def test_change_language_reloads_ui_without_triggering_file_load() -> None:
     """Language switch should reload the page so all translated text updates."""
 
-    fake_app = SimpleNamespace(storage=SimpleNamespace(user={}))
+    fake_app = SimpleNamespace(storage=SimpleNamespace(user={}, general={}, tab={}))
 
     with (
         patch("ui.layout.app", fake_app),

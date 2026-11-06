@@ -195,7 +195,8 @@ class TestLanguageSwitching:
         user.find("tune").click()
         await asyncio.sleep(0.1)
         change_language = cast(Callable[[str], None], getattr(layout_module, "_change_language"))
-        change_language("fr")
+        with user:
+            change_language("fr")
 
         # _change_language triggers ui.navigate.reload(); title stays literal
         await user.should_see("TrackTales", retries=50)

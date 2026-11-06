@@ -269,3 +269,28 @@ class TestAutoLoadFunctionality:
             # Cleanup
             app.storage.general.pop("_dev_file_path", None)
             await asyncio.sleep(0.2)
+
+    async def test_auto_load_skipped_when_file_already_loaded(
+        self, user: User, create_health_zip: Callable[..., str]
+    ) -> None:
+        """Auto-load must not re-parse when the file is already loaded in the session.
+
+        Simulates a language-change reload: state.file_loaded is True when main() runs
+        again, so the auto-load timer must not be scheduled a second time.
+        """
+        from app_state import state
+
+        zip_path = create_health_zip()
+        app.storage.general["_dev_file_path"] = zip_path
+
+        try:
+            with patch("nicegui.ui.timer") as mock_timer:
+                state.file_loaded = True
+                await user.open("/")
+                await asyncio.sleep(0.5)
+
+                mock_timer.assert_not_called()
+        finally:
+            state.file_loaded = False
+            app.storage.general.pop("_dev_file_path", None)
+            await asyncio.sleep(0.2)

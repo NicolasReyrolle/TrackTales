@@ -15,7 +15,7 @@ from typing import cast
 
 from nicegui import app, ui
 
-from app_state import state
+from app_state import DEV_AUTO_LOAD_SKIP_KEY, state
 from assets import APP_ICON_BASE64
 from i18n import compile_message_catalogs
 from logging_config import ensure_standard_streams, setup_logging
@@ -82,19 +82,22 @@ def main() -> None:
     _register_static_assets()
 
     # Check if dev file was passed through app storage
-    # Note: This auto-load mechanism intentionally triggers on every page render
-    # (e.g., browser refresh or new tab). This is useful for development as it
-    # allows quickly testing changes by simply refreshing the browser.
+    # This auto-load mechanism intentionally triggers on every page render
+    # (e.g., browser refresh or new tab), except for preference-triggered reloads.
     dev_file = cast(
         str | None,
         app.storage.general.get("_dev_file_path"),  # type: ignore[no-untyped-call]
     )
-    if dev_file and not state.file_loaded:
+    if dev_file:
         _logger.info("Dev file will be auto-loaded: %s", dev_file)
         state.input_file.value = dev_file
 
         async def _auto_load() -> None:
             """Auto-load the dev file after UI is ready."""
+            if app.storage.tab.pop(DEV_AUTO_LOAD_SKIP_KEY, False):
+                _logger.debug("Skipping dev auto-load after preference reload")
+                return
+
             _logger.info("Auto-loading file: %s", dev_file)
             await load_file()
 

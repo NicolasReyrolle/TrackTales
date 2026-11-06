@@ -12,6 +12,7 @@ import pandas as pd
 from nicegui import app, ui
 
 from app_state import (
+    DEV_AUTO_LOAD_SKIP_KEY,
     UNIT_SYSTEMS,
     get_distance_unit,
     get_elevation_unit,
@@ -672,7 +673,14 @@ def _change_language(language_code: str) -> None:
     _logger.info("Language changed to '%s', reloading page.", language_code)
     # NiceGUI top-level layout elements (header/drawer/body containers) cannot be
     # nested in refreshable containers. Reloading ensures all translated UI text updates.
+    _mark_dev_auto_load_skip_for_preference_reload()
     ui.navigate.reload()
+
+
+def _mark_dev_auto_load_skip_for_preference_reload() -> None:
+    """Prevent re-parsing the dev file after a preference-triggered page reload."""
+    if app.storage.general.get("_dev_file_path"):
+        app.storage.tab[DEV_AUTO_LOAD_SKIP_KEY] = True
 
 
 def _refresh_loaded_data_for_unit_change() -> None:
@@ -688,6 +696,7 @@ def _change_unit_system(system: str) -> None:
     app.storage.user["unit_system"] = system
     _refresh_loaded_data_for_unit_change()
     _logger.info("Unit system changed to '%s', reloading page.", system)
+    _mark_dev_auto_load_skip_for_preference_reload()
     ui.navigate.reload()
 
 

@@ -19,6 +19,8 @@ UNIT_SYSTEMS: dict[str, str] = {"metric": "Metric", "imperial": "Imperial"}
 
 DEFAULT_UNIT_SYSTEM: str = "metric"
 
+DEV_AUTO_LOAD_SKIP_KEY = "_skip_dev_auto_load_once"
+
 
 def _register_unit_system_translations() -> None:
     """Register unit-system labels for Babel extraction.

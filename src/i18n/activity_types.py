@@ -147,16 +147,24 @@ def build_activity_select_options(activity_options: list[str]) -> dict[str, str]
 
     NiceGUI `ui.select` expects dictionary options in the form
     `{value: label}`. The selected value remains the raw activity type.
+    Options are sorted by translated label so the combo box is alphabetical
+    in every language; the first entry (e.g. 'All') is always kept first.
     """
-    translated_options: dict[str, str] = {}
+    if not activity_options:
+        return {}
+
     used_labels: set[str] = set()
+    pairs: list[tuple[str, str]] = []
     for raw_value in activity_options:
         display_label = activity_display_label(raw_value)
         if display_label in used_labels:
             display_label = f"{display_label} ({raw_value})"
-        translated_options[raw_value] = display_label
+        pairs.append((raw_value, display_label))
         used_labels.add(display_label)
-    return translated_options
+
+    first = pairs[:1]
+    rest = sorted(pairs[1:], key=lambda p: p[1])
+    return dict(first + rest)
 
 
 def translate_activity_value_map(values: Mapping[str, float | int]) -> dict[str, float | int]:

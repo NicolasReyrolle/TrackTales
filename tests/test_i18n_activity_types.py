@@ -1,5 +1,7 @@
 """Tests for i18n activity type translation helpers."""
 
+from unittest.mock import patch
+
 from i18n.activity_types import (
     HK_WORKOUT_ACTIVITY_TYPES,
     activity_display_label,
@@ -65,3 +67,18 @@ def test_translate_activity_value_map_merges_label_collisions() -> None:
     translated = translate_activity_value_map({"Running": 2, "HKWorkoutActivityTypeRunning": 3})
 
     assert translated == {"Running": 5}
+
+
+def test_build_activity_select_options_sorted_by_translated_label_in_french() -> None:
+    """Options must be sorted by translated label, not raw key, so French UI is alphabetical.
+
+    In French: Running -> "Course à pied", Hiking -> "Randonnée", Walking -> "Marche".
+    Sorted by label: All, Course à pied, Marche, Randonnée — not the raw-key order
+    All, Hiking, Running, Walking.
+    """
+    with patch("i18n.core.get_language", return_value="fr"):
+        options = build_activity_select_options(["All", "Hiking", "Running", "Walking"])
+
+    labels = list(options.values())
+    assert labels[0] == "Toutes", "'All' must remain first"
+    assert labels[1:] == sorted(labels[1:]), "Remaining labels must be sorted alphabetically"

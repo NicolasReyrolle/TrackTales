@@ -79,7 +79,7 @@ class WorkoutManagerSeasonalAggregationsMixin:
 
         Args:
             column: DataFrame column to aggregate.
-            date_attr: pandas ``dt`` attribute name (``"dayofweek"``, ``"month"``,
+            date_attr: pandas ``dt`` attribute name (``"day_of_week"``, ``"month"``,
                 or ``"quarter"``).
             positions: All expected integer positions for the date attribute
                 (e.g. ``[0, 1, …, 6]`` for ``"dayofweek"``).
@@ -177,7 +177,7 @@ class WorkoutManagerSeasonalAggregationsMixin:
         """Return total workout count for each day of the week (Monday … Sunday)."""
         return self._aggregate_by_seasonal_unit(
             "activityType",
-            "dayofweek",
+            "day_of_week",
             _DAY_OF_WEEK_POSITIONS,
             _DAY_OF_WEEK_LABELS,
             lambda x: x.count().astype(float),
@@ -259,7 +259,7 @@ class WorkoutManagerSeasonalAggregationsMixin:
         """Return total distance for each day of the week in the specified unit."""
         return self._aggregate_by_seasonal_unit(
             "distance",
-            "dayofweek",
+            "day_of_week",
             _DAY_OF_WEEK_POSITIONS,
             _DAY_OF_WEEK_LABELS,
             lambda x: x.sum(),
@@ -339,7 +339,7 @@ class WorkoutManagerSeasonalAggregationsMixin:
         """Return total duration in hours for each day of the week."""
         return self._aggregate_by_seasonal_unit(
             "duration",
-            "dayofweek",
+            "day_of_week",
             _DAY_OF_WEEK_POSITIONS,
             _DAY_OF_WEEK_LABELS,
             lambda x: x.sum(),
@@ -416,7 +416,7 @@ class WorkoutManagerSeasonalAggregationsMixin:
         """Return total calories burned for each day of the week."""
         return self._aggregate_by_seasonal_unit(
             "sumActiveEnergyBurned",
-            "dayofweek",
+            "day_of_week",
             _DAY_OF_WEEK_POSITIONS,
             _DAY_OF_WEEK_LABELS,
             lambda x: x.sum(),

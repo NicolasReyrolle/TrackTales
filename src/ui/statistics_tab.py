@@ -34,7 +34,7 @@ def _build_day_time_heatmap_values(workouts: pd.DataFrame) -> list[tuple[int, in
     start_dates = start_dates.dropna()
     if start_dates.empty:
         return []
-    counts = start_dates.groupby([start_dates.dt.hour, start_dates.dt.dayofweek]).size()
+    counts = start_dates.groupby([start_dates.dt.hour, start_dates.dt.day_of_week]).size()
     result: list[tuple[int, int, int]] = []
     for key, value in counts.items():
         if not isinstance(key, tuple) or len(key) != 2:

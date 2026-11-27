@@ -69,6 +69,46 @@ ruff check src tests
 mypy src tests
 ```
 
+## Dependabot branch updates
+
+The `autoupdate` workflow updates only Dependabot PRs targeting `main` by merging
+`main` into their branches. It runs on pushes to `main`, every four hours, and on
+manual dispatch from `main`. Scheduled runs catch automated merges that do not trigger
+push workflows; GitHub may delay scheduled runs. Conflicts and other API failures
+are reported in the workflow run and may need manual intervention.
+
+### GitHub App setup
+
+Before merging this workflow:
+
+1. Open [GitHub Apps](https://github.com/settings/apps) in your account settings and
+   select **New GitHub App**. Choose a globally unique name and use
+   `https://github.com/NicolasReyrolle` as the homepage URL. Leave the
+   callback and setup URLs empty and uncheck **Active** under Webhook.
+2. Under **Repository permissions**, set **Contents** and **Pull requests** to
+   **Read and write**. Under installation options, select **Only on this account**,
+   then create the app.
+3. In the app settings, select **Install App** and install it on your account. Choose
+   **Only select repositories** and select **TrackTales**.
+4. Copy the app's **Client ID** (not its App ID). Under the repository's
+   **Settings > Secrets and variables > Actions > Variables**, create the repository
+   variable `DEPENDABOT_UPDATER_APP_CLIENT_ID` with that value.
+5. In the app settings, select **Credentials > Key pairs > New key** to download a
+   private key in PEM format. Under the repository's **Settings > Secrets and variables >
+   Actions > Secrets**, create the repository secret `DEPENDABOT_UPDATER_APP_PRIVATE_KEY`
+   and paste the entire PEM file, including its `BEGIN` and `END` lines.
+
+Do not share or commit the private key, or add it to Dependabot secrets. The workflow
+uses a short-lived installation token so branch updates trigger the normal PR workflows.
+The same app can be installed on other selected repositories, but each repository needs
+its own workflow, client ID variable, and private-key secret. The token created by this
+workflow is limited to the current repository; the private key can authenticate to all
+repositories on which the app is installed.
+
+After merging, run the workflow manually and verify that multiple behind Dependabot PRs
+receive updates, their required checks rerun, and auto-merge completes. PRs by other
+authors are no longer automatically updated by this workflow.
+
 ## Route Parsing and Segment Semantics
 
 The parser and segment logic intentionally use window-bounded route behavior:

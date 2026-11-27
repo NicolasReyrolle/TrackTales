@@ -4,22 +4,38 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
+  schedule:
+    - cron: '17 */4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: dependabot-autoupdate
+  cancel-in-progress: false
 
 jobs:
   autoupdate:
     name: autoupdate
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.user.login == 'dependabot[bot]' }}
+    if: github.ref == 'refs/heads/main'
     permissions:
-      contents: write
-      pull-requests: write
-    runs-on: ubuntu-22.04
+      contents: read
+    runs-on: ubuntu-latest
     steps:
-      - uses: docker://chinthakagodawita/autoupdate-action:v1
-        env:
-          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.DEPENDABOT_UPDATER_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DEPENDABOT_UPDATER_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Update Dependabot branches
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            await require('./.github/scripts/update-dependabot.cjs')({ github, context, core });

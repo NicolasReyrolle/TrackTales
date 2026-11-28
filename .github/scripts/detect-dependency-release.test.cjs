@@ -124,3 +124,8 @@ test('propagates GitHub and PyPI errors instead of treating them as no updates',
   h.fetch = async () => { throw new Error('network unavailable'); };
   await assert.rejects(detect(h), /network unavailable/);
 });
+
+test('defaultGit executes git using fixed unwriteable PATH directories', () => {
+  const result = detect.defaultGit('rev-parse', '--is-inside-work-tree');
+  assert.equal(result, 'true');
+});

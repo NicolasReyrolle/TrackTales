@@ -79,9 +79,9 @@ jobs:
           # Running from the project root ensures pytest discovery
           pytest --cov=src --cov-report=term-missing -q tests/
 
-      - name: Test Dependabot updater
+      - name: Test Dependabot automation
         if: matrix.python-version == '3.14'
-        run: node --test .github/scripts/update-dependabot.test.cjs
+        run: node --test .github/scripts/update-dependabot.test.cjs .github/scripts/detect-dependency-release.test.cjs
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v7

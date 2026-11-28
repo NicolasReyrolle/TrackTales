@@ -11,12 +11,6 @@ module.exports = async function detectDependencyRelease({
   const tag = tags.find((value) => /^v\d{4}\.\d+\.\d+$/.test(value));
   if (!tag) throw new Error('No CalVer release tag found; automatic release requires a published baseline.');
 
-  try {
-    git('merge-base', '--is-ancestor', tag, source);
-  } catch (error) {
-    throw new Error(`Latest release tag ${tag} is not an ancestor of main: ${String(error)}`);
-  }
-
   const { data: release } = await github.rest.repos.getReleaseByTag({ owner, repo, tag });
   if (release.draft || release.prerelease) {
     throw new Error(`${tag} is not a published GitHub release; investigate before releasing automatically.`);
@@ -29,6 +23,18 @@ module.exports = async function detectDependencyRelease({
   const types = new Set(metadata.urls.map((file) => file.packagetype));
   if (!types.has('bdist_wheel') || !types.has('sdist')) {
     throw new Error(`${tag} is missing a wheel or source distribution on PyPI; investigate the previous release.`);
+  }
+
+  const baseline = git('rev-parse', `${tag}^{commit}`);
+  const common = git('merge-base', tag, source);
+  if (common !== baseline) {
+    const main = git('rev-parse', 'refs/remotes/origin/main');
+    if (common === source && git('merge-base', tag, main) === baseline) {
+      core.info(`The snapshot is already covered by ${tag}; the next check will consider newer updates.`);
+      core.setOutput('should_release', 'false');
+      return;
+    }
+    throw new Error(`Latest release tag ${tag} is not an ancestor of main's release snapshot.`);
   }
 
   const commits = git('rev-list', '--first-parent', `${tag}..${source}`).split('\n').filter(Boolean);

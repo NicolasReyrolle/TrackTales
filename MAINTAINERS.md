@@ -222,11 +222,12 @@ title is not used to determine scope. If eligible, the workflow dispatches
 The check runs on main pushes and every four hours, so automated merges that do
 not trigger a push workflow are eventually detected. GitHub may delay schedules.
 The release workflow checks again after obtaining its release concurrency slot
-and builds a single snapshot of the latest `main`. This prevents duplicate
-automatic releases and includes all changes in that snapshot, not only the
-dependency update. Changes merged during a build are considered at the next
-check. Existing unreleased qualifying PRs are eligible immediately after this
-automation is merged.
+and builds the immutable `main` commit selected when it was dispatched. This
+prevents duplicate automatic releases and includes all changes in that snapshot,
+not only the dependency update. Changes merged after dispatch are considered at
+the next check. If another completed release already covers the snapshot, the
+queued automatic release skips it. Existing unreleased qualifying PRs are eligible
+immediately after this automation is merged.
 
 The latest CalVer tag must be an ancestor of `main`, have a published GitHub
 release, and have both a wheel and source distribution on PyPI. If these

@@ -3,15 +3,21 @@ const test = require('node:test');
 const detect = require('./detect-dependency-release.cjs');
 
 function harness({ commits = [], pulls = {}, files = {}, tags = 'v2026.11.3',
-  ancestor = true, release = {}, status = 200, types = ['bdist_wheel', 'sdist'] } = {}) {
+  ancestry = 'normal', release = {}, status = 200, types = ['bdist_wheel', 'sdist'] } = {}) {
   const outputs = {};
   const calls = [];
   const git = (...args) => {
-    if (args[0] === 'rev-parse') return 'snapshot';
+    if (args[0] === 'rev-parse') {
+      if (args[1] === 'HEAD') return 'snapshot';
+      if (args[1] === 'v2026.11.3^{commit}') return 'baseline';
+      if (args[1] === 'refs/remotes/origin/main') return 'main';
+    }
     if (args[0] === 'tag') return tags;
     if (args[0] === 'merge-base') {
-      if (!ancestor) throw new Error('not ancestor');
-      return '';
+      if (args[2] === 'snapshot') {
+        return ancestry === 'normal' ? 'baseline' : ancestry === 'divergent' ? 'other' : 'snapshot';
+      }
+      if (args[2] === 'main') return ancestry === 'covered' ? 'baseline' : 'other';
     }
     if (args[0] === 'rev-list') {
       assert.equal(args[2], 'v2026.11.3..snapshot');
@@ -87,7 +93,8 @@ test('does not repeat a release when the snapshot has no commits after the publi
 test('blocks incomplete or unverifiable previous releases', async () => {
   for (const [options, message] of [
     [{ tags: '' }, /No CalVer release tag/],
-    [{ ancestor: false }, /not an ancestor/],
+    [{ ancestry: 'divergent' }, /not an ancestor/],
+    [{ ancestry: 'off-main' }, /not an ancestor/],
     [{ release: { draft: true } }, /not a published GitHub release/],
     [{ status: 404 }, /Cannot verify.*PyPI/],
     [{ types: ['bdist_wheel'] }, /missing a wheel or source distribution/],
@@ -96,6 +103,17 @@ test('blocks incomplete or unverifiable previous releases', async () => {
     await assert.rejects(detect(h), message);
     assert.deepEqual(h.outputs, {});
   }
+});
+
+test('skips an older queued snapshot only after the newer main release is fully published', async () => {
+  const h = harness({ ancestry: 'covered' });
+  await detect(h);
+  assert.equal(h.outputs.should_release, 'false');
+  assert.deepEqual(h.calls, []);
+
+  const incomplete = harness({ ancestry: 'covered', types: ['bdist_wheel'] });
+  await assert.rejects(detect(incomplete), /missing a wheel or source distribution/);
+  assert.deepEqual(incomplete.outputs, {});
 });
 
 test('propagates GitHub and PyPI errors instead of treating them as no updates', async () => {

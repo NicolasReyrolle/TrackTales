@@ -210,6 +210,34 @@ Runtime notes:
 
 TrackTales uses **Calendar Versioning (CalVer)** with the format `YYYY.M.PATCH` (e.g., `2026.5.1`, `2026.5.2`).
 
+### Automatic dependency releases
+
+The existing `autoupdate` workflow also checks for merged Dependabot PRs targeting
+`main` that changed `requirements.txt` since the latest release. This includes
+major updates. Changes confined to `requirements-dev.txt`,
+`requirements-triage.txt`, or GitHub Actions do not trigger a release. The PR
+title is not used to determine scope. If eligible, the workflow dispatches
+`Release`; no additional schedule or GitHub App permissions are needed.
+
+The check runs on main pushes and every four hours, so automated merges that do
+not trigger a push workflow are eventually detected. GitHub may delay schedules.
+The release workflow checks again after obtaining its release concurrency slot
+and builds a single snapshot of the latest `main`. This prevents duplicate
+automatic releases and includes all changes in that snapshot, not only the
+dependency update. Changes merged during a build are considered at the next
+check. Existing unreleased qualifying PRs are eligible immediately after this
+automation is merged.
+
+The latest CalVer tag must be an ancestor of `main`, have a published GitHub
+release, and have both a wheel and source distribution on PyPI. If these
+conditions cannot be verified, the automatic check fails rather than treating a
+partial publication as successful. Check the `autoupdate` and `Release` Actions
+runs and inspect both GitHub Releases and PyPI before resolving a failed
+publication. A failure before a tag is created may be retried on the next check;
+after a tag is created, incomplete publication blocks automatic releases until
+the release is repaired. Do not delete or recreate PyPI versions to work around
+this. A manual release remains available, but first resolve any partial release.
+
 ### Versioning Scheme
 
 - **YYYY**: Current year (4 digits)
@@ -242,7 +270,7 @@ Examples:
    - Click **Run workflow** button
 5. **Workflow automatically**:
    - Calculates next version (YYYY.M.PATCH with auto-incremented PATCH)
-   - Updates and commits `pyproject.toml` with the new version before creating the release tag
+   - Updates `pyproject.toml` in build checkouts only; the version change is not committed
    - Builds Windows executable (.exe) via PyInstaller
    - Builds macOS app bundle (.dmg) via PyInstaller
    - Builds Python distributions (.whl and .tar.gz) via setuptools
